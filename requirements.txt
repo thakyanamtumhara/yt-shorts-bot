@@ -1,0 +1,9 @@
+anthropic
+elevenlabs
+moviepy==1.0.3
+Pillow
+openai-whisper
+google-auth-oauthlib
+google-api-python-client
+google-genai
+pytz
