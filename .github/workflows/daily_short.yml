@@ -1,0 +1,54 @@
+name: Daily YouTube Short
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  create-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick ffmpeg fonts-noto-core
+          sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
+
+      - name: Install Python packages
+        run: pip install -q -r requirements.txt
+
+      - name: Restore YouTube credentials
+        run: |
+          mkdir -p /tmp/yt_shorts
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
+          echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
+
+      - name: Run Daily Short Generator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OAUTHLIB_INSECURE_TRANSPORT: '1'
+        run: python daily_short.py
+
+      - name: Save updated topic history
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add topic_history.json || true
+          git commit -m "Update topic history [skip ci]" || true
+          git push || true
