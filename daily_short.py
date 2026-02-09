@@ -629,12 +629,23 @@ Return ONLY the topic text, nothing else."""}]
     video_objects = []
     for fname in downloaded_clips:
         try:
-            v = VideoFileClip(fname)
+            fixed_fname = fname.replace(".mp4", "_fixed.mp4")
+            import subprocess
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-i", fname, "-c:v", "libx264", "-preset", "fast",
+                 "-crf", "18", "-an", "-movflags", "+faststart", fixed_fname],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode != 0:
+                print(f"   ffmpeg error: {result.stderr[:200]}")
+                fixed_fname = fname
+            v = VideoFileClip(fixed_fname)
             v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
             v = v.without_audio()
             video_objects.append(v)
-        except:
-            pass
+            print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
+        except Exception as e:
+            print(f"   Failed to load {fname}: {e}")
 
     if not video_objects:
         print("❌ No usable clips")
