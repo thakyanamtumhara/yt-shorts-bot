@@ -25,6 +25,10 @@ import pytz
 from datetime import datetime, timedelta
 
 from elevenlabs.client import ElevenLabs
+# Fix Pillow 10+ compatibility with MoviePy
+import PIL.Image
+if not hasattr(PIL.Image, 'ANTIALIAS'):
+    PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, TextClip,
     CompositeVideoClip, concatenate_videoclips, ColorClip
