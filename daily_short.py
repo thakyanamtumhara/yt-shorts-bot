@@ -452,7 +452,7 @@ def main():
     else:
         print("   🧠 All topics used — Claude generating new one...")
         resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250514", max_tokens=200,
+            model="claude-sonnet-4-5-20250929", max_tokens=200,
             messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
@@ -468,7 +468,7 @@ Return ONLY the topic text, nothing else."""}]
     # ── 3. Generate Script ──
     print("   ✍️ Writing script...")
     resp = claude.messages.create(
-        model="claude-sonnet-4-5-20250514", max_tokens=1500,
+        model="claude-sonnet-4-5-20250929", max_tokens=1500,
         messages=[{"role": "user", "content": get_script_prompt(fresh_topic)}]
     )
     raw = resp.content[0].text.strip()
