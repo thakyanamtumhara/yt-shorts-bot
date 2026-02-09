@@ -21,6 +21,7 @@ import os
 import glob
 import math
 import time
+import sys
 import pytz
 from datetime import datetime, timedelta
 
@@ -430,7 +431,7 @@ def main():
 
     if missing:
         print(f"❌ Missing: {', '.join(missing)}")
-        return
+        sys.exit(1)
 
     el_client = ElevenLabs(api_key=elevenlabs_key)
     claude = anthropic.Anthropic(api_key=anthropic_key)
@@ -451,7 +452,7 @@ def main():
     else:
         print("   🧠 All topics used — Claude generating new one...")
         resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-sonnet-4-5-20250514", max_tokens=200,
             messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
@@ -467,7 +468,7 @@ Return ONLY the topic text, nothing else."""}]
     # ── 3. Generate Script ──
     print("   ✍️ Writing script...")
     resp = claude.messages.create(
-        model="claude-sonnet-4-5-20250929", max_tokens=1500,
+        model="claude-sonnet-4-5-20250514", max_tokens=1500,
         messages=[{"role": "user", "content": get_script_prompt(fresh_topic)}]
     )
     raw = resp.content[0].text.strip()
@@ -564,7 +565,7 @@ Return ONLY the topic text, nothing else."""}]
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
-        return
+        sys.exit(1)
 
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
@@ -638,7 +639,7 @@ Return ONLY the topic text, nothing else."""}]
 
     if not video_objects:
         print("❌ No usable clips")
-        return
+        sys.exit(1)
 
     total_clip_duration = sum(v.duration for v in video_objects)
     if total_clip_duration >= total_duration:
@@ -736,6 +737,7 @@ Return ONLY the topic text, nothing else."""}]
         print(f"{'='*60}")
     else:
         print("   ❌ YouTube auth failed. Video saved locally.")
+        sys.exit(1)
 
     # Cleanup
     for f in downloaded_clips:
