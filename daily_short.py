@@ -487,10 +487,12 @@ def generate_bg_music(mood="calm"):
     prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
+    HF_API_URL = "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
+
     try:
         print(f"   🤖 AI generating '{mood}' background music...")
         response = requests.post(
-            "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+            HF_API_URL,
             headers={"Authorization": f"Bearer {hf_key}"},
             json={"inputs": prompt},
             timeout=180,
@@ -502,7 +504,7 @@ def generate_bg_music(mood="calm"):
             print(f"   ⏳ MusicGen model loading, waiting {int(wait_time)}s...")
             time.sleep(min(wait_time, 60))
             response = requests.post(
-                "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+                HF_API_URL,
                 headers={"Authorization": f"Bearer {hf_key}"},
                 json={"inputs": prompt},
                 timeout=180,
