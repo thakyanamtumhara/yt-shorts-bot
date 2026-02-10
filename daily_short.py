@@ -94,7 +94,7 @@ VOICE_SPEED = 0.88
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 3
-VEO_MODEL = "veo-3.1-generate-preview"
+VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
 
