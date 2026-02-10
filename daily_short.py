@@ -676,7 +676,7 @@ Return ONLY the topic text, nothing else."""}]
         selected_voice = voices.voices[0]
 
     audio_gen = el_client.text_to_speech.convert(
-        text=script_voice,
+        text=script_voice + "...",   # Trailing ellipsis prevents last-word cutoff
         voice_id=selected_voice.voice_id,
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
@@ -811,7 +811,7 @@ Return ONLY the topic text, nothing else."""}]
     # ── 7. Video Assembly ──
     print("   ✂️ Building video...")
     audio_clip = AudioFileClip(audio_path)
-    total_duration = audio_clip.duration + 0.3
+    total_duration = audio_clip.duration + 0.8  # Extra buffer so ending doesn't feel cut
 
     def smart_crop(clip, tw=1080, th=1920):
         w, h = clip.size
@@ -924,6 +924,10 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
+
+    # Fade out voice at the end to prevent abrupt cutoff
+    from moviepy.audio.fx.audio_fadeout import audio_fadeout
+    audio_clip = audio_fadeout(audio_clip, 0.5)
 
     # Mix background music with voice
     mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
