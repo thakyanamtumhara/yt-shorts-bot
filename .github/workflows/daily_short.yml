@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 12 * * *'
   workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode (skip Veo clips + YouTube upload = free run)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   create-and-upload:
@@ -50,6 +56,7 @@ jobs:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           HF_API_KEY: ${{ secrets.HF_API_KEY }}
+          TEST_MODE: ${{ github.event.inputs.test_mode }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
         run: python daily_short.py
 
