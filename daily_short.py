@@ -11,6 +11,9 @@ Required environment variables:
   ELEVENLABS_API_KEY
   GOOGLE_API_KEY
   OAUTHLIB_INSECURE_TRANSPORT=1
+
+Optional environment variables:
+  PIXABAY_API_KEY    — auto-download royalty-free background music from Pixabay
 """
 
 import anthropic
@@ -31,8 +34,11 @@ if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, TextClip,
-    CompositeVideoClip, concatenate_videoclips, ColorClip
+    CompositeVideoClip, concatenate_videoclips, ColorClip,
+    CompositeAudioClip
 )
+from moviepy.audio.fx.audio_loop import audio_loop
+from moviepy.audio.fx.volumex import volumex
 
 # Allow http localhost for OAuth
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -121,6 +127,7 @@ WATERMARK_OPACITY = 0.8
 ADD_BG_MUSIC = True
 BG_MUSIC_FOLDER = f"{WORK_DIR}/bg_music"
 BG_MUSIC_VOLUME = 0.08
+BG_MUSIC_SEARCH_QUERY = "lo-fi ambient calm"  # Pixabay search query for mood
 
 # Hook Text
 ADD_HOOK_TEXT = True
@@ -240,6 +247,33 @@ EXAMPLE 4 (Recommendation):
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
     Script ends when the point is made. Just stop.
+
+━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
+
+The voice MUST sound like a REAL person thinking and talking, NOT a script being read.
+Add NATURAL HINDI FILLERS and THINKING PAUSES throughout the script:
+
+FILLER WORDS to use naturally (pick 2-3 per script, don't overdo):
+- "Dekho..." (Look/See... — opening filler)
+- "Matlab..." (Meaning... — thinking pause)
+- "Accha..." (Okay/Right... — transition filler)
+- "Hmm..." (thinking sound)
+- "Toh basically..." (So basically... — explanation starter)
+- "Aur ek baat..." (And one thing... — adding a point)
+- "Samjho..." (Understand... — before explaining)
+- "Seedhi baat hai..." (Straight talk... — before a direct statement)
+- "Ab dekho..." (Now see... — transitioning)
+
+EXAMPLE with fillers (natural flow):
+"Dekho... GSM bas fabric ka weight hota hai. Matlab jyada GSM toh mota fabric,
+kam GSM toh patla. Basically kisi bhi kapde ko 1 square meter mein cut karke
+weight kar doge toh... wahi GSM hota hai. Simple hai."
+
+RULES for fillers:
+- Place fillers at SENTENCE STARTS and BEFORE explanations, never mid-word
+- Use "..." (ellipsis) after fillers to indicate natural pause
+- Don't use more than 3 fillers per script — it should feel natural, not stuttering
+- Fillers should FLOW with the sentence, not feel forced
 
 ━━━ LANGUAGE RULES ━━━
 
@@ -413,6 +447,112 @@ Custom printing businesses | Merch brands | Corporate orders
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# BACKGROUND MUSIC
+# ═══════════════════════════════════════════════════════════════════════
+
+def download_bg_music():
+    """Download royalty-free background music from Pixabay if folder is empty."""
+    existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
+    if existing:
+        return  # Already have music files
+
+    pixabay_key = os.environ.get("PIXABAY_API_KEY")
+    if not pixabay_key:
+        print("   ⚠️ No PIXABAY_API_KEY set and no music files in bg_music/. Skipping BG music.")
+        return
+
+    try:
+        print(f"   🎵 Downloading background music from Pixabay...")
+        search_url = (
+            f"https://pixabay.com/api/videos/music/"
+            f"?key={pixabay_key}"
+            f"&q={requests.utils.quote(BG_MUSIC_SEARCH_QUERY)}"
+            f"&per_page=5"
+        )
+        resp = requests.get(search_url, timeout=30)
+        resp.raise_for_status()
+        results = resp.json()
+
+        hits = results.get("hits", [])
+        if not hits:
+            # Fallback: try broader search
+            search_url = f"https://pixabay.com/api/videos/music/?key={pixabay_key}&per_page=5"
+            resp = requests.get(search_url, timeout=30)
+            resp.raise_for_status()
+            results = resp.json()
+            hits = results.get("hits", [])
+
+        if not hits:
+            print("   ⚠️ No music found on Pixabay.")
+            return
+
+        # Download up to 3 tracks
+        downloaded = 0
+        for hit in hits[:3]:
+            audio_url = hit.get("audio", "")
+            if not audio_url:
+                # Try alternate field names
+                audio_url = hit.get("url", "")
+            if not audio_url:
+                continue
+
+            track_id = hit.get("id", random.randint(1000, 9999))
+            track_path = f"{BG_MUSIC_FOLDER}/pixabay_{track_id}.mp3"
+
+            try:
+                audio_resp = requests.get(audio_url, timeout=60)
+                audio_resp.raise_for_status()
+                with open(track_path, "wb") as f:
+                    f.write(audio_resp.content)
+                downloaded += 1
+                print(f"   ✅ Downloaded: pixabay_{track_id}.mp3")
+            except Exception as e:
+                print(f"   ⚠️ Failed to download track {track_id}: {e}")
+
+        if downloaded == 0:
+            print("   ⚠️ Could not download any music tracks.")
+        else:
+            print(f"   🎵 {downloaded} background track(s) ready")
+
+    except Exception as e:
+        print(f"   ⚠️ Pixabay music download failed: {e}")
+
+
+def mix_background_music(voice_audio_clip, duration):
+    """Mix background music with voice audio. Returns CompositeAudioClip or original voice."""
+    if not ADD_BG_MUSIC:
+        return voice_audio_clip
+
+    music_files = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
+    if not music_files:
+        return voice_audio_clip
+
+    try:
+        music_path = random.choice(music_files)
+        print(f"   🎵 Adding background music: {os.path.basename(music_path)}")
+
+        music_clip = AudioFileClip(music_path)
+
+        # Loop music if shorter than video, or trim if longer
+        if music_clip.duration < duration:
+            music_clip = audio_loop(music_clip, duration=duration)
+        else:
+            music_clip = music_clip.subclip(0, duration)
+
+        # Reduce music volume
+        music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+
+        # Composite: voice on top, music underneath
+        mixed = CompositeAudioClip([music_clip, voice_audio_clip])
+        print(f"   ✅ Background music mixed at {int(BG_MUSIC_VOLUME * 100)}% volume")
+        return mixed
+
+    except Exception as e:
+        print(f"   ⚠️ Background music mixing failed: {e}")
+        return voice_audio_clip
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -487,6 +627,9 @@ Return ONLY the topic text, nothing else."""}]
 
     print(f"   🗣️ Script: {script_voice[:80]}...")
 
+    # ── 3b. Download Background Music (if needed) ──
+    download_bg_music()
+
     # ── 4. Generate Voice ──
     print("   🎙️ Generating voice...")
     voices = el_client.voices.get_all()
@@ -503,7 +646,13 @@ Return ONLY the topic text, nothing else."""}]
         voice_id=selected_voice.voice_id,
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
-        voice_settings={"stability": 0.50, "similarity_boost": 0.80, "speed": VOICE_SPEED}
+        voice_settings={
+            "stability": 0.35,           # Lower = more expressive, natural variation
+            "similarity_boost": 0.75,     # Slightly lower for more natural delivery
+            "style": 0.45,               # Add speaking style expressiveness
+            "use_speaker_boost": True,    # Enhance speaker clarity
+            "speed": VOICE_SPEED,
+        }
     )
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     with open(audio_path, "wb") as f:
@@ -728,7 +877,10 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
-    final_video = final_video.set_audio(audio_clip)
+
+    # Mix background music with voice
+    mixed_audio = mix_background_music(audio_clip, total_duration)
+    final_video = final_video.set_audio(mixed_audio)
 
     # ── 9. Render ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
