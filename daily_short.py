@@ -95,6 +95,9 @@ KEY FACTS:
 # ║                   VIDEO SETTINGS                                     ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 
+# Test mode: skip expensive Veo clips, use placeholder video. Set TEST_MODE=1 to enable.
+TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
+
 TARGET_VOICE_NAME = "Viraj"
 VOICE_SPEED = 0.88
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
@@ -583,6 +586,8 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
 
 def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
+    if TEST_MODE:
+        print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
     print()
 
@@ -692,55 +697,68 @@ Return ONLY the topic text, nothing else."""}]
     VEO_MAX_RETRIES = 5
     VEO_RETRY_WAIT = 90
 
-    print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
-    for i in range(VEO_CLIPS_PER_VIDEO):
-        if i > 0 and i % 2 == 0:
-            print(f"   ⏸️ RPM limit — waiting 60s...")
-            time.sleep(60)
+    if TEST_MODE:
+        # Test mode: create cheap placeholder clips (solid color) instead of Veo
+        print("   🧪 TEST MODE: Skipping Veo clips, using placeholder video...")
+        for i in range(VEO_CLIPS_PER_VIDEO):
+            placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
+            colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60)]
+            color = colors[i % len(colors)]
+            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
+            placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
+            downloaded_clips.append(placeholder_path)
+        print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-        prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
-        clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
-        clip_success = False
+    if not TEST_MODE:
+        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
+        for i in range(VEO_CLIPS_PER_VIDEO):
+            if i > 0 and i % 2 == 0:
+                print(f"   ⏸️ RPM limit — waiting 60s...")
+                time.sleep(60)
 
-        for attempt in range(1, VEO_MAX_RETRIES + 1):
-            try:
-                print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
-                operation = veo_client.models.generate_videos(
-                    model=VEO_MODEL,
-                    prompt=prompt_text,
-                    config=types.GenerateVideosConfig(
-                        aspect_ratio=VEO_ASPECT_RATIO,
-                        number_of_videos=1,
-                        duration_seconds=VEO_DURATION,
-                    ),
-                )
-                while not operation.done:
-                    time.sleep(10)
-                    operation = veo_client.operations.get(operation)
+            prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
+            clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
+            clip_success = False
 
-                if operation.response and operation.response.generated_videos:
-                    video = operation.response.generated_videos[0]
-                    video_data = veo_client.files.download(file=video.video)
-                    with open(clip_path, "wb") as f:
-                        f.write(video_data)
-                    downloaded_clips.append(clip_path)
-                    clip_success = True
-                    print("✅")
-                    break
-                else:
-                    print("empty response")
-            except BaseException as e:
-                error_msg = str(e)
-                if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                    wait = VEO_RETRY_WAIT * attempt
-                    print(f"rate limited — waiting {wait}s")
-                    time.sleep(wait)
-                else:
-                    print(f"error: {error_msg[:60]}")
-                    break
+            for attempt in range(1, VEO_MAX_RETRIES + 1):
+                try:
+                    print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
+                    operation = veo_client.models.generate_videos(
+                        model=VEO_MODEL,
+                        prompt=prompt_text,
+                        config=types.GenerateVideosConfig(
+                            aspect_ratio=VEO_ASPECT_RATIO,
+                            number_of_videos=1,
+                            duration_seconds=VEO_DURATION,
+                        ),
+                    )
+                    while not operation.done:
+                        time.sleep(10)
+                        operation = veo_client.operations.get(operation)
 
-        if not clip_success:
-            print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
+                    if operation.response and operation.response.generated_videos:
+                        video = operation.response.generated_videos[0]
+                        video_data = veo_client.files.download(file=video.video)
+                        with open(clip_path, "wb") as f:
+                            f.write(video_data)
+                        downloaded_clips.append(clip_path)
+                        clip_success = True
+                        print("✅")
+                        break
+                    else:
+                        print("empty response")
+                except BaseException as e:
+                    error_msg = str(e)
+                    if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                        wait = VEO_RETRY_WAIT * attempt
+                        print(f"rate limited — waiting {wait}s")
+                        time.sleep(wait)
+                    else:
+                        print(f"error: {error_msg[:60]}")
+                        break
+
+            if not clip_success:
+                print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
@@ -919,17 +937,25 @@ Return ONLY the topic text, nothing else."""}]
     print(f"   ✅ Video ready: {output_path}")
 
     # ── 10. Upload to YouTube ──
-    print("   📤 Uploading to YouTube...")
-    youtube = get_youtube_service()
-    if youtube:
-        vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags)
+    if TEST_MODE:
         print(f"\n{'='*60}")
-        print(f"  ✅ DAILY SHORT COMPLETE!")
-        print(f"  🔗 {vid_url}")
-        print(f"  📌 {yt_title}")
+        print(f"  🧪 TEST MODE COMPLETE — video NOT uploaded")
+        print(f"  📁 Video saved: {output_path}")
+        print(f"  📌 Title: {yt_title}")
+        print(f"  🎵 Mood: {music_mood}")
         print(f"{'='*60}")
     else:
-        print("   ❌ YouTube auth failed. Video saved locally.")
+        print("   📤 Uploading to YouTube...")
+        youtube = get_youtube_service()
+        if youtube:
+            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags)
+            print(f"\n{'='*60}")
+            print(f"  ✅ DAILY SHORT COMPLETE!")
+            print(f"  🔗 {vid_url}")
+            print(f"  📌 {yt_title}")
+            print(f"{'='*60}")
+        else:
+            print("   ❌ YouTube auth failed. Video saved locally.")
 
     # Cleanup
     for f in downloaded_clips:
