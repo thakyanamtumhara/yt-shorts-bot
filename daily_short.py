@@ -251,7 +251,29 @@ EXAMPLE 4 (Recommendation):
 9. NATURAL ENGLISH mix — "basically", "common", "non noticeable",
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
-    Script ends when the point is made. Just stop.
+
+━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
+
+When a real person finishes talking, they naturally slow down and trail off.
+The listener can SENSE the sentence is ending BEFORE the last word.
+Your script MUST end this way — NOT like it was cut mid-thought.
+
+GOOD endings (trailing, conclusive — listener feels the wrap-up):
+- "...bas itna samajh lo, fark dikh jayega."
+- "...toh wahi hota hai, simple hai."
+- "...isi ko bolte hai... bas."
+- "...wo jyada theek rahega."
+- "...bas yehi hai, kuch aur nahi."
+
+BAD endings (feel abrupt — like more was coming):
+- "Aur ye 200 GSM hota hai." (sounds like next point is coming)
+- "Print karke dekh lo." (too commanding, no sense of conclusion)
+
+RULES for ending:
+- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "fark dikh jayega"
+- The last 3-4 words should feel like they're naturally trailing off
+- Add "..." before the final phrase for a natural pause feel
+- The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
 
 ━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
 
@@ -572,8 +594,10 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
         else:
             music_clip = music_clip.subclip(0, duration)
 
-        # Reduce music volume
+        # Reduce music volume and fade out at the end
         music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+        from moviepy.audio.fx.audio_fadeout import audio_fadeout
+        music_clip = audio_fadeout(music_clip, 2.0)
 
         # Composite: voice on top, music underneath
         mixed = CompositeAudioClip([music_clip, voice_audio_clip])
@@ -623,6 +647,8 @@ def extract_ambient_audio(clip_paths, total_duration):
             ambient = ambient.subclip(0, total_duration)
 
         ambient = volumex(ambient, VEO_AMBIENT_VOLUME)
+        from moviepy.audio.fx.audio_fadeout import audio_fadeout
+        ambient = audio_fadeout(ambient, 2.0)
         print(f"   🔊 Veo ambient audio extracted ({len(audio_clips)} clips, {int(VEO_AMBIENT_VOLUME * 100)}% volume)")
         return ambient
 
@@ -981,9 +1007,9 @@ Return ONLY the topic text, nothing else."""}]
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
-    # Fade out voice at the end to prevent abrupt cutoff
+    # Gradual voice fade-out at the end (natural trailing off)
     from moviepy.audio.fx.audio_fadeout import audio_fadeout
-    audio_clip = audio_fadeout(audio_clip, 0.5)
+    audio_clip = audio_fadeout(audio_clip, 1.2)
 
     # Extract Veo ambient audio (scene sounds at low volume)
     ambient_clip = extract_ambient_audio(downloaded_clips, total_duration)
