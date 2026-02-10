@@ -11,6 +11,9 @@ Required environment variables:
   ELEVENLABS_API_KEY
   GOOGLE_API_KEY
   OAUTHLIB_INSECURE_TRANSPORT=1
+
+Optional environment variables:
+  HF_API_KEY    — Hugging Face token for AI background music generation (free)
 """
 
 import anthropic
@@ -447,8 +450,16 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-# Repo-level bg_music/ folder (persists across runs, committed to git)
-# Name files with mood prefix: calm_track1.mp3, upbeat_beat.mp3, serious_piano.mp3, etc.
+# Mood → text prompt for AI music generation (Meta MusicGen via Hugging Face)
+MOOD_TO_MUSIC_PROMPT = {
+    "upbeat": "upbeat happy energetic instrumental music, positive vibes, bright, no vocals",
+    "calm": "soft ambient lo-fi instrumental music, relaxed, gentle piano, no vocals",
+    "serious": "deep cinematic dramatic instrumental music, serious tone, no vocals",
+    "motivational": "motivational inspiring corporate instrumental music, uplifting, no vocals",
+    "trendy": "modern trendy electronic beat, cool urban instrumental, no vocals",
+}
+
+# Repo-level bg_music/ folder (fallback — persists across runs, committed to git)
 REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
 
 
@@ -464,8 +475,58 @@ def _copy_repo_music_to_workdir():
                 shutil.copy2(src, dst)
 
 
+def generate_bg_music(mood="calm"):
+    """Generate background music using Meta MusicGen via Hugging Face Inference API."""
+    hf_key = os.environ.get("HF_API_KEY")
+    if not hf_key:
+        return None
+
+    prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
+    music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
+
+    try:
+        print(f"   🤖 AI generating '{mood}' background music...")
+        response = requests.post(
+            "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+            headers={"Authorization": f"Bearer {hf_key}"},
+            json={"inputs": prompt},
+            timeout=180,
+        )
+
+        if response.status_code == 503:
+            # Model is loading, wait and retry once
+            wait_time = response.json().get("estimated_time", 30)
+            print(f"   ⏳ MusicGen model loading, waiting {int(wait_time)}s...")
+            time.sleep(min(wait_time, 60))
+            response = requests.post(
+                "https://api-inference.huggingface.co/models/facebook/musicgen-small",
+                headers={"Authorization": f"Bearer {hf_key}"},
+                json={"inputs": prompt},
+                timeout=180,
+            )
+
+        if response.status_code == 200:
+            with open(music_path, "wb") as f:
+                f.write(response.content)
+            print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+            return music_path
+        else:
+            print(f"   ⚠️ MusicGen API returned {response.status_code}: {response.text[:100]}")
+            return None
+
+    except Exception as e:
+        print(f"   ⚠️ AI music generation failed: {e}")
+        return None
+
+
 def load_bg_music(mood="calm"):
-    """Copy repo music to workdir and check availability."""
+    """Load background music: AI generate first, fall back to repo files."""
+    # Step 1: Try AI generation (best — unique music per video, mood-matched)
+    ai_path = generate_bg_music(mood)
+    if ai_path:
+        return
+
+    # Step 2: Fall back to repo music files
     _copy_repo_music_to_workdir()
 
     existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
@@ -473,9 +534,9 @@ def load_bg_music(mood="calm"):
         mood_files = [f for f in existing if mood.lower() in os.path.basename(f).lower()]
         print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
     else:
-        print("   ⚠️ No music files found. Add .mp3 files to bg_music/ folder in your repo.")
-        print("   💡 Download free music from: pixabay.com/music or YouTube Audio Library")
-        print("   💡 Name files with mood prefix: calm_lofi.mp3, upbeat_beat.mp3, serious_piano.mp3")
+        print("   ⚠️ No background music available.")
+        print("   💡 Option 1: Set HF_API_KEY secret (free) for AI-generated music")
+        print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
 
 
 def mix_background_music(voice_audio_clip, duration, mood="calm"):
