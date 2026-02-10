@@ -11,9 +11,6 @@ Required environment variables:
   ELEVENLABS_API_KEY
   GOOGLE_API_KEY
   OAUTHLIB_INSECURE_TRANSPORT=1
-
-Optional environment variables:
-  PIXABAY_API_KEY    — auto-download royalty-free background music from Pixabay
 """
 
 import anthropic
@@ -450,15 +447,8 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-MOOD_TO_PIXABAY_QUERY = {
-    "upbeat": "upbeat energetic happy",
-    "calm": "calm ambient lo-fi",
-    "serious": "serious deep cinematic",
-    "motivational": "motivational inspiring corporate",
-    "trendy": "trendy modern beat",
-}
-
 # Repo-level bg_music/ folder (persists across runs, committed to git)
+# Name files with mood prefix: calm_track1.mp3, upbeat_beat.mp3, serious_piano.mp3, etc.
 REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
 
 
@@ -474,77 +464,18 @@ def _copy_repo_music_to_workdir():
                 shutil.copy2(src, dst)
 
 
-def download_bg_music(mood="calm"):
-    """Ensure background music is available. Uses repo files first, Pixabay as fallback."""
-    # Step 1: Copy any music from repo's bg_music/ folder
+def load_bg_music(mood="calm"):
+    """Copy repo music to workdir and check availability."""
     _copy_repo_music_to_workdir()
 
-    # Step 2: Check if we already have music files
     existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
     if existing:
-        print(f"   🎵 {len(existing)} music file(s) available")
-        return
-
-    # Step 3: Try Pixabay download with mood-based search
-    pixabay_key = os.environ.get("PIXABAY_API_KEY")
-    if not pixabay_key:
-        print("   ⚠️ No music files in bg_music/ and no PIXABAY_API_KEY set. Skipping BG music.")
-        print("   💡 Add .mp3 files to bg_music/ folder in your repo, OR set PIXABAY_API_KEY secret.")
-        return
-
-    search_query = MOOD_TO_PIXABAY_QUERY.get(mood, MOOD_TO_PIXABAY_QUERY["calm"])
-    try:
-        print(f"   🎵 Downloading '{mood}' background music from Pixabay...")
-        search_url = (
-            f"https://pixabay.com/api/videos/music/"
-            f"?key={pixabay_key}"
-            f"&q={requests.utils.quote(search_query)}"
-            f"&per_page=5"
-        )
-        resp = requests.get(search_url, timeout=30)
-        resp.raise_for_status()
-        results = resp.json()
-
-        hits = results.get("hits", [])
-        if not hits:
-            # Fallback: broader search
-            search_url = f"https://pixabay.com/api/videos/music/?key={pixabay_key}&per_page=5"
-            resp = requests.get(search_url, timeout=30)
-            resp.raise_for_status()
-            results = resp.json()
-            hits = results.get("hits", [])
-
-        if not hits:
-            print("   ⚠️ No music found on Pixabay.")
-            return
-
-        # Download up to 3 tracks, tagged with mood in filename
-        downloaded = 0
-        for hit in hits[:3]:
-            audio_url = hit.get("audio", "") or hit.get("url", "")
-            if not audio_url:
-                continue
-
-            track_id = hit.get("id", random.randint(1000, 9999))
-            track_path = f"{BG_MUSIC_FOLDER}/{mood}_{track_id}.mp3"
-
-            try:
-                audio_resp = requests.get(audio_url, timeout=60)
-                audio_resp.raise_for_status()
-                with open(track_path, "wb") as f:
-                    f.write(audio_resp.content)
-                downloaded += 1
-                print(f"   ✅ Downloaded: {mood}_{track_id}.mp3")
-            except Exception as e:
-                print(f"   ⚠️ Failed to download track {track_id}: {e}")
-
-        if downloaded == 0:
-            print("   ⚠️ Could not download any music tracks.")
-        else:
-            print(f"   🎵 {downloaded} '{mood}' track(s) ready")
-
-    except Exception as e:
-        print(f"   ⚠️ Pixabay music download failed: {e}")
+        mood_files = [f for f in existing if mood.lower() in os.path.basename(f).lower()]
+        print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
+    else:
+        print("   ⚠️ No music files found. Add .mp3 files to bg_music/ folder in your repo.")
+        print("   💡 Download free music from: pixabay.com/music or YouTube Audio Library")
+        print("   💡 Name files with mood prefix: calm_lofi.mp3, upbeat_beat.mp3, serious_piano.mp3")
 
 
 def mix_background_music(voice_audio_clip, duration, mood="calm"):
@@ -662,8 +593,8 @@ Return ONLY the topic text, nothing else."""}]
     print(f"   🗣️ Script: {script_voice[:80]}...")
     print(f"   🎵 Mood: {music_mood}")
 
-    # ── 3b. Download Background Music (if needed) ──
-    download_bg_music(music_mood)
+    # ── 3b. Load Background Music ──
+    load_bg_music(music_mood)
 
     # ── 4. Generate Voice ──
     print("   🎙️ Generating voice...")
