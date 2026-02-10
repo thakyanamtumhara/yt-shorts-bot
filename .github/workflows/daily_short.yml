@@ -68,3 +68,11 @@ jobs:
           git add topic_history.json || true
           git commit -m "Update topic history [skip ci]" || true
           git push || true
+
+      - name: Upload test video
+        if: ${{ github.event.inputs.test_mode == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-video
+          path: /tmp/yt_shorts/SHORT_*.mp4
+          retention-days: 3
