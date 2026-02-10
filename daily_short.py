@@ -11,6 +11,9 @@ Required environment variables:
   ELEVENLABS_API_KEY
   GOOGLE_API_KEY
   OAUTHLIB_INSECURE_TRANSPORT=1
+
+Optional environment variables:
+  HF_API_KEY    — Hugging Face token for AI background music generation (free)
 """
 
 import anthropic
@@ -31,8 +34,11 @@ if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, TextClip,
-    CompositeVideoClip, concatenate_videoclips, ColorClip
+    CompositeVideoClip, concatenate_videoclips, ColorClip,
+    CompositeAudioClip
 )
+from moviepy.audio.fx.audio_loop import audio_loop
+from moviepy.audio.fx.volumex import volumex
 
 # Allow http localhost for OAuth
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -88,6 +94,9 @@ KEY FACTS:
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                   VIDEO SETTINGS                                     ║
 # ╚══════════════════════════════════════════════════════════════════════╝
+
+# Test mode: skip expensive Veo clips, use placeholder video. Set TEST_MODE=1 to enable.
+TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 
 TARGET_VOICE_NAME = "Viraj"
 VOICE_SPEED = 0.88
@@ -241,6 +250,33 @@ EXAMPLE 4 (Recommendation):
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
     Script ends when the point is made. Just stop.
 
+━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
+
+The voice MUST sound like a REAL person thinking and talking, NOT a script being read.
+Add NATURAL HINDI FILLERS and THINKING PAUSES throughout the script:
+
+FILLER WORDS to use naturally (pick 2-3 per script, don't overdo):
+- "Dekho..." (Look/See... — opening filler)
+- "Matlab..." (Meaning... — thinking pause)
+- "Accha..." (Okay/Right... — transition filler)
+- "Hmm..." (thinking sound)
+- "Toh basically..." (So basically... — explanation starter)
+- "Aur ek baat..." (And one thing... — adding a point)
+- "Samjho..." (Understand... — before explaining)
+- "Seedhi baat hai..." (Straight talk... — before a direct statement)
+- "Ab dekho..." (Now see... — transitioning)
+
+EXAMPLE with fillers (natural flow):
+"Dekho... GSM bas fabric ka weight hota hai. Matlab jyada GSM toh mota fabric,
+kam GSM toh patla. Basically kisi bhi kapde ko 1 square meter mein cut karke
+weight kar doge toh... wahi GSM hota hai. Simple hai."
+
+RULES for fillers:
+- Place fillers at SENTENCE STARTS and BEFORE explanations, never mid-word
+- Use "..." (ellipsis) after fillers to indicate natural pause
+- Don't use more than 3 fillers per script — it should feel natural, not stuttering
+- Fillers should FLOW with the sentence, not feel forced
+
 ━━━ LANGUAGE RULES ━━━
 
 Write in ROMAN HINGLISH — Hindi words in ENGLISH LETTERS (not Devanagari).
@@ -275,6 +311,7 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "description": "YouTube description in English with 6-8 hashtags. Include Sale91.com link.",
     "script_voice": "The ROMAN HINGLISH script. MAX 3-4 sentences. NO website. NO selling. Pure knowledge.",
     "script_english": "Clean English translation for on-screen subtitles",
+    "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
     "video_prompt_1": "Detailed 40-80 word visual scene for OPENING.",
     "video_prompt_2": "Detailed 40-80 word visual scene for MIDDLE.",
     "video_prompt_3": "Detailed 40-80 word visual scene for ENDING.",
@@ -413,11 +450,146 @@ Custom printing businesses | Merch brands | Corporate orders
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# BACKGROUND MUSIC
+# ═══════════════════════════════════════════════════════════════════════
+
+# Mood → text prompt for AI music generation (Meta MusicGen via Hugging Face)
+MOOD_TO_MUSIC_PROMPT = {
+    "upbeat": "upbeat happy energetic instrumental music, positive vibes, bright, no vocals",
+    "calm": "soft ambient lo-fi instrumental music, relaxed, gentle piano, no vocals",
+    "serious": "deep cinematic dramatic instrumental music, serious tone, no vocals",
+    "motivational": "motivational inspiring corporate instrumental music, uplifting, no vocals",
+    "trendy": "modern trendy electronic beat, cool urban instrumental, no vocals",
+}
+
+# Repo-level bg_music/ folder (fallback — persists across runs, committed to git)
+REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
+
+
+def _copy_repo_music_to_workdir():
+    """Copy music files from repo bg_music/ to working directory."""
+    if not os.path.isdir(REPO_BG_MUSIC_FOLDER):
+        return
+    import shutil
+    for ext in ("*.mp3", "*.wav"):
+        for src in glob.glob(f"{REPO_BG_MUSIC_FOLDER}/{ext}"):
+            dst = os.path.join(BG_MUSIC_FOLDER, os.path.basename(src))
+            if not os.path.exists(dst):
+                shutil.copy2(src, dst)
+
+
+def generate_bg_music(mood="calm"):
+    """Generate background music using Meta MusicGen via Hugging Face Inference API."""
+    hf_key = os.environ.get("HF_API_KEY")
+    if not hf_key:
+        return None
+
+    prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
+    music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
+
+    HF_API_URL = "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
+
+    try:
+        print(f"   🤖 AI generating '{mood}' background music...")
+        response = requests.post(
+            HF_API_URL,
+            headers={"Authorization": f"Bearer {hf_key}"},
+            json={"inputs": prompt},
+            timeout=180,
+        )
+
+        if response.status_code == 503:
+            # Model is loading, wait and retry once
+            wait_time = response.json().get("estimated_time", 30)
+            print(f"   ⏳ MusicGen model loading, waiting {int(wait_time)}s...")
+            time.sleep(min(wait_time, 60))
+            response = requests.post(
+                HF_API_URL,
+                headers={"Authorization": f"Bearer {hf_key}"},
+                json={"inputs": prompt},
+                timeout=180,
+            )
+
+        if response.status_code == 200:
+            with open(music_path, "wb") as f:
+                f.write(response.content)
+            print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+            return music_path
+        else:
+            print(f"   ⚠️ MusicGen API returned {response.status_code}: {response.text[:100]}")
+            return None
+
+    except Exception as e:
+        print(f"   ⚠️ AI music generation failed: {e}")
+        return None
+
+
+def load_bg_music(mood="calm"):
+    """Load background music: AI generate first, fall back to repo files."""
+    # Step 1: Try AI generation (best — unique music per video, mood-matched)
+    ai_path = generate_bg_music(mood)
+    if ai_path:
+        return
+
+    # Step 2: Fall back to repo music files
+    _copy_repo_music_to_workdir()
+
+    existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
+    if existing:
+        mood_files = [f for f in existing if mood.lower() in os.path.basename(f).lower()]
+        print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
+    else:
+        print("   ⚠️ No background music available.")
+        print("   💡 Option 1: Set HF_API_KEY secret (free) for AI-generated music")
+        print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
+
+
+def mix_background_music(voice_audio_clip, duration, mood="calm"):
+    """Mix background music with voice audio. Prefers mood-matching files."""
+    if not ADD_BG_MUSIC:
+        return voice_audio_clip
+
+    all_files = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
+    if not all_files:
+        return voice_audio_clip
+
+    # Prefer files matching the mood (e.g., "calm_12345.mp3" or "calm_lofi.mp3")
+    mood_files = [f for f in all_files if mood.lower() in os.path.basename(f).lower()]
+    music_files = mood_files if mood_files else all_files
+
+    try:
+        music_path = random.choice(music_files)
+        print(f"   🎵 Adding background music: {os.path.basename(music_path)}")
+
+        music_clip = AudioFileClip(music_path)
+
+        # Loop music if shorter than video, or trim if longer
+        if music_clip.duration < duration:
+            music_clip = audio_loop(music_clip, duration=duration)
+        else:
+            music_clip = music_clip.subclip(0, duration)
+
+        # Reduce music volume
+        music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+
+        # Composite: voice on top, music underneath
+        mixed = CompositeAudioClip([music_clip, voice_audio_clip])
+        print(f"   ✅ Background music mixed at {int(BG_MUSIC_VOLUME * 100)}% volume")
+        return mixed
+
+    except Exception as e:
+        print(f"   ⚠️ Background music mixing failed: {e}")
+        return voice_audio_clip
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
 
 def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
+    if TEST_MODE:
+        print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
     print()
 
@@ -483,9 +655,14 @@ Return ONLY the topic text, nothing else."""}]
     yt_title = data["title"]
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
+    music_mood = data.get("music_mood", "calm")
     video_prompts = [data.get("video_prompt_1",""), data.get("video_prompt_2",""), data.get("video_prompt_3","")]
 
     print(f"   🗣️ Script: {script_voice[:80]}...")
+    print(f"   🎵 Mood: {music_mood}")
+
+    # ── 3b. Load Background Music ──
+    load_bg_music(music_mood)
 
     # ── 4. Generate Voice ──
     print("   🎙️ Generating voice...")
@@ -503,7 +680,13 @@ Return ONLY the topic text, nothing else."""}]
         voice_id=selected_voice.voice_id,
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
-        voice_settings={"stability": 0.50, "similarity_boost": 0.80, "speed": VOICE_SPEED}
+        voice_settings={
+            "stability": 0.35,           # Lower = more expressive, natural variation
+            "similarity_boost": 0.75,     # Slightly lower for more natural delivery
+            "style": 0.45,               # Add speaking style expressiveness
+            "use_speaker_boost": True,    # Enhance speaker clarity
+            "speed": VOICE_SPEED,
+        }
     )
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     with open(audio_path, "wb") as f:
@@ -516,55 +699,68 @@ Return ONLY the topic text, nothing else."""}]
     VEO_MAX_RETRIES = 5
     VEO_RETRY_WAIT = 90
 
-    print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
-    for i in range(VEO_CLIPS_PER_VIDEO):
-        if i > 0 and i % 2 == 0:
-            print(f"   ⏸️ RPM limit — waiting 60s...")
-            time.sleep(60)
+    if TEST_MODE:
+        # Test mode: create cheap placeholder clips (solid color) instead of Veo
+        print("   🧪 TEST MODE: Skipping Veo clips, using placeholder video...")
+        for i in range(VEO_CLIPS_PER_VIDEO):
+            placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
+            colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60)]
+            color = colors[i % len(colors)]
+            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
+            placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
+            downloaded_clips.append(placeholder_path)
+        print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-        prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
-        clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
-        clip_success = False
+    if not TEST_MODE:
+        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
+        for i in range(VEO_CLIPS_PER_VIDEO):
+            if i > 0 and i % 2 == 0:
+                print(f"   ⏸️ RPM limit — waiting 60s...")
+                time.sleep(60)
 
-        for attempt in range(1, VEO_MAX_RETRIES + 1):
-            try:
-                print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
-                operation = veo_client.models.generate_videos(
-                    model=VEO_MODEL,
-                    prompt=prompt_text,
-                    config=types.GenerateVideosConfig(
-                        aspect_ratio=VEO_ASPECT_RATIO,
-                        number_of_videos=1,
-                        duration_seconds=VEO_DURATION,
-                    ),
-                )
-                while not operation.done:
-                    time.sleep(10)
-                    operation = veo_client.operations.get(operation)
+            prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
+            clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
+            clip_success = False
 
-                if operation.response and operation.response.generated_videos:
-                    video = operation.response.generated_videos[0]
-                    video_data = veo_client.files.download(file=video.video)
-                    with open(clip_path, "wb") as f:
-                        f.write(video_data)
-                    downloaded_clips.append(clip_path)
-                    clip_success = True
-                    print("✅")
-                    break
-                else:
-                    print("empty response")
-            except BaseException as e:
-                error_msg = str(e)
-                if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                    wait = VEO_RETRY_WAIT * attempt
-                    print(f"rate limited — waiting {wait}s")
-                    time.sleep(wait)
-                else:
-                    print(f"error: {error_msg[:60]}")
-                    break
+            for attempt in range(1, VEO_MAX_RETRIES + 1):
+                try:
+                    print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
+                    operation = veo_client.models.generate_videos(
+                        model=VEO_MODEL,
+                        prompt=prompt_text,
+                        config=types.GenerateVideosConfig(
+                            aspect_ratio=VEO_ASPECT_RATIO,
+                            number_of_videos=1,
+                            duration_seconds=VEO_DURATION,
+                        ),
+                    )
+                    while not operation.done:
+                        time.sleep(10)
+                        operation = veo_client.operations.get(operation)
 
-        if not clip_success:
-            print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
+                    if operation.response and operation.response.generated_videos:
+                        video = operation.response.generated_videos[0]
+                        video_data = veo_client.files.download(file=video.video)
+                        with open(clip_path, "wb") as f:
+                            f.write(video_data)
+                        downloaded_clips.append(clip_path)
+                        clip_success = True
+                        print("✅")
+                        break
+                    else:
+                        print("empty response")
+                except BaseException as e:
+                    error_msg = str(e)
+                    if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                        wait = VEO_RETRY_WAIT * attempt
+                        print(f"rate limited — waiting {wait}s")
+                        time.sleep(wait)
+                    else:
+                        print(f"error: {error_msg[:60]}")
+                        break
+
+            if not clip_success:
+                print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
@@ -728,7 +924,10 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
-    final_video = final_video.set_audio(audio_clip)
+
+    # Mix background music with voice
+    mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
+    final_video = final_video.set_audio(mixed_audio)
 
     # ── 9. Render ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
@@ -740,17 +939,25 @@ Return ONLY the topic text, nothing else."""}]
     print(f"   ✅ Video ready: {output_path}")
 
     # ── 10. Upload to YouTube ──
-    print("   📤 Uploading to YouTube...")
-    youtube = get_youtube_service()
-    if youtube:
-        vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags)
+    if TEST_MODE:
         print(f"\n{'='*60}")
-        print(f"  ✅ DAILY SHORT COMPLETE!")
-        print(f"  🔗 {vid_url}")
-        print(f"  📌 {yt_title}")
+        print(f"  🧪 TEST MODE COMPLETE — video NOT uploaded")
+        print(f"  📁 Video saved: {output_path}")
+        print(f"  📌 Title: {yt_title}")
+        print(f"  🎵 Mood: {music_mood}")
         print(f"{'='*60}")
     else:
-        print("   ❌ YouTube auth failed. Video saved locally.")
+        print("   📤 Uploading to YouTube...")
+        youtube = get_youtube_service()
+        if youtube:
+            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags)
+            print(f"\n{'='*60}")
+            print(f"  ✅ DAILY SHORT COMPLETE!")
+            print(f"  🔗 {vid_url}")
+            print(f"  📌 {yt_title}")
+            print(f"{'='*60}")
+        else:
+            print("   ❌ YouTube auth failed. Video saved locally.")
 
     # Cleanup
     for f in downloaded_clips:
