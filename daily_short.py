@@ -127,7 +127,6 @@ WATERMARK_OPACITY = 0.8
 ADD_BG_MUSIC = True
 BG_MUSIC_FOLDER = f"{WORK_DIR}/bg_music"
 BG_MUSIC_VOLUME = 0.08
-BG_MUSIC_SEARCH_QUERY = "lo-fi ambient calm"  # Pixabay search query for mood
 
 # Hook Text
 ADD_HOOK_TEXT = True
@@ -309,6 +308,7 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "description": "YouTube description in English with 6-8 hashtags. Include Sale91.com link.",
     "script_voice": "The ROMAN HINGLISH script. MAX 3-4 sentences. NO website. NO selling. Pure knowledge.",
     "script_english": "Clean English translation for on-screen subtitles",
+    "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
     "video_prompt_1": "Detailed 40-80 word visual scene for OPENING.",
     "video_prompt_2": "Detailed 40-80 word visual scene for MIDDLE.",
     "video_prompt_3": "Detailed 40-80 word visual scene for ENDING.",
@@ -450,23 +450,55 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-def download_bg_music():
-    """Download royalty-free background music from Pixabay if folder is empty."""
+MOOD_TO_PIXABAY_QUERY = {
+    "upbeat": "upbeat energetic happy",
+    "calm": "calm ambient lo-fi",
+    "serious": "serious deep cinematic",
+    "motivational": "motivational inspiring corporate",
+    "trendy": "trendy modern beat",
+}
+
+# Repo-level bg_music/ folder (persists across runs, committed to git)
+REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
+
+
+def _copy_repo_music_to_workdir():
+    """Copy music files from repo bg_music/ to working directory."""
+    if not os.path.isdir(REPO_BG_MUSIC_FOLDER):
+        return
+    import shutil
+    for ext in ("*.mp3", "*.wav"):
+        for src in glob.glob(f"{REPO_BG_MUSIC_FOLDER}/{ext}"):
+            dst = os.path.join(BG_MUSIC_FOLDER, os.path.basename(src))
+            if not os.path.exists(dst):
+                shutil.copy2(src, dst)
+
+
+def download_bg_music(mood="calm"):
+    """Ensure background music is available. Uses repo files first, Pixabay as fallback."""
+    # Step 1: Copy any music from repo's bg_music/ folder
+    _copy_repo_music_to_workdir()
+
+    # Step 2: Check if we already have music files
     existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
     if existing:
-        return  # Already have music files
-
-    pixabay_key = os.environ.get("PIXABAY_API_KEY")
-    if not pixabay_key:
-        print("   ⚠️ No PIXABAY_API_KEY set and no music files in bg_music/. Skipping BG music.")
+        print(f"   🎵 {len(existing)} music file(s) available")
         return
 
+    # Step 3: Try Pixabay download with mood-based search
+    pixabay_key = os.environ.get("PIXABAY_API_KEY")
+    if not pixabay_key:
+        print("   ⚠️ No music files in bg_music/ and no PIXABAY_API_KEY set. Skipping BG music.")
+        print("   💡 Add .mp3 files to bg_music/ folder in your repo, OR set PIXABAY_API_KEY secret.")
+        return
+
+    search_query = MOOD_TO_PIXABAY_QUERY.get(mood, MOOD_TO_PIXABAY_QUERY["calm"])
     try:
-        print(f"   🎵 Downloading background music from Pixabay...")
+        print(f"   🎵 Downloading '{mood}' background music from Pixabay...")
         search_url = (
             f"https://pixabay.com/api/videos/music/"
             f"?key={pixabay_key}"
-            f"&q={requests.utils.quote(BG_MUSIC_SEARCH_QUERY)}"
+            f"&q={requests.utils.quote(search_query)}"
             f"&per_page=5"
         )
         resp = requests.get(search_url, timeout=30)
@@ -475,7 +507,7 @@ def download_bg_music():
 
         hits = results.get("hits", [])
         if not hits:
-            # Fallback: try broader search
+            # Fallback: broader search
             search_url = f"https://pixabay.com/api/videos/music/?key={pixabay_key}&per_page=5"
             resp = requests.get(search_url, timeout=30)
             resp.raise_for_status()
@@ -486,18 +518,15 @@ def download_bg_music():
             print("   ⚠️ No music found on Pixabay.")
             return
 
-        # Download up to 3 tracks
+        # Download up to 3 tracks, tagged with mood in filename
         downloaded = 0
         for hit in hits[:3]:
-            audio_url = hit.get("audio", "")
-            if not audio_url:
-                # Try alternate field names
-                audio_url = hit.get("url", "")
+            audio_url = hit.get("audio", "") or hit.get("url", "")
             if not audio_url:
                 continue
 
             track_id = hit.get("id", random.randint(1000, 9999))
-            track_path = f"{BG_MUSIC_FOLDER}/pixabay_{track_id}.mp3"
+            track_path = f"{BG_MUSIC_FOLDER}/{mood}_{track_id}.mp3"
 
             try:
                 audio_resp = requests.get(audio_url, timeout=60)
@@ -505,27 +534,31 @@ def download_bg_music():
                 with open(track_path, "wb") as f:
                     f.write(audio_resp.content)
                 downloaded += 1
-                print(f"   ✅ Downloaded: pixabay_{track_id}.mp3")
+                print(f"   ✅ Downloaded: {mood}_{track_id}.mp3")
             except Exception as e:
                 print(f"   ⚠️ Failed to download track {track_id}: {e}")
 
         if downloaded == 0:
             print("   ⚠️ Could not download any music tracks.")
         else:
-            print(f"   🎵 {downloaded} background track(s) ready")
+            print(f"   🎵 {downloaded} '{mood}' track(s) ready")
 
     except Exception as e:
         print(f"   ⚠️ Pixabay music download failed: {e}")
 
 
-def mix_background_music(voice_audio_clip, duration):
-    """Mix background music with voice audio. Returns CompositeAudioClip or original voice."""
+def mix_background_music(voice_audio_clip, duration, mood="calm"):
+    """Mix background music with voice audio. Prefers mood-matching files."""
     if not ADD_BG_MUSIC:
         return voice_audio_clip
 
-    music_files = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
-    if not music_files:
+    all_files = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
+    if not all_files:
         return voice_audio_clip
+
+    # Prefer files matching the mood (e.g., "calm_12345.mp3" or "calm_lofi.mp3")
+    mood_files = [f for f in all_files if mood.lower() in os.path.basename(f).lower()]
+    music_files = mood_files if mood_files else all_files
 
     try:
         music_path = random.choice(music_files)
@@ -623,12 +656,14 @@ Return ONLY the topic text, nothing else."""}]
     yt_title = data["title"]
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
+    music_mood = data.get("music_mood", "calm")
     video_prompts = [data.get("video_prompt_1",""), data.get("video_prompt_2",""), data.get("video_prompt_3","")]
 
     print(f"   🗣️ Script: {script_voice[:80]}...")
+    print(f"   🎵 Mood: {music_mood}")
 
     # ── 3b. Download Background Music (if needed) ──
-    download_bg_music()
+    download_bg_music(music_mood)
 
     # ── 4. Generate Voice ──
     print("   🎙️ Generating voice...")
@@ -879,7 +914,7 @@ Return ONLY the topic text, nothing else."""}]
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
     # Mix background music with voice
-    mixed_audio = mix_background_music(audio_clip, total_duration)
+    mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
     final_video = final_video.set_audio(mixed_audio)
 
     # ── 9. Render ──
