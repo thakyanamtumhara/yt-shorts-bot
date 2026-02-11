@@ -675,17 +675,20 @@ def review_script(claude_client, script_voice, script_english, topic):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, feedback: str)."""
 
-    review_prompt = f"""You are a STRICT YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
-Review this script and decide: would this go VIRAL or is it forgettable?
+    review_prompt = f"""You are a YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
+Review this script and decide: is this GOOD ENOUGH to publish?
+
+Remember: this is B2B educational content for printing businesses, NOT entertainment/clickbait.
+A factory owner explaining something practical IS valuable — don't expect Bollywood drama.
 
 TOPIC: {topic}
 HINDI SCRIPT: {script_voice}
 ENGLISH: {script_english}
 
-Score each (1-10) and be BRUTALLY honest:
+Score each (1-10):
 
-1. HOOK (first 2 seconds) — Does the opening GRAB attention instantly?
-   Bad: starts slow/generic. Good: "Dekho... ye galti mat karna" — curiosity.
+1. HOOK (first 2 seconds) — Does the opening create some curiosity or interest?
+   Bad: completely generic boring start. Good: starts with a question, opinion, or "Dekho..."
 
 2. NATURAL FEEL — Does it sound like a REAL factory owner talking?
    Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
@@ -696,16 +699,16 @@ Score each (1-10) and be BRUTALLY honest:
 4. ENDING — Does it trail off naturally like a real person finishing?
    Bad: abrupt cut or sounds like more is coming. Good: "...bas yehi hai, simple hai."
 
-5. VIRAL POTENTIAL — Would someone share this or save it?
-   Bad: boring, too safe. Good: surprising fact, relatable problem, strong opinion.
+5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
+   Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
 OUTPUT THIS JSON ONLY (no markdown):
 {{"approved": true/false, "total_score": sum_of_5_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve ONLY if total_score >= 35 (out of 50)
-- If ANY single score is below 5, REJECT regardless of total
-- Be harsh — a mediocre script wastes Rs 300 on video generation"""
+- Approve if total_score >= 30 (out of 50)
+- REJECT only if ANY single score is below 4
+- Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
     try:
         resp = claude_client.messages.create(
@@ -789,11 +792,18 @@ Return ONLY the topic text, nothing else."""}]
 
     # ── 3. Generate Script (with quality gate) ──
     data = None
+    previous_feedback = ""  # Pass rejection reasons to next attempt
     for attempt in range(1, SCRIPT_MAX_ATTEMPTS + 1):
         print(f"   ✍️ Writing script (attempt {attempt}/{SCRIPT_MAX_ATTEMPTS})...")
+
+        prompt = get_script_prompt(fresh_topic)
+        # On retry, tell Claude what was wrong so it can fix it
+        if previous_feedback:
+            prompt += f"\n\n━━━ IMPORTANT: PREVIOUS ATTEMPT WAS REJECTED ━━━\nReviewer feedback: {previous_feedback}\nFix these issues in your new script. Write a DIFFERENT and BETTER script."
+
         resp = claude.messages.create(
             model="claude-sonnet-4-5-20250929", max_tokens=1500,
-            messages=[{"role": "user", "content": get_script_prompt(fresh_topic)}]
+            messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
         if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
@@ -814,8 +824,9 @@ Return ONLY the topic text, nothing else."""}]
         else:
             print(f"   ❌ Script REJECTED (score: {score}/50, weak: {weakest})")
             print(f"      Reason: {feedback}")
+            previous_feedback = f"Score {score}/50. Weakest: {weakest}. {feedback}"
             if attempt < SCRIPT_MAX_ATTEMPTS:
-                print(f"      Regenerating...")
+                print(f"      Regenerating with feedback...")
 
     # Use last attempt if none were approved (don't waste the topic)
     if data is None:
