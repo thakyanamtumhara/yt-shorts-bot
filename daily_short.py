@@ -98,6 +98,9 @@ KEY FACTS:
 # Test mode: skip expensive Veo clips, use placeholder video. Set TEST_MODE=1 to enable.
 TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 
+# Script quality gate: Claude reviews its own script before proceeding
+SCRIPT_MAX_ATTEMPTS = 3
+
 TARGET_VOICE_NAME = "Viraj"
 VOICE_SPEED = 0.88
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
@@ -665,6 +668,71 @@ def extract_ambient_audio(clip_paths, total_duration):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# SCRIPT QUALITY GATE
+# ═══════════════════════════════════════════════════════════════════════
+
+def review_script(claude_client, script_voice, script_english, topic):
+    """Claude reviews its own script like a human content creator would.
+    Returns (approved: bool, feedback: str)."""
+
+    review_prompt = f"""You are a YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
+Review this script and decide: is this GOOD ENOUGH to publish?
+
+Remember: this is B2B educational content for printing businesses, NOT entertainment/clickbait.
+A factory owner explaining something practical IS valuable — don't expect Bollywood drama.
+
+TOPIC: {topic}
+HINDI SCRIPT: {script_voice}
+ENGLISH: {script_english}
+
+Score each (1-10):
+
+1. HOOK (first 2 seconds) — Does the opening create some curiosity or interest?
+   Bad: completely generic boring start. Good: starts with a question, opinion, or "Dekho..."
+
+2. NATURAL FEEL — Does it sound like a REAL factory owner talking?
+   Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
+
+3. VALUE — Does the viewer LEARN something useful in under 15 seconds?
+   Bad: vague fluff. Good: specific, practical, actionable knowledge.
+
+4. ENDING — Does it trail off naturally like a real person finishing?
+   Bad: abrupt cut or sounds like more is coming. Good: "...bas yehi hai, simple hai."
+
+5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
+   Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
+
+OUTPUT THIS JSON ONLY (no markdown):
+{{"approved": true/false, "total_score": sum_of_5_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+
+RULES:
+- Approve if total_score >= 30 (out of 50)
+- REJECT only if ANY single score is below 4
+- Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            messages=[{"role": "user", "content": review_prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        review = json.loads(raw)
+
+        approved = review.get("approved", False)
+        score = review.get("total_score", 0)
+        weakest = review.get("weakest", "unknown")
+        feedback = review.get("feedback", "")
+
+        return approved, score, weakest, feedback
+
+    except Exception as e:
+        # If review fails, approve by default (don't block pipeline)
+        print(f"   ⚠️ Review failed ({e}), approving by default")
+        return True, 0, "", "review error"
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -722,16 +790,49 @@ Return ONLY the topic text, nothing else."""}]
         json.dump(topic_history, f, indent=2)
     print(f"   📌 Topic: {fresh_topic}")
 
-    # ── 3. Generate Script ──
-    print("   ✍️ Writing script...")
-    resp = claude.messages.create(
-        model="claude-sonnet-4-5-20250929", max_tokens=1500,
-        messages=[{"role": "user", "content": get_script_prompt(fresh_topic)}]
-    )
-    raw = resp.content[0].text.strip()
-    if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+    # ── 3. Generate Script (with quality gate) ──
+    data = None
+    previous_feedback = ""  # Pass rejection reasons to next attempt
+    for attempt in range(1, SCRIPT_MAX_ATTEMPTS + 1):
+        print(f"   ✍️ Writing script (attempt {attempt}/{SCRIPT_MAX_ATTEMPTS})...")
 
-    data = json.loads(raw)
+        prompt = get_script_prompt(fresh_topic)
+        # On retry, tell Claude what was wrong so it can fix it
+        if previous_feedback:
+            prompt += f"\n\n━━━ IMPORTANT: PREVIOUS ATTEMPT WAS REJECTED ━━━\nReviewer feedback: {previous_feedback}\nFix these issues in your new script. Write a DIFFERENT and BETTER script."
+
+        resp = claude.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=1500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+
+        candidate = json.loads(raw)
+        script_voice = candidate["script_voice"]
+        script_english = candidate["script_english"]
+
+        print(f"   🗣️ Script: {script_voice[:80]}...")
+
+        # Quality gate: Claude reviews its own script
+        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic)
+
+        if approved:
+            print(f"   ✅ Script APPROVED (score: {score}/50) — {feedback}")
+            data = candidate
+            break
+        else:
+            print(f"   ❌ Script REJECTED (score: {score}/50, weak: {weakest})")
+            print(f"      Reason: {feedback}")
+            previous_feedback = f"Score {score}/50. Weakest: {weakest}. {feedback}"
+            if attempt < SCRIPT_MAX_ATTEMPTS:
+                print(f"      Regenerating with feedback...")
+
+    # Use last attempt if none were approved (don't waste the topic)
+    if data is None:
+        print(f"   ⚠️ No script scored high enough — using best last attempt")
+        data = candidate
+
     script_voice = data["script_voice"]
     script_english = data["script_english"]
     yt_title = data["title"]
@@ -740,7 +841,6 @@ Return ONLY the topic text, nothing else."""}]
     music_mood = data.get("music_mood", "calm")
     video_prompts = [data.get("video_prompt_1",""), data.get("video_prompt_2",""), data.get("video_prompt_3","")]
 
-    print(f"   🗣️ Script: {script_voice[:80]}...")
     print(f"   🎵 Mood: {music_mood}")
 
     # ── 3b. Load Background Music ──
