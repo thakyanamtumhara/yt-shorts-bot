@@ -35,7 +35,7 @@ if not hasattr(PIL.Image, 'ANTIALIAS'):
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, TextClip,
     CompositeVideoClip, concatenate_videoclips, ColorClip,
-    CompositeAudioClip
+    CompositeAudioClip, concatenate_audioclips
 )
 from moviepy.audio.fx.audio_loop import audio_loop
 from moviepy.audio.fx.volumex import volumex
@@ -130,6 +130,9 @@ WATERMARK_OPACITY = 0.8
 ADD_BG_MUSIC = True
 BG_MUSIC_FOLDER = f"{WORK_DIR}/bg_music"
 BG_MUSIC_VOLUME = 0.08
+
+# Veo Ambient Audio (keep Veo's generated scene sounds at low volume)
+VEO_AMBIENT_VOLUME = 0.03
 
 # Hook Text
 ADD_HOOK_TEXT = True
@@ -248,7 +251,29 @@ EXAMPLE 4 (Recommendation):
 9. NATURAL ENGLISH mix — "basically", "common", "non noticeable",
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
-    Script ends when the point is made. Just stop.
+
+━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
+
+When a real person finishes talking, they naturally slow down and trail off.
+The listener can SENSE the sentence is ending BEFORE the last word.
+Your script MUST end this way — NOT like it was cut mid-thought.
+
+GOOD endings (trailing, conclusive — listener feels the wrap-up):
+- "...bas itna samajh lo, fark dikh jayega."
+- "...toh wahi hota hai, simple hai."
+- "...isi ko bolte hai... bas."
+- "...wo jyada theek rahega."
+- "...bas yehi hai, kuch aur nahi."
+
+BAD endings (feel abrupt — like more was coming):
+- "Aur ye 200 GSM hota hai." (sounds like next point is coming)
+- "Print karke dekh lo." (too commanding, no sense of conclusion)
+
+RULES for ending:
+- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "fark dikh jayega"
+- The last 3-4 words should feel like they're naturally trailing off
+- Add "..." before the final phrase for a natural pause feel
+- The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
 
 ━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
 
@@ -569,8 +594,10 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
         else:
             music_clip = music_clip.subclip(0, duration)
 
-        # Reduce music volume
+        # Reduce music volume and fade out at the end
         music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+        from moviepy.audio.fx.audio_fadeout import audio_fadeout
+        music_clip = audio_fadeout(music_clip, 2.0)
 
         # Composite: voice on top, music underneath
         mixed = CompositeAudioClip([music_clip, voice_audio_clip])
@@ -580,6 +607,61 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
     except Exception as e:
         print(f"   ⚠️ Background music mixing failed: {e}")
         return voice_audio_clip
+
+
+def extract_ambient_audio(clip_paths, total_duration):
+    """Extract and concatenate ambient audio from Veo video clips at low volume."""
+    if not clip_paths or VEO_AMBIENT_VOLUME <= 0:
+        return None
+
+    import subprocess
+    audio_clips = []
+    temp_audio_files = []
+
+    for clip_path in clip_paths:
+        try:
+            audio_path = clip_path.replace(".mp4", "_ambient.wav")
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-i", clip_path, "-vn", "-acodec", "pcm_s16le",
+                 "-ar", "44100", "-ac", "2", audio_path],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode == 0 and os.path.exists(audio_path) and os.path.getsize(audio_path) > 1000:
+                ac = AudioFileClip(audio_path)
+                audio_clips.append(ac)
+                temp_audio_files.append(audio_path)
+        except Exception:
+            pass
+
+    if not audio_clips:
+        print("   ℹ️ No ambient audio found in clips (normal for test mode)")
+        return None
+
+    try:
+        ambient = concatenate_audioclips(audio_clips)
+
+        # Adjust to match total video duration
+        if ambient.duration < total_duration:
+            ambient = audio_loop(ambient, duration=total_duration)
+        else:
+            ambient = ambient.subclip(0, total_duration)
+
+        ambient = volumex(ambient, VEO_AMBIENT_VOLUME)
+        from moviepy.audio.fx.audio_fadeout import audio_fadeout
+        ambient = audio_fadeout(ambient, 2.0)
+        print(f"   🔊 Veo ambient audio extracted ({len(audio_clips)} clips, {int(VEO_AMBIENT_VOLUME * 100)}% volume)")
+        return ambient
+
+    except Exception as e:
+        print(f"   ⚠️ Ambient audio extraction failed: {e}")
+        return None
+    finally:
+        # Clean up temp audio files
+        for tf in temp_audio_files:
+            try:
+                os.remove(tf)
+            except Exception:
+                pass
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -676,7 +758,7 @@ Return ONLY the topic text, nothing else."""}]
         selected_voice = voices.voices[0]
 
     audio_gen = el_client.text_to_speech.convert(
-        text=script_voice,
+        text=script_voice + "...",   # Trailing ellipsis prevents last-word cutoff
         voice_id=selected_voice.voice_id,
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
@@ -811,7 +893,7 @@ Return ONLY the topic text, nothing else."""}]
     # ── 7. Video Assembly ──
     print("   ✂️ Building video...")
     audio_clip = AudioFileClip(audio_path)
-    total_duration = audio_clip.duration + 0.3
+    total_duration = audio_clip.duration + 0.8  # Extra buffer so ending doesn't feel cut
 
     def smart_crop(clip, tw=1080, th=1920):
         w, h = clip.size
@@ -925,8 +1007,21 @@ Return ONLY the topic text, nothing else."""}]
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
+    # Gradual voice fade-out at the end (natural trailing off)
+    from moviepy.audio.fx.audio_fadeout import audio_fadeout
+    audio_clip = audio_fadeout(audio_clip, 1.2)
+
+    # Extract Veo ambient audio (scene sounds at low volume)
+    ambient_clip = extract_ambient_audio(downloaded_clips, total_duration)
+
     # Mix background music with voice
     mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
+
+    # Add Veo ambient audio layer if available
+    if ambient_clip:
+        mixed_audio = CompositeAudioClip([mixed_audio, ambient_clip])
+        print(f"   ✅ Final audio: voice + background music + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)")
+
     final_video = final_video.set_audio(mixed_audio)
 
     # ── 9. Render ──
