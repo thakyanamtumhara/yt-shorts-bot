@@ -613,9 +613,10 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
 
 
 def extract_ambient_audio(clip_paths, total_duration):
-    """Extract and concatenate ambient audio from Veo video clips at low volume."""
+    """Extract and concatenate ambient audio from Veo video clips at low volume.
+    Returns (ambient_clip, temp_files) — caller must clean up temp_files after rendering."""
     if not clip_paths or VEO_AMBIENT_VOLUME <= 0:
-        return None
+        return None, []
 
     import subprocess
     audio_clips = []
@@ -638,7 +639,7 @@ def extract_ambient_audio(clip_paths, total_duration):
 
     if not audio_clips:
         print("   ℹ️ No ambient audio found in clips (normal for test mode)")
-        return None
+        return None, temp_audio_files
 
     try:
         ambient = concatenate_audioclips(audio_clips)
@@ -653,18 +654,11 @@ def extract_ambient_audio(clip_paths, total_duration):
         from moviepy.audio.fx.audio_fadeout import audio_fadeout
         ambient = audio_fadeout(ambient, 2.0)
         print(f"   🔊 Veo ambient audio extracted ({len(audio_clips)} clips, {int(VEO_AMBIENT_VOLUME * 100)}% volume)")
-        return ambient
+        return ambient, temp_audio_files
 
     except Exception as e:
         print(f"   ⚠️ Ambient audio extraction failed: {e}")
-        return None
-    finally:
-        # Clean up temp audio files
-        for tf in temp_audio_files:
-            try:
-                os.remove(tf)
-            except Exception:
-                pass
+        return None, temp_audio_files
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1112,24 +1106,38 @@ Return ONLY the topic text, nothing else."""}]
     audio_clip = audio_fadeout(audio_clip, 1.2)
 
     # Extract Veo ambient audio (scene sounds at low volume)
-    ambient_clip = extract_ambient_audio(downloaded_clips, total_duration)
+    ambient_clip, ambient_temp_files = extract_ambient_audio(downloaded_clips, total_duration)
 
     # Mix background music with voice
     mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
 
     # Add Veo ambient audio layer if available
+    has_ambient = False
     if ambient_clip:
-        mixed_audio = CompositeAudioClip([mixed_audio, ambient_clip])
+        mixed_audio_with_ambient = CompositeAudioClip([mixed_audio, ambient_clip])
         print(f"   ✅ Final audio: voice + background music + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)")
+        has_ambient = True
+    else:
+        mixed_audio_with_ambient = mixed_audio
 
-    final_video = final_video.set_audio(mixed_audio)
+    final_video = final_video.set_audio(mixed_audio_with_ambient)
 
-    # ── 9. Render ──
+    # ── 9. Render (with safety net for ambient audio issues) ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
     output_path = f"{WORK_DIR}/{filename}"
     print(f"   🎬 Rendering {filename}...")
-    final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
-        preset="medium", bitrate="8000k", threads=4, logger=None)
+    try:
+        final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+            preset="medium", bitrate="8000k", threads=4, logger=None)
+    except Exception as render_err:
+        if has_ambient:
+            print(f"   ⚠️ Render failed with ambient audio: {render_err}")
+            print(f"   🔄 Retrying WITHOUT ambient audio...")
+            final_video = final_video.set_audio(mixed_audio)
+            final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+                preset="medium", bitrate="8000k", threads=4, logger=None)
+        else:
+            raise
 
     print(f"   ✅ Video ready: {output_path}")
 
@@ -1156,6 +1164,9 @@ Return ONLY the topic text, nothing else."""}]
 
     # Cleanup
     for f in downloaded_clips:
+        try: os.remove(f)
+        except: pass
+    for f in ambient_temp_files:
         try: os.remove(f)
         except: pass
     try: os.remove(audio_path)
