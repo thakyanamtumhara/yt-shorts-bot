@@ -1112,18 +1112,32 @@ Return ONLY the topic text, nothing else."""}]
     mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
 
     # Add Veo ambient audio layer if available
+    has_ambient = False
     if ambient_clip:
-        mixed_audio = CompositeAudioClip([mixed_audio, ambient_clip])
+        mixed_audio_with_ambient = CompositeAudioClip([mixed_audio, ambient_clip])
         print(f"   ✅ Final audio: voice + background music + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)")
+        has_ambient = True
+    else:
+        mixed_audio_with_ambient = mixed_audio
 
-    final_video = final_video.set_audio(mixed_audio)
+    final_video = final_video.set_audio(mixed_audio_with_ambient)
 
-    # ── 9. Render ──
+    # ── 9. Render (with safety net for ambient audio issues) ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
     output_path = f"{WORK_DIR}/{filename}"
     print(f"   🎬 Rendering {filename}...")
-    final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
-        preset="medium", bitrate="8000k", threads=4, logger=None)
+    try:
+        final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+            preset="medium", bitrate="8000k", threads=4, logger=None)
+    except Exception as render_err:
+        if has_ambient:
+            print(f"   ⚠️ Render failed with ambient audio: {render_err}")
+            print(f"   🔄 Retrying WITHOUT ambient audio...")
+            final_video = final_video.set_audio(mixed_audio)
+            final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+                preset="medium", bitrate="8000k", threads=4, logger=None)
+        else:
+            raise
 
     print(f"   ✅ Video ready: {output_path}")
 
