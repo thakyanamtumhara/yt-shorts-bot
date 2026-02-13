@@ -157,8 +157,8 @@ SUBTITLE_HIGHLIGHT_WORDS = {
 ADD_WATERMARK = True
 WATERMARK_TEXT = "Sale91.com"
 STRIP_HEIGHT = 44
-STRIP_OPACITY = 0.55
-STRIP_FONT_SIZE = 24
+STRIP_OPACITY = 0.65
+STRIP_FONT_SIZE = 26
 STRIP_COLOR = "white"
 
 # Background Music
@@ -1373,40 +1373,18 @@ Return ONLY the topic text, nothing else."""}]
                 has_keyword = any(w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS for w in seg_words)
 
                 if has_keyword:
-                    # Build subtitle with highlighted keywords — render two layers
-                    # Normal text (white) as base
-                    txt_normal = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
-                        color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
-                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
-                    # Highlighted version — keywords in yellow, rest transparent
-                    highlighted_words = []
-                    for w in seg_words:
-                        if w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS:
-                            highlighted_words.append(w)
-                        else:
-                            # Use same-width space placeholder (invisible in final composite)
-                            highlighted_words.append(" " * len(w))
-                    highlight_text = " ".join(highlighted_words)
-
-                    txt_highlight = TextClip(highlight_text, fontsize=SUBTITLE_FONTSIZE + 4, font=SUBTITLE_FONT,
+                    # Keyword detected — render entire subtitle in yellow (single layer, no overlap)
+                    txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
                         color=SUBTITLE_HIGHLIGHT_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
                         method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
-
-                    # Use the normal text dimensions for positioning
-                    txt_w, txt_h = txt_normal.size
+                    txt_w, txt_h = txt.size
                     bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
                     bg_h = txt_h + SUBTITLE_BG_PADDING * 2
                     bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
                     sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
                     bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
-                    txt_normal = txt_normal.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
-                    layers.extend([bg, txt_normal])
-
-                    # Overlay highlighted keywords on top (only if text is not all spaces)
-                    if highlight_text.strip():
-                        hl_w, hl_h = txt_highlight.size
-                        txt_highlight = txt_highlight.set_position(((VIDEO_WIDTH - hl_w) // 2, sub_y - 2)).set_start(seg["start"]).set_duration(dur)
-                        layers.append(txt_highlight)
+                    txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
+                    layers.extend([bg, txt])
                 else:
                     # No keywords — standard white subtitle
                     txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
@@ -1425,7 +1403,7 @@ Return ONLY the topic text, nothing else."""}]
     # Bottom strip banner — subtle dark strip with site name
     if ADD_WATERMARK:
         try:
-            strip_y = VIDEO_HEIGHT - STRIP_HEIGHT
+            strip_y = int(VIDEO_HEIGHT * 0.82)  # Above YouTube Shorts UI zone
             # Dark semi-transparent strip across full width
             strip_bg = ColorClip(size=(VIDEO_WIDTH, STRIP_HEIGHT), color=(0, 0, 0))
             strip_bg = strip_bg.set_opacity(STRIP_OPACITY).set_position((0, strip_y)).set_duration(total_duration)
