@@ -735,7 +735,7 @@ def generate_bg_music(mood="calm"):
     try:
         print(f"   🤖 Generating '{mood}' music via Replicate ACE-Step...")
         output = replicate.run(
-            "lucataco/ace-step",
+            "lucataco/ace-step:280fc4f9ee507577f880a167f639c02622421d8fecf492454320311217b688f1",
             input={
                 "tags": tags,
                 "lyrics": "[instrumental]",
@@ -800,20 +800,25 @@ def _apply_dynamic_volume(music_clip, duration):
 
     def volume_filter(get_frame, t):
         frame = get_frame(t)
-        if t < start_dur:
-            vol = BG_MUSIC_VOLUME_START
-        elif t > mid_end:
-            # Ramp up to end volume
-            progress = (t - mid_end) / max(end_dur, 0.1)
-            vol = BG_MUSIC_VOLUME_MID + (BG_MUSIC_VOLUME_END - BG_MUSIC_VOLUME_MID) * min(progress, 1.0)
-        else:
-            # Ramp down from start to mid volume
-            if t < mid_start + 1.0:
-                progress = (t - mid_start) / 1.0
-                vol = BG_MUSIC_VOLUME_START + (BG_MUSIC_VOLUME_MID - BG_MUSIC_VOLUME_START) * min(progress, 1.0)
-            else:
-                vol = BG_MUSIC_VOLUME_MID
-        return (frame * vol / max(BG_MUSIC_VOLUME, 0.01)).astype(frame.dtype)
+        t_arr = np.asarray(t, dtype=float)
+
+        # Vectorized volume curve using np.where (handles both scalar and array t)
+        end_progress = np.minimum((t_arr - mid_end) / max(end_dur, 0.1), 1.0)
+        end_vol = BG_MUSIC_VOLUME_MID + (BG_MUSIC_VOLUME_END - BG_MUSIC_VOLUME_MID) * end_progress
+
+        ramp_progress = np.minimum((t_arr - mid_start) / 1.0, 1.0)
+        ramp_vol = BG_MUSIC_VOLUME_START + (BG_MUSIC_VOLUME_MID - BG_MUSIC_VOLUME_START) * ramp_progress
+        mid_vol = np.where(t_arr < mid_start + 1.0, ramp_vol, BG_MUSIC_VOLUME_MID)
+
+        vol = np.where(t_arr < start_dur, BG_MUSIC_VOLUME_START,
+                       np.where(t_arr > mid_end, end_vol, mid_vol))
+
+        scale = vol / max(BG_MUSIC_VOLUME, 0.01)
+        frame_arr = np.asarray(frame)
+        # Reshape scale for broadcasting with (N, channels) audio frames
+        if frame_arr.ndim == 2 and np.ndim(scale) >= 1:
+            scale = np.expand_dims(scale, -1)
+        return (frame_arr * scale).astype(frame_arr.dtype)
 
     return music_clip.fl(volume_filter, keep_duration=True)
 
