@@ -125,7 +125,7 @@ SPEAKING STYLE:
 - Trail off naturally at the end of sentences"""
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
-VEO_CLIPS_PER_VIDEO = 3
+VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
@@ -133,7 +133,7 @@ VEO_DURATION = 8
 # Subtitles
 ADD_SUBTITLES = True
 SUBTITLE_FONT = "Noto-Sans-Bold"
-SUBTITLE_FONTSIZE = 58
+SUBTITLE_FONTSIZE = 62
 SUBTITLE_COLOR = "white"
 SUBTITLE_STROKE = "black"
 SUBTITLE_STROKE_W = 2
@@ -141,6 +141,17 @@ SUBTITLE_BG_COLOR = (0, 0, 0)
 SUBTITLE_BG_OPACITY = 0.7
 SUBTITLE_BG_PADDING = 16
 WORDS_PER_SUBTITLE = 4
+# Keywords that get highlighted in yellow for visual emphasis
+SUBTITLE_HIGHLIGHT_COLOR = "yellow"
+SUBTITLE_HIGHLIGHT_WORDS = {
+    "gsm", "fabric", "cotton", "biowash", "preshrunk", "pre-shrunk", "shrinkage",
+    "combed", "carded", "ring-spun", "ringspun", "printing", "print", "dtg", "dtf",
+    "screen", "quality", "weight", "200", "180", "220", "160", "430", "240", "320",
+    "pilling", "dyeing", "collar", "ribbing", "rib", "yarn", "knit", "interlock",
+    "jersey", "fleece", "terry", "pique", "mercerized", "organic", "polyester",
+    "sublimation", "vinyl", "embroidery", "discharge", "plastisol", "mesh",
+    "sample", "moq", "bulk", "wholesale", "premium", "acid wash",
+}
 
 # Watermark
 ADD_WATERMARK = True
@@ -153,9 +164,17 @@ WATERMARK_OPACITY = 0.8
 ADD_BG_MUSIC = True
 BG_MUSIC_FOLDER = f"{WORK_DIR}/bg_music"
 BG_MUSIC_VOLUME = 0.08
+# Dynamic music volume: louder at start/end for energy, quieter in middle for voice clarity
+BG_MUSIC_VOLUME_START = 0.15   # First 2 seconds — energy at hook
+BG_MUSIC_VOLUME_MID = 0.05    # Middle — voice dominant
+BG_MUSIC_VOLUME_END = 0.12    # Last 3 seconds — emotional close
 
 # Veo Ambient Audio (keep Veo's generated scene sounds at low volume)
 VEO_AMBIENT_VOLUME = 0.03
+
+# Hook Sound Effect (low bass drop at video start to stop the scroll)
+ADD_HOOK_SFX = True
+HOOK_SFX_VOLUME = 0.25
 
 # Hook Text
 ADD_HOOK_TEXT = True
@@ -170,7 +189,7 @@ CTA_TEXT = "Sale91.com"
 
 # YouTube
 SCHEDULE_PUBLISH = True
-PUBLISH_HOUR = 19
+PUBLISH_HOUR = 21
 PUBLISH_MINUTE = 30
 TIMEZONE = "Asia/Kolkata"
 UPLOAD_AS_SHORT = True
@@ -187,29 +206,129 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 # ╚══════════════════════════════════════════════════════════════════════╝
 
 TOPIC_BANK = [
+    # ── SERIES 1: Fabric & GSM Knowledge (20 topics) ──
     "GSM bas fabric ka weight hota hai — kaise check karein ghar pe",
     "180 GSM aur 220 GSM mein kya farq hai — printing ke baad dikta hai",
-    "Ring-spun aur open-end yarn — quality mein zameen aasmaan ka fark hai",
-    "Biowash ka matlab acchi quality — roa nahi aata fabric mein",
-    "Normal 2% shrinkage hota hai — ye common hai kuch nahi kar sakte",
-    "Rs 55 wali aur Rs 90 wali tshirt mein quality quality ka farq hota hai",
+    "160 GSM tshirt pe print karega toh regret hoga — pata hai kyu?",
+    "200 GSM sweet spot hai printing ke liye — na mota na patla",
+    "GSM zyada matlab better quality? Galat hai — suno kyu",
+    "Fabric weight ghar pe check karo — ek scissor aur weighing scale chahiye bas",
+    "Single jersey aur interlock fabric — fark samjho warna galti hogi",
+    "Fabric ki knitting tight hai ya loose — print quality isse decide hoti hai",
+    "Pique fabric polo ke liye best hai — smooth fabric pe polo mat banao",
+    "Fleece vs French terry hoodie blank — winter ke liye kaunsa better",
+    "Rib fabric kahan use hota hai — collar cuff aur hem mein fark hai",
+    "30s aur 40s yarn count ka matlab — patla aur mota fabric aise banta hai",
+    "Slub cotton tshirt ka texture — ye defect nahi hai design hai",
+    "Organic cotton aur regular cotton — printing business ke liye kya fark padta hai",
+    "Bamboo cotton blend trending hai — par printing ke liye theek hai ya nahi",
+    "Polyester blend tshirt pe DTG mat karo — ink absorb nahi hoti",
+    "Tri-blend fabric kya hota hai — cotton polyester rayon ka mix",
+    "Mercerized cotton ka lustre alag hota hai — premium feel instantly",
+    "Supima cotton vs regular combed cotton — touch karke pata chal jayega",
+    "Fabric ka shrinkage direction — length mein zyada hota hai width mein kam",
+
+    # ── SERIES 2: Customer Stories & Incidents (20 topics) ──
     "Client ne return kiya? Pre-shrunk nahi tha shayad",
+    "Ek customer aaya 500 piece cancel karwa diya — galti uski thi ya supplier ki?",
+    "Customer bola print crack ho gaya — maine pucha kaunsa ink use kiya?",
+    "Pehla order 50 piece tha ab monthly 5000 leta hai — kya kiya alag?",
+    "Ek banda ne Rs 45 wali tshirt pe DTG kiya — result dekh ke ro diya",
+    "Customer ne 5 supplier try kiye — phir humse kyu ruka? GSM consistency",
+    "Wedding merch ka order aaya 200 piece — 3 din mein chahiye tha",
+    "Customer bola collar yellow ho gaya — sweat stain tha ya fabric issue?",
+    "Return hua kyunki color screen pe alag tha — ye common problem hai",
+    "Ek customer ne white aur off-white confuse kar diya — 1000 piece ka order",
+    "Client bola tshirt ka weight kam lag raha hai — GSM aur weight mein fark hai",
+    "500 piece screen print order mein 20 piece waste hua — ye normal hai ya nahi",
+    "Ek customer ne bina sample liye 2000 piece order kiya — kya hua phir?",
+    "Client ne acid wash pe embroidery karwai — thread toota kyu? Texture issue",
+    "Customer bola sizing galat hai — L size chhota lag raha hai — actual problem kya thi",
+    "Ek startup ne 10 piece se shuru kiya — ab apna brand hai 50K monthly",
+    "Festival season mein 2x order aata hai — stock kaise manage karein",
+    "Customer ne black tshirt pe white DTF kiya — peeling kyu hui?",
+    "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
+    "Ek banda export karta hai humse plain leke — shipping mein kya dikkat aati hai",
+
+    # ── SERIES 3: Printing Methods Deep Dive (15 topics) ──
+    "DTG DTF Screen — har method ke liye alag blank tshirt theek rehta hai",
+    "DTG printing ke liye pre-treatment zaroori hai — bina kiye print dhul jayega",
+    "DTF printing ka fayda — dark fabric pe bhi sharp colors aate hain",
+    "Screen printing mein mesh count matter karta hai — detail ka game hai",
+    "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
+    "White ink DTG pe costly hai — dark tshirt pe margin kam hoga",
+    "Sublimation sirf polyester pe hota hai — cotton pe try mat karna",
+    "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
+    "DTF film ka quality matter karta hai — saste film se print kharab hoga",
+    "Discharge printing kya hai — bleach se design banta hai fabric pe",
+    "Water based vs plastisol ink — feel aur durability mein fark hai",
+    "All over print kaise hota hai — sublimation ya screen dono se ho sakta hai",
+    "Embroidery blank ke liye 200+ GSM chahiye — patla fabric pe thread kheechta hai",
+    "Puff print trending hai — 3D effect ke liye kaunsa fabric best hai",
+    "Vinyl cut vs DTF — small orders ke liye kaunsa sasta padega",
+
+    # ── SERIES 4: Business Tips & Mistakes (15 topics) ──
     "Pehla order dene se pehle 5 cheezein confirm kar lo supplier se",
     "10 piece se merch brand start ho sakta hai — high MOQ ki zaroorat nahi",
-    "DTG DTF Screen — har method ke liye alag blank tshirt theek rehta hai",
-    "Oversized tshirt ka trend hai — GSM aur fit sahi choose kar lo",
+    "Naya printing business start karna hai? 3 galtiyan mat kariyega",
+    "Pricing galat rakhi toh loss hoga — fabric plus print plus margin calculate karo",
+    "Mockup accha dikhta hai par actual print alag — sample zaroori hai",
+    "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
+    "Printing business mein waste percentage rakho — 3 to 5% normal hai",
+    "Instagram se customer aayega — par product quality se rukega",
+    "COD doge toh returns badhenge — prepaid model better hai",
+    "Apna brand banana hai? Pehle 100 piece becho bina brand ke",
+    "Supplier change karne se pehle soch lo — consistency matter karti hai",
+    "Tshirt business mein seasonal demand hoti hai — summer mein 3x sale hoti hai",
+    "Freight cost calculate karo — door delivery mein margin khata hai",
+    "Custom packaging se brand value badhti hai — par shuruat mein zaroor nahi",
+    "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
+
+    # ── SERIES 5: Quality Checks & Testing (15 topics) ──
+    "Biowash ka matlab acchi quality — roa nahi aata fabric mein",
+    "Normal 2% shrinkage hota hai — ye common hai kuch nahi kar sakte",
+    "Ring-spun aur open-end yarn — quality mein zameen aasmaan ka fark hai",
+    "Biowash aur pre-shrunk mein fark hai — dono zaroori hain",
+    "Collar 5 wash mein loose ho jaata hai? Collar ribbing ka scene samjho",
+    "Cotton tshirt mein pilling kyu hoti hai — yarn quality se connection hai",
+    "Tshirt ka color 2 wash mein fade ho gaya? Dyeing quality ka issue hai",
+    "Combed aur carded cotton — touch karke fark samajh aa jayega",
+    "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
+    "Fabric ka GSM check karne ka tarika — round cutter aur scale se",
+    "Colorfastness test ghar pe karo — rubbing se pata chal jayega",
+    "Seam strength kaise check karo — haath se kheench ke dekho",
+    "Wash test karo print ke baad — 3 wash ke baad asli quality dikhti hai",
+    "Fabric pe crease marks aa rahe hain — ye permanent hai ya jaayenge?",
+    "Tshirt ka hand feel kaise judge karo — 3 cheezein check karo",
+
+    # ── SERIES 6: Product & Style Knowledge (15 topics) ──
+    "Rs 55 wali aur Rs 90 wali tshirt mein quality quality ka farq hota hai",
     "White tshirt pe dark print — fabric quality matter karti hai",
     "Ek tshirt ki actual cost kya hoti hai — fabric dyeing stitching biowash",
     "Acid wash oversized blank — printing business ke liye next trend hai",
     "Polo tshirt blanks — corporate orders ke liye best quality kaise pehchano",
     "430 GSM hoodie blank — winter mein demand sabse zyada isi ki hoti hai",
-    "Combed aur carded cotton — touch karke fark samajh aa jayega",
-    "Naya printing business start karna hai? 3 galtiyan mat kariyega",
-    "Biowash aur pre-shrunk mein fark hai — dono zaroori hain",
-    "Collar 5 wash mein loose ho jaata hai? Collar ribbing ka scene samjho",
     "Side seam aur tubular tshirt — printing ke liye kaunsa better hai",
-    "Cotton tshirt mein pilling kyu hoti hai — yarn quality se connection hai",
-    "Tshirt ka color 2 wash mein fade ho gaya? Dyeing quality ka issue hai",
+    "Oversized tshirt ka trend hai — GSM aur fit sahi choose kar lo",
+    "Drop shoulder vs regular shoulder — fit mein fark dikhta hai",
+    "Round neck vs V-neck — printing ke liye kaunsa better sell hota hai",
+    "Crop top blanks ka demand badh raha hai — women's merch mein scope hai",
+    "Raglan sleeve tshirt — sporty look ke liye trending hai",
+    "Hoodie mein kangaroo pocket ya side pocket — style matter karta hai",
+    "Sweatshirt vs hoodie blank — margin kismein zyada hai",
+    "Henley collar tshirt — ye niche product hai par premium customer milta hai",
+
+    # ── SERIES 7: Myth Busters (10 topics) ──
+    "Myth: Imported tshirt better hoti hai — India ka Tiruppur world supply karta hai",
+    "Myth: 100% cotton best hai — kuch cases mein blend better hota hai",
+    "Myth: Zyada GSM matlab zyada quality — galat sochte ho tum",
+    "Myth: Biowash sirf softness ke liye hai — nahi aur bhi fayda hai",
+    "Myth: Black tshirt pe print nahi tikta — technique galat hai tumhari",
+    "Myth: Cheap blank leke accha print kar do — final product bekar niklega",
+    "Myth: Screen printing dead hai — volume orders mein sabse sasta aaj bhi",
+    "Myth: Online supplier pe trust nahi kar sakte — sample mangao pehle",
+    "Myth: Tshirt business easy hai — margins tight hain competition zyada hai",
+    "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
 ]
 
 DEFAULT_TAGS = [
@@ -229,7 +348,7 @@ def get_script_prompt(topic):
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
 (a B2B plain t-shirt manufacturer) but the script must NOT sell anything.
-You also need to describe 3 AI video clips that will play during the Short.
+You also need to describe 5 AI video clips that will play during the Short.
 
 BUSINESS CONTEXT (use this knowledge, but do NOT promote the brand in voice):
 {BUSINESS_CONTEXT}
@@ -241,47 +360,60 @@ TOPIC: {topic}
 You are writing EXACTLY like a real Indian textile manufacturer talks — but using
 MICRO-STORYTELLING to hook the viewer in the first 2 seconds.
 
+TARGET LENGTH: 8-12 sentences. The Short should be 45-55 seconds long when spoken naturally.
+This is NOT a quick tip — this is a MINI STORY with a beginning, middle, and end.
+
 STRUCTURE (follow this EVERY time):
-1. HOOK (first sentence) — Start with a REAL STORY, shocking fact, or customer incident:
+1. HOOK (first 1-2 sentences) — Start with a REAL STORY, shocking fact, or customer incident:
    - "Ek customer aaya tha, bola print dhul gaya 2 wash mein..."
    - "Pehle main bhi yahi galti karta tha..."
    - "Ek baar ek banda 500 piece ka order cancel karwa diya..."
    - "Log sochte hai GSM jyada toh better... galat hai"
    - "Maine ek tshirt 2 saal pehni, ek 2 hafte mein kharab..."
-2. PROBLEM/CURIOSITY (middle) — Kya galti hui ya kya fark hai:
+
+2. PROBLEM BUILD-UP (2-3 sentences) — Build the tension, explain what went wrong:
    - "Problem ye thi ki usne check hi nahi kiya..."
    - "Fark ye hai ki ek mein combed tha, ek mein nahi..."
-3. KNOWLEDGE + NATURAL ENDING (last sentence) — Seedha gyaan, trailing off:
+   - "Maine pucha — sample liya tha? Bola nahi, seedha 500 piece order kar diya..."
+   - Add details that make the story feel REAL — quantities, reactions, what happened next
+
+3. KNOWLEDGE DROP (3-4 sentences) — The actual gyaan, with practical examples:
+   - Explain the concept with REAL comparisons
+   - Give a practical test or check the viewer can do themselves
+   - Include specific numbers, methods, or techniques
+   - "Dekho... agar tum 180 GSM loge toh summer ke liye theek hai, par printing ke liye 200 minimum rakho"
+
+4. NATURAL ENDING (1-2 sentences) — Trail off conclusively:
    - "...toh bas itna yaad rakhna, fark dikh jayega."
    - "...simple hai, pehle check kar lo, phir order karo."
+   - "...bas yehi galti mat karna, aur kuch nahi."
 
 Study these REAL examples from the actual business owner — match this tone PERFECTLY:
 
-EXAMPLE 1 (GSM explanation):
-"GSM bas fabric ka weight hota hai. Jyada GSM matlab mota fabric, kam GSM
-matlab patla. Basically kisi bhi kapde ko 1 square meter mein cut karke uska
-weight kar doge toh jo bhi uska gram mein weight aayega, usi ko GSM bolte hai."
+EXAMPLE 1 (GSM explanation — LONGER STYLE):
+"Dekho... ek customer ne mujhe call kiya, bola tshirt bahut patli lag rahi hai,
+quality kharab hai. Maine pucha GSM kya order kiya tha? Bola pata nahi, sasti
+wali mangai thi. Yehi problem hai. GSM bas fabric ka weight hota hai — jyada
+GSM matlab mota fabric, kam GSM matlab patla. Basically kisi bhi kapde ko 1
+square meter mein cut karke weight kar doge toh jo bhi gram mein aayega, wahi
+GSM hai. Toh agar printing ke liye le rahe ho, 200 GSM minimum rakho. 180 pe
+print theek lagta hai par fabric through dikha sakta hai. Aur 220 premium feel
+deta hai par cost badh jayegi. Toh bas... pehle decide karo end use kya hai,
+phir GSM choose karo... simple hai."
 
-EXAMPLE 2 (Biowash):
-"Biowash ka matlab acchi quality ki tshirt. Biowash wala jo fabric hota hai,
-usmein roa nahi aata hai."
-
-EXAMPLE 3 (Shrinkage):
-"Normal 2% shrinkage hota hai tshirt mein, koi bhi tshirt lelo aap, lekin ye
-non noticeable hai, pata nahi lagta. Ye common hai, kuch bhi nahi kar sakte."
-
-EXAMPLE 4 (Recommendation):
-"Sample leke ek baar try kar lo print karke, wo jyada theek rahega."
-
-EXAMPLE 5 (Storytelling — THIS is the new style to follow):
+EXAMPLE 2 (Storytelling style — THIS is the target):
 "Ek customer aaya tha, bola collar loose ho gaya 5 wash mein. Maine bola collar
-ribbing ka type check kiya tha? Nahi kiya tha. Dekho... agar 1x1 rib hai toh
-tight rahega, flat knit hai toh loose hoga... bas itna check kar lo, problem
-nahi aayegi."
+ribbing ka type check kiya tha? Nahi kiya tha. Dekho... collar mein 2 type ki
+ribbing hoti hai — 1x1 rib aur flat knit. 1x1 rib mein elasticity hoti hai,
+toh wo recover karta hai har wash ke baad. Flat knit mein ye nahi hota, toh
+stretch hoke waisi reh jaati hai. Ab agar tum premium blank le rahe ho, toh 1x1
+rib collar wala lo. Aur ek baat... ribbing ka GSM bhi matter karta hai —
+agar collar ka rib patla hai toh jaldi shape kho dega. Bas itna check kar lo,
+collar ki complaint kabhi nahi aayegi... simple hai."
 
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
-1. MAX 4-5 SENTENCES. Start with story/hook, end with knowledge. Seedha khatam.
+1. 8-12 SENTENCES for a 45-55 second Short. Start with story/hook, build up, drop knowledge, end naturally.
 2. FIRST SENTENCE = HOOK — customer story, personal experience, ya surprising fact.
    NEVER start with a definition or explanation. ALWAYS start with a STORY.
 3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
@@ -297,6 +429,8 @@ nahi aayegi."
 9. NATURAL ENGLISH mix — "basically", "common", "non noticeable",
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
+11. INCLUDE SPECIFIC DETAILS — numbers (GSM values, piece counts, prices), names of techniques, comparisons.
+    Specificity = credibility. "200 GSM" is better than "thick fabric".
 
 ━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
 
@@ -310,6 +444,7 @@ GOOD endings (trailing, conclusive — listener feels the wrap-up):
 - "...isi ko bolte hai... bas."
 - "...wo jyada theek rahega."
 - "...bas yehi hai, kuch aur nahi."
+- "...toh bas... yehi galti mat karna, aur kuch nahi."
 
 BAD endings (feel abrupt — like more was coming):
 - "Aur ye 200 GSM hota hai." (sounds like next point is coming)
@@ -326,7 +461,7 @@ RULES for ending:
 The voice MUST sound like a REAL person thinking and talking, NOT a script being read.
 Add NATURAL HINDI FILLERS and THINKING PAUSES throughout the script:
 
-FILLER WORDS to use naturally (pick 2-3 per script, don't overdo):
+FILLER WORDS to use naturally (pick 4-5 per script for the longer format):
 - "Dekho..." (Look/See... — opening filler)
 - "Matlab..." (Meaning... — thinking pause)
 - "Accha..." (Okay/Right... — transition filler)
@@ -336,16 +471,22 @@ FILLER WORDS to use naturally (pick 2-3 per script, don't overdo):
 - "Samjho..." (Understand... — before explaining)
 - "Seedhi baat hai..." (Straight talk... — before a direct statement)
 - "Ab dekho..." (Now see... — transitioning)
+- "Accha toh suno..." (Ok so listen... — before key point)
+- "Wahi toh problem hai..." (That's the problem... — frustration filler)
 
 EXAMPLE with fillers (natural flow):
-"Dekho... GSM bas fabric ka weight hota hai. Matlab jyada GSM toh mota fabric,
-kam GSM toh patla. Basically kisi bhi kapde ko 1 square meter mein cut karke
-weight kar doge toh... wahi GSM hota hai. Simple hai."
+"Dekho... ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
+2 wash mein print fade ho gaya. Matlab... pre-treatment hi nahi kiya tha. Ab DTG
+mein ye zaroori hota hai — ink fabric mein absorb hone ke liye pre-treatment lagta hai.
+Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Accha... toh solution
+simple hai — pre-treatment spray ya machine use karo, phir print karo. Cost thoda
+badhega par return zero ho jayega. Aur ek baat... pre-treatment ka coat uniform hona
+chahiye, warna patchy print aayega... toh bas itna dhyan rakho, complaint nahi aayegi."
 
 RULES for fillers:
 - Place fillers at SENTENCE STARTS and BEFORE explanations, never mid-word
 - Use "..." (ellipsis) after fillers to indicate natural pause
-- Don't use more than 3 fillers per script — it should feel natural, not stuttering
+- Use 4-5 fillers naturally spread across the longer script
 - Fillers should FLOW with the sentence, not feel forced
 
 ━━━ LANGUAGE RULES ━━━
@@ -357,9 +498,25 @@ Write in ROMAN HINGLISH — Hindi words in ENGLISH LETTERS (not Devanagari).
   "hota hai", "bolte hai", "kar lo", "lelo", "bas"
 - Numbers in digits: "200", "160", "10", "2%"
 
+━━━ HOOK TEXT (for on-screen text overlay) ━━━
+
+Write a short CURIOSITY-DRIVEN hook text (max 6 words) that appears on screen
+for the first 2.5 seconds. This must make the viewer STOP SCROLLING.
+
+Good hook texts:
+- "YE GALTI MAT KARNA..."
+- "99% LOG YE NAHI JAANTE"
+- "EK CUSTOMER NE BATAYA..."
+- "SHOCKING QUALITY DIFFERENCE..."
+- "PEHLE YE CHECK KARO"
+
+Bad hook texts (boring, no curiosity):
+- "GSM KA MATLAB KYA HAI"
+- "FABRIC QUALITY TIPS"
+
 ━━━ VIDEO PROMPT RULES ━━━
 
-Write 3 detailed video scene descriptions for AI video generation (Google Veo).
+Write 5 detailed video scene descriptions for AI video generation (Google Veo).
 Each clip will be 8 seconds, vertical 9:16 format.
 
 IMPORTANT VIDEO PROMPT GUIDELINES:
@@ -374,18 +531,28 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Show HANDS, products, fabrics, machines, packaging — not faces
 - Each prompt should be 40-80 words for best results
 - Describe REALISTIC scenes that could exist in a real Indian textile business
-- Each of the 3 clips must show a DIFFERENT scene — NO repetition between clips
+- Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
+
+The 5 clips should follow the story arc:
+- Clip 1: HOOK — the problem or dramatic moment
+- Clip 2: CONTEXT — setting the scene, showing the product/situation
+- Clip 3: EXPLANATION — the comparison or process being discussed
+- Clip 4: DEMONSTRATION — showing the technique, test, or method
+- Clip 5: RESOLUTION — the correct result, quality product, or satisfying conclusion
 
 OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
     "description": "YouTube description in English with 6-8 hashtags. Include Sale91.com link.",
-    "script_voice": "The ROMAN HINGLISH script. MAX 3-4 sentences. NO website. NO selling. Pure knowledge.",
+    "script_voice": "The ROMAN HINGLISH script. 8-12 sentences for 45-55 seconds. NO website. NO selling. Pure knowledge with storytelling.",
     "script_english": "Clean English translation for on-screen subtitles",
+    "hook_text": "Max 6 words, UPPERCASE, curiosity-driven text for on-screen hook overlay",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
-    "video_prompt_1": "Detailed 40-80 word visual scene for HOOK — show the PROBLEM or customer situation. E.g., hands examining a faded/damaged t-shirt, a confused person looking at fabric, returned packages on a table.",
-    "video_prompt_2": "Detailed 40-80 word visual scene for EXPLANATION — show the PROCESS or comparison. E.g., hands comparing two fabric pieces side by side, close-up of fabric texture difference, weighing fabric on scale.",
-    "video_prompt_3": "Detailed 40-80 word visual scene for RESOLUTION — show the CORRECT way or result. E.g., hands holding a perfect quality t-shirt, smooth bio-washed fabric close-up, neatly packed order ready to ship.",
+    "video_prompt_1": "HOOK scene — the problem or dramatic moment. 40-80 words.",
+    "video_prompt_2": "CONTEXT scene — setting up the situation. 40-80 words.",
+    "video_prompt_3": "EXPLANATION scene — showing the comparison or process. 40-80 words.",
+    "video_prompt_4": "DEMONSTRATION scene — the technique or test being shown. 40-80 words.",
+    "video_prompt_5": "RESOLUTION scene — the correct result or satisfying conclusion. 40-80 words.",
     "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"]
 }}
 """
@@ -615,8 +782,68 @@ def load_bg_music(mood="calm"):
         print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
 
 
+def _apply_dynamic_volume(music_clip, duration):
+    """Apply dynamic volume: louder at start/end, quieter in middle.
+    Creates an engaging audio curve instead of flat volume."""
+    import numpy as np
+
+    start_dur = min(2.0, duration * 0.1)
+    end_dur = min(3.0, duration * 0.15)
+    mid_start = start_dur
+    mid_end = max(mid_start + 0.1, duration - end_dur)
+
+    def volume_filter(get_frame, t):
+        frame = get_frame(t)
+        if t < start_dur:
+            vol = BG_MUSIC_VOLUME_START
+        elif t > mid_end:
+            # Ramp up to end volume
+            progress = (t - mid_end) / max(end_dur, 0.1)
+            vol = BG_MUSIC_VOLUME_MID + (BG_MUSIC_VOLUME_END - BG_MUSIC_VOLUME_MID) * min(progress, 1.0)
+        else:
+            # Ramp down from start to mid volume
+            if t < mid_start + 1.0:
+                progress = (t - mid_start) / 1.0
+                vol = BG_MUSIC_VOLUME_START + (BG_MUSIC_VOLUME_MID - BG_MUSIC_VOLUME_START) * min(progress, 1.0)
+            else:
+                vol = BG_MUSIC_VOLUME_MID
+        return (frame * vol / max(BG_MUSIC_VOLUME, 0.01)).astype(frame.dtype)
+
+    return music_clip.fl(volume_filter, keep_duration=True)
+
+
+def generate_hook_sfx(duration=0.5):
+    """Generate a short bass drop sound effect for the hook moment."""
+    if not ADD_HOOK_SFX:
+        return None
+    try:
+        import numpy as np
+        from moviepy.audio.AudioClip import AudioClip
+
+        sr = 44100
+        total_samples = int(sr * duration)
+
+        def make_frame(t):
+            # Low bass hit that decays quickly — feels like a "boom"
+            freq = 60  # Low bass frequency
+            envelope = np.exp(-t * 8)  # Fast decay
+            signal = np.sin(2 * np.pi * freq * t) * envelope * HOOK_SFX_VOLUME
+            # Add a subtle sub-bass layer
+            sub = np.sin(2 * np.pi * 35 * t) * envelope * HOOK_SFX_VOLUME * 0.5
+            result = signal + sub
+            return np.column_stack([result, result])
+
+        sfx = AudioClip(make_frame, duration=duration, fps=sr)
+        print("   💥 Hook sound effect generated")
+        return sfx
+    except Exception as e:
+        print(f"   ⚠️ Hook SFX generation failed: {e}")
+        return None
+
+
 def mix_background_music(voice_audio_clip, duration, mood="calm"):
-    """Mix background music with voice audio. Prefers mood-matching files."""
+    """Mix background music with voice audio. Prefers mood-matching files.
+    Uses dynamic volume: louder at start/end, quieter in middle."""
     if not ADD_BG_MUSIC:
         return voice_audio_clip
 
@@ -640,14 +867,22 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
         else:
             music_clip = music_clip.subclip(0, duration)
 
-        # Reduce music volume and fade out at the end
+        # Apply dynamic volume (louder start/end, quieter middle)
         music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+        music_clip = _apply_dynamic_volume(music_clip, duration)
+
+        # Fade out at the very end
         from moviepy.audio.fx.audio_fadeout import audio_fadeout
         music_clip = audio_fadeout(music_clip, 2.0)
 
-        # Composite: voice on top, music underneath
-        mixed = CompositeAudioClip([music_clip, voice_audio_clip])
-        print(f"   ✅ Background music mixed at {int(BG_MUSIC_VOLUME * 100)}% volume")
+        # Add hook sound effect at the beginning
+        audio_layers = [music_clip, voice_audio_clip]
+        hook_sfx = generate_hook_sfx(duration=0.5)
+        if hook_sfx:
+            audio_layers.append(hook_sfx)
+
+        mixed = CompositeAudioClip(audio_layers)
+        print(f"   ✅ Background music mixed with dynamic volume (start:{int(BG_MUSIC_VOLUME_START*100)}% → mid:{int(BG_MUSIC_VOLUME_MID*100)}% → end:{int(BG_MUSIC_VOLUME_END*100)}%)")
         return mixed
 
     except Exception as e:
@@ -730,8 +965,8 @@ Score each (1-10):
 2. NATURAL FEEL — Does it sound like a REAL factory owner talking?
    Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
 
-3. VALUE — Does the viewer LEARN something useful in under 15 seconds?
-   Bad: vague fluff. Good: specific, practical, actionable knowledge.
+3. VALUE — Does the viewer LEARN something useful and specific?
+   Bad: vague fluff. Good: specific numbers, practical tips, actionable knowledge.
 
 4. ENDING — Does it trail off naturally like a real person finishing?
    Bad: abrupt cut or sounds like more is coming. Good: "...bas yehi hai, simple hai."
@@ -877,7 +1112,10 @@ Return ONLY the topic text, nothing else."""}]
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
-    video_prompts = [data.get("video_prompt_1",""), data.get("video_prompt_2",""), data.get("video_prompt_3","")]
+    hook_text_from_claude = data.get("hook_text", "")
+    video_prompts = [data.get(f"video_prompt_{i}","") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
+    # Filter out empty prompts, keep at least the first 3
+    video_prompts = [p for p in video_prompts if p.strip()] or video_prompts[:3]
 
     print(f"   🎵 Mood: {music_mood}")
 
@@ -913,7 +1151,7 @@ Return ONLY the topic text, nothing else."""}]
         print("   🧪 TEST MODE: Skipping Veo clips, using placeholder video...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
-            colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60)]
+            colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60), (60, 30, 70), (40, 70, 50)]
             color = colors[i % len(colors)]
             placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
             placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
@@ -1035,6 +1273,34 @@ Return ONLY the topic text, nothing else."""}]
             y1 = max(0, int(h2 / 2 - th / 2))
             return clip.crop(x1=0, y1=y1, width=tw, height=th)
 
+    def apply_ken_burns(clip, zoom_percent=3):
+        """Apply slow Ken Burns zoom-in effect. Makes static clips feel alive."""
+        try:
+            w, h = clip.size
+            # Over-size the clip slightly so we can zoom in without black borders
+            scale_start = 1.0
+            scale_end = 1.0 + (zoom_percent / 100.0)
+            dur = clip.duration
+
+            def zoom_frame(get_frame, t):
+                progress = t / max(dur, 0.1)
+                scale = scale_start + (scale_end - scale_start) * progress
+                frame = get_frame(t)
+                from PIL import Image
+                import numpy as np
+                img = Image.fromarray(frame)
+                new_w, new_h = int(w * scale), int(h * scale)
+                img = img.resize((new_w, new_h), Image.LANCZOS)
+                # Center crop back to original size
+                left = (new_w - w) // 2
+                top = (new_h - h) // 2
+                img = img.crop((left, top, left + w, top + h))
+                return np.array(img)
+
+            return clip.fl(zoom_frame, keep_duration=True)
+        except Exception:
+            return clip  # Fallback: return original if zoom fails
+
     video_objects = []
     for fname in downloaded_clips:
         try:
@@ -1051,6 +1317,8 @@ Return ONLY the topic text, nothing else."""}]
             v = VideoFileClip(fixed_fname)
             v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
             v = v.without_audio()
+            # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
+            v = apply_ken_burns(v, zoom_percent=3)
             video_objects.append(v)
             print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
         except Exception as e:
@@ -1078,26 +1346,69 @@ Return ONLY the topic text, nothing else."""}]
     if base_video.duration > total_duration:
         base_video = base_video.subclip(0, total_duration)
 
+    print(f"   🎬 Ken Burns zoom applied to all clips")
+
     # ── 8. Overlays ──
     layers = [base_video]
 
-    # Subtitles
+    # Subtitles — CENTER SCREEN with keyword highlighting
     if ADD_SUBTITLES and subtitle_segments:
         for seg in subtitle_segments:
             dur = seg["end"] - seg["start"]
             if dur < 0.1: continue
             try:
-                txt = TextClip(seg["text"], fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
-                    color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
-                    method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
-                txt_w, txt_h = txt.size
-                bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
-                bg_h = txt_h + SUBTITLE_BG_PADDING * 2
-                bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
-                sub_y = int(VIDEO_HEIGHT * 0.75)
-                bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
-                txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
-                layers.extend([bg, txt])
+                seg_text = seg["text"]
+                seg_words = seg_text.split()
+                has_keyword = any(w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS for w in seg_words)
+
+                if has_keyword:
+                    # Build subtitle with highlighted keywords — render two layers
+                    # Normal text (white) as base
+                    txt_normal = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
+                        color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
+                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
+                    # Highlighted version — keywords in yellow, rest transparent
+                    highlighted_words = []
+                    for w in seg_words:
+                        if w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS:
+                            highlighted_words.append(w)
+                        else:
+                            # Use same-width space placeholder (invisible in final composite)
+                            highlighted_words.append(" " * len(w))
+                    highlight_text = " ".join(highlighted_words)
+
+                    txt_highlight = TextClip(highlight_text, fontsize=SUBTITLE_FONTSIZE + 4, font=SUBTITLE_FONT,
+                        color=SUBTITLE_HIGHLIGHT_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
+                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
+
+                    # Use the normal text dimensions for positioning
+                    txt_w, txt_h = txt_normal.size
+                    bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
+                    bg_h = txt_h + SUBTITLE_BG_PADDING * 2
+                    bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
+                    sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
+                    bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
+                    txt_normal = txt_normal.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
+                    layers.extend([bg, txt_normal])
+
+                    # Overlay highlighted keywords on top (only if text is not all spaces)
+                    if highlight_text.strip():
+                        hl_w, hl_h = txt_highlight.size
+                        txt_highlight = txt_highlight.set_position(((VIDEO_WIDTH - hl_w) // 2, sub_y - 2)).set_start(seg["start"]).set_duration(dur)
+                        layers.append(txt_highlight)
+                else:
+                    # No keywords — standard white subtitle
+                    txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
+                        color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
+                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
+                    txt_w, txt_h = txt.size
+                    bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
+                    bg_h = txt_h + SUBTITLE_BG_PADDING * 2
+                    bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
+                    sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
+                    bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
+                    txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
+                    layers.extend([bg, txt])
             except: pass
 
     # Watermark
@@ -1109,17 +1420,21 @@ Return ONLY the topic text, nothing else."""}]
             layers.append(wm)
         except: pass
 
-    # Hook
+    # Hook — curiosity-driven text from Claude (or fallback to topic words)
     if ADD_HOOK_TEXT:
         try:
-            hook_line = " ".join(fresh_topic.split()[:6]).upper()
-            ht = TextClip(hook_line, fontsize=52, font=SUBTITLE_FONT, color="white",
+            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:6]).upper()
+            # Truncate to max 6 words
+            hook_words = hook_line.split()[:6]
+            hook_line = " ".join(hook_words)
+
+            ht = TextClip(hook_line, fontsize=56, font=SUBTITLE_FONT, color="white",
                 stroke_color="black", stroke_width=3, method='caption',
-                size=(VIDEO_WIDTH - 200, None), align='center')
+                size=(VIDEO_WIDTH - 180, None), align='center')
             ht_w, ht_h = ht.size
-            hbg = ColorClip(size=(ht_w + 40, ht_h + 30), color=(0,0,0)).set_opacity(0.75)
-            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.35))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
-            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.35)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            hbg = ColorClip(size=(ht_w + 40, ht_h + 30), color=(0,0,0)).set_opacity(0.80)
+            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.30))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.30)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
             layers.extend([hbg, ht])
         except: pass
 
