@@ -13,7 +13,7 @@ Required environment variables:
   OAUTHLIB_INSECURE_TRANSPORT=1
 
 Optional environment variables:
-  HF_API_KEY    — Hugging Face token for AI background music generation (free)
+  REPLICATE_API_TOKEN — Replicate token for AI background music generation
 """
 
 import anthropic
@@ -718,61 +718,47 @@ def _copy_repo_music_to_workdir():
 
 
 def generate_bg_music(mood="calm"):
-    """Generate background music using Meta MusicGen via Hugging Face Inference API (requires HF Pro)."""
-    hf_key = os.environ.get("HF_API_KEY")
-    if not hf_key:
+    """Generate background music using Meta MusicGen via Replicate API."""
+    api_token = os.environ.get("REPLICATE_API_TOKEN")
+    if not api_token:
+        return None
+
+    try:
+        import replicate
+    except ImportError:
+        print("   ⚠️ replicate package not installed — using local music files")
         return None
 
     prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
-    # Try multiple models (small is lightest, most likely to be available)
-    HF_MODELS = [
-        "facebook/musicgen-small",
-        "facebook/musicgen-medium",
-        "facebook/musicgen-large",
-    ]
+    try:
+        print(f"   🤖 Generating '{mood}' music via Replicate MusicGen...")
+        output = replicate.run(
+            "meta/musicgen:b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38",
+            input={
+                "prompt": prompt,
+                "duration": 30,
+                "model_version": "stereo-melody-large",
+                "output_format": "wav",
+                "normalization_strategy": "loudness",
+            },
+        )
 
-    headers = {"Authorization": f"Bearer {hf_key}"}
+        # output is a URL to the generated audio file
+        response = requests.get(str(output), timeout=120)
+        if response.status_code == 200:
+            with open(music_path, "wb") as f:
+                f.write(response.content)
+            print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+            return music_path
+        else:
+            print(f"   ⚠️ Failed to download generated music: HTTP {response.status_code}")
+            return None
 
-    for model_name in HF_MODELS:
-        api_url = f"https://router.huggingface.co/hf-inference/models/{model_name}"
-        try:
-            print(f"   🤖 Trying {model_name} for '{mood}' music...")
-            response = requests.post(
-                api_url, headers=headers,
-                json={"inputs": prompt},
-                timeout=30,
-            )
-
-            if response.status_code == 503:
-                wait_time = response.json().get("estimated_time", 30)
-                print(f"   ⏳ Model loading, waiting {int(wait_time)}s...")
-                time.sleep(min(wait_time, 60))
-                response = requests.post(
-                    api_url, headers=headers,
-                    json={"inputs": prompt},
-                    timeout=120,
-                )
-
-            if response.status_code == 200:
-                with open(music_path, "wb") as f:
-                    f.write(response.content)
-                print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
-                return music_path
-            elif response.status_code == 404:
-                print(f"   ⚠️ {model_name} not available on HF Inference (404), trying next...")
-                continue
-            else:
-                print(f"   ⚠️ {model_name} returned {response.status_code}: {response.text[:100]}")
-                continue
-
-        except Exception as e:
-            print(f"   ⚠️ {model_name} failed: {e}")
-            continue
-
-    print("   ⚠️ No MusicGen model available on HF — using local music files")
-    return None
+    except Exception as e:
+        print(f"   ⚠️ Replicate MusicGen failed: {e}")
+        return None
 
 
 def load_bg_music(mood="calm"):
