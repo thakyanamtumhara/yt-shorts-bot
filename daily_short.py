@@ -157,6 +157,10 @@ BG_MUSIC_VOLUME = 0.08
 # Veo Ambient Audio (keep Veo's generated scene sounds at low volume)
 VEO_AMBIENT_VOLUME = 0.03
 
+# Veo Background Music (generate a dedicated music clip via Veo and extract its audio)
+VEO_BG_MUSIC = True
+VEO_BG_MUSIC_VOLUME = 0.08  # Same default as BG_MUSIC_VOLUME
+
 # Hook Text
 ADD_HOOK_TEXT = True
 HOOK_DURATION = 2.5
@@ -533,6 +537,16 @@ MOOD_TO_MUSIC_PROMPT = {
     "trendy": "modern trendy electronic beat, cool urban instrumental, no vocals",
 }
 
+# Mood → Veo video prompts designed to produce music-heavy audio
+# These describe musical scenes so Veo generates clips with strong background music audio
+MOOD_TO_VEO_MUSIC_PROMPT = {
+    "upbeat": "Close-up of a DJ mixer with colorful LED lights pulsing to energetic electronic music, hands adjusting knobs and faders, vibrant club atmosphere with neon reflections on polished equipment, dynamic camera movement",
+    "calm": "Intimate close-up of piano keys being gently played by elegant hands in a cozy dimly-lit room, warm amber lighting, soft peaceful lo-fi atmosphere, gentle camera dolly forward, serene and relaxing mood",
+    "serious": "Dimly lit concert stage with a solo cellist playing dramatic cinematic music, warm focused spotlight casting long shadows, close-up of bow moving gracefully across strings, intense emotional atmosphere",
+    "motivational": "Sunrise timelapse over a beautiful mountain landscape with inspirational orchestral music building, golden light illuminating majestic clouds, dawn breaking over snow-capped peaks, sweeping cinematic atmosphere, slow camera pan",
+    "trendy": "Close-up of a music producer working on electronic beats in a modern studio, laptop screen showing audio waveforms and equalizer, colorful LED ambient lighting, headphones on desk, urban creative atmosphere",
+}
+
 # Repo-level bg_music/ folder (fallback — persists across runs, committed to git)
 REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
 
@@ -595,14 +609,87 @@ def generate_bg_music(mood="calm"):
         return None
 
 
-def load_bg_music(mood="calm"):
-    """Load background music: AI generate first, fall back to repo files."""
-    # Step 1: Try AI generation (best — unique music per video, mood-matched)
+def generate_veo_bg_music(veo_client, types_module, mood="calm"):
+    """Generate background music using Veo by creating a music-focused video clip
+    and extracting its audio. Returns path to extracted audio file or None."""
+    if not VEO_BG_MUSIC or not veo_client or not types_module:
+        return None
+
+    import subprocess
+
+    prompt = MOOD_TO_VEO_MUSIC_PROMPT.get(mood, MOOD_TO_VEO_MUSIC_PROMPT["calm"])
+    clip_path = f"{WORK_DIR}/veo_music_{mood}_{random.randint(100,999)}.mp4"
+    audio_path = f"{BG_MUSIC_FOLDER}/veo_music_{mood}_{random.randint(100,999)}.wav"
+
+    print(f"   🎵 Generating Veo background music ({mood})...")
+
+    try:
+        operation = veo_client.models.generate_videos(
+            model=VEO_MODEL,
+            prompt=prompt,
+            config=types_module.GenerateVideosConfig(
+                aspect_ratio=VEO_ASPECT_RATIO,
+                number_of_videos=1,
+                duration_seconds=VEO_DURATION,
+            ),
+        )
+        while not operation.done:
+            time.sleep(10)
+            operation = veo_client.operations.get(operation)
+
+        if operation.response and operation.response.generated_videos:
+            video = operation.response.generated_videos[0]
+            video_data = veo_client.files.download(file=video.video)
+            with open(clip_path, "wb") as f:
+                f.write(video_data)
+
+            # Extract audio from the music clip
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-i", clip_path, "-vn", "-acodec", "pcm_s16le",
+                 "-ar", "44100", "-ac", "2", audio_path],
+                capture_output=True, text=True, timeout=60
+            )
+
+            # Clean up video file (we only need the audio)
+            try: os.remove(clip_path)
+            except: pass
+
+            if result.returncode == 0 and os.path.exists(audio_path) and os.path.getsize(audio_path) > 1000:
+                print(f"   ✅ Veo background music generated: {os.path.basename(audio_path)}")
+                return audio_path
+            else:
+                print(f"   ⚠️ Failed to extract audio from Veo music clip")
+                return None
+        else:
+            print(f"   ⚠️ Veo music clip returned empty response")
+            return None
+
+    except Exception as e:
+        error_msg = str(e)
+        if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+            print(f"   ⚠️ Veo rate limited for music — will use fallback music")
+        else:
+            print(f"   ⚠️ Veo music generation failed: {error_msg[:100]}")
+        # Clean up
+        try: os.remove(clip_path)
+        except: pass
+        return None
+
+
+def load_bg_music(mood="calm", veo_client=None, types_module=None):
+    """Load background music: Veo first, then AI generate, fall back to repo files."""
+    # Step 1: Try Veo background music (best — unique, mood-matched, contextual sound from Veo)
+    if veo_client and types_module:
+        veo_path = generate_veo_bg_music(veo_client, types_module, mood)
+        if veo_path:
+            return
+
+    # Step 2: Try HF MusicGen AI generation (unique per video, mood-matched)
     ai_path = generate_bg_music(mood)
     if ai_path:
         return
 
-    # Step 2: Fall back to repo music files
+    # Step 3: Fall back to repo music files (5 saved files)
     _copy_repo_music_to_workdir()
 
     existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
@@ -616,7 +703,7 @@ def load_bg_music(mood="calm"):
 
 
 def mix_background_music(voice_audio_clip, duration, mood="calm"):
-    """Mix background music with voice audio. Prefers mood-matching files."""
+    """Mix background music with voice audio. Prefers Veo-generated music, then mood-matching files."""
     if not ADD_BG_MUSIC:
         return voice_audio_clip
 
@@ -624,13 +711,24 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
     if not all_files:
         return voice_audio_clip
 
-    # Prefer files matching the mood (e.g., "calm_12345.mp3" or "calm_lofi.mp3")
+    # Priority: Veo-generated music > mood-matching files > any file
+    veo_files = [f for f in all_files if "veo_music" in os.path.basename(f).lower()]
     mood_files = [f for f in all_files if mood.lower() in os.path.basename(f).lower()]
-    music_files = mood_files if mood_files else all_files
+
+    if veo_files:
+        music_files = veo_files
+        is_veo = True
+    elif mood_files:
+        music_files = mood_files
+        is_veo = False
+    else:
+        music_files = all_files
+        is_veo = False
 
     try:
         music_path = random.choice(music_files)
-        print(f"   🎵 Adding background music: {os.path.basename(music_path)}")
+        source_label = "Veo" if is_veo else "file"
+        print(f"   🎵 Adding background music ({source_label}): {os.path.basename(music_path)}")
 
         music_clip = AudioFileClip(music_path)
 
@@ -640,14 +738,15 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
         else:
             music_clip = music_clip.subclip(0, duration)
 
-        # Reduce music volume and fade out at the end
-        music_clip = volumex(music_clip, BG_MUSIC_VOLUME)
+        # Use VEO_BG_MUSIC_VOLUME for Veo-generated music, BG_MUSIC_VOLUME for others
+        vol = VEO_BG_MUSIC_VOLUME if is_veo else BG_MUSIC_VOLUME
+        music_clip = volumex(music_clip, vol)
         from moviepy.audio.fx.audio_fadeout import audio_fadeout
         music_clip = audio_fadeout(music_clip, 2.0)
 
         # Composite: voice on top, music underneath
         mixed = CompositeAudioClip([music_clip, voice_audio_clip])
-        print(f"   ✅ Background music mixed at {int(BG_MUSIC_VOLUME * 100)}% volume")
+        print(f"   ✅ Background music mixed at {int(vol * 100)}% volume ({source_label})")
         return mixed
 
     except Exception as e:
@@ -881,8 +980,9 @@ Return ONLY the topic text, nothing else."""}]
 
     print(f"   🎵 Mood: {music_mood}")
 
-    # ── 3b. Load Background Music ──
-    load_bg_music(music_mood)
+    # ── 3b. Load Background Music (Veo > MusicGen > saved files) ──
+    load_bg_music(music_mood, veo_client=veo_client if not TEST_MODE else None,
+                  types_module=types if not TEST_MODE else None)
 
     # ── 4. Generate Voice (OpenAI gpt-4o-mini-tts) ──
     print("   🎙️ Generating voice (OpenAI TTS)...")
