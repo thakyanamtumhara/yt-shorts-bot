@@ -102,7 +102,7 @@ TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 SCRIPT_MAX_ATTEMPTS = 3
 
 TARGET_VOICE = "ash"  # OpenAI TTS voice (ash = warm male, good for Hindi)
-VOICE_SPEED = 0.88
+VOICE_SPEED = 1.0
 VOICE_INSTRUCTIONS = """Speak in natural conversational Hindi (Hinglish). 
 You are an Indian textile businessman from Delhi casually explaining something to a fellow businessman.
 - Speak naturally with real pauses, thinking moments, and slight hesitations
