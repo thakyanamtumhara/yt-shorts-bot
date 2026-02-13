@@ -101,15 +101,28 @@ TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
 
-TARGET_VOICE = "ash"  # OpenAI TTS voice (ash = warm male, good for Hindi)
+TARGET_VOICE = "ash"  # OpenAI TTS voice (try: ash, ballad, coral, echo, sage, verse)
 VOICE_SPEED = 1.0
-VOICE_INSTRUCTIONS = """Speak in natural conversational Hindi (Hinglish). 
-You are an Indian textile businessman from Delhi casually explaining something to a fellow businessman.
-- Speak naturally with real pauses, thinking moments, and slight hesitations
-- Add natural fillers like "umm", "hmm", "dekho", "matlab" where it feels natural
-- Tone: confident, knowledgeable, casual — NOT formal or scripted
-- Pace: medium-slow, like you're explaining in person over chai
-- Do NOT sound like a narrator or news anchor — sound like a REAL person talking"""
+VOICE_INSTRUCTIONS = """You are an Indian man from Delhi speaking casual Hinglish.
+
+PRONUNCIATION RULES (CRITICAL):
+- You are a NATIVE HINDI speaker. Hindi words MUST sound fully native Indian, not anglicized.
+- "hai" = "hai" (short, flat) — NOT "high" or "hay"
+- "toh" = soft "toh" — NOT "toe"  
+- "matlab" = "mut-lub" — NOT "mat-lab"
+- "hota hai" = quick natural "hota-hai" — NOT two separate English words
+- "karo/karlo" = soft rolled 'r' — NOT hard English 'r'
+- "dekho" = "deh-kho" with soft 'deh' — NOT "deck-oh"
+- All Hindi connectors (toh, ki, ka, ke, mein, se, pe) should flow naturally, unstressed
+- English words like "quality", "print", "GSM", "fabric" keep their English pronunciation
+- The RHYTHM should be Hindi — not English rhythm with Hindi words inserted
+
+SPEAKING STYLE:
+- Speak like you're explaining something to a fellow businessman over chai
+- Natural thinking pauses and fillers — "umm", "dekho", "matlab"
+- Confident, knowledgeable, casual — NOT formal, NOT scripted, NOT like a narrator
+- Medium pace, relaxed delivery
+- Trail off naturally at the end of sentences"""
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 3
