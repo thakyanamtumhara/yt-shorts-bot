@@ -739,7 +739,7 @@ def generate_bg_music(mood="calm"):
             input={
                 "prompt": prompt,
                 "duration": 30,
-                "model_version": "melody",
+                "model_version": "stereo-melody-large",
                 "output_format": "wav",
                 "normalization_strategy": "loudness",
             },
