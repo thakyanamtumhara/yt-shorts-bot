@@ -198,17 +198,39 @@ CTA_TEXT = "Sale91.com — MOQ sirf 10 pieces"
 
 # YouTube
 SCHEDULE_PUBLISH = True
-PUBLISH_HOUR = 21
-PUBLISH_MINUTE = 30
 TIMEZONE = "Asia/Kolkata"
 UPLOAD_AS_SHORT = True
+
+# A/B Test Publish Times — rotate between 3 slots to find best engagement
+# Each slot: (hour, minute, label)
+PUBLISH_SLOTS = [
+    (21, 30, "9:30 PM"),   # Original — post-dinner scroll time
+    (11,  0, "11:00 AM"),  # Morning — chai break / office downtime
+    (19,  0, "7:00 PM"),   # Evening — commute / pre-dinner scroll
+]
+# Rotation: Mon/Thu → 11 AM, Tue/Fri → 7 PM, Wed/Sat/Sun → 9:30 PM
+PUBLISH_SLOT_SCHEDULE = {
+    0: 1,  # Monday    → 11:00 AM
+    1: 2,  # Tuesday   → 7:00 PM
+    2: 0,  # Wednesday → 9:30 PM
+    3: 1,  # Thursday  → 11:00 AM
+    4: 2,  # Friday    → 7:00 PM
+    5: 0,  # Saturday  → 9:30 PM
+    6: 0,  # Sunday    → 9:30 PM
+}
 
 # Files
 TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
 CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
+          "https://www.googleapis.com/auth/youtube"]
+
+# Thumbnail
+GENERATE_THUMBNAIL = True
+THUMBNAIL_WIDTH = 1080
+THUMBNAIL_HEIGHT = 1920  # Vertical for Shorts
 
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                   TOPIC BANK                                         ║
@@ -340,13 +362,249 @@ TOPIC_BANK = [
     "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
 ]
 
-DEFAULT_TAGS = [
-    "plain tshirt", "blank tshirt", "tshirt printing",
-    "DTG printing", "DTF printing", "screen printing",
+# Base tags always included
+BASE_TAGS = [
+    "plain tshirt", "blank tshirt", "Sale91",
     "t-shirt manufacturer India", "wholesale tshirt",
-    "cotton tshirt", "bulk tshirt", "Sale91",
-    "printing business", "tshirt supplier"
 ]
+
+# Series-specific tags — matched by keywords in the topic string
+TOPIC_SERIES_TAGS = {
+    "fabric_gsm": {
+        "keywords": ["gsm", "fabric", "cotton", "yarn", "knit", "jersey", "fleece",
+                      "interlock", "pique", "rib", "slub", "organic", "bamboo",
+                      "polyester", "tri-blend", "mercerized", "supima", "shrinkage",
+                      "weight"],
+        "tags": ["fabric quality", "GSM explained", "cotton fabric", "textile knowledge",
+                 "fabric weight", "tshirt fabric", "cotton tshirt"],
+    },
+    "customer_stories": {
+        "keywords": ["customer", "client", "return", "cancel", "order", "complaint",
+                      "repeat", "export", "startup"],
+        "tags": ["customer story", "business lessons", "tshirt business India",
+                 "printing business tips", "B2B tshirt"],
+    },
+    "printing_methods": {
+        "keywords": ["dtg", "dtf", "screen print", "sublimation", "vinyl",
+                      "embroidery", "discharge", "plastisol", "heat transfer",
+                      "puff print", "ink", "mesh", "pre-treatment"],
+        "tags": ["DTG printing", "DTF printing", "screen printing", "tshirt printing",
+                 "printing methods", "custom printing", "print on demand"],
+    },
+    "business_tips": {
+        "keywords": ["business", "pricing", "moq", "margin", "profit", "brand",
+                      "supplier", "bulk", "freight", "packaging", "b2b", "b2c",
+                      "seasonal", "instagram"],
+        "tags": ["tshirt business", "printing business", "business tips India",
+                 "small business", "merch business", "startup tips"],
+    },
+    "quality_checks": {
+        "keywords": ["biowash", "pre-shrunk", "preshrunk", "pilling", "dyeing",
+                      "colorfastness", "seam", "wash test", "crease", "hand feel",
+                      "ring-spun", "combed", "carded", "quality"],
+        "tags": ["quality check", "tshirt quality", "fabric testing",
+                 "biowash tshirt", "cotton quality", "textile testing"],
+    },
+    "product_style": {
+        "keywords": ["oversized", "polo", "hoodie", "sweatshirt", "acid wash",
+                      "drop shoulder", "v-neck", "crop top", "raglan", "henley",
+                      "round neck", "side seam"],
+        "tags": ["oversized tshirt", "polo tshirt", "hoodie blank",
+                 "tshirt styles", "blank apparel", "streetwear blanks"],
+    },
+    "myth_busters": {
+        "keywords": ["myth", "galat", "sochte"],
+        "tags": ["myth busted", "tshirt myths", "textile myths",
+                 "printing myths", "fact check", "common mistakes"],
+    },
+}
+
+
+def get_topic_tags(topic):
+    """Return topic-specific tags by matching topic keywords against series."""
+    topic_lower = topic.lower()
+    matched_tags = list(BASE_TAGS)  # Always include base tags
+
+    for series_name, series_data in TOPIC_SERIES_TAGS.items():
+        for kw in series_data["keywords"]:
+            if kw in topic_lower:
+                for tag in series_data["tags"]:
+                    if tag.lower() not in [t.lower() for t in matched_tags]:
+                        matched_tags.append(tag)
+                break  # One keyword match per series is enough
+
+    return matched_tags
+
+
+def get_topic_hashtags(topic):
+    """Generate topic-specific hashtags for YouTube description."""
+    topic_lower = topic.lower()
+    # Always present
+    hashtags = ["#Sale91", "#PlainTshirt", "#TshirtManufacturer"]
+
+    series_hashtags = {
+        "fabric_gsm": ["#FabricQuality", "#GSM", "#CottonFabric", "#TextileKnowledge"],
+        "customer_stories": ["#CustomerStory", "#BusinessLesson", "#TshirtBusiness"],
+        "printing_methods": ["#DTGPrinting", "#DTFPrinting", "#ScreenPrinting", "#CustomPrinting"],
+        "business_tips": ["#BusinessTips", "#PrintingBusiness", "#SmallBusiness", "#Startup"],
+        "quality_checks": ["#QualityCheck", "#FabricTesting", "#Biowash", "#CottonQuality"],
+        "product_style": ["#OversizedTshirt", "#PoloTshirt", "#HoodieBlank", "#Streetwear"],
+        "myth_busters": ["#MythBusted", "#TshirtMyths", "#FactCheck", "#CommonMistakes"],
+    }
+
+    for series_name, series_data in TOPIC_SERIES_TAGS.items():
+        for kw in series_data["keywords"]:
+            if kw in topic_lower:
+                hashtags.extend(series_hashtags.get(series_name, []))
+                break
+
+    # Deduplicate while keeping order
+    seen = set()
+    unique = []
+    for h in hashtags:
+        if h.lower() not in seen:
+            seen.add(h.lower())
+            unique.append(h)
+    return unique
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# THUMBNAIL GENERATION
+# ═══════════════════════════════════════════════════════════════════════
+
+def generate_thumbnail(hook_text, topic, output_path=None):
+    """Generate a branded thumbnail image for YouTube SEO.
+    Returns the file path to the thumbnail PNG, or None on failure."""
+    if not GENERATE_THUMBNAIL:
+        return None
+
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+
+        if output_path is None:
+            output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
+
+        img = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), color=(15, 15, 25))
+        draw = ImageDraw.Draw(img)
+
+        # Gradient background: dark blue-black at top, dark red-black at bottom
+        for y in range(THUMBNAIL_HEIGHT):
+            ratio = y / THUMBNAIL_HEIGHT
+            r = int(15 + 60 * ratio)
+            g = int(15 - 10 * ratio)
+            b = int(25 - 15 * ratio)
+            r, g, b = max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b))
+            draw.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
+
+        # Try to load a good font, fall back to default
+        font_hook = None
+        font_topic = None
+        font_brand = None
+        font_paths = [
+            "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        ]
+        font_file = None
+        for fp in font_paths:
+            if os.path.exists(fp):
+                font_file = fp
+                break
+
+        if font_file:
+            font_hook = ImageFont.truetype(font_file, 72)
+            font_topic = ImageFont.truetype(font_file, 36)
+            font_brand = ImageFont.truetype(font_file, 42)
+        else:
+            font_hook = ImageFont.load_default()
+            font_topic = ImageFont.load_default()
+            font_brand = ImageFont.load_default()
+
+        # Yellow accent bar at top
+        draw.rectangle([(0, 0), (THUMBNAIL_WIDTH, 8)], fill=(255, 215, 0))
+
+        # Hook text — big, bold, white with yellow highlight words
+        hook_display = (hook_text or topic.split("—")[0].strip()).upper()
+        # Wrap long text
+        hook_words = hook_display.split()
+        lines = []
+        current_line = ""
+        for word in hook_words:
+            test = f"{current_line} {word}".strip()
+            bbox = draw.textbbox((0, 0), test, font=font_hook)
+            if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+            else:
+                current_line = test
+        if current_line:
+            lines.append(current_line)
+
+        # Draw hook text centered, starting at ~35% height
+        y_start = int(THUMBNAIL_HEIGHT * 0.30)
+        line_height = 90
+        for i, line in enumerate(lines[:4]):  # Max 4 lines
+            bbox = draw.textbbox((0, 0), line, font=font_hook)
+            text_w = bbox[2] - bbox[0]
+            x = (THUMBNAIL_WIDTH - text_w) // 2
+            y = y_start + i * line_height
+            # Black outline
+            for dx in [-3, -2, 0, 2, 3]:
+                for dy in [-3, -2, 0, 2, 3]:
+                    draw.text((x + dx, y + dy), line, font=font_hook, fill=(0, 0, 0))
+            # White text
+            draw.text((x, y), line, font=font_hook, fill=(255, 255, 255))
+
+        # Topic summary — smaller text below hook
+        topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
+        bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
+        topic_w = bbox[2] - bbox[0]
+        topic_y = y_start + len(lines[:4]) * line_height + 30
+        draw.text(((THUMBNAIL_WIDTH - topic_w) // 2, topic_y), topic_short,
+                  font=font_topic, fill=(200, 200, 200))
+
+        # Brand bar at bottom
+        bar_y = THUMBNAIL_HEIGHT - 120
+        draw.rectangle([(0, bar_y), (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
+        brand_text = "Sale91.com"
+        bbox = draw.textbbox((0, 0), brand_text, font=font_brand)
+        brand_w = bbox[2] - bbox[0]
+        draw.text(((THUMBNAIL_WIDTH - brand_w) // 2, bar_y + 35), brand_text,
+                  font=font_brand, fill=(15, 15, 25))
+
+        # Red "WATCH" badge top-right corner
+        badge_text = "▶ WATCH"
+        bbox = draw.textbbox((0, 0), badge_text, font=font_topic)
+        badge_w = bbox[2] - bbox[0]
+        badge_x = THUMBNAIL_WIDTH - badge_w - 50
+        badge_y = 40
+        draw.rectangle([(badge_x - 15, badge_y - 8),
+                        (badge_x + badge_w + 15, badge_y + 44)],
+                       fill=(220, 30, 30))
+        draw.text((badge_x, badge_y), badge_text, font=font_topic, fill=(255, 255, 255))
+
+        img.save(output_path, "PNG", quality=95)
+        print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
+        return output_path
+
+    except Exception as e:
+        print(f"   ⚠️ Thumbnail generation failed: {e}")
+        return None
+
+
+def upload_thumbnail(youtube, video_id, thumbnail_path):
+    """Upload custom thumbnail to a YouTube video."""
+    from googleapiclient.http import MediaFileUpload
+    try:
+        media = MediaFileUpload(thumbnail_path, mimetype="image/png")
+        youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
+        print(f"   🖼️ Custom thumbnail uploaded for {video_id}")
+        return True
+    except Exception as e:
+        print(f"   ⚠️ Thumbnail upload failed: {e}")
+        print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
+        return False
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -574,12 +832,25 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 def get_publish_time():
     ist = pytz.timezone(TIMEZONE)
     now = datetime.now(ist)
-    today_publish = now.replace(hour=PUBLISH_HOUR, minute=PUBLISH_MINUTE, second=0, microsecond=0)
+
+    # A/B test: pick publish slot based on day of week
+    weekday = now.weekday()  # 0=Monday ... 6=Sunday
+    slot_idx = PUBLISH_SLOT_SCHEDULE.get(weekday, 0)
+    hour, minute, label = PUBLISH_SLOTS[slot_idx]
+
+    today_publish = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if now >= today_publish:
-        publish_at = today_publish + timedelta(days=1)
+        # If we've passed today's slot, schedule for tomorrow's slot
+        tomorrow = now + timedelta(days=1)
+        tomorrow_weekday = tomorrow.weekday()
+        slot_idx = PUBLISH_SLOT_SCHEDULE.get(tomorrow_weekday, 0)
+        hour, minute, label = PUBLISH_SLOTS[slot_idx]
+        publish_at = tomorrow.replace(hour=hour, minute=minute, second=0, microsecond=0)
     else:
         publish_at = today_publish
+
     publish_utc = publish_at.astimezone(pytz.utc)
+    print(f"   ⏰ A/B slot: {label} ({['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][publish_at.weekday()]})")
     return publish_at, publish_utc
 
 
@@ -612,7 +883,7 @@ def get_youtube_service():
     return build("youtube", "v3", credentials=creds)
 
 
-def upload_to_youtube(youtube, video_path, title, description, tags):
+def upload_to_youtube(youtube, video_path, title, description, tags, topic=""):
     from googleapiclient.http import MediaFileUpload
     from googleapiclient.errors import HttpError
 
@@ -620,6 +891,10 @@ def upload_to_youtube(youtube, video_path, title, description, tags):
     if UPLOAD_AS_SHORT and "#shorts" not in title.lower():
         if len(title) + 8 <= 100:
             title += " #Shorts"
+
+    # Dynamic hashtags based on topic
+    topic_hashtags = get_topic_hashtags(topic)
+    hashtag_line = " ".join(topic_hashtags)
 
     seo_description = f"""{description}
 
@@ -635,13 +910,13 @@ MOQ just 10 pieces | Ready stock | Pan India delivery
 Perfect for: DTG Printing | DTF Printing | Screen Printing | Heat Transfer
 Custom printing businesses | Merch brands | Corporate orders
 
-#PlainTshirt #BlankTshirt #TshirtPrinting #WholesaleTshirt
-#DTGPrinting #DTFPrinting #ScreenPrinting #Sale91
-#TshirtManufacturer #CottonTshirt #BulkTshirt #PrintingBusiness
+{hashtag_line}
 """
 
+    # Dynamic tags: Claude's tags + topic-specific tags + booster tags
     all_tags = list(tags) if tags else []
-    for t in DEFAULT_TAGS:
+    topic_specific = get_topic_tags(topic)
+    for t in topic_specific:
         if t.lower() not in [x.lower() for x in all_tags]:
             all_tags.append(t)
     for t in ["shorts", "youtubeshorts", "viral", "trending"]:
@@ -1509,19 +1784,28 @@ Return ONLY the topic text, nothing else."""}]
 
     print(f"   ✅ Video ready: {output_path}")
 
+    # ── 9b. Generate Thumbnail ──
+    thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic)
+
     # ── 10. Upload to YouTube ──
     if TEST_MODE:
         print(f"\n{'='*60}")
         print(f"  🧪 TEST MODE COMPLETE — video NOT uploaded")
         print(f"  📁 Video saved: {output_path}")
+        if thumbnail_path:
+            print(f"  🖼️ Thumbnail: {thumbnail_path}")
         print(f"  📌 Title: {yt_title}")
         print(f"  🎵 Mood: {music_mood}")
+        print(f"  🏷️ Tags: {', '.join(get_topic_tags(fresh_topic)[:8])}")
         print(f"{'='*60}")
     else:
         print("   📤 Uploading to YouTube...")
         youtube = get_youtube_service()
         if youtube:
-            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags)
+            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
+            # Upload custom thumbnail
+            if thumbnail_path and vid_id != "?":
+                upload_thumbnail(youtube, vid_id, thumbnail_path)
             print(f"\n{'='*60}")
             print(f"  ✅ DAILY SHORT COMPLETE!")
             print(f"  🔗 {vid_url}")
@@ -1539,6 +1823,9 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
     try: os.remove(audio_path)
     except: pass
+    if thumbnail_path:
+        try: os.remove(thumbnail_path)
+        except: pass
 
 
 if __name__ == "__main__":

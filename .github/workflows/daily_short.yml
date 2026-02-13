@@ -74,5 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-video
-          path: /tmp/yt_shorts/SHORT_*.mp4
+          path: |
+            /tmp/yt_shorts/SHORT_*.mp4
+            /tmp/yt_shorts/thumbnail_*.png
           retention-days: 3
