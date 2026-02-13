@@ -140,25 +140,33 @@ SUBTITLE_STROKE_W = 2
 SUBTITLE_BG_COLOR = (0, 0, 0)
 SUBTITLE_BG_OPACITY = 0.7
 SUBTITLE_BG_PADDING = 16
-WORDS_PER_SUBTITLE = 4
+WORDS_PER_SUBTITLE = 5
 # Keywords that get highlighted in yellow for visual emphasis
 SUBTITLE_HIGHLIGHT_COLOR = "yellow"
 SUBTITLE_HIGHLIGHT_WORDS = {
     "gsm", "fabric", "cotton", "biowash", "preshrunk", "pre-shrunk", "shrinkage",
     "combed", "carded", "ring-spun", "ringspun", "printing", "print", "dtg", "dtf",
     "screen", "quality", "weight", "200", "180", "220", "160", "430", "240", "320",
+    "210", "250", "280", "300",
     "pilling", "dyeing", "collar", "ribbing", "rib", "yarn", "knit", "interlock",
     "jersey", "fleece", "terry", "pique", "mercerized", "organic", "polyester",
     "sublimation", "vinyl", "embroidery", "discharge", "plastisol", "mesh",
     "sample", "moq", "bulk", "wholesale", "premium", "acid wash",
+    # Manufacturing & process terms
+    "stitching", "cutting", "knitting", "carding", "combing", "finishing",
+    "tiruppur", "delhi", "manufacturer", "factory", "warehouse",
+    # Business terms
+    "order", "price", "profit", "margin", "cost", "business", "customer",
+    # Product types
+    "oversized", "polo", "hoodie", "sweatshirt", "roundneck", "vneck",
 }
 
 # Bottom Strip Banner (subtle website strip)
 ADD_WATERMARK = True
 WATERMARK_TEXT = "Sale91.com"
-STRIP_HEIGHT = 44
-STRIP_OPACITY = 0.65
-STRIP_FONT_SIZE = 26
+STRIP_HEIGHT = 36
+STRIP_OPACITY = 0.60
+STRIP_FONT_SIZE = 22
 STRIP_COLOR = "white"
 
 # Background Music
@@ -171,7 +179,7 @@ BG_MUSIC_VOLUME_MID = 0.05    # Middle — voice dominant
 BG_MUSIC_VOLUME_END = 0.12    # Last 3 seconds — emotional close
 
 # Veo Ambient Audio (keep Veo's generated scene sounds at low volume)
-VEO_AMBIENT_VOLUME = 0.03
+VEO_AMBIENT_VOLUME = 0.08
 
 # Hook Sound Effect (low bass drop at video start to stop the scroll)
 ADD_HOOK_SFX = True
@@ -179,14 +187,14 @@ HOOK_SFX_VOLUME = 0.25
 
 # Hook Text
 ADD_HOOK_TEXT = True
-HOOK_DURATION = 2.5
+HOOK_DURATION = 1.5
 
 # Transitions
 CLIP_FADE_DURATION = 0.3
 
 # CTA
 ADD_CTA_OVERLAY = True
-CTA_TEXT = "Sale91.com"
+CTA_TEXT = "Sale91.com — MOQ sirf 10 pieces"
 
 # YouTube
 SCHEDULE_PUBLISH = True
@@ -501,8 +509,8 @@ Write in ROMAN HINGLISH — Hindi words in ENGLISH LETTERS (not Devanagari).
 
 ━━━ HOOK TEXT (for on-screen text overlay) ━━━
 
-Write a short CURIOSITY-DRIVEN hook text (max 6 words) that appears on screen
-for the first 2.5 seconds. This must make the viewer STOP SCROLLING.
+Write a short CURIOSITY-DRIVEN hook text (max 4 words) that appears on screen
+for the first 1.5 seconds. This must make the viewer STOP SCROLLING instantly.
 
 Good hook texts:
 - "YE GALTI MAT KARNA..."
@@ -547,7 +555,7 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "description": "YouTube description in English with 6-8 hashtags. Include Sale91.com link.",
     "script_voice": "The ROMAN HINGLISH script. 8-12 sentences for 45-55 seconds. NO website. NO selling. Pure knowledge with storytelling.",
     "script_english": "Clean English translation for on-screen subtitles",
-    "hook_text": "Max 6 words, UPPERCASE, curiosity-driven text for on-screen hook overlay",
+    "hook_text": "Max 4 words, UPPERCASE, punchy curiosity-driven text for on-screen hook overlay",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
     "video_prompt_1": "HOOK scene — the problem or dramatic moment. 40-80 words.",
     "video_prompt_2": "CONTEXT scene — setting up the situation. 40-80 words.",
@@ -1296,7 +1304,7 @@ Return ONLY the topic text, nothing else."""}]
             y1 = max(0, int(h2 / 2 - th / 2))
             return clip.crop(x1=0, y1=y1, width=tw, height=th)
 
-    def apply_ken_burns(clip, zoom_percent=3):
+    def apply_ken_burns(clip, zoom_percent=5):
         """Apply slow Ken Burns zoom-in effect. Makes static clips feel alive."""
         try:
             w, h = clip.size
@@ -1415,7 +1423,7 @@ Return ONLY the topic text, nothing else."""}]
     # Bottom strip banner — subtle dark strip with site name
     if ADD_WATERMARK:
         try:
-            strip_y = int(VIDEO_HEIGHT * 0.82)  # Above YouTube Shorts UI zone
+            strip_y = int(VIDEO_HEIGHT * 0.75)  # Clear of YouTube Shorts like/comment buttons
             # Dark semi-transparent strip across full width
             strip_bg = ColorClip(size=(VIDEO_WIDTH, STRIP_HEIGHT), color=(0, 0, 0))
             strip_bg = strip_bg.set_opacity(STRIP_OPACITY).set_position((0, strip_y)).set_duration(total_duration)
@@ -1435,9 +1443,9 @@ Return ONLY the topic text, nothing else."""}]
     # Hook — curiosity-driven text from Claude (or fallback to topic words)
     if ADD_HOOK_TEXT:
         try:
-            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:6]).upper()
-            # Truncate to max 6 words
-            hook_words = hook_line.split()[:6]
+            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
+            # Truncate to max 4 words (punchier for Shorts scroll-stop)
+            hook_words = hook_line.split()[:4]
             hook_line = " ".join(hook_words)
 
             ht = TextClip(hook_line, fontsize=56, font=SUBTITLE_FONT, color="white",
@@ -1445,17 +1453,17 @@ Return ONLY the topic text, nothing else."""}]
                 size=(VIDEO_WIDTH - 180, None), align='center')
             ht_w, ht_h = ht.size
             hbg = ColorClip(size=(ht_w + 40, ht_h + 30), color=(0,0,0)).set_opacity(0.80)
-            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.30))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
-            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.30)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.22))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
+            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.22)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
             layers.extend([hbg, ht])
         except: pass
 
     # CTA — end-of-video nudge pointing to the bottom strip
     if ADD_CTA_OVERLAY:
         try:
-            cta = TextClip(f"Visit {CTA_TEXT}", fontsize=40, font=SUBTITLE_FONT, color="white",
+            cta = TextClip(CTA_TEXT, fontsize=38, font=SUBTITLE_FONT, color="white",
                 stroke_color="black", stroke_width=2, method='label')
-            cta = cta.set_position(("center", 0.82), relative=True).set_start(max(0, total_duration-3.5)).set_duration(3.5).crossfadein(0.3)
+            cta = cta.set_position(("center", 0.75), relative=True).set_start(max(0, total_duration-4.0)).set_duration(4.0).crossfadein(0.3)
             layers.append(cta)
         except: pass
 
