@@ -692,7 +692,7 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-# Mood → text prompt for AI music generation (Meta MusicGen Large via HF Pro)
+# Mood → text prompt for AI music generation (Meta MusicGen via Replicate)
 MOOD_TO_MUSIC_PROMPT = {
     "upbeat": "upbeat happy energetic instrumental music, positive vibes, bright, no vocals",
     "calm": "soft ambient lo-fi instrumental music, relaxed, gentle piano, no vocals",
@@ -745,15 +745,15 @@ def generate_bg_music(mood="calm"):
             },
         )
 
-        # output is a URL to the generated audio file
-        response = requests.get(str(output), timeout=120)
-        if response.status_code == 200:
+        # output is a FileOutput object — read bytes directly
+        audio_bytes = output.read()
+        if audio_bytes:
             with open(music_path, "wb") as f:
-                f.write(response.content)
+                f.write(audio_bytes)
             print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
             return music_path
         else:
-            print(f"   ⚠️ Failed to download generated music: HTTP {response.status_code}")
+            print("   ⚠️ Replicate returned empty audio")
             return None
 
     except Exception as e:
