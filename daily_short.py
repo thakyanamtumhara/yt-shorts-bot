@@ -853,8 +853,8 @@ def generate_hook_sfx(duration=0.5):
 
 
 def mix_background_music(voice_audio_clip, duration, mood="calm"):
-    """Mix background music with voice audio. Prefers mood-matching files.
-    Uses dynamic volume: louder at start/end, quieter in middle."""
+    """Mix background music with voice audio. Prioritizes AI-generated music
+    over repo files, then mood-matching. Uses dynamic volume curve."""
     if not ADD_BG_MUSIC:
         return voice_audio_clip
 
@@ -862,12 +862,24 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
     if not all_files:
         return voice_audio_clip
 
-    # Prefer files matching the mood (e.g., "calm_12345.mp3" or "calm_lofi.mp3")
+    # Priority: AI-generated music (ai_*) > mood-matching repo files > any file
+    ai_files = [f for f in all_files if os.path.basename(f).startswith("ai_")]
+    ai_mood_files = [f for f in ai_files if mood.lower() in os.path.basename(f).lower()]
     mood_files = [f for f in all_files if mood.lower() in os.path.basename(f).lower()]
-    music_files = mood_files if mood_files else all_files
+
+    if ai_mood_files:
+        music_files = ai_mood_files
+    elif ai_files:
+        music_files = ai_files
+    elif mood_files:
+        music_files = mood_files
+    else:
+        music_files = all_files
 
     try:
-        music_path = random.choice(music_files)
+        # Pick the most recent file (latest generated) from the preferred group
+        music_files.sort(key=os.path.getmtime, reverse=True)
+        music_path = music_files[0]
         print(f"   🎵 Adding background music: {os.path.basename(music_path)}")
 
         music_clip = AudioFileClip(music_path)
