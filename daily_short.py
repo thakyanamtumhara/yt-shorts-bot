@@ -744,8 +744,16 @@ def generate_bg_music(mood="calm"):
             },
         )
 
-        # output is a FileOutput object — read bytes directly
-        audio_bytes = output.read()
+        # Handle both FileOutput (SDK >= 1.0) and raw URL string (older SDK)
+        if hasattr(output, 'read'):
+            audio_bytes = output.read()
+        elif isinstance(output, str) and output.startswith("http"):
+            from urllib.request import urlopen
+            audio_bytes = urlopen(output).read()
+        else:
+            print(f"   ⚠️ Unexpected Replicate output type: {type(output)}")
+            return None
+
         if audio_bytes:
             with open(music_path, "wb") as f:
                 f.write(audio_bytes)
@@ -776,7 +784,7 @@ def load_bg_music(mood="calm"):
         print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
     else:
         print("   ⚠️ No background music available.")
-        print("   💡 Option 1: Set HF_API_KEY secret (HF Pro $9/mo) for AI-generated music")
+        print("   💡 Option 1: Set REPLICATE_API_TOKEN secret for AI-generated music (ACE-Step)")
         print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
 
 
