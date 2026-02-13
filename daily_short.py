@@ -692,13 +692,13 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-# Mood → text prompt for AI music generation (Meta MusicGen via Replicate)
+# Mood → tags for AI music generation (ACE-Step via Replicate)
 MOOD_TO_MUSIC_PROMPT = {
-    "upbeat": "upbeat happy energetic instrumental music, positive vibes, bright, no vocals",
-    "calm": "soft ambient lo-fi instrumental music, relaxed, gentle piano, no vocals",
-    "serious": "deep cinematic dramatic instrumental music, serious tone, no vocals",
-    "motivational": "motivational inspiring corporate instrumental music, uplifting, no vocals",
-    "trendy": "modern trendy electronic beat, cool urban instrumental, no vocals",
+    "upbeat": "upbeat, happy, energetic, instrumental, positive vibes, bright, electronic, pop",
+    "calm": "soft, ambient, lo-fi, instrumental, relaxed, gentle piano, chill, downtempo",
+    "serious": "deep, cinematic, dramatic, instrumental, serious tone, orchestral, dark",
+    "motivational": "motivational, inspiring, corporate, instrumental, uplifting, epic, anthemic",
+    "trendy": "modern, trendy, electronic beat, cool, urban, instrumental, trap, hip-hop",
 }
 
 # Repo-level bg_music/ folder (fallback — persists across runs, committed to git)
@@ -718,7 +718,7 @@ def _copy_repo_music_to_workdir():
 
 
 def generate_bg_music(mood="calm"):
-    """Generate background music using Meta MusicGen via Replicate API."""
+    """Generate background music using ACE-Step via Replicate API."""
     api_token = os.environ.get("REPLICATE_API_TOKEN")
     if not api_token:
         return None
@@ -729,19 +729,18 @@ def generate_bg_music(mood="calm"):
         print("   ⚠️ replicate package not installed — using local music files")
         return None
 
-    prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
+    tags = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
     try:
-        print(f"   🤖 Generating '{mood}' music via Replicate MusicGen...")
+        print(f"   🤖 Generating '{mood}' music via Replicate ACE-Step...")
         output = replicate.run(
-            "meta/musicgen",
+            "lucataco/ace-step",
             input={
-                "prompt": prompt,
+                "tags": tags,
+                "lyrics": "[instrumental]",
                 "duration": 30,
-                "model_version": "stereo-melody-large",
-                "output_format": "wav",
-                "normalization_strategy": "loudness",
+                "seed": 0,
             },
         )
 
@@ -757,7 +756,7 @@ def generate_bg_music(mood="calm"):
             return None
 
     except Exception as e:
-        print(f"   ⚠️ Replicate MusicGen failed: {e}")
+        print(f"   ⚠️ Replicate ACE-Step failed: {e}")
         return None
 
 
