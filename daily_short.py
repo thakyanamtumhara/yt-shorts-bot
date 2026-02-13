@@ -225,8 +225,24 @@ TOPIC: {topic}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
-You are writing EXACTLY like a real Indian textile manufacturer talks. Study these
-REAL examples from the actual business owner — match this tone PERFECTLY:
+You are writing EXACTLY like a real Indian textile manufacturer talks — but using
+MICRO-STORYTELLING to hook the viewer in the first 2 seconds.
+
+STRUCTURE (follow this EVERY time):
+1. HOOK (first sentence) — Start with a REAL STORY, shocking fact, or customer incident:
+   - "Ek customer aaya tha, bola print dhul gaya 2 wash mein..."
+   - "Pehle main bhi yahi galti karta tha..."
+   - "Ek baar ek banda 500 piece ka order cancel karwa diya..."
+   - "Log sochte hai GSM jyada toh better... galat hai"
+   - "Maine ek tshirt 2 saal pehni, ek 2 hafte mein kharab..."
+2. PROBLEM/CURIOSITY (middle) — Kya galti hui ya kya fark hai:
+   - "Problem ye thi ki usne check hi nahi kiya..."
+   - "Fark ye hai ki ek mein combed tha, ek mein nahi..."
+3. KNOWLEDGE + NATURAL ENDING (last sentence) — Seedha gyaan, trailing off:
+   - "...toh bas itna yaad rakhna, fark dikh jayega."
+   - "...simple hai, pehle check kar lo, phir order karo."
+
+Study these REAL examples from the actual business owner — match this tone PERFECTLY:
 
 EXAMPLE 1 (GSM explanation):
 "GSM bas fabric ka weight hota hai. Jyada GSM matlab mota fabric, kam GSM
@@ -244,10 +260,17 @@ non noticeable hai, pata nahi lagta. Ye common hai, kuch bhi nahi kar sakte."
 EXAMPLE 4 (Recommendation):
 "Sample leke ek baar try kar lo print karke, wo jyada theek rahega."
 
+EXAMPLE 5 (Storytelling — THIS is the new style to follow):
+"Ek customer aaya tha, bola collar loose ho gaya 5 wash mein. Maine bola collar
+ribbing ka type check kiya tha? Nahi kiya tha. Dekho... agar 1x1 rib hai toh
+tight rahega, flat knit hai toh loose hoga... bas itna check kar lo, problem
+nahi aayegi."
+
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
-1. MAX 3-4 SENTENCES. No paragraphs. No lectures. Seedha baat khatam.
-2. SEEDHA JAWAB first — "mil jaayega", "bas weight hota hai", "hota hai"
+1. MAX 4-5 SENTENCES. Start with story/hook, end with knowledge. Seedha khatam.
+2. FIRST SENTENCE = HOOK — customer story, personal experience, ya surprising fact.
+   NEVER start with a definition or explanation. ALWAYS start with a STORY.
 3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
    Give PRACTICAL action: "cut kar lo", "weight kar lo", "try kar lo"
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
@@ -347,9 +370,9 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "script_voice": "The ROMAN HINGLISH script. MAX 3-4 sentences. NO website. NO selling. Pure knowledge.",
     "script_english": "Clean English translation for on-screen subtitles",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
-    "video_prompt_1": "Detailed 40-80 word visual scene for OPENING.",
-    "video_prompt_2": "Detailed 40-80 word visual scene for MIDDLE.",
-    "video_prompt_3": "Detailed 40-80 word visual scene for ENDING.",
+    "video_prompt_1": "Detailed 40-80 word visual scene for HOOK — show the PROBLEM or customer situation. E.g., hands examining a faded/damaged t-shirt, a confused person looking at fabric, returned packages on a table.",
+    "video_prompt_2": "Detailed 40-80 word visual scene for EXPLANATION — show the PROCESS or comparison. E.g., hands comparing two fabric pieces side by side, close-up of fabric texture difference, weighing fabric on scale.",
+    "video_prompt_3": "Detailed 40-80 word visual scene for RESOLUTION — show the CORRECT way or result. E.g., hands holding a perfect quality t-shirt, smooth bio-washed fabric close-up, neatly packed order ready to ship.",
     "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"]
 }}
 """
@@ -688,8 +711,8 @@ ENGLISH: {script_english}
 
 Score each (1-10):
 
-1. HOOK (first 2 seconds) — Does the opening create some curiosity or interest?
-   Bad: completely generic boring start. Good: starts with a question, opinion, or "Dekho..."
+1. HOOK (first 2 seconds) — Does it start with a STORY, customer incident, or surprising fact?
+   Bad: starts with a definition ("GSM matlab..."). Good: "Ek customer aaya tha..." or "Pehle main bhi yahi galti karta tha..."
 
 2. NATURAL FEEL — Does it sound like a REAL factory owner talking?
    Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
