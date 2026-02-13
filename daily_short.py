@@ -524,7 +524,7 @@ Custom printing businesses | Merch brands | Corporate orders
 # BACKGROUND MUSIC
 # ═══════════════════════════════════════════════════════════════════════
 
-# Mood → text prompt for AI music generation (Meta MusicGen via Hugging Face)
+# Mood → text prompt for AI music generation (Meta MusicGen Large via HF Pro)
 MOOD_TO_MUSIC_PROMPT = {
     "upbeat": "upbeat happy energetic instrumental music, positive vibes, bright, no vocals",
     "calm": "soft ambient lo-fi instrumental music, relaxed, gentle piano, no vocals",
@@ -550,7 +550,7 @@ def _copy_repo_music_to_workdir():
 
 
 def generate_bg_music(mood="calm"):
-    """Generate background music using Meta MusicGen via Hugging Face Inference API."""
+    """Generate background music using Meta MusicGen Large via Hugging Face Inference API (requires HF Pro)."""
     hf_key = os.environ.get("HF_API_KEY")
     if not hf_key:
         return None
@@ -558,7 +558,7 @@ def generate_bg_music(mood="calm"):
     prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
-    HF_API_URL = "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
+    HF_API_URL = "https://router.huggingface.co/hf-inference/models/facebook/musicgen-large"
 
     try:
         print(f"   🤖 AI generating '{mood}' background music...")
@@ -611,7 +611,7 @@ def load_bg_music(mood="calm"):
         print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
     else:
         print("   ⚠️ No background music available.")
-        print("   💡 Option 1: Set HF_API_KEY secret (free) for AI-generated music")
+        print("   💡 Option 1: Set HF_API_KEY secret (HF Pro $9/mo) for AI-generated music")
         print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
 
 
