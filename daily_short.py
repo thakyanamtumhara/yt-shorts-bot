@@ -735,11 +735,11 @@ def generate_bg_music(mood="calm"):
     try:
         print(f"   🤖 Generating '{mood}' music via Replicate MusicGen...")
         output = replicate.run(
-            "meta/musicgen:b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38",
+            "meta/musicgen",
             input={
                 "prompt": prompt,
                 "duration": 30,
-                "model_version": "stereo-melody-large",
+                "model_version": "melody",
                 "output_format": "wav",
                 "normalization_strategy": "loudness",
             },
