@@ -1,5 +1,5 @@
 anthropic
-elevenlabs
+openai
 moviepy==1.0.3
 Pillow
 openai-whisper

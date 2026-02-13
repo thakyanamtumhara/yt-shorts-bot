@@ -8,7 +8,7 @@ Usage:
 
 Required environment variables:
   ANTHROPIC_API_KEY
-  ELEVENLABS_API_KEY
+  OPENAI_API_KEY
   GOOGLE_API_KEY
   OAUTHLIB_INSECURE_TRANSPORT=1
 
@@ -27,7 +27,7 @@ import time
 import pytz
 from datetime import datetime, timedelta
 
-from elevenlabs.client import ElevenLabs
+from openai import OpenAI
 # Fix Pillow 10+ compatibility with MoviePy
 import PIL.Image
 if not hasattr(PIL.Image, 'ANTIALIAS'):
@@ -101,8 +101,15 @@ TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
 
-TARGET_VOICE_NAME = "Viraj"
+TARGET_VOICE = "ash"  # OpenAI TTS voice (ash = warm male, good for Hindi)
 VOICE_SPEED = 0.88
+VOICE_INSTRUCTIONS = """Speak in natural conversational Hindi (Hinglish). 
+You are an Indian textile businessman from Delhi casually explaining something to a fellow businessman.
+- Speak naturally with real pauses, thinking moments, and slight hesitations
+- Add natural fillers like "umm", "hmm", "dekho", "matlab" where it feels natural
+- Tone: confident, knowledgeable, casual — NOT formal or scripted
+- Pace: medium-slow, like you're explaining in person over chai
+- Do NOT sound like a narrator or news anchor — sound like a REAL person talking"""
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 3
@@ -738,12 +745,13 @@ def main():
     print()
 
     # ── 1. API Keys ──
-    elevenlabs_key = os.environ.get('ELEVENLABS_API_KEY')
+    elevenlabs_key = None  # Deprecated — using OpenAI TTS now
+    openai_key = os.environ.get('OPENAI_API_KEY')
     anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
     google_key = os.environ.get('GOOGLE_API_KEY')
 
     missing = [k for k, v in {
-        "ELEVENLABS_API_KEY": elevenlabs_key,
+        "OPENAI_API_KEY": openai_key,
         "ANTHROPIC_API_KEY": anthropic_key,
         "GOOGLE_API_KEY": google_key
     }.items() if not v]
@@ -752,7 +760,7 @@ def main():
         print(f"❌ Missing: {', '.join(missing)}")
         return
 
-    el_client = ElevenLabs(api_key=elevenlabs_key)
+    openai_client = OpenAI(api_key=openai_key)
     claude = anthropic.Anthropic(api_key=anthropic_key)
 
     from google import genai
@@ -840,35 +848,24 @@ Return ONLY the topic text, nothing else."""}]
     # ── 3b. Load Background Music ──
     load_bg_music(music_mood)
 
-    # ── 4. Generate Voice ──
-    print("   🎙️ Generating voice...")
-    voices = el_client.voices.get_all()
-    selected_voice = None
-    for v in voices.voices:
-        if TARGET_VOICE_NAME.lower() in v.name.lower():
-            selected_voice = v
-            break
-    if not selected_voice:
-        selected_voice = voices.voices[0]
-
-    audio_gen = el_client.text_to_speech.convert(
-        text=script_voice + "...",   # Trailing ellipsis prevents last-word cutoff
-        voice_id=selected_voice.voice_id,
-        model_id="eleven_multilingual_v2",
-        output_format="mp3_44100_128",
-        voice_settings={
-            "stability": 0.35,           # Lower = more expressive, natural variation
-            "similarity_boost": 0.75,     # Slightly lower for more natural delivery
-            "style": 0.45,               # Add speaking style expressiveness
-            "use_speaker_boost": True,    # Enhance speaker clarity
-            "speed": VOICE_SPEED,
-        }
-    )
+    # ── 4. Generate Voice (OpenAI gpt-4o-mini-tts) ──
+    print("   🎙️ Generating voice (OpenAI TTS)...")
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
-    with open(audio_path, "wb") as f:
-        for chunk in audio_gen:
-            f.write(chunk)
-    print(f"   ✅ Voice: {selected_voice.name}")
+
+    try:
+        response = openai_client.audio.speech.create(
+            model="gpt-4o-mini-tts",
+            voice=TARGET_VOICE,
+            input=script_voice + "...",  # Trailing ellipsis prevents last-word cutoff
+            instructions=VOICE_INSTRUCTIONS,
+            speed=VOICE_SPEED,
+            response_format="mp3",
+        )
+        response.stream_to_file(audio_path)
+        print(f"   ✅ Voice: OpenAI {TARGET_VOICE} (native Hindi)")
+    except Exception as e:
+        print(f"   ❌ OpenAI TTS failed: {e}")
+        return
 
     # ── 5. Generate Video Clips (Veo 3.1) ──
     downloaded_clips = []
