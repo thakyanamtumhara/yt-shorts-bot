@@ -153,12 +153,13 @@ SUBTITLE_HIGHLIGHT_WORDS = {
     "sample", "moq", "bulk", "wholesale", "premium", "acid wash",
 }
 
-# Watermark
+# Bottom Strip Banner (subtle website strip)
 ADD_WATERMARK = True
 WATERMARK_TEXT = "Sale91.com"
-WATERMARK_FONTSIZE = 28
-WATERMARK_COLOR = "white"
-WATERMARK_OPACITY = 0.8
+STRIP_HEIGHT = 44
+STRIP_OPACITY = 0.55
+STRIP_FONT_SIZE = 24
+STRIP_COLOR = "white"
 
 # Background Music
 ADD_BG_MUSIC = True
@@ -717,7 +718,7 @@ def _copy_repo_music_to_workdir():
 
 
 def generate_bg_music(mood="calm"):
-    """Generate background music using Meta MusicGen Large via Hugging Face Inference API (requires HF Pro)."""
+    """Generate background music using Meta MusicGen via Hugging Face Inference API (requires HF Pro)."""
     hf_key = os.environ.get("HF_API_KEY")
     if not hf_key:
         return None
@@ -725,41 +726,53 @@ def generate_bg_music(mood="calm"):
     prompt = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
-    HF_API_URL = "https://router.huggingface.co/hf-inference/models/facebook/musicgen-large"
+    # Try multiple models (small is lightest, most likely to be available)
+    HF_MODELS = [
+        "facebook/musicgen-small",
+        "facebook/musicgen-medium",
+        "facebook/musicgen-large",
+    ]
 
-    try:
-        print(f"   🤖 AI generating '{mood}' background music...")
-        response = requests.post(
-            HF_API_URL,
-            headers={"Authorization": f"Bearer {hf_key}"},
-            json={"inputs": prompt},
-            timeout=180,
-        )
+    headers = {"Authorization": f"Bearer {hf_key}"}
 
-        if response.status_code == 503:
-            # Model is loading, wait and retry once
-            wait_time = response.json().get("estimated_time", 30)
-            print(f"   ⏳ MusicGen model loading, waiting {int(wait_time)}s...")
-            time.sleep(min(wait_time, 60))
+    for model_name in HF_MODELS:
+        api_url = f"https://router.huggingface.co/hf-inference/models/{model_name}"
+        try:
+            print(f"   🤖 Trying {model_name} for '{mood}' music...")
             response = requests.post(
-                HF_API_URL,
-                headers={"Authorization": f"Bearer {hf_key}"},
+                api_url, headers=headers,
                 json={"inputs": prompt},
-                timeout=180,
+                timeout=30,
             )
 
-        if response.status_code == 200:
-            with open(music_path, "wb") as f:
-                f.write(response.content)
-            print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
-            return music_path
-        else:
-            print(f"   ⚠️ MusicGen API returned {response.status_code}: {response.text[:100]}")
-            return None
+            if response.status_code == 503:
+                wait_time = response.json().get("estimated_time", 30)
+                print(f"   ⏳ Model loading, waiting {int(wait_time)}s...")
+                time.sleep(min(wait_time, 60))
+                response = requests.post(
+                    api_url, headers=headers,
+                    json={"inputs": prompt},
+                    timeout=120,
+                )
 
-    except Exception as e:
-        print(f"   ⚠️ AI music generation failed: {e}")
-        return None
+            if response.status_code == 200:
+                with open(music_path, "wb") as f:
+                    f.write(response.content)
+                print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+                return music_path
+            elif response.status_code == 404:
+                print(f"   ⚠️ {model_name} not available on HF Inference (404), trying next...")
+                continue
+            else:
+                print(f"   ⚠️ {model_name} returned {response.status_code}: {response.text[:100]}")
+                continue
+
+        except Exception as e:
+            print(f"   ⚠️ {model_name} failed: {e}")
+            continue
+
+    print("   ⚠️ No MusicGen model available on HF — using local music files")
+    return None
 
 
 def load_bg_music(mood="calm"):
@@ -1411,13 +1424,24 @@ Return ONLY the topic text, nothing else."""}]
                     layers.extend([bg, txt])
             except: pass
 
-    # Watermark
+    # Bottom strip banner — subtle dark strip with site name
     if ADD_WATERMARK:
         try:
-            wm = TextClip(WATERMARK_TEXT, fontsize=WATERMARK_FONTSIZE, font=SUBTITLE_FONT,
-                color=WATERMARK_COLOR, stroke_color="black", stroke_width=1, method='label')
-            wm = wm.set_opacity(WATERMARK_OPACITY).set_position((20, VIDEO_HEIGHT - 55)).set_duration(total_duration)
-            layers.append(wm)
+            strip_y = VIDEO_HEIGHT - STRIP_HEIGHT
+            # Dark semi-transparent strip across full width
+            strip_bg = ColorClip(size=(VIDEO_WIDTH, STRIP_HEIGHT), color=(0, 0, 0))
+            strip_bg = strip_bg.set_opacity(STRIP_OPACITY).set_position((0, strip_y)).set_duration(total_duration)
+            # Website text centered on strip
+            strip_txt = TextClip(
+                f"  {WATERMARK_TEXT}  ",
+                fontsize=STRIP_FONT_SIZE, font=SUBTITLE_FONT,
+                color=STRIP_COLOR, method='label',
+            )
+            txt_w, txt_h = strip_txt.size
+            strip_txt = strip_txt.set_opacity(0.9).set_position(
+                ((VIDEO_WIDTH - txt_w) // 2, strip_y + (STRIP_HEIGHT - txt_h) // 2)
+            ).set_duration(total_duration)
+            layers.extend([strip_bg, strip_txt])
         except: pass
 
     # Hook — curiosity-driven text from Claude (or fallback to topic words)
@@ -1438,12 +1462,12 @@ Return ONLY the topic text, nothing else."""}]
             layers.extend([hbg, ht])
         except: pass
 
-    # CTA
+    # CTA — end-of-video nudge pointing to the bottom strip
     if ADD_CTA_OVERLAY:
         try:
-            cta = TextClip(CTA_TEXT, fontsize=44, font=SUBTITLE_FONT, color="white",
+            cta = TextClip(f"Visit {CTA_TEXT}", fontsize=40, font=SUBTITLE_FONT, color="white",
                 stroke_color="black", stroke_width=2, method='label')
-            cta = cta.set_position(("center", 0.88), relative=True).set_start(max(0, total_duration-3.5)).set_duration(3.5).crossfadein(0.3)
+            cta = cta.set_position(("center", 0.82), relative=True).set_start(max(0, total_duration-3.5)).set_duration(3.5).crossfadein(0.3)
             layers.append(cta)
         except: pass
 
