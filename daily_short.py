@@ -995,7 +995,7 @@ RULES:
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=300,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -1061,7 +1061,7 @@ def main():
     else:
         print("   🧠 All topics used — Claude generating new one...")
         resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-opus-4-6", max_tokens=200,
             messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
@@ -1086,7 +1086,7 @@ Return ONLY the topic text, nothing else."""}]
             prompt += f"\n\n━━━ IMPORTANT: PREVIOUS ATTEMPT WAS REJECTED ━━━\nReviewer feedback: {previous_feedback}\nFix these issues in your new script. Write a DIFFERENT and BETTER script."
 
         resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=1500,
+            model="claude-opus-4-6", max_tokens=1500,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
