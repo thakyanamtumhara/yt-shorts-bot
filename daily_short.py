@@ -995,7 +995,7 @@ RULES:
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=300,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
