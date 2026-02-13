@@ -161,15 +161,15 @@ SUBTITLE_HIGHLIGHT_WORDS = {
     "oversized", "polo", "hoodie", "sweatshirt", "roundneck", "vneck",
 }
 
-# Watermark Badge (small one-side tag, not full-width strip)
+# Watermark Badge (small one-side tag, avoids YouTube Shorts UI)
 ADD_WATERMARK = True
 WATERMARK_TEXT = "Sale91.com"
 WATERMARK_FONT_SIZE = 18
-WATERMARK_OPACITY = 0.75
+WATERMARK_OPACITY = 0.70
 WATERMARK_PADDING_H = 12   # Horizontal padding inside badge
 WATERMARK_PADDING_V = 6    # Vertical padding inside badge
-WATERMARK_MARGIN = 16      # Distance from edge
-WATERMARK_POSITION = "top-left"  # top-left, top-right, bottom-left, bottom-right
+WATERMARK_MARGIN_X = 16    # Distance from left edge
+WATERMARK_Y_PERCENT = 0.17 # 17% from top — below YT channel name, above subtitles
 
 # Background Music
 ADD_BG_MUSIC = True
@@ -1697,7 +1697,9 @@ Return ONLY the topic text, nothing else."""}]
                     layers.extend([bg, txt])
             except: pass
 
-    # Watermark badge — small tag on one side (like a channel logo)
+    # Watermark badge — small left-side tag (positioned to avoid YouTube Shorts UI)
+    # YT Shorts UI: top = channel name, right = like/comment/share, bottom = desc/music
+    # Safe zone: left side, ~17% from top
     if ADD_WATERMARK:
         try:
             wm_txt = TextClip(
@@ -1709,15 +1711,8 @@ Return ONLY the topic text, nothing else."""}]
             badge_w = txt_w + WATERMARK_PADDING_H * 2
             badge_h = txt_h + WATERMARK_PADDING_V * 2
 
-            # Position badge based on config
-            if "top" in WATERMARK_POSITION:
-                badge_y = WATERMARK_MARGIN
-            else:
-                badge_y = VIDEO_HEIGHT - badge_h - WATERMARK_MARGIN
-            if "left" in WATERMARK_POSITION:
-                badge_x = WATERMARK_MARGIN
-            else:
-                badge_x = VIDEO_WIDTH - badge_w - WATERMARK_MARGIN
+            badge_x = WATERMARK_MARGIN_X
+            badge_y = int(VIDEO_HEIGHT * WATERMARK_Y_PERCENT)
 
             wm_bg = ColorClip(size=(badge_w, badge_h), color=(0, 0, 0))
             wm_bg = wm_bg.set_opacity(WATERMARK_OPACITY).set_position((badge_x, badge_y)).set_duration(total_duration)
