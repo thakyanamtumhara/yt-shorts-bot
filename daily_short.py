@@ -166,11 +166,11 @@ SUBTITLE_HIGHLIGHT_WORDS = {
 # Watermark Badge (small one-side tag, avoids YouTube Shorts UI)
 ADD_WATERMARK = True
 WATERMARK_TEXT = "Sale91.com"
-WATERMARK_FONT_SIZE = 18
+WATERMARK_FONT_SIZE = 24
 WATERMARK_OPACITY = 0.70
 WATERMARK_PADDING_H = 12   # Horizontal padding inside badge
 WATERMARK_PADDING_V = 6    # Vertical padding inside badge
-WATERMARK_MARGIN_X = 16    # Distance from left edge
+WATERMARK_MARGIN_X = 30    # Distance from left edge
 WATERMARK_Y_PERCENT = 0.17 # 17% from top — below YT channel name, above subtitles
 
 # Background Music
