@@ -1,0 +1,48 @@
+name: Retry YouTube Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Run ID of the failed workflow (find in Actions tab URL)'
+        required: true
+        type: string
+
+jobs:
+  retry-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python packages
+        run: pip install -q google-api-python-client google-auth google-auth-oauthlib
+
+      - name: Restore YouTube credentials
+        run: |
+          mkdir -p /tmp/yt_shorts
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
+          echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
+
+      - name: Download failed video artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: failed-upload-video
+          path: /tmp/yt_shorts/
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List downloaded files
+        run: ls -la /tmp/yt_shorts/
+
+      - name: Retry upload
+        env:
+          OAUTHLIB_INSECURE_TRANSPORT: '1'
+        run: python retry_upload.py

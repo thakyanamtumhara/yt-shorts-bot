@@ -97,6 +97,8 @@ KEY FACTS:
 
 # Test mode: skip expensive Veo clips, use placeholder video. Set TEST_MODE=1 to enable.
 TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
+# Skip clips mode: use placeholder clips but still run everything else (including YouTube upload).
+SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -226,8 +228,7 @@ TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
 CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
-          "https://www.googleapis.com/auth/youtube"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 # Thumbnail
 GENERATE_THUMBNAIL = True
@@ -1320,6 +1321,8 @@ def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
     if TEST_MODE:
         print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
+    elif SKIP_CLIPS:
+        print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
     print()
 
@@ -1454,9 +1457,10 @@ Return ONLY the topic text, nothing else."""}]
     VEO_MAX_RETRIES = 5
     VEO_RETRY_WAIT = 90
 
-    if TEST_MODE:
-        # Test mode: create cheap placeholder clips (solid color) instead of Veo
-        print("   🧪 TEST MODE: Skipping Veo clips, using placeholder video...")
+    if TEST_MODE or SKIP_CLIPS:
+        # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
+        label = "TEST MODE" if TEST_MODE else "SKIP CLIPS"
+        print(f"   🧪 {label}: Skipping Veo clips, using placeholder video...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
             colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60), (60, 30, 70), (40, 70, 50)]
@@ -1466,7 +1470,7 @@ Return ONLY the topic text, nothing else."""}]
             downloaded_clips.append(placeholder_path)
         print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-    if not TEST_MODE:
+    if not TEST_MODE and not SKIP_CLIPS:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             if i > 0 and i % 2 == 0:
@@ -1795,6 +1799,7 @@ Return ONLY the topic text, nothing else."""}]
     thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic)
 
     # ── 10. Upload to YouTube ──
+    upload_failed = False
     if TEST_MODE:
         print(f"\n{'='*60}")
         print(f"  🧪 TEST MODE COMPLETE — video NOT uploaded")
@@ -1809,19 +1814,39 @@ Return ONLY the topic text, nothing else."""}]
         print("   📤 Uploading to YouTube...")
         youtube = get_youtube_service()
         if youtube:
-            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
-            # Upload custom thumbnail
-            if thumbnail_path and vid_id != "?":
-                upload_thumbnail(youtube, vid_id, thumbnail_path)
-            print(f"\n{'='*60}")
-            print(f"  ✅ DAILY SHORT COMPLETE!")
-            print(f"  🔗 {vid_url}")
-            print(f"  📌 {yt_title}")
-            print(f"{'='*60}")
+            try:
+                vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
+                # Upload custom thumbnail
+                if thumbnail_path and vid_id != "?":
+                    upload_thumbnail(youtube, vid_id, thumbnail_path)
+                print(f"\n{'='*60}")
+                print(f"  ✅ DAILY SHORT COMPLETE!")
+                print(f"  🔗 {vid_url}")
+                print(f"  📌 {yt_title}")
+                print(f"{'='*60}")
+            except Exception as upload_err:
+                print(f"   ❌ YouTube upload failed: {upload_err}")
+                upload_failed = True
         else:
             print("   ❌ YouTube auth failed. Video saved locally.")
+            upload_failed = True
 
-    # Cleanup
+    # Save metadata for retry if upload failed
+    if upload_failed:
+        meta = {
+            "title": yt_title,
+            "description": yt_description,
+            "tags": list(yt_tags) if yt_tags else [],
+            "topic": fresh_topic,
+            "video_path": output_path,
+            "thumbnail_path": thumbnail_path or "",
+        }
+        meta_path = f"{WORK_DIR}/upload_meta.json"
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
+        print(f"   💾 Upload metadata saved: {meta_path}")
+
+    # Cleanup (keep video + thumbnail if upload failed)
     for f in downloaded_clips:
         try: os.remove(f)
         except: pass
@@ -1830,7 +1855,7 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
     try: os.remove(audio_path)
     except: pass
-    if thumbnail_path:
+    if thumbnail_path and not upload_failed:
         try: os.remove(thumbnail_path)
         except: pass
 
