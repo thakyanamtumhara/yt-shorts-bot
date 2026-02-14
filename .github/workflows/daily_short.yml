@@ -78,3 +78,15 @@ jobs:
             /tmp/yt_shorts/SHORT_*.mp4
             /tmp/yt_shorts/thumbnail_*.png
           retention-days: 3
+
+      - name: Save video for retry (on upload failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-upload-video
+          path: |
+            /tmp/yt_shorts/SHORT_*.mp4
+            /tmp/yt_shorts/thumbnail_*.png
+            /tmp/yt_shorts/upload_meta.json
+          retention-days: 3
+          if-no-files-found: ignore

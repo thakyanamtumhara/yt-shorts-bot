@@ -1794,6 +1794,7 @@ Return ONLY the topic text, nothing else."""}]
     thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic)
 
     # ── 10. Upload to YouTube ──
+    upload_failed = False
     if TEST_MODE:
         print(f"\n{'='*60}")
         print(f"  🧪 TEST MODE COMPLETE — video NOT uploaded")
@@ -1808,19 +1809,39 @@ Return ONLY the topic text, nothing else."""}]
         print("   📤 Uploading to YouTube...")
         youtube = get_youtube_service()
         if youtube:
-            vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
-            # Upload custom thumbnail
-            if thumbnail_path and vid_id != "?":
-                upload_thumbnail(youtube, vid_id, thumbnail_path)
-            print(f"\n{'='*60}")
-            print(f"  ✅ DAILY SHORT COMPLETE!")
-            print(f"  🔗 {vid_url}")
-            print(f"  📌 {yt_title}")
-            print(f"{'='*60}")
+            try:
+                vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
+                # Upload custom thumbnail
+                if thumbnail_path and vid_id != "?":
+                    upload_thumbnail(youtube, vid_id, thumbnail_path)
+                print(f"\n{'='*60}")
+                print(f"  ✅ DAILY SHORT COMPLETE!")
+                print(f"  🔗 {vid_url}")
+                print(f"  📌 {yt_title}")
+                print(f"{'='*60}")
+            except Exception as upload_err:
+                print(f"   ❌ YouTube upload failed: {upload_err}")
+                upload_failed = True
         else:
             print("   ❌ YouTube auth failed. Video saved locally.")
+            upload_failed = True
 
-    # Cleanup
+    # Save metadata for retry if upload failed
+    if upload_failed:
+        meta = {
+            "title": yt_title,
+            "description": yt_description,
+            "tags": list(yt_tags) if yt_tags else [],
+            "topic": fresh_topic,
+            "video_path": output_path,
+            "thumbnail_path": thumbnail_path or "",
+        }
+        meta_path = f"{WORK_DIR}/upload_meta.json"
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
+        print(f"   💾 Upload metadata saved: {meta_path}")
+
+    # Cleanup (keep video + thumbnail if upload failed)
     for f in downloaded_clips:
         try: os.remove(f)
         except: pass
@@ -1829,7 +1850,7 @@ Return ONLY the topic text, nothing else."""}]
         except: pass
     try: os.remove(audio_path)
     except: pass
-    if thumbnail_path:
+    if thumbnail_path and not upload_failed:
         try: os.remove(thumbnail_path)
         except: pass
 
