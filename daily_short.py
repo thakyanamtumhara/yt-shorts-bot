@@ -97,6 +97,8 @@ KEY FACTS:
 
 # Test mode: skip expensive Veo clips, use placeholder video. Set TEST_MODE=1 to enable.
 TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
+# Skip clips mode: use placeholder clips but still run everything else (including YouTube upload).
+SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -1319,6 +1321,8 @@ def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
     if TEST_MODE:
         print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
+    elif SKIP_CLIPS:
+        print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
     print()
 
@@ -1453,9 +1457,10 @@ Return ONLY the topic text, nothing else."""}]
     VEO_MAX_RETRIES = 5
     VEO_RETRY_WAIT = 90
 
-    if TEST_MODE:
-        # Test mode: create cheap placeholder clips (solid color) instead of Veo
-        print("   🧪 TEST MODE: Skipping Veo clips, using placeholder video...")
+    if TEST_MODE or SKIP_CLIPS:
+        # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
+        label = "TEST MODE" if TEST_MODE else "SKIP CLIPS"
+        print(f"   🧪 {label}: Skipping Veo clips, using placeholder video...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
             colors = [(30, 60, 90), (50, 80, 40), (80, 40, 60), (60, 30, 70), (40, 70, 50)]
@@ -1465,7 +1470,7 @@ Return ONLY the topic text, nothing else."""}]
             downloaded_clips.append(placeholder_path)
         print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-    if not TEST_MODE:
+    if not TEST_MODE and not SKIP_CLIPS:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             if i > 0 and i % 2 == 0:
