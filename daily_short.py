@@ -226,8 +226,7 @@ TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
 CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
-          "https://www.googleapis.com/auth/youtube"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 # Thumbnail
 GENERATE_THUMBNAIL = True
