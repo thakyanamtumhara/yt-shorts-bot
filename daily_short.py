@@ -1026,7 +1026,7 @@ def generate_bg_music(mood="calm"):
                 "tags": tags,
                 "lyrics": "[instrumental]",
                 "duration": 30,
-                "seed": 0,
+                "seed": random.randint(1, 2**31),
             },
         )
 
