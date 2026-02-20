@@ -255,8 +255,7 @@ THUMBNAIL_HEIGHT = 1920  # Vertical for Shorts
 AUTO_PIN_COMMENT = True
 PIN_COMMENT_TEXT = """📦 Plain t-shirt chahiye printing ke liye?
 👉 Sale91.com pe order karo — MOQ sirf 10 pieces
-📱 WhatsApp: 8368648533
-🚚 Pan India delivery | 1 lakh+ ready stock"""
+🚚 Pan India delivery | 2 lakh+ ready stock"""
 
 # Auto-Playlist — organize videos into series playlists automatically
 AUTO_PLAYLIST = True
