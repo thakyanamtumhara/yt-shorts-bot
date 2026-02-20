@@ -49,30 +49,27 @@ jobs:
           echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
           echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
 
-      - name: Copy repo background music
-        run: |
-          mkdir -p /tmp/yt_shorts/bg_music
-          cp -n bg_music/*.mp3 /tmp/yt_shorts/bg_music/ 2>/dev/null || true
-          cp -n bg_music/*.wav /tmp/yt_shorts/bg_music/ 2>/dev/null || true
-
       - name: Run Daily Short Generator
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
         run: python daily_short.py
 
-      - name: Save updated topic history
+      - name: Save updated tracking files
         if: always()
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
-          git add topic_history.json || true
-          git commit -m "Update topic history [skip ci]" || true
+          git add topic_history.json cost_tracker.json engagement_history.json || true
+          git commit -m "Update topic history + cost tracker + engagement [skip ci]" || true
           git push || true
 
       - name: Upload test video
