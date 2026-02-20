@@ -105,7 +105,7 @@ SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 SCRIPT_MAX_ATTEMPTS = 3
 
 # ── ElevenLabs TTS (Primary) ──
-ELEVENLABS_VOICE_ID = "Y6nOpHQlW4lnf9GRRc8f"  # Adarsh — Emotive Hindi voice
+ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
 ELEVENLABS_VOICE_SETTINGS = {
     "stability": 0.45,
@@ -2317,9 +2317,9 @@ def main():
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     voice_ok = False
 
-    # Try ElevenLabs first (Adarsh — Emotive Hindi)
+    # Try ElevenLabs first (ElevenLabs Hindi — Emotive Hindi)
     if elevenlabs_key:
-        print("   🎙️ Generating voice (ElevenLabs — Adarsh)...")
+        print("   🎙️ Generating voice (ElevenLabs — ElevenLabs Hindi)...")
         try:
             from elevenlabs import ElevenLabs
             el_client = ElevenLabs(api_key=elevenlabs_key)
@@ -2332,7 +2332,7 @@ def main():
             with open(audio_path, "wb") as f:
                 for chunk in audio_iter:
                     f.write(chunk)
-            print("   ✅ Voice: ElevenLabs Adarsh (Emotive Hindi)")
+            print("   ✅ Voice: ElevenLabs ElevenLabs Hindi (Emotive Hindi)")
             cost.track_tts("elevenlabs", len(script_voice))
             voice_ok = True
         except Exception as e:
