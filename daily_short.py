@@ -2654,13 +2654,30 @@ def main():
             layers.extend([hbg, ht])
         except: pass
 
-    # CTA — end-of-video nudge pointing to the bottom strip
+    # CTA — end-of-video branded strip (professional bar style)
     if ADD_CTA_OVERLAY:
         try:
-            cta = TextClip(CTA_TEXT, fontsize=38, font=SUBTITLE_FONT, color="white",
-                stroke_color="black", stroke_width=2, method='label')
-            cta = cta.set_position(("center", 0.75), relative=True).set_start(max(0, total_duration-4.0)).set_duration(4.0).crossfadein(0.3)
-            layers.append(cta)
+            cta_start = max(0, total_duration - 4.0)
+            cta_dur = 4.0
+
+            # Main branded bar (full-width, slim, orange-red brand color)
+            bar_height = 72
+            bar_y = int(VIDEO_HEIGHT * 0.80)
+            cta_bar = ColorClip(size=(VIDEO_WIDTH, bar_height), color=(230, 60, 20)).set_opacity(0.92)
+            cta_bar = cta_bar.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+            # Thin accent line on top of bar for depth
+            accent_line = ColorClip(size=(VIDEO_WIDTH, 3), color=(255, 255, 255)).set_opacity(0.50)
+            accent_line = accent_line.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+            # Clean white text (no stroke needed — bar provides contrast)
+            cta_txt = TextClip(CTA_TEXT, fontsize=36, font=SUBTITLE_FONT, color="white",
+                method='label')
+            cta_w, cta_h = cta_txt.size
+            cta_txt = cta_txt.set_position(((VIDEO_WIDTH - cta_w) // 2, bar_y + (bar_height - cta_h) // 2))
+            cta_txt = cta_txt.set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+            layers.extend([cta_bar, accent_line, cta_txt])
         except: pass
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
