@@ -905,7 +905,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # Step 1: Create media container (Reels)
         # Build caption: title + hashtags
         topic_hashtags = get_topic_hashtags(topic)
-        ig_caption = f"{title}\n\n{description.split(chr(10))[0]}\n\n{' '.join(topic_hashtags[:10])}\n\n📦 Order: Sale91.com | WhatsApp: 8368648533"
+        ig_caption = f"{title}\n\n{description.split(chr(10))[0]}\n\n{' '.join(topic_hashtags[:10])}\n\n📦 Order: Sale91.com"
 
         container_resp = requests.post(
             f"https://graph.facebook.com/v21.0/{ig_business_id}/media",
