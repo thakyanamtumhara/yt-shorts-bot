@@ -240,7 +240,10 @@ TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
 CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+]
 
 # Thumbnail
 GENERATE_THUMBNAIL = True
@@ -487,29 +490,67 @@ def get_topic_hashtags(topic):
 # THUMBNAIL GENERATION
 # ═══════════════════════════════════════════════════════════════════════
 
-def generate_thumbnail(hook_text, topic, output_path=None):
+def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
     """Generate a branded thumbnail image for YouTube SEO.
+    If veo_clip_path is provided, extracts the best frame from the first Veo clip
+    and overlays text on it (much more clickable than a plain gradient).
     Returns the file path to the thumbnail PNG, or None on failure."""
     if not GENERATE_THUMBNAIL:
         return None
 
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+        import numpy as np
 
         if output_path is None:
             output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
 
-        img = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), color=(15, 15, 25))
-        draw = ImageDraw.Draw(img)
+        # Try to extract a frame from the first Veo clip (hook scene)
+        bg_from_clip = False
+        if veo_clip_path and os.path.exists(veo_clip_path):
+            try:
+                clip = VideoFileClip(veo_clip_path)
+                # Sample frames at 25%, 40%, 50% of clip duration — pick the most "interesting" one
+                # (highest contrast/color variance = more visually striking)
+                best_frame = None
+                best_score = -1
+                for t_pct in [0.25, 0.40, 0.50, 0.60]:
+                    t = min(t_pct * clip.duration, clip.duration - 0.1)
+                    frame = clip.get_frame(t)
+                    # Score: standard deviation of pixel values (higher = more visual contrast)
+                    score = float(np.std(frame))
+                    if score > best_score:
+                        best_score = score
+                        best_frame = frame
 
-        # Gradient background: dark blue-black at top, dark red-black at bottom
-        for y in range(THUMBNAIL_HEIGHT):
-            ratio = y / THUMBNAIL_HEIGHT
-            r = int(15 + 60 * ratio)
-            g = int(15 - 10 * ratio)
-            b = int(25 - 15 * ratio)
-            r, g, b = max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b))
-            draw.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
+                if best_frame is not None:
+                    img = Image.fromarray(best_frame)
+                    img = img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+                    # Darken slightly for text readability + boost contrast
+                    enhancer = ImageEnhance.Brightness(img)
+                    img = enhancer.enhance(0.7)
+                    enhancer = ImageEnhance.Contrast(img)
+                    img = enhancer.enhance(1.3)
+                    bg_from_clip = True
+                    print(f"   🖼️ Thumbnail: using Veo frame (contrast score: {best_score:.0f})")
+
+                clip.close()
+            except Exception as e:
+                print(f"   ⚠️ Veo frame extraction failed: {e}, falling back to gradient")
+
+        # Fallback: gradient background
+        if not bg_from_clip:
+            img = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), color=(15, 15, 25))
+            draw_bg = ImageDraw.Draw(img)
+            for y in range(THUMBNAIL_HEIGHT):
+                ratio = y / THUMBNAIL_HEIGHT
+                r = int(15 + 60 * ratio)
+                g = int(15 - 10 * ratio)
+                b = int(25 - 15 * ratio)
+                r, g, b = max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b))
+                draw_bg.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
+
+        draw = ImageDraw.Draw(img)
 
         # Try to load a good font, fall back to default
         font_hook = None
@@ -844,28 +885,154 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 # YOUTUBE HELPERS
 # ═══════════════════════════════════════════════════════════════════════
 
-def get_publish_time():
+# Analytics tracking file — stores per-slot performance data
+ANALYTICS_FILE = f"{WORK_DIR}/slot_analytics.json"
+
+
+def fetch_recent_video_analytics(youtube):
+    """Fetch view counts for recent uploads and map them to publish time slots.
+    Returns dict: {slot_label: {"views": total, "count": num_videos, "avg": avg_views}}"""
+    try:
+        # Get last 21 uploaded videos (3 weeks of daily uploads)
+        channels = youtube.channels().list(part="contentDetails", mine=True).execute()
+        if not channels.get("items"):
+            return None
+        uploads_playlist = channels["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+
+        playlist_items = youtube.playlistItems().list(
+            part="snippet", playlistId=uploads_playlist, maxResults=21
+        ).execute()
+
+        video_ids = [item["snippet"]["resourceId"]["videoId"]
+                     for item in playlist_items.get("items", [])]
+
+        if not video_ids:
+            return None
+
+        # Get view counts + publish times
+        videos = youtube.videos().list(
+            part="statistics,snippet", id=",".join(video_ids)
+        ).execute()
+
+        ist = pytz.timezone(TIMEZONE)
+        slot_data = {}  # {label: {"views": [], "video_ids": []}}
+
+        for v in videos.get("items", []):
+            try:
+                views = int(v["statistics"].get("viewCount", 0))
+                pub_str = v["snippet"]["publishedAt"]
+                # Parse ISO 8601 UTC time
+                pub_utc = datetime.strptime(pub_str.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                pub_utc = pytz.utc.localize(pub_utc)
+                pub_ist = pub_utc.astimezone(ist)
+                pub_hour = pub_ist.hour
+
+                # Map to nearest slot
+                best_slot = None
+                best_diff = 999
+                for hour, minute, label in PUBLISH_SLOTS:
+                    diff = abs(pub_hour - hour)
+                    if diff < best_diff:
+                        best_diff = diff
+                        best_slot = label
+
+                if best_slot:
+                    if best_slot not in slot_data:
+                        slot_data[best_slot] = {"views": [], "video_ids": []}
+                    slot_data[best_slot]["views"].append(views)
+                    slot_data[best_slot]["video_ids"].append(v["id"])
+            except Exception:
+                continue
+
+        # Calculate averages
+        result = {}
+        for label, data in slot_data.items():
+            total = sum(data["views"])
+            count = len(data["views"])
+            result[label] = {
+                "total_views": total,
+                "count": count,
+                "avg_views": round(total / count) if count > 0 else 0,
+            }
+
+        return result
+
+    except Exception as e:
+        print(f"   ⚠️ Analytics fetch failed: {e}")
+        return None
+
+
+def get_best_publish_slot(youtube):
+    """Analyze past performance and return the best publish time slot.
+    Falls back to the A/B rotation schedule if analytics are unavailable."""
+
+    analytics = None
+    if youtube:
+        analytics = fetch_recent_video_analytics(youtube)
+
+    if analytics and len(analytics) >= 2:
+        # Save analytics to file for tracking
+        try:
+            with open(ANALYTICS_FILE, "w") as f:
+                json.dump({"last_updated": datetime.now().isoformat(), "slots": analytics}, f, indent=2)
+        except Exception:
+            pass
+
+        # Find the best performing slot
+        best_label = max(analytics, key=lambda k: analytics[k]["avg_views"])
+        best_avg = analytics[best_label]["avg_views"]
+
+        print(f"   📊 YouTube Analytics (last 21 videos):")
+        for label, data in sorted(analytics.items()):
+            marker = " ← BEST" if label == best_label else ""
+            print(f"      {label}: {data['avg_views']} avg views ({data['count']} videos){marker}")
+
+        # Use best slot if it has significantly more views (>20% better than average)
+        all_avgs = [d["avg_views"] for d in analytics.values()]
+        overall_avg = sum(all_avgs) / len(all_avgs) if all_avgs else 0
+
+        if best_avg > overall_avg * 1.2:
+            print(f"   🏆 Analytics-optimized: using {best_label} (best performer)")
+            # Find the slot tuple
+            for hour, minute, label in PUBLISH_SLOTS:
+                if label == best_label:
+                    return hour, minute, label
+        else:
+            print(f"   📊 No clear winner yet — continuing A/B rotation")
+
+    # Fallback: A/B rotation schedule
+    return None
+
+
+def get_publish_time(youtube=None):
     ist = pytz.timezone(TIMEZONE)
     now = datetime.now(ist)
 
-    # A/B test: pick publish slot based on day of week
-    weekday = now.weekday()  # 0=Monday ... 6=Sunday
-    slot_idx = PUBLISH_SLOT_SCHEDULE.get(weekday, 0)
-    hour, minute, label = PUBLISH_SLOTS[slot_idx]
+    # Try analytics-optimized slot first
+    optimized = get_best_publish_slot(youtube)
+
+    if optimized:
+        hour, minute, label = optimized
+    else:
+        # A/B test: pick publish slot based on day of week
+        weekday = now.weekday()  # 0=Monday ... 6=Sunday
+        slot_idx = PUBLISH_SLOT_SCHEDULE.get(weekday, 0)
+        hour, minute, label = PUBLISH_SLOTS[slot_idx]
 
     today_publish = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if now >= today_publish:
-        # If we've passed today's slot, schedule for tomorrow's slot
+        # If we've passed today's slot, schedule for tomorrow
         tomorrow = now + timedelta(days=1)
-        tomorrow_weekday = tomorrow.weekday()
-        slot_idx = PUBLISH_SLOT_SCHEDULE.get(tomorrow_weekday, 0)
-        hour, minute, label = PUBLISH_SLOTS[slot_idx]
+        if not optimized:
+            tomorrow_weekday = tomorrow.weekday()
+            slot_idx = PUBLISH_SLOT_SCHEDULE.get(tomorrow_weekday, 0)
+            hour, minute, label = PUBLISH_SLOTS[slot_idx]
         publish_at = tomorrow.replace(hour=hour, minute=minute, second=0, microsecond=0)
     else:
         publish_at = today_publish
 
     publish_utc = publish_at.astimezone(pytz.utc)
-    print(f"   ⏰ A/B slot: {label} ({['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][publish_at.weekday()]})")
+    print(f"   ⏰ Publish slot: {label} ({['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][publish_at.weekday()]})")
     return publish_at, publish_utc
 
 
@@ -955,7 +1122,7 @@ Custom printing businesses | Merch brands | Corporate orders
     }
 
     if SCHEDULE_PUBLISH:
-        publish_ist, publish_utc = get_publish_time()
+        publish_ist, publish_utc = get_publish_time(youtube=youtube)
         body["status"]["privacyStatus"] = "private"
         body["status"]["publishAt"] = publish_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
         schedule_str = publish_ist.strftime("%d %b %Y, %I:%M %p IST")
@@ -1117,8 +1284,9 @@ def _apply_dynamic_volume(music_clip, duration):
     return music_clip.fl(volume_filter, keep_duration=True)
 
 
-def generate_hook_sfx(duration=0.5):
-    """Generate a short bass drop sound effect for the hook moment."""
+def generate_hook_sfx(duration=0.6):
+    """Generate a cinematic bass drop + whoosh sound effect for the hook moment.
+    Layered design: sub-bass boom + mid-freq impact + high-freq whoosh + noise burst."""
     if not ADD_HOOK_SFX:
         return None
     try:
@@ -1126,20 +1294,43 @@ def generate_hook_sfx(duration=0.5):
         from moviepy.audio.AudioClip import AudioClip
 
         sr = 44100
-        total_samples = int(sr * duration)
 
         def make_frame(t):
-            # Low bass hit that decays quickly — feels like a "boom"
-            freq = 60  # Low bass frequency
-            envelope = np.exp(-t * 8)  # Fast decay
-            signal = np.sin(2 * np.pi * freq * t) * envelope * HOOK_SFX_VOLUME
-            # Add a subtle sub-bass layer
-            sub = np.sin(2 * np.pi * 35 * t) * envelope * HOOK_SFX_VOLUME * 0.5
-            result = signal + sub
+            t = np.asarray(t, dtype=np.float64)
+            vol = HOOK_SFX_VOLUME
+
+            # Layer 1: Sub-bass boom (40Hz, fast exponential decay)
+            sub_env = np.exp(-t * 10)
+            sub = np.sin(2 * np.pi * 40 * t) * sub_env * vol * 0.6
+
+            # Layer 2: Mid impact hit (100Hz with pitch drop from 200Hz → 80Hz)
+            mid_freq = 200 * np.exp(-t * 4) + 80
+            mid_phase = 2 * np.pi * np.cumsum(np.broadcast_to(mid_freq, t.shape) / sr) if t.ndim > 0 else 2 * np.pi * mid_freq * t
+            mid_env = np.exp(-t * 7)
+            mid = np.sin(mid_phase) * mid_env * vol * 0.4
+
+            # Layer 3: High-freq whoosh (white noise shaped with bandpass feel)
+            # Deterministic noise using sine sum (reproducible, no random seed issues)
+            whoosh = np.zeros_like(t)
+            for f in [2200, 3100, 4500, 5800, 7200]:
+                whoosh += np.sin(2 * np.pi * f * t + f * 0.7) * 0.2
+            whoosh_env = np.exp(-t * 12) * (1 - np.exp(-t * 80))  # Attack + fast decay
+            whoosh = whoosh * whoosh_env * vol * 0.25
+
+            # Layer 4: Transient click (very short, adds punch to the initial hit)
+            click_env = np.exp(-t * 60) * (1 - np.exp(-t * 200))
+            click = np.sin(2 * np.pi * 1000 * t) * click_env * vol * 0.3
+
+            # Mix all layers
+            result = sub + mid + whoosh + click
+
+            # Soft clip to avoid harsh distortion
+            result = np.tanh(result * 1.5) * 0.8
+
             return np.column_stack([result, result])
 
         sfx = AudioClip(make_frame, duration=duration, fps=sr)
-        print("   💥 Hook sound effect generated")
+        print("   💥 Hook SFX: cinematic boom + whoosh (4-layer)")
         return sfx
     except Exception as e:
         print(f"   ⚠️ Hook SFX generation failed: {e}")
@@ -1260,6 +1451,176 @@ def extract_ambient_audio(clip_paths, total_duration):
 # SCRIPT QUALITY GATE
 # ═══════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════
+# TOPIC QUALITY GATE + SMART TOPIC GENERATION
+# ═══════════════════════════════════════════════════════════════════════
+
+TOPIC_MAX_CANDIDATES = 5  # Generate this many candidates, pick the best
+TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
+
+def search_trending_topics(anthropic_client):
+    """Use Claude to brainstorm trending topics based on current Indian textile/printing industry trends.
+    Claude uses its training knowledge of YouTube Shorts trends, Google Trends patterns,
+    and Indian B2B textile market to generate timely, high-search-volume topics."""
+
+    prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt manufacturer (Sale91.com).
+
+Your job: generate 10 FRESH topic ideas that are likely to be HIGHLY SEARCHED right now.
+
+Think about:
+1. SEASONAL TRENDS — what's relevant this month? (summer coming = cotton demand, winter ending = hoodie clearance, etc.)
+2. YOUTUBE SEARCH TRENDS — what do printing business owners search for? ("DTG vs DTF 2025", "best GSM for printing", etc.)
+3. CUSTOMER PAIN POINTS — what problems are printing businesses facing right now?
+4. VIRAL FORMATS — what YouTube Shorts formats are working? (myth busting, "I tested X", comparisons, mistakes series)
+5. INDUSTRY NEWS — any new printing tech, fabric innovations, market changes?
+
+CURRENT CONTEXT:
+- Month: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%B %Y')}
+- Season in India: {_get_india_season()}
+- Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
+- Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
+
+STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
+Each topic should be 1 line, specific, and contain a hook element.
+
+OUTPUT: Return ONLY a JSON array of 10 topic strings, nothing else.
+Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
+
+    try:
+        resp = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=800,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        topics = json.loads(raw)
+        if isinstance(topics, list) and len(topics) > 0:
+            print(f"   🔍 Generated {len(topics)} trending topic candidates")
+            return topics
+    except Exception as e:
+        print(f"   ⚠️ Trending topic search failed: {e}")
+
+    return []
+
+
+def _get_india_season():
+    """Return current season in India for topic relevance."""
+    month = datetime.now(pytz.timezone(TIMEZONE)).month
+    if month in (3, 4, 5):
+        return "Summer approaching — cotton t-shirt demand peak, lightweight fabrics trending"
+    elif month in (6, 7, 8, 9):
+        return "Monsoon/Rainy season — drying issues, color bleeding concerns, polyester demand"
+    elif month in (10, 11):
+        return "Festival season (Diwali, Navratri) — corporate gifting orders, custom merch rush"
+    else:
+        return "Winter — hoodie/sweatshirt demand peak, heavy GSM fabrics trending"
+
+
+def review_topic(claude_client, topic, topic_history):
+    """Claude reviews a topic candidate for search potential, freshness, and content fit.
+    Returns (score, feedback) where score is out of 40."""
+
+    recent_topics = topic_history[-20:] if len(topic_history) > 20 else topic_history
+
+    review_prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt brand (Sale91.com).
+
+Review this topic candidate and score it for a YouTube Short:
+
+TOPIC: {topic}
+
+RECENTLY USED TOPICS (avoid similar ones):
+{json.dumps(recent_topics[-10:], ensure_ascii=False)}
+
+Score each (1-10):
+
+1. SEARCH POTENTIAL — Would printing business owners actively search for this on YouTube?
+   High: specific problem ("DTG print dhul gaya 2 wash mein — kya galti ki?")
+   Low: vague/generic ("fabric ke baare mein jaano")
+
+2. FRESHNESS — Is this genuinely different from recently used topics? Not repetitive?
+   High: new angle, untouched subtopic. Low: similar to a recent topic.
+
+3. STORYTELLING FIT — Can this be turned into a compelling 50-sec micro-story with hook?
+   High: has natural conflict/problem/surprise. Low: just a definition or list.
+
+4. VIRAL SHAREABILITY — Would someone save this or send it to a fellow business owner?
+   High: actionable tip, surprising fact, money-saving advice. Low: common knowledge.
+
+OUTPUT THIS JSON ONLY (no markdown):
+{{"score": total_out_of_40, "feedback": "1 sentence — why good or what's wrong"}}"""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            messages=[{"role": "user", "content": review_prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        result = json.loads(raw)
+        return result.get("score", 0), result.get("feedback", "")
+    except Exception as e:
+        print(f"   ⚠️ Topic review failed: {e}")
+        return 30, "review error — approved by default"
+
+
+def smart_pick_topic(claude_client, topic_bank, topic_history):
+    """Smart topic selection:
+    1. If unused topics in bank, pick from them but validate with Claude
+    2. If bank exhausted, generate trending topics and pick the best one
+    Returns the selected topic string."""
+
+    unused = [t for t in topic_bank if t not in topic_history]
+
+    if unused:
+        # Pick from bank, but validate — ensure it's timely
+        candidate = random.choice(unused)
+        score, feedback = review_topic(claude_client, candidate, topic_history)
+        print(f"   📋 Bank topic score: {score}/40 — {feedback}")
+        if score >= TOPIC_MIN_SCORE:
+            return candidate
+        # If bank topic scored low, try 2 more from bank
+        for _ in range(2):
+            alt = random.choice(unused)
+            if alt != candidate:
+                alt_score, alt_feedback = review_topic(claude_client, alt, topic_history)
+                print(f"   📋 Alt bank topic score: {alt_score}/40 — {alt_feedback}")
+                if alt_score > score:
+                    candidate, score, feedback = alt, alt_score, alt_feedback
+        if score >= 20:  # Accept if reasonably good
+            return candidate
+
+    # Bank exhausted or all scored low — generate fresh trending topics
+    print("   🧠 Generating fresh trending topics with AI search...")
+    trending = search_trending_topics(claude_client)
+
+    if not trending:
+        # Absolute fallback: single topic generation (old behavior)
+        print("   🔄 Fallback: single topic generation...")
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
+Style: practical knowledge, no selling. Hindi conversational.
+Already used: {json.dumps(topic_history[-10:])}
+Return ONLY the topic text, nothing else."""}]
+        )
+        return resp.content[0].text.strip()
+
+    # Score all trending candidates and pick the best
+    best_topic = trending[0]
+    best_score = 0
+    candidates_to_review = [t for t in trending if t not in topic_history][:TOPIC_MAX_CANDIDATES]
+
+    for t in candidates_to_review:
+        score, feedback = review_topic(claude_client, t, topic_history)
+        print(f"   🔍 Candidate: {t[:50]}... → {score}/40 ({feedback})")
+        if score > best_score:
+            best_score = score
+            best_topic = t
+
+    print(f"   ✅ Best topic selected (score: {best_score}/40): {best_topic[:60]}...")
+    return best_topic
+
+
 def review_script(claude_client, script_voice, script_english, topic):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, feedback: str)."""
@@ -1357,25 +1718,14 @@ def main():
     from google.genai import types
     veo_client = genai.Client(api_key=google_key)
 
-    # ── 2. Pick Topic ──
+    # ── 2. Pick Topic (Smart: trending search + Claude review gate) ──
     topic_history = []
     if os.path.exists(TOPIC_HISTORY_FILE):
         with open(TOPIC_HISTORY_FILE, "r") as f:
             topic_history = json.load(f)
 
-    unused = [t for t in TOPIC_BANK if t not in topic_history]
-    if unused:
-        fresh_topic = random.choice(unused)
-    else:
-        print("   🧠 All topics used — Claude generating new one...")
-        resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
-            messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
-Style: practical knowledge, no selling. Hindi conversational.
-Already used: {json.dumps(topic_history[-10:])}
-Return ONLY the topic text, nothing else."""}]
-        )
-        fresh_topic = resp.content[0].text.strip()
+    print("   🎯 Smart topic selection (with quality gate)...")
+    fresh_topic = smart_pick_topic(claude, TOPIC_BANK, topic_history)
 
     topic_history.append(fresh_topic)
     with open(TOPIC_HISTORY_FILE, "w") as f:
@@ -1829,8 +2179,9 @@ Return ONLY the topic text, nothing else."""}]
 
     print(f"   ✅ Video ready: {output_path}")
 
-    # ── 9b. Generate Thumbnail ──
-    thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic)
+    # ── 9b. Generate Thumbnail (uses first Veo clip frame if available) ──
+    first_clip = downloaded_clips[0] if downloaded_clips else None
+    thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip)
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
