@@ -194,8 +194,8 @@ BG_MUSIC_VOLUME_START = 0.15   # First 2 seconds — energy at hook
 BG_MUSIC_VOLUME_MID = 0.05    # Middle — voice dominant
 BG_MUSIC_VOLUME_END = 0.12    # Last 3 seconds — emotional close
 
-# Veo Ambient Audio (keep Veo's generated scene sounds at low volume)
-VEO_AMBIENT_VOLUME = 0.08
+# Veo Ambient Audio (disabled — we generate video-only clips to save ~33% on Veo cost)
+VEO_AMBIENT_VOLUME = 0
 
 # Hook Sound Effect (low bass drop at video start to stop the scroll)
 ADD_HOOK_SFX = True
@@ -1524,6 +1524,7 @@ Return ONLY the topic text, nothing else."""}]
                             aspect_ratio=VEO_ASPECT_RATIO,
                             number_of_videos=1,
                             duration_seconds=VEO_DURATION,
+                            generate_audio=False,  # Skip audio — we add our own voice + music
                         ),
                     )
                     while not operation.done:
