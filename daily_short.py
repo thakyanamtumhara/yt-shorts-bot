@@ -13,6 +13,7 @@ Required environment variables:
   OAUTHLIB_INSECURE_TRANSPORT=1
 
 Optional environment variables:
+  ELEVENLABS_API_KEY  — ElevenLabs TTS (primary voice; falls back to OpenAI if missing)
   REPLICATE_API_TOKEN — Replicate token for AI background music generation
 """
 
@@ -103,6 +104,17 @@ SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
 
+# ── ElevenLabs TTS (Primary) ──
+ELEVENLABS_VOICE_ID = "Y6nOpHQlW4lnf9GRRc8f"  # Adarsh — Emotive Hindi voice
+ELEVENLABS_MODEL = "eleven_multilingual_v2"
+ELEVENLABS_VOICE_SETTINGS = {
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.40,
+    "use_speaker_boost": True,
+}
+
+# ── OpenAI TTS (Fallback) ──
 TARGET_VOICE = "ash"  # OpenAI TTS voice (try: ash, ballad, coral, echo, sage, verse)
 VOICE_SPEED = 1.0
 VOICE_INSTRUCTIONS = """You are an Indian man from Delhi speaking casual Hinglish.
@@ -110,7 +122,7 @@ VOICE_INSTRUCTIONS = """You are an Indian man from Delhi speaking casual Hinglis
 PRONUNCIATION RULES (CRITICAL):
 - You are a NATIVE HINDI speaker. Hindi words MUST sound fully native Indian, not anglicized.
 - "hai" = "hai" (short, flat) — NOT "high" or "hay"
-- "toh" = soft "toh" — NOT "toe"  
+- "toh" = soft "toh" — NOT "toe"
 - "matlab" = "mut-lub" — NOT "mat-lab"
 - "hota hai" = quick natural "hota-hai" — NOT two separate English words
 - "karo/karlo" = soft rolled 'r' — NOT hard English 'r'
@@ -1342,7 +1354,7 @@ def main():
     print()
 
     # ── 1. API Keys ──
-    elevenlabs_key = None  # Deprecated — using OpenAI TTS now
+    elevenlabs_key = os.environ.get('ELEVENLABS_API_KEY')
     openai_key = os.environ.get('OPENAI_API_KEY')
     anthropic_key = os.environ.get('ANTHROPIC_API_KEY')
     google_key = os.environ.get('GOOGLE_API_KEY')
@@ -1448,24 +1460,49 @@ Return ONLY the topic text, nothing else."""}]
     # ── 3b. Load Background Music ──
     load_bg_music(music_mood)
 
-    # ── 4. Generate Voice (OpenAI gpt-4o-mini-tts) ──
-    print("   🎙️ Generating voice (OpenAI TTS)...")
+    # ── 4. Generate Voice (ElevenLabs primary → OpenAI fallback) ──
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
+    voice_ok = False
 
-    try:
-        response = openai_client.audio.speech.create(
-            model="gpt-4o-mini-tts",
-            voice=TARGET_VOICE,
-            input=script_voice + "...",  # Trailing ellipsis prevents last-word cutoff
-            instructions=VOICE_INSTRUCTIONS,
-            speed=VOICE_SPEED,
-            response_format="mp3",
-        )
-        response.stream_to_file(audio_path)
-        print(f"   ✅ Voice: OpenAI {TARGET_VOICE} (native Hindi)")
-    except Exception as e:
-        print(f"   ❌ OpenAI TTS failed: {e}")
-        return
+    # Try ElevenLabs first (Adarsh — Emotive Hindi)
+    if elevenlabs_key:
+        print("   🎙️ Generating voice (ElevenLabs — Adarsh)...")
+        try:
+            from elevenlabs import ElevenLabs
+            el_client = ElevenLabs(api_key=elevenlabs_key)
+            audio_iter = el_client.text_to_speech.convert(
+                voice_id=ELEVENLABS_VOICE_ID,
+                model_id=ELEVENLABS_MODEL,
+                text=script_voice,
+                voice_settings=ELEVENLABS_VOICE_SETTINGS,
+            )
+            with open(audio_path, "wb") as f:
+                for chunk in audio_iter:
+                    f.write(chunk)
+            print("   ✅ Voice: ElevenLabs Adarsh (Emotive Hindi)")
+            voice_ok = True
+        except Exception as e:
+            print(f"   ⚠️ ElevenLabs TTS failed: {e}")
+            print("   🔄 Falling back to OpenAI TTS...")
+
+    # Fallback: OpenAI gpt-4o-mini-tts
+    if not voice_ok:
+        print("   🎙️ Generating voice (OpenAI TTS fallback)...")
+        try:
+            response = openai_client.audio.speech.create(
+                model="gpt-4o-mini-tts",
+                voice=TARGET_VOICE,
+                input=script_voice + "...",
+                instructions=VOICE_INSTRUCTIONS,
+                speed=VOICE_SPEED,
+                response_format="mp3",
+            )
+            response.stream_to_file(audio_path)
+            print(f"   ✅ Voice: OpenAI {TARGET_VOICE} (fallback)")
+            voice_ok = True
+        except Exception as e:
+            print(f"   ❌ OpenAI TTS also failed: {e}")
+            return
 
     # ── 5. Generate Video Clips (Veo 3.1) ──
     downloaded_clips = []
