@@ -1004,7 +1004,8 @@ def _copy_repo_music_to_workdir():
 
 
 def generate_bg_music(mood="calm"):
-    """Generate background music using ACE-Step via Replicate API."""
+    """Generate background music using ACE-Step via Replicate API.
+    Retries up to 3 times with exponential backoff on transient errors (429, 5xx)."""
     api_token = os.environ.get("REPLICATE_API_TOKEN")
     if not api_token:
         return None
@@ -1018,40 +1019,54 @@ def generate_bg_music(mood="calm"):
     tags = MOOD_TO_MUSIC_PROMPT.get(mood, MOOD_TO_MUSIC_PROMPT["calm"])
     music_path = f"{BG_MUSIC_FOLDER}/ai_{mood}_{random.randint(100,999)}.wav"
 
-    try:
-        print(f"   🤖 Generating '{mood}' music via Replicate ACE-Step...")
-        output = replicate.run(
-            "lucataco/ace-step:280fc4f9ee507577f880a167f639c02622421d8fecf492454320311217b688f1",
-            input={
-                "tags": tags,
-                "lyrics": "[instrumental]",
-                "duration": 30,
-                "seed": random.randint(1, 2**31),
-            },
-        )
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"   🤖 Generating '{mood}' music via Replicate ACE-Step (attempt {attempt}/{max_retries})...")
+            output = replicate.run(
+                "lucataco/ace-step:280fc4f9ee507577f880a167f639c02622421d8fecf492454320311217b688f1",
+                input={
+                    "tags": tags,
+                    "lyrics": "[instrumental]",
+                    "duration": 30,
+                    "seed": random.randint(1, 2**31),
+                },
+            )
 
-        # Handle both FileOutput (SDK >= 1.0) and raw URL string (older SDK)
-        if hasattr(output, 'read'):
-            audio_bytes = output.read()
-        elif isinstance(output, str) and output.startswith("http"):
-            from urllib.request import urlopen
-            audio_bytes = urlopen(output).read()
-        else:
-            print(f"   ⚠️ Unexpected Replicate output type: {type(output)}")
-            return None
+            # Handle both FileOutput (SDK >= 1.0) and raw URL string (older SDK)
+            if hasattr(output, 'read'):
+                audio_bytes = output.read()
+            elif isinstance(output, str) and output.startswith("http"):
+                from urllib.request import urlopen
+                audio_bytes = urlopen(output).read()
+            else:
+                print(f"   ⚠️ Unexpected Replicate output type: {type(output)}")
+                return None
 
-        if audio_bytes:
-            with open(music_path, "wb") as f:
-                f.write(audio_bytes)
-            print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
-            return music_path
-        else:
-            print("   ⚠️ Replicate returned empty audio")
-            return None
+            if audio_bytes:
+                with open(music_path, "wb") as f:
+                    f.write(audio_bytes)
+                print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+                return music_path
+            else:
+                print("   ⚠️ Replicate returned empty audio")
+                return None
 
-    except Exception as e:
-        print(f"   ⚠️ Replicate ACE-Step failed: {e}")
-        return None
+        except Exception as e:
+            err_str = str(e).lower()
+            status = getattr(e, 'status', None) or getattr(e, 'status_code', None)
+            is_status_retryable = status is not None and (status == 429 or status >= 500)
+            is_msg_retryable = any(k in err_str for k in ("429", "rate limit", "too many", "timeout", "timed out", "502", "503", "504", "unavailable"))
+            is_retryable = is_status_retryable or is_msg_retryable
+            if is_retryable and attempt < max_retries:
+                wait = 2 ** attempt  # 2s, 4s
+                print(f"   ⚠️ Replicate ACE-Step attempt {attempt} failed: {e}")
+                print(f"   ⏳ Retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                print(f"   ⚠️ Replicate ACE-Step failed after {attempt} attempt(s): {e}")
+                return None
+    return None
 
 
 def load_bg_music(mood="calm"):
