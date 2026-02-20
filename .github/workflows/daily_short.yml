@@ -49,12 +49,6 @@ jobs:
           echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
           echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
 
-      - name: Copy repo background music
-        run: |
-          mkdir -p /tmp/yt_shorts/bg_music
-          cp -n bg_music/*.mp3 /tmp/yt_shorts/bg_music/ 2>/dev/null || true
-          cp -n bg_music/*.wav /tmp/yt_shorts/bg_music/ 2>/dev/null || true
-
       - name: Run Daily Short Generator
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

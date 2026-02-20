@@ -999,20 +999,6 @@ MOOD_TO_MUSIC_PROMPT = {
     "trendy": "modern, trendy, electronic beat, cool, urban, instrumental, trap, hip-hop",
 }
 
-# Repo-level bg_music/ folder (fallback — persists across runs, committed to git)
-REPO_BG_MUSIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bg_music")
-
-
-def _copy_repo_music_to_workdir():
-    """Copy music files from repo bg_music/ to working directory."""
-    if not os.path.isdir(REPO_BG_MUSIC_FOLDER):
-        return
-    import shutil
-    for ext in ("*.mp3", "*.wav"):
-        for src in glob.glob(f"{REPO_BG_MUSIC_FOLDER}/{ext}"):
-            dst = os.path.join(BG_MUSIC_FOLDER, os.path.basename(src))
-            if not os.path.exists(dst):
-                shutil.copy2(src, dst)
 
 
 def generate_bg_music(mood="calm"):
@@ -1082,14 +1068,10 @@ def generate_bg_music(mood="calm"):
 
 
 def load_bg_music(mood="calm"):
-    """Load background music: AI generate first, fall back to repo files."""
-    # Step 1: Try AI generation (best — unique music per video, mood-matched)
+    """Load background music via AI generation (ACE-Step on Replicate)."""
     ai_path = generate_bg_music(mood)
     if ai_path:
         return
-
-    # Step 2: Fall back to repo music files
-    _copy_repo_music_to_workdir()
 
     existing = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
     if existing:
@@ -1097,8 +1079,7 @@ def load_bg_music(mood="calm"):
         print(f"   🎵 {len(existing)} music file(s) available ({len(mood_files)} match '{mood}' mood)")
     else:
         print("   ⚠️ No background music available.")
-        print("   💡 Option 1: Set REPLICATE_API_TOKEN secret for AI-generated music (ACE-Step)")
-        print("   💡 Option 2: Add .mp3 files to bg_music/ folder (calm_lofi.mp3, upbeat_beat.mp3, etc.)")
+        print("   💡 Set REPLICATE_API_TOKEN secret for AI-generated music (ACE-Step)")
 
 
 def _apply_dynamic_volume(music_clip, duration):
