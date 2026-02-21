@@ -2309,9 +2309,14 @@ Return ONLY the topic text, nothing else."""}]
     return best_topic
 
 
-def review_script(claude_client, script_voice, script_english, topic):
+def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
-    Returns (approved: bool, feedback: str)."""
+    Returns (approved: bool, score: int, weakest: str, feedback: str)."""
+
+    prompts_section = ""
+    if video_prompts:
+        prompts_list = "\n".join(f"  Clip {i+1}: {p}" for i, p in enumerate(video_prompts) if p.strip())
+        prompts_section = f"\nVEO VIDEO PROMPTS:\n{prompts_list}\n"
 
     review_prompt = f"""You are a YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
 Review this script and decide: is this GOOD ENOUGH to publish?
@@ -2322,7 +2327,7 @@ A factory owner explaining something practical IS valuable — don't expect Boll
 TOPIC: {topic}
 HINDI SCRIPT: {script_voice}
 ENGLISH: {script_english}
-
+{prompts_section}
 Score each (1-10):
 
 1. HOOK (first 2 seconds) — Does it start with a STORY, customer incident, or surprising fact?
@@ -2340,11 +2345,16 @@ Score each (1-10):
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
+6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
+   Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
+   Good: prompts that show the EXACT scenario being discussed — the specific fabric, the specific test, the specific machine, the specific problem from the script.
+   If no video prompts provided, score 6 (neutral).
+
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "total_score": sum_of_5_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve if total_score >= 30 (out of 50)
+- Approve if total_score >= 36 (out of 60)
 - REJECT only if ANY single score is below 4
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
@@ -2456,17 +2466,18 @@ def main():
 
         print(f"   🗣️ Script: {script_voice[:80]}...")
 
-        # Quality gate: Claude reviews its own script
-        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic)
+        # Quality gate: Claude reviews its own script + video prompts alignment
+        candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
+        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts)
 
         if approved:
-            print(f"   ✅ Script APPROVED (score: {score}/50) — {feedback}")
+            print(f"   ✅ Script APPROVED (score: {score}/60) — {feedback}")
             data = candidate
             break
         else:
-            print(f"   ❌ Script REJECTED (score: {score}/50, weak: {weakest})")
+            print(f"   ❌ Script REJECTED (score: {score}/60, weak: {weakest})")
             print(f"      Reason: {feedback}")
-            previous_feedback = f"Score {score}/50. Weakest: {weakest}. {feedback}"
+            previous_feedback = f"Score {score}/60. Weakest: {weakest}. {feedback}"
             if attempt < SCRIPT_MAX_ATTEMPTS:
                 print(f"      Regenerating with feedback...")
 
