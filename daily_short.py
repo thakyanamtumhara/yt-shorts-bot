@@ -1247,6 +1247,44 @@ def get_top_performing_topics(n=5):
         return []
 
 
+def get_top_performing_categories():
+    """Analyze engagement data and return category names ranked by avg views.
+    Maps video titles back to TOPIC_SERIES_TAGS categories via keyword matching."""
+    if not os.path.exists(ENGAGEMENT_FILE):
+        return []
+
+    try:
+        with open(ENGAGEMENT_FILE, "r") as f:
+            engagement = json.load(f)
+
+        if not engagement:
+            return []
+
+        # Aggregate views per category
+        cat_stats = {}  # {category: [views, views, ...]}
+        for entry in engagement:
+            title_lower = entry.get("title", "").lower()
+            views = entry.get("views", 0)
+            for cat_name, cat_data in TOPIC_SERIES_TAGS.items():
+                if any(kw in title_lower for kw in cat_data["keywords"]):
+                    cat_stats.setdefault(cat_name, []).append(views)
+                    break  # One category per video
+
+        if not cat_stats:
+            return []
+
+        # Rank by average views
+        ranked = sorted(
+            cat_stats.items(),
+            key=lambda x: sum(x[1]) / len(x[1]),
+            reverse=True,
+        )
+        return [cat for cat, _ in ranked]
+
+    except Exception:
+        return []
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # SCRIPT PROMPT
 # ═══════════════════════════════════════════════════════════════════════
@@ -2166,8 +2204,25 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     unused = [t for t in topic_bank if t not in topic_history]
 
     if unused:
-        # Pick from bank, but validate — ensure it's timely
-        candidate = random.choice(unused)
+        # Prefer topics from high-performing categories (engagement-based)
+        top_cats = get_top_performing_categories()
+        if top_cats:
+            # Sort unused topics: ones matching top categories come first
+            def _cat_priority(topic):
+                t_lower = topic.lower()
+                for rank, cat in enumerate(top_cats):
+                    cat_data = TOPIC_SERIES_TAGS.get(cat, {})
+                    if any(kw in t_lower for kw in cat_data.get("keywords", [])):
+                        return rank  # Lower = higher priority
+                return len(top_cats)  # No match = lowest priority
+            prioritized = sorted(unused, key=_cat_priority)
+            # Pick from top 30% (biased towards high-performing categories)
+            pool_size = max(3, len(prioritized) // 3)
+            candidate = random.choice(prioritized[:pool_size])
+            print(f"   📊 Top categories by engagement: {', '.join(top_cats[:3])}")
+        else:
+            candidate = random.choice(unused)
+
         score, feedback = review_topic(claude_client, candidate, topic_history)
         print(f"   📋 Bank topic score: {score}/40 — {feedback}")
         if score >= TOPIC_MIN_SCORE:
