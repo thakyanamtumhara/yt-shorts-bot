@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repo
@@ -74,7 +74,11 @@ jobs:
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
-          git add topic_history.json cost_tracker.json engagement_history.json clip_history.json source_channel_insights.json || true
+          git add topic_history.json || true
+          git add cost_tracker.json || true
+          git add engagement_history.json || true
+          git add clip_history.json || true
+          git add source_channel_insights.json || true
           git commit -m "Update tracking files (topic + cost + engagement + clips + source insights) [skip ci]" || true
           git pull --rebase origin main || true
           git push
