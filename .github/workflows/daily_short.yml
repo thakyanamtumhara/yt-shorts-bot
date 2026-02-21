@@ -64,6 +64,8 @@ jobs:
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
         run: python daily_short.py
 
@@ -72,8 +74,8 @@ jobs:
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
-          git add topic_history.json cost_tracker.json engagement_history.json clip_history.json || true
-          git commit -m "Update tracking files (topic + cost + engagement + clips) [skip ci]" || true
+          git add topic_history.json cost_tracker.json engagement_history.json clip_history.json source_channel_insights.json || true
+          git commit -m "Update tracking files (topic + cost + engagement + clips + source insights) [skip ci]" || true
           git pull --rebase origin main || true
           git push
 

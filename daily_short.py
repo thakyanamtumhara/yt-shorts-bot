@@ -273,6 +273,11 @@ DAILY_COST_LIMIT_USD = 10.0  # Circuit breaker: skip video if today's spend exce
 ENGAGEMENT_FILE = "engagement_history.json"  # In repo root for git tracking
 ENGAGEMENT_CHECK_DELAY_HOURS = 48
 
+# Source Channel — read engagement data from existing 50K channel to inform topic selection
+SOURCE_CHANNEL_ID = os.environ.get("CHANNEL_ID_2", "")
+SOURCE_CHANNEL_API_KEY = os.environ.get("YOUTUBE_API_KEY_1", "")
+SOURCE_CHANNEL_CACHE_FILE = "source_channel_insights.json"  # In repo root for git tracking
+
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                   TOPIC BANK                                         ║
 # ╚══════════════════════════════════════════════════════════════════════╝
@@ -1305,6 +1310,130 @@ def get_top_performing_categories():
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# SOURCE CHANNEL INSIGHTS (read-only from existing 50K channel)
+# ═══════════════════════════════════════════════════════════════════════
+
+def fetch_source_channel_insights():
+    """Fetch top videos from the source YouTube channel (read-only).
+    Uses YouTube Data API v3: search.list + videos.list.
+    Caches results for 24h to avoid unnecessary API calls.
+    Returns list of dicts: [{title, views, likes, comments, published}]"""
+
+    if not SOURCE_CHANNEL_ID or not SOURCE_CHANNEL_API_KEY:
+        return []
+
+    # Check cache — refresh only once per 24h
+    if os.path.exists(SOURCE_CHANNEL_CACHE_FILE):
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cached_at = cache.get("fetched_at", "")
+            if cached_at:
+                age_hours = (datetime.now() - datetime.fromisoformat(cached_at)).total_seconds() / 3600
+                if age_hours < 24:
+                    print(f"   📊 Source channel insights from cache ({len(cache.get('videos', []))} videos, {age_hours:.0f}h old)")
+                    return cache.get("videos", [])
+        except Exception:
+            pass
+
+    print("   📊 Fetching source channel data (YouTube Data API — read only)...")
+    base_url = "https://www.googleapis.com/youtube/v3"
+
+    try:
+        # Step 1: Get video IDs from channel (search.list — 100 quota units)
+        search_resp = requests.get(f"{base_url}/search", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "channelId": SOURCE_CHANNEL_ID,
+            "part": "id",
+            "order": "date",
+            "maxResults": 50,
+            "type": "video",
+        }, timeout=15)
+        search_resp.raise_for_status()
+        search_data = search_resp.json()
+
+        video_ids = [item["id"]["videoId"] for item in search_data.get("items", []) if item["id"].get("videoId")]
+        if not video_ids:
+            print("   ⚠️ No videos found on source channel")
+            return []
+
+        # Step 2: Get video details (videos.list — 1 quota unit per 50 videos)
+        videos_resp = requests.get(f"{base_url}/videos", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "id": ",".join(video_ids),
+            "part": "snippet,statistics",
+        }, timeout=15)
+        videos_resp.raise_for_status()
+        videos_data = videos_resp.json()
+
+        videos = []
+        for item in videos_data.get("items", []):
+            snippet = item.get("snippet", {})
+            stats = item.get("statistics", {})
+            videos.append({
+                "title": snippet.get("title", ""),
+                "views": int(stats.get("viewCount", 0)),
+                "likes": int(stats.get("likeCount", 0)),
+                "comments": int(stats.get("commentCount", 0)),
+                "published": snippet.get("publishedAt", ""),
+            })
+
+        # Sort by views descending
+        videos.sort(key=lambda v: v["views"], reverse=True)
+
+        # Cache results
+        cache_data = {
+            "fetched_at": datetime.now().isoformat(),
+            "channel_id": SOURCE_CHANNEL_ID,
+            "videos": videos,
+        }
+        with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
+            json.dump(cache_data, f, indent=2, ensure_ascii=False)
+
+        print(f"   ✅ Fetched {len(videos)} videos from source channel (top: {videos[0]['views']:,} views)")
+        return videos
+
+    except Exception as e:
+        print(f"   ⚠️ Source channel fetch failed: {e}")
+        return []
+
+
+def get_source_channel_top_topics(n=10):
+    """Return top N video titles from source channel, ranked by views."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        return []
+    return [v["title"] for v in videos[:n]]
+
+
+def get_source_channel_category_ranking():
+    """Analyze source channel videos and rank categories by avg views.
+    Same logic as get_top_performing_categories() but using source channel data."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        return []
+
+    cat_stats = {}
+    for v in videos:
+        title_lower = v["title"].lower()
+        views = v["views"]
+        for cat_name, cat_data in TOPIC_SERIES_TAGS.items():
+            if any(kw in title_lower for kw in cat_data["keywords"]):
+                cat_stats.setdefault(cat_name, []).append(views)
+                break
+
+    if not cat_stats:
+        return []
+
+    ranked = sorted(
+        cat_stats.items(),
+        key=lambda x: sum(x[1]) / len(x[1]),
+        reverse=True,
+    )
+    return [cat for cat, _ in ranked]
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # SCRIPT PROMPT
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -1336,6 +1465,11 @@ BUSINESS CONTEXT (use this knowledge, but do NOT promote the brand in voice):
 {BUSINESS_CONTEXT}
 
 TOPIC: {topic}
+
+━━━ AUDIENCE INTELLIGENCE (from our main channel with 50K subs) ━━━
+These are PROVEN top-performing video titles from our existing audience — use this to understand
+what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
+{json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -2148,8 +2282,11 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-TOP PERFORMING VIDEOS (make MORE topics like these — they got the most views):
-{json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "No engagement data yet — generate based on search trends."}
+TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL (make MORE topics like these):
+{json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "New channel — no data yet."}
+
+PROVEN WINNERS FROM OUR MAIN CHANNEL (50K subs, 5.5L monthly views — these topics WORK with our audience):
+{json.dumps(get_source_channel_top_topics(10), ensure_ascii=False) if get_source_channel_top_topics(10) else "No source channel data available."}
 
 STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
 Each topic should be 1 line, specific, and contain a hook element.
@@ -2244,7 +2381,12 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
 
     if unused:
         # Prefer topics from high-performing categories (engagement-based)
+        # Priority: own channel data > source channel data > random
         top_cats = get_top_performing_categories()
+        cat_source = "own channel"
+        if not top_cats:
+            top_cats = get_source_channel_category_ranking()
+            cat_source = "source channel (50K)"
         if top_cats:
             # Sort unused topics: ones matching top categories come first
             def _cat_priority(topic):
@@ -2258,7 +2400,7 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
             # Pick from top 30% (biased towards high-performing categories)
             pool_size = max(3, len(prioritized) // 3)
             candidate = random.choice(prioritized[:pool_size])
-            print(f"   📊 Top categories by engagement: {', '.join(top_cats[:3])}")
+            print(f"   📊 Top categories by engagement ({cat_source}): {', '.join(top_cats[:3])}")
         else:
             candidate = random.choice(unused)
 
@@ -2426,6 +2568,9 @@ def main():
     from google import genai
     from google.genai import types
     veo_client = genai.Client(api_key=google_key)
+
+    # ── 1b. Fetch source channel insights (read-only, cached 24h) ──
+    fetch_source_channel_insights()
 
     # ── 2. Pick Topic (Smart: trending search + Claude review gate) ──
     topic_history = []
