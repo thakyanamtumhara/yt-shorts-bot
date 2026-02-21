@@ -202,9 +202,9 @@ VEO_AMBIENT_VOLUME = 0
 ADD_HOOK_SFX = True
 HOOK_SFX_VOLUME = 0.25
 
-# Hook Text
+# Hook Text (scroll-stopping overlay on first frame)
 ADD_HOOK_TEXT = True
-HOOK_DURATION = 1.5
+HOOK_DURATION = 2.0  # 2 seconds for better scroll-stop impact
 
 # Transitions
 CLIP_FADE_DURATION = 0.3
@@ -604,47 +604,67 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
             font_topic = ImageFont.load_default()
             font_brand = ImageFont.load_default()
 
-        # Yellow accent bar at top
+        # Yellow accent bars — top + left edge (brand consistency with video hook)
         draw.rectangle([(0, 0), (THUMBNAIL_WIDTH, 8)], fill=(255, 215, 0))
+        draw.rectangle([(0, 0), (8, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
 
-        # Hook text — big, bold, white with yellow highlight words
+        # Hook text — first word YELLOW (scroll-stop), rest WHITE
         hook_display = (hook_text or topic.split("—")[0].strip()).upper()
-        # Wrap long text
-        hook_words = hook_display.split()
-        lines = []
-        current_line = ""
-        for word in hook_words:
-            test = f"{current_line} {word}".strip()
-            bbox = draw.textbbox((0, 0), test, font=font_hook)
-            if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
-                if current_line:
-                    lines.append(current_line)
-                current_line = word
-            else:
-                current_line = test
-        if current_line:
-            lines.append(current_line)
+        all_words = hook_display.split()
+        first_word = all_words[0] if all_words else ""
+        rest_words = " ".join(all_words[1:]) if len(all_words) > 1 else ""
 
-        # Draw hook text centered, starting at ~35% height
-        y_start = int(THUMBNAIL_HEIGHT * 0.30)
-        line_height = 90
-        for i, line in enumerate(lines[:4]):  # Max 4 lines
-            bbox = draw.textbbox((0, 0), line, font=font_hook)
-            text_w = bbox[2] - bbox[0]
-            x = (THUMBNAIL_WIDTH - text_w) // 2
-            y = y_start + i * line_height
-            # Black outline
-            for dx in [-3, -2, 0, 2, 3]:
-                for dy in [-3, -2, 0, 2, 3]:
-                    draw.text((x + dx, y + dy), line, font=font_hook, fill=(0, 0, 0))
-            # White text
-            draw.text((x, y), line, font=font_hook, fill=(255, 255, 255))
+        # Use larger font for first word
+        font_first = None
+        if font_file:
+            font_first = ImageFont.truetype(font_file, 90)
+
+        y_start = int(THUMBNAIL_HEIGHT * 0.28)
+
+        def _draw_outlined(draw, x, y, text, font, fill, outline=(0, 0, 0), width=4):
+            for dx in range(-width, width + 1):
+                for dy in range(-width, width + 1):
+                    if dx * dx + dy * dy <= width * width:
+                        draw.text((x + dx, y + dy), text, font=font, fill=outline)
+            draw.text((x, y), text, font=font, fill=fill)
+
+        # Draw first word in YELLOW (big)
+        current_y = y_start
+        if first_word:
+            bbox = draw.textbbox((0, 0), first_word, font=font_first or font_hook)
+            fw_w = bbox[2] - bbox[0]
+            fw_x = (THUMBNAIL_WIDTH - fw_w) // 2
+            _draw_outlined(draw, fw_x, current_y, first_word, font_first or font_hook, (255, 215, 0))
+            current_y += (bbox[3] - bbox[1]) + 15
+
+        # Draw remaining words in WHITE (wrap if needed)
+        if rest_words:
+            rest_lines = []
+            current_line = ""
+            for word in rest_words.split():
+                test = f"{current_line} {word}".strip()
+                bbox = draw.textbbox((0, 0), test, font=font_hook)
+                if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
+                    if current_line:
+                        rest_lines.append(current_line)
+                    current_line = word
+                else:
+                    current_line = test
+            if current_line:
+                rest_lines.append(current_line)
+
+            for line in rest_lines[:3]:
+                bbox = draw.textbbox((0, 0), line, font=font_hook)
+                text_w = bbox[2] - bbox[0]
+                x = (THUMBNAIL_WIDTH - text_w) // 2
+                _draw_outlined(draw, x, current_y, line, font_hook, (255, 255, 255))
+                current_y += (bbox[3] - bbox[1]) + 10
 
         # Topic summary — smaller text below hook
         topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
         bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
         topic_w = bbox[2] - bbox[0]
-        topic_y = y_start + len(lines[:4]) * line_height + 30
+        topic_y = current_y + 25
         draw.text(((THUMBNAIL_WIDTH - topic_w) // 2, topic_y), topic_short,
                   font=font_topic, fill=(200, 200, 200))
 
@@ -3315,22 +3335,64 @@ def main():
             layers.extend([wm_bg, wm_txt])
         except: pass
 
-    # Hook — curiosity-driven text from Claude (or fallback to topic words)
+    # Hook — scroll-stopping text overlay (first 2 seconds)
+    # Design: large bold white text, first word in YELLOW for attention
     if ADD_HOOK_TEXT:
         try:
             hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
-            # Truncate to max 4 words (punchier for Shorts scroll-stop)
             hook_words = hook_line.split()[:4]
-            hook_line = " ".join(hook_words)
 
-            ht = TextClip(hook_line, fontsize=56, font=SUBTITLE_FONT, color="white",
-                stroke_color="black", stroke_width=3, method='caption',
-                size=(VIDEO_WIDTH - 180, None), align='center')
-            ht_w, ht_h = ht.size
-            hbg = ColorClip(size=(ht_w + 40, ht_h + 30), color=(0,0,0)).set_opacity(0.80)
-            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.22))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
-            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.22)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
-            layers.extend([hbg, ht])
+            # First word = yellow (attention grab), rest = white
+            first_word = hook_words[0] if hook_words else ""
+            rest_words = " ".join(hook_words[1:]) if len(hook_words) > 1 else ""
+
+            hook_y = int(VIDEO_HEIGHT * 0.18)
+
+            # Semi-transparent dark panel behind text (taller for bigger text)
+            # Build text clips first to measure total height
+            text_layers = []
+
+            # First word — YELLOW, extra large
+            if first_word:
+                ht1 = TextClip(first_word, fontsize=80, font=SUBTITLE_FONT, color="#FFD700",
+                    stroke_color="black", stroke_width=4, method='caption',
+                    size=(VIDEO_WIDTH - 120, None), align='center')
+                text_layers.append(("first", ht1))
+
+            # Remaining words — WHITE, large
+            if rest_words:
+                ht2 = TextClip(rest_words, fontsize=68, font=SUBTITLE_FONT, color="white",
+                    stroke_color="black", stroke_width=4, method='caption',
+                    size=(VIDEO_WIDTH - 120, None), align='center')
+                text_layers.append(("rest", ht2))
+
+            # Calculate total height for background panel
+            total_text_h = sum(tc.size[1] for _, tc in text_layers) + 20 * len(text_layers)
+            max_text_w = max((tc.size[0] for _, tc in text_layers), default=VIDEO_WIDTH - 200)
+            panel_w = min(max_text_w + 80, VIDEO_WIDTH - 40)
+            panel_h = total_text_h + 50
+
+            # Dark panel with slight transparency
+            hbg = ColorClip(size=(panel_w, panel_h), color=(0, 0, 0)).set_opacity(0.75)
+            hbg = hbg.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+            hbg = hbg.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            layers.append(hbg)
+
+            # Yellow accent bar on left edge of panel (MrBeast style)
+            accent_bar = ColorClip(size=(6, panel_h), color=(255, 215, 0)).set_opacity(0.95)
+            accent_bar = accent_bar.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+            accent_bar = accent_bar.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            layers.append(accent_bar)
+
+            # Position text clips
+            current_y = hook_y + 10
+            for label, tc in text_layers:
+                tc_w, tc_h = tc.size
+                tc = tc.set_position(((VIDEO_WIDTH - tc_w) // 2, current_y))
+                tc = tc.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+                layers.append(tc)
+                current_y += tc_h + 15
+
         except: pass
 
     # CTA — end-of-video branded strip (professional bar style)
