@@ -2838,9 +2838,46 @@ def main():
                         upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
+                    # Scheduled videos are private — YouTube blocks comments on private videos.
+                    # Temporarily switch to unlisted, post comment, then restore scheduled state.
+                    original_publish_at = None
+                    switched_to_unlisted = False
+                    if SCHEDULE_PUBLISH:
+                        try:
+                            # Save original publishAt before switching
+                            vid_status = youtube.videos().list(part="status", id=vid_id).execute()
+                            if vid_status.get("items"):
+                                original_publish_at = vid_status["items"][0]["status"].get("publishAt")
+                            youtube.videos().update(
+                                part="status",
+                                body={"id": vid_id, "status": {"privacyStatus": "unlisted"}}
+                            ).execute()
+                            switched_to_unlisted = True
+                            print("   🔓 Temporarily set to unlisted for commenting...")
+                        except Exception as e:
+                            print(f"   ⚠️ Could not switch to unlisted: {e}")
+
                     print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                     time.sleep(30)
                     pin_comment(youtube, vid_id)
+
+                    # Restore scheduled/private status
+                    if switched_to_unlisted and original_publish_at:
+                        try:
+                            youtube.videos().update(
+                                part="status",
+                                body={
+                                    "id": vid_id,
+                                    "status": {
+                                        "privacyStatus": "private",
+                                        "publishAt": original_publish_at,
+                                    }
+                                }
+                            ).execute()
+                            print(f"   🔒 Restored scheduled/private status")
+                        except Exception as e:
+                            print(f"   ⚠️ Could not restore private status: {e}")
+                            print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
 
                     # ── 10c. Add to series playlist ──
                     add_to_playlist(youtube, vid_id, fresh_topic)
