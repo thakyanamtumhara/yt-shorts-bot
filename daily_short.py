@@ -144,6 +144,8 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
+VEO_MAX_RETRIES = 5
+VEO_RETRY_WAIT = 90
 
 # Subtitles
 ADD_SUBTITLES = True
@@ -3098,8 +3100,6 @@ def main():
 
     # ── 5. Generate Video Clips (Veo 3.1) ──
     downloaded_clips = []
-    VEO_MAX_RETRIES = 5
-    VEO_RETRY_WAIT = 90
 
     if TEST_MODE or SKIP_CLIPS:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
