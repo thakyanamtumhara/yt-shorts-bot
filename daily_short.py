@@ -144,8 +144,9 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
-VEO_MAX_RETRIES = 5
-VEO_RETRY_WAIT = 90
+VEO_MAX_RETRIES = 3
+VEO_RETRY_WAIT = 30
+VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 
 # Subtitles
 ADD_SUBTITLES = True
@@ -2865,6 +2866,8 @@ def main():
     print(f"   ║ Clips per Video        : {VEO_CLIPS_PER_VIDEO:>25} ║")
     print(f"   ║ Veo Duration/Clip      : {str(VEO_DURATION) + 's':>25} ║")
     print(f"   ║ Veo Retries            : {VEO_MAX_RETRIES:>25} ║")
+    print(f"   ║ Veo Poll Timeout       : {str(VEO_POLL_TIMEOUT) + 's':>25} ║")
+    print(f"   ║ Veo Retry Wait         : {str(VEO_RETRY_WAIT) + 's':>25} ║")
     print(f"   ║ Clip Loop Guard        : {'ON':>25} ║")
     print(f"   ║ Ken Burns Effect       : {'ON':>25} ║")
     print(f"   ║ Black Intro Trim       : {'ON':>25} ║")
@@ -3118,8 +3121,8 @@ def main():
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             if i > 0 and i % 2 == 0:
-                print(f"   ⏸️ RPM limit — waiting 60s...")
-                time.sleep(60)
+                print(f"   ⏸️ RPM limit — waiting 30s...")
+                time.sleep(30)
 
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
@@ -3137,7 +3140,10 @@ def main():
                             duration_seconds=VEO_DURATION,
                         ),
                     )
+                    poll_start = time.time()
                     while not operation.done:
+                        if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                            raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
                         time.sleep(10)
                         operation = veo_client.operations.get(operation)
 
