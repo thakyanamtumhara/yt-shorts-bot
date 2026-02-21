@@ -1340,6 +1340,7 @@ def fetch_source_channel_insights():
     Returns list of dicts: [{title, views, likes, comments, published}]"""
 
     if not SOURCE_CHANNEL_ID or not SOURCE_CHANNEL_API_KEY:
+        print("   📊 Source channel: skipped (CHANNEL_ID_2 or YOUTUBE_API_KEY_1 not set)")
         return []
 
     # Check cache — refresh only once per 24h
@@ -1353,8 +1354,8 @@ def fetch_source_channel_insights():
                 if age_hours < 24:
                     print(f"   📊 Source channel insights from cache ({len(cache.get('videos', []))} videos, {age_hours:.0f}h old)")
                     return cache.get("videos", [])
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   📊 Source channel cache read failed: {e}")
 
     print("   📊 Fetching source channel data (YouTube Data API — read only)...")
     base_url = "https://www.googleapis.com/youtube/v3"
@@ -1432,6 +1433,7 @@ def get_source_channel_category_ranking():
     Same logic as get_top_performing_categories() but using source channel data."""
     videos = fetch_source_channel_insights()
     if not videos:
+        print("   📊 Source category ranking: no data available")
         return []
 
     cat_stats = {}
@@ -1461,6 +1463,7 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
 
     videos = fetch_source_channel_insights()
     if not videos or not SOURCE_CHANNEL_API_KEY:
+        print("   💬 Comment mining: skipped (no source channel data)")
         return []
 
     # Check cache (stored inside source_channel_insights.json)
@@ -1470,12 +1473,15 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
                 cache = json.load(f)
             cached_comments = cache.get("top_comments", [])
             if cached_comments:
+                print(f"   💬 Comment mining: {len(cached_comments)} comments from cache")
                 return cached_comments
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   💬 Comment cache read failed: {e}")
 
+    print("   💬 Fetching comments from source channel top videos...")
     base_url = "https://www.googleapis.com/youtube/v3"
     all_comments = []
+    fetch_errors = 0
 
     # Pick top videos by views (most engaged = best comments)
     top_videos = [v for v in videos if v.get("video_id") and v.get("comments", 0) > 0][:max_videos]
@@ -1491,6 +1497,7 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
                 "textFormat": "plainText",
             }, timeout=10)
             if resp.status_code != 200:
+                fetch_errors += 1
                 continue
             data = resp.json()
 
@@ -1504,8 +1511,12 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
                         "likes": like_count,
                         "video_title": video["title"][:60],
                     })
-        except Exception:
+        except Exception as e:
+            fetch_errors += 1
             continue
+
+    if fetch_errors:
+        print(f"   💬 Comment fetch: {fetch_errors}/{len(top_videos)} videos had errors")
 
     # Sort by likes — most liked comments = what audience cares about
     all_comments.sort(key=lambda c: c["likes"], reverse=True)
@@ -1519,10 +1530,10 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
             cache["top_comments"] = top_comments
             with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
                 json.dump(cache, f, indent=2, ensure_ascii=False)
-            print(f"   💬 Fetched {len(top_comments)} top comments from source channel")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   ⚠️ Comment cache save failed: {e}")
 
+    print(f"   💬 Comment mining: {len(top_comments)} comments collected ({len(top_videos)} videos scanned)")
     return top_comments
 
 
@@ -1556,6 +1567,7 @@ def get_source_channel_posting_patterns():
     Returns dict: {hour: avg_views} for hours that have data."""
     videos = fetch_source_channel_insights()
     if not videos:
+        print("   ⏰ Source posting patterns: no data available")
         return {}
 
     ist = pytz.timezone(TIMEZONE)
@@ -2726,6 +2738,7 @@ RULES:
 def optimize_title(claude_client, original_title, script_english, topic):
     """Generate 3 title variants and pick the best one for CTR.
     Uses source channel's top titles as reference for what works."""
+    print(f"   🏷️ Title optimization: generating A/B variants...")
 
     source_titles = get_source_channel_top_topics(5)
     source_context = ""
@@ -2808,6 +2821,32 @@ def main():
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
+
+    # ── Feature Dashboard ──
+    print()
+    print("   ┌─────────────────────────────────────────────┐")
+    print("   │          FEATURE STATUS DASHBOARD            │")
+    print("   ├─────────────────────────────────────────────┤")
+    print(f"   │ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>20} │")
+    print(f"   │ Comment Mining         : {'ON' if SOURCE_CHANNEL_API_KEY else 'OFF (no API key)':>20} │")
+    print(f"   │ Title A/B Optimization : {'ON':>20} │")
+    print(f"   │ Smart Posting Time     : {'ON':>20} │")
+    print(f"   │ Script Quality Gate    : {'ON (6 dimensions/60)':>20} │")
+    print(f"   │ Visual Alignment Check : {'ON':>20} │")
+    print(f"   │ Clip Loop Guard        : {'ON':>20} │")
+    print(f"   │ Hook Text (scroll-stop): {'ON' if ADD_HOOK_TEXT else 'OFF':>20} │")
+    print(f"   │ Hook SFX (bass drop)   : {'ON' if ADD_HOOK_SFX else 'OFF':>20} │")
+    print(f"   │ Audio Normalization    : {'ON (-16 LUFS)':>20} │")
+    print(f"   │ Thumbnail Generation   : {'ON' if GENERATE_THUMBNAIL else 'OFF':>20} │")
+    print(f"   │ Auto-Pin Comment       : {'ON' if AUTO_PIN_COMMENT else 'OFF':>20} │")
+    print(f"   │ Auto-Playlist          : {'ON' if AUTO_PLAYLIST else 'OFF':>20} │")
+    print(f"   │ Instagram Cross-Post   : {'ON' if CROSS_POST_INSTAGRAM else 'OFF':>20} │")
+    print(f"   │ Engagement Feedback    : {'ON (48h delay)':>20} │")
+    print(f"   │ Cost Limit             : {'$' + str(DAILY_COST_LIMIT_USD):>20} │")
+    print(f"   │ Veo Model              : {VEO_MODEL:>20} │")
+    print(f"   │ Clips per Video        : {VEO_CLIPS_PER_VIDEO:>20} │")
+    print(f"   │ Hook Duration          : {str(HOOK_DURATION) + 's':>20} │")
+    print("   └─────────────────────────────────────────────┘")
     print()
 
     # ── 1. API Keys ──
@@ -3243,6 +3282,7 @@ def main():
         while accumulated < total_duration:
             clip = video_objects[idx % len(video_objects)]
             if clip.duration <= 0:
+                print(f"   ⚠️ Clip {idx} has zero duration — skipping")
                 idx += 1
                 continue
             remaining = total_duration - accumulated
@@ -3308,7 +3348,8 @@ def main():
                     bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
                     txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
                     layers.extend([bg, txt])
-            except: pass
+            except Exception as e:
+                print(f"   ⚠️ Subtitle overlay failed: {e}")
 
     # Watermark badge — small left-side tag (positioned to avoid YouTube Shorts UI)
     # YT Shorts UI: top = channel name, right = like/comment/share, bottom = desc/music
@@ -3333,7 +3374,8 @@ def main():
                 (badge_x + WATERMARK_PADDING_H, badge_y + WATERMARK_PADDING_V)
             ).set_duration(total_duration)
             layers.extend([wm_bg, wm_txt])
-        except: pass
+        except Exception as e:
+            print(f"   ⚠️ Watermark overlay failed: {e}")
 
     # Hook — scroll-stopping text overlay (first 2 seconds)
     # Design: large bold white text, first word in YELLOW for attention
@@ -3393,7 +3435,8 @@ def main():
                 layers.append(tc)
                 current_y += tc_h + 15
 
-        except: pass
+        except Exception as e:
+            print(f"   ⚠️ Hook text overlay failed: {e}")
 
     # CTA — end-of-video branded strip (professional bar style)
     if ADD_CTA_OVERLAY:
@@ -3419,7 +3462,8 @@ def main():
             cta_txt = cta_txt.set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
 
             layers.extend([cta_bar, accent_line, cta_txt])
-        except: pass
+        except Exception as e:
+            print(f"   ⚠️ CTA overlay failed: {e}")
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
