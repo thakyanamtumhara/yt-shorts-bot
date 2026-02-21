@@ -108,9 +108,9 @@ SCRIPT_MAX_ATTEMPTS = 3
 ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
 ELEVENLABS_VOICE_SETTINGS = {
-    "stability": 0.45,
+    "stability": 0.62,
     "similarity_boost": 0.75,
-    "style": 0.40,
+    "style": 0.22,
     "use_speaker_boost": True,
 }
 
@@ -133,9 +133,10 @@ PRONUNCIATION RULES (CRITICAL):
 
 SPEAKING STYLE:
 - Speak like you're explaining something to a fellow businessman over chai
-- Natural thinking pauses and fillers — "umm", "dekho", "matlab"
 - Confident, knowledgeable, casual — NOT formal, NOT scripted, NOT like a narrator
-- Medium pace, relaxed delivery
+- Medium pace, relaxed delivery — do NOT elongate or stretch any syllables
+- Do NOT add "umm", "hmm", "aaaa" or any stretched filler sounds
+- Keep pauses SHORT and natural — just a brief comma pause, nothing long
 - Trail off naturally at the end of sentences"""
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
@@ -1362,38 +1363,33 @@ RULES for ending:
 - Add "..." before the final phrase for a natural pause feel
 - The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
 
-━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
+━━━ NATURAL SPEECH FILLERS (for human feel) ━━━
 
-The voice MUST sound like a REAL person thinking and talking, NOT a script being read.
-Add NATURAL HINDI FILLERS and THINKING PAUSES throughout the script:
+Add a few NATURAL HINDI FILLERS to make it sound real, not read:
 
-FILLER WORDS to use naturally (pick 4-5 per script for the longer format):
-- "Dekho..." (Look/See... — opening filler)
-- "Matlab..." (Meaning... — thinking pause)
-- "Accha..." (Okay/Right... — transition filler)
-- "Hmm..." (thinking sound)
-- "Toh basically..." (So basically... — explanation starter)
-- "Aur ek baat..." (And one thing... — adding a point)
-- "Samjho..." (Understand... — before explaining)
-- "Seedhi baat hai..." (Straight talk... — before a direct statement)
-- "Ab dekho..." (Now see... — transitioning)
-- "Accha toh suno..." (Ok so listen... — before key point)
-- "Wahi toh problem hai..." (That's the problem... — frustration filler)
+FILLER WORDS (pick 2-3 per script, NOT more):
+- "Dekho," (Look/See — opening)
+- "Matlab," (Meaning — thinking)
+- "Toh basically," (explanation starter)
+- "Aur ek baat," (adding a point)
+- "Ab dekho," (transitioning)
 
 EXAMPLE with fillers (natural flow):
-"Dekho... ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
-2 wash mein print fade ho gaya. Matlab... pre-treatment hi nahi kiya tha. Ab DTG
-mein ye zaroori hota hai — ink fabric mein absorb hone ke liye pre-treatment lagta hai.
-Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Accha... toh solution
-simple hai — pre-treatment spray ya machine use karo, phir print karo. Cost thoda
-badhega par return zero ho jayega. Aur ek baat... pre-treatment ka coat uniform hona
-chahiye, warna patchy print aayega... toh bas itna dhyan rakho, complaint nahi aayegi."
+"Dekho, ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
+2 wash mein print fade ho gaya. Matlab, pre-treatment hi nahi kiya tha. Ab DTG
+mein ye zaroori hota hai, ink fabric mein absorb hone ke liye pre-treatment lagta hai.
+Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Toh solution simple hai,
+pre-treatment spray ya machine use karo, phir print karo. Cost thoda badhega par
+return zero ho jayega. Aur ek baat, pre-treatment ka coat uniform hona chahiye,
+warna patchy print aayega. Toh bas itna dhyan rakho, complaint nahi aayegi."
 
-RULES for fillers:
-- Place fillers at SENTENCE STARTS and BEFORE explanations, never mid-word
-- Use "..." (ellipsis) after fillers to indicate natural pause
-- Use 4-5 fillers naturally spread across the longer script
-- Fillers should FLOW with the sentence, not feel forced
+CRITICAL RULES for fillers and pauses:
+- Use COMMA after fillers, NOT "..." (ellipsis). The TTS engine reads "..." as a very long pause.
+- NEVER use "..." anywhere in script_voice. Use comma or dash instead.
+- NEVER write elongated sounds like "aaaaaa", "hmmmm", "ummmm", "bekaaaar"
+- NEVER write "Hmm..." or "Accha..." — these sound distorted in TTS
+- Maximum 2-3 filler words per script, NOT more
+- Keep the flow CLEAN and CRISP — fillers are seasoning, not the main dish
 
 ━━━ LANGUAGE RULES ━━━
 
@@ -1429,6 +1425,7 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Describe EXACTLY what the camera sees — this is for an AI that generates video
 - Include camera angle, lighting, movement, and specific objects
 - Focus on t-shirt/textile/manufacturing/printing industry visuals
+- CRITICAL: Every clip must START with a visible, well-lit scene from frame 1. NO black intros, NO fade-from-black, NO dark openings. Begin with action immediately.
 - Be SPECIFIC: "Close-up of Indian man's hands holding a thick white cotton
   round-neck t-shirt, turning it to show the smooth bio-washed fabric texture,
   warm indoor lighting, slight camera dolly forward" — NOT "a tshirt"
@@ -2377,6 +2374,12 @@ def main():
         data = candidate
 
     script_voice = data["script_voice"]
+    # Sanitize script for TTS: strip ellipsis and elongated sounds that cause distortion
+    import re
+    script_voice = script_voice.replace("...", ",").replace("..", ",")
+    script_voice = re.sub(r'(\w)\1{3,}', lambda m: m.group(0)[:2], script_voice)  # "aaaaaa" → "aa"
+    script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
+
     script_english = data["script_english"]
     yt_title = data["title"]
     yt_description = data["description"]
@@ -2605,6 +2608,29 @@ def main():
         except Exception:
             return clip  # Fallback: return original if zoom fails
 
+    def trim_black_intro(clip, threshold=15, max_trim=3.0):
+        """Detect and skip black frames at the start of a clip.
+        threshold: average pixel brightness below which a frame is 'black'.
+        max_trim: maximum seconds to trim from the start."""
+        try:
+            import numpy as np
+            step = 0.25  # Check every 0.25 seconds
+            trim_to = 0.0
+            for t in [i * step for i in range(int(max_trim / step) + 1)]:
+                if t >= clip.duration:
+                    break
+                frame = clip.get_frame(t)
+                avg_brightness = np.mean(frame)
+                if avg_brightness > threshold:
+                    trim_to = t
+                    break
+            if trim_to > 0:
+                print(f"      Trimmed {trim_to:.1f}s black intro")
+                return clip.subclip(trim_to)
+            return clip
+        except Exception:
+            return clip
+
     video_objects = []
     for fname in downloaded_clips:
         try:
@@ -2621,6 +2647,8 @@ def main():
             v = VideoFileClip(fixed_fname)
             v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
             v = v.without_audio()
+            # Trim black frames from Veo clip intros
+            v = trim_black_intro(v)
             # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
             v = apply_ken_burns(v, zoom_percent=3)
             video_objects.append(v)
@@ -2642,11 +2670,13 @@ def main():
         trimmed = [speedx(v, sf) for v in video_objects]
 
     if CLIP_FADE_DURATION > 0 and len(trimmed) > 1:
-        for idx in range(len(trimmed)):
-            if idx > 0: trimmed[idx] = trimmed[idx].crossfadein(CLIP_FADE_DURATION)
-            if idx < len(trimmed) - 1: trimmed[idx] = trimmed[idx].crossfadeout(CLIP_FADE_DURATION)
-
-    base_video = concatenate_videoclips(trimmed, method="compose")
+        # Use padding_and_crossfade for clean transitions (no black gaps)
+        try:
+            base_video = concatenate_videoclips(trimmed, method="compose", padding=-CLIP_FADE_DURATION)
+        except Exception:
+            base_video = concatenate_videoclips(trimmed, method="chain")
+    else:
+        base_video = concatenate_videoclips(trimmed, method="chain")
     if base_video.duration > total_duration:
         base_video = base_video.subclip(0, total_duration)
 
