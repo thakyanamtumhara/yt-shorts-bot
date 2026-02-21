@@ -2397,7 +2397,6 @@ def main():
                             aspect_ratio=VEO_ASPECT_RATIO,
                             number_of_videos=1,
                             duration_seconds=VEO_DURATION,
-                            generate_audio=False,  # Skip audio — we add our own voice + music
                         ),
                     )
                     while not operation.done:
