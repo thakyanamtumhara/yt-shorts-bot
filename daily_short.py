@@ -108,9 +108,9 @@ SCRIPT_MAX_ATTEMPTS = 3
 ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
 ELEVENLABS_VOICE_SETTINGS = {
-    "stability": 0.45,
+    "stability": 0.62,
     "similarity_boost": 0.75,
-    "style": 0.40,
+    "style": 0.22,
     "use_speaker_boost": True,
 }
 
@@ -133,9 +133,10 @@ PRONUNCIATION RULES (CRITICAL):
 
 SPEAKING STYLE:
 - Speak like you're explaining something to a fellow businessman over chai
-- Natural thinking pauses and fillers — "umm", "dekho", "matlab"
 - Confident, knowledgeable, casual — NOT formal, NOT scripted, NOT like a narrator
-- Medium pace, relaxed delivery
+- Medium pace, relaxed delivery — do NOT elongate or stretch any syllables
+- Do NOT add "umm", "hmm", "aaaa" or any stretched filler sounds
+- Keep pauses SHORT and natural — just a brief comma pause, nothing long
 - Trail off naturally at the end of sentences"""
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
@@ -201,9 +202,9 @@ VEO_AMBIENT_VOLUME = 0
 ADD_HOOK_SFX = True
 HOOK_SFX_VOLUME = 0.25
 
-# Hook Text
+# Hook Text (scroll-stopping overlay on first frame)
 ADD_HOOK_TEXT = True
-HOOK_DURATION = 1.5
+HOOK_DURATION = 2.0  # 2 seconds for better scroll-stop impact
 
 # Transitions
 CLIP_FADE_DURATION = 0.3
@@ -237,7 +238,7 @@ PUBLISH_SLOT_SCHEDULE = {
 
 # Files
 TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
-CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
+CLIP_HISTORY_FILE = "clip_history.json"  # In repo root for git tracking
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
 SCOPES = [
@@ -266,10 +267,16 @@ CROSS_POST_INSTAGRAM = True
 
 # Cost Tracker — log per-video API costs
 COST_TRACKER_FILE = "cost_tracker.json"  # In repo root for git tracking
+DAILY_COST_LIMIT_USD = 10.0  # Circuit breaker: skip video if today's spend exceeds this
 
 # Engagement Feedback Loop — check video performance after 48h
 ENGAGEMENT_FILE = "engagement_history.json"  # In repo root for git tracking
 ENGAGEMENT_CHECK_DELAY_HOURS = 48
+
+# Source Channel — read engagement data from existing 50K channel to inform topic selection
+SOURCE_CHANNEL_ID = os.environ.get("CHANNEL_ID_2", "")
+SOURCE_CHANNEL_API_KEY = os.environ.get("YOUTUBE_API_KEY_1", "")
+SOURCE_CHANNEL_CACHE_FILE = "source_channel_insights.json"  # In repo root for git tracking
 
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                   TOPIC BANK                                         ║
@@ -597,47 +604,67 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
             font_topic = ImageFont.load_default()
             font_brand = ImageFont.load_default()
 
-        # Yellow accent bar at top
+        # Yellow accent bars — top + left edge (brand consistency with video hook)
         draw.rectangle([(0, 0), (THUMBNAIL_WIDTH, 8)], fill=(255, 215, 0))
+        draw.rectangle([(0, 0), (8, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
 
-        # Hook text — big, bold, white with yellow highlight words
+        # Hook text — first word YELLOW (scroll-stop), rest WHITE
         hook_display = (hook_text or topic.split("—")[0].strip()).upper()
-        # Wrap long text
-        hook_words = hook_display.split()
-        lines = []
-        current_line = ""
-        for word in hook_words:
-            test = f"{current_line} {word}".strip()
-            bbox = draw.textbbox((0, 0), test, font=font_hook)
-            if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
-                if current_line:
-                    lines.append(current_line)
-                current_line = word
-            else:
-                current_line = test
-        if current_line:
-            lines.append(current_line)
+        all_words = hook_display.split()
+        first_word = all_words[0] if all_words else ""
+        rest_words = " ".join(all_words[1:]) if len(all_words) > 1 else ""
 
-        # Draw hook text centered, starting at ~35% height
-        y_start = int(THUMBNAIL_HEIGHT * 0.30)
-        line_height = 90
-        for i, line in enumerate(lines[:4]):  # Max 4 lines
-            bbox = draw.textbbox((0, 0), line, font=font_hook)
-            text_w = bbox[2] - bbox[0]
-            x = (THUMBNAIL_WIDTH - text_w) // 2
-            y = y_start + i * line_height
-            # Black outline
-            for dx in [-3, -2, 0, 2, 3]:
-                for dy in [-3, -2, 0, 2, 3]:
-                    draw.text((x + dx, y + dy), line, font=font_hook, fill=(0, 0, 0))
-            # White text
-            draw.text((x, y), line, font=font_hook, fill=(255, 255, 255))
+        # Use larger font for first word
+        font_first = None
+        if font_file:
+            font_first = ImageFont.truetype(font_file, 90)
+
+        y_start = int(THUMBNAIL_HEIGHT * 0.28)
+
+        def _draw_outlined(draw, x, y, text, font, fill, outline=(0, 0, 0), width=4):
+            for dx in range(-width, width + 1):
+                for dy in range(-width, width + 1):
+                    if dx * dx + dy * dy <= width * width:
+                        draw.text((x + dx, y + dy), text, font=font, fill=outline)
+            draw.text((x, y), text, font=font, fill=fill)
+
+        # Draw first word in YELLOW (big)
+        current_y = y_start
+        if first_word:
+            bbox = draw.textbbox((0, 0), first_word, font=font_first or font_hook)
+            fw_w = bbox[2] - bbox[0]
+            fw_x = (THUMBNAIL_WIDTH - fw_w) // 2
+            _draw_outlined(draw, fw_x, current_y, first_word, font_first or font_hook, (255, 215, 0))
+            current_y += (bbox[3] - bbox[1]) + 15
+
+        # Draw remaining words in WHITE (wrap if needed)
+        if rest_words:
+            rest_lines = []
+            current_line = ""
+            for word in rest_words.split():
+                test = f"{current_line} {word}".strip()
+                bbox = draw.textbbox((0, 0), test, font=font_hook)
+                if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
+                    if current_line:
+                        rest_lines.append(current_line)
+                    current_line = word
+                else:
+                    current_line = test
+            if current_line:
+                rest_lines.append(current_line)
+
+            for line in rest_lines[:3]:
+                bbox = draw.textbbox((0, 0), line, font=font_hook)
+                text_w = bbox[2] - bbox[0]
+                x = (THUMBNAIL_WIDTH - text_w) // 2
+                _draw_outlined(draw, x, current_y, line, font_hook, (255, 255, 255))
+                current_y += (bbox[3] - bbox[1]) + 10
 
         # Topic summary — smaller text below hook
         topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
         bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
         topic_w = bbox[2] - bbox[0]
-        topic_y = y_start + len(lines[:4]) * line_height + 30
+        topic_y = current_y + 25
         draw.text(((THUMBNAIL_WIDTH - topic_w) // 2, topic_y), topic_short,
                   font=font_topic, fill=(200, 200, 200))
 
@@ -690,32 +717,56 @@ def pin_comment(youtube, video_id, comment_text=None):
         return
     try:
         text = comment_text or PIN_COMMENT_TEXT
-        # Insert the comment
-        comment_body = {
-            "snippet": {
-                "videoId": video_id,
-                "topLevelComment": {
+
+        # Get our channel ID (required by commentThreads.insert)
+        channel_id = None
+        try:
+            ch_resp = youtube.channels().list(part="id", mine=True).execute()
+            if ch_resp.get("items"):
+                channel_id = ch_resp["items"][0]["id"]
+        except Exception:
+            pass
+
+        # Insert the comment (retry with delay — freshly uploaded videos need processing time)
+        comment_response = None
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                comment_body = {
                     "snippet": {
-                        "textOriginal": text,
+                        "videoId": video_id,
+                        "topLevelComment": {
+                            "snippet": {
+                                "textOriginal": text,
+                            }
+                        }
                     }
                 }
-            }
-        }
-        comment_response = youtube.commentThreads().insert(
-            part="snippet", body=comment_body
-        ).execute()
+                if channel_id:
+                    comment_body["snippet"]["channelId"] = channel_id
+
+                comment_response = youtube.commentThreads().insert(
+                    part="snippet", body=comment_body
+                ).execute()
+                break  # Success
+            except Exception as e:
+                error_msg = str(e)
+                if attempt < max_retries and ("403" in error_msg or "processing" in error_msg.lower()):
+                    wait = 30 * attempt
+                    print(f"   ⏳ Comment attempt {attempt} failed, retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
+
+        if not comment_response:
+            print(f"   ⚠️ Pin comment failed after {max_retries} attempts")
+            return None
 
         comment_id = comment_response["snippet"]["topLevelComment"]["id"]
         print(f"   💬 CTA comment posted: {comment_id}")
 
-        # Pin the comment (set as held-for-review moderation status doesn't pin,
-        # we need to use the comments.setModerationStatus or simply mark via the API)
-        # YouTube Data API v3: to pin, we set the comment as "heldForReview" then "published"
-        # Actually, pinning requires using the channelId approach:
-        # The simplest method: use the comment's ID to pin via setModerationStatus
-        # Note: YouTube API doesn't have a direct "pin" endpoint.
-        # Workaround: the channel owner's first comment is prominent by default.
-        # For actual pinning, we use the undocumented but functional approach:
+        # Channel owner's first comment is automatically prominent.
+        # setModerationStatus as "published" ensures it's visible immediately.
         try:
             youtube.comments().setModerationStatus(
                 id=comment_id, moderationStatus="published"
@@ -879,28 +930,75 @@ def cross_post_to_instagram(video_path, title, description, topic):
 
     try:
         # Instagram Reels need the video hosted at a public URL.
-        # Upload to a temporary public host first, OR use a pre-signed URL.
-        # For GitHub Actions, we upload the video to a temporary file.io endpoint.
+        # Upload to a temporary public host (with fallback chain).
         print("   📸 Cross-posting to Instagram Reels...")
 
-        # Step 0: Upload video to temporary public URL (file.io — auto-deletes after download)
-        with open(video_path, "rb") as vf:
-            upload_resp = requests.post(
-                "https://file.io",
-                files={"file": (os.path.basename(video_path), vf, "video/mp4")},
-                timeout=120,
-            )
-        if upload_resp.status_code != 200:
-            print(f"   ⚠️ Instagram: temp upload failed ({upload_resp.status_code})")
-            return None
+        # Step 0: Upload video to temporary public URL
+        public_url = None
+        file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
 
-        upload_data = upload_resp.json()
-        if not upload_data.get("success"):
-            print(f"   ⚠️ Instagram: temp upload failed: {upload_data}")
-            return None
+        # Host 1: 0x0.st (up to 512MB, direct URL, no account needed)
+        if not public_url:
+            try:
+                print(f"   📤 Uploading to 0x0.st ({file_size_mb:.0f}MB)...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://0x0.st",
+                        files={"file": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=300,
+                    )
+                if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                    public_url = resp.text.strip()
+                    print(f"   📤 Video hosted via 0x0.st")
+                else:
+                    print(f"   ⚠️ 0x0.st failed ({resp.status_code}): {resp.text[:100]}")
+            except Exception as e:
+                print(f"   ⚠️ 0x0.st error: {e}")
 
-        public_url = upload_data.get("link")
-        print(f"   📤 Video hosted temporarily for Instagram")
+        # Host 2: litterbox.catbox.moe (up to 1GB, 72h expiry)
+        if not public_url:
+            try:
+                print(f"   📤 Trying litterbox.catbox.moe...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://litterbox.catbox.moe/resources/internals/api.php",
+                        data={"reqtype": "fileupload", "time": "72h"},
+                        files={"fileToUpload": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=300,
+                    )
+                if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                    public_url = resp.text.strip()
+                    print(f"   📤 Video hosted via litterbox.catbox.moe")
+                else:
+                    print(f"   ⚠️ litterbox failed ({resp.status_code}): {resp.text[:100]}")
+            except Exception as e:
+                print(f"   ⚠️ litterbox error: {e}")
+
+        # Host 3: file.io (fallback, 100MB limit)
+        if not public_url:
+            try:
+                print(f"   📤 Trying file.io (fallback)...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://file.io",
+                        files={"file": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=120,
+                    )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("success"):
+                        public_url = data.get("link")
+                        print(f"   📤 Video hosted via file.io")
+                    else:
+                        print(f"   ⚠️ file.io failed: {data}")
+                else:
+                    print(f"   ⚠️ file.io failed ({resp.status_code})")
+            except Exception as e:
+                print(f"   ⚠️ file.io error: {e}")
+
+        if not public_url:
+            print(f"   ❌ Instagram: all temp hosts failed. Skipping cross-post.")
+            return None
 
         # Step 1: Create media container (Reels)
         # Build caption: title + hashtags
@@ -1067,6 +1165,24 @@ class CostTracker:
 
         print(f"   💾 Cost logged: ${self.total():.4f} → {COST_TRACKER_FILE}")
 
+    @staticmethod
+    def check_daily_limit():
+        """Check if today's total spend exceeds DAILY_COST_LIMIT_USD.
+        Returns (within_limit: bool, today_spend: float)."""
+        if not os.path.exists(COST_TRACKER_FILE):
+            return True, 0.0
+        try:
+            with open(COST_TRACKER_FILE, "r") as f:
+                history = json.load(f)
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            today_spend = sum(
+                e.get("total_usd", 0) for e in history
+                if e.get("date", "").startswith(today_str)
+            )
+            return today_spend < DAILY_COST_LIMIT_USD, today_spend
+        except Exception:
+            return True, 0.0
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # ENGAGEMENT FEEDBACK LOOP
@@ -1175,9 +1291,366 @@ def get_top_performing_topics(n=5):
         return []
 
 
+def get_top_performing_categories():
+    """Analyze engagement data and return category names ranked by avg views.
+    Maps video titles back to TOPIC_SERIES_TAGS categories via keyword matching."""
+    if not os.path.exists(ENGAGEMENT_FILE):
+        return []
+
+    try:
+        with open(ENGAGEMENT_FILE, "r") as f:
+            engagement = json.load(f)
+
+        if not engagement:
+            return []
+
+        # Aggregate views per category
+        cat_stats = {}  # {category: [views, views, ...]}
+        for entry in engagement:
+            title_lower = entry.get("title", "").lower()
+            views = entry.get("views", 0)
+            for cat_name, cat_data in TOPIC_SERIES_TAGS.items():
+                if any(kw in title_lower for kw in cat_data["keywords"]):
+                    cat_stats.setdefault(cat_name, []).append(views)
+                    break  # One category per video
+
+        if not cat_stats:
+            return []
+
+        # Rank by average views
+        ranked = sorted(
+            cat_stats.items(),
+            key=lambda x: sum(x[1]) / len(x[1]),
+            reverse=True,
+        )
+        return [cat for cat, _ in ranked]
+
+    except Exception:
+        return []
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# SOURCE CHANNEL INSIGHTS (read-only from existing 50K channel)
+# ═══════════════════════════════════════════════════════════════════════
+
+def fetch_source_channel_insights():
+    """Fetch top videos from the source YouTube channel (read-only).
+    Uses YouTube Data API v3: search.list + videos.list.
+    Caches results for 24h to avoid unnecessary API calls.
+    Returns list of dicts: [{title, views, likes, comments, published}]"""
+
+    if not SOURCE_CHANNEL_ID or not SOURCE_CHANNEL_API_KEY:
+        print("   📊 Source channel: skipped (CHANNEL_ID_2 or YOUTUBE_API_KEY_1 not set)")
+        return []
+
+    # Check cache — refresh only once per 24h
+    if os.path.exists(SOURCE_CHANNEL_CACHE_FILE):
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cached_at = cache.get("fetched_at", "")
+            if cached_at:
+                age_hours = (datetime.now() - datetime.fromisoformat(cached_at)).total_seconds() / 3600
+                if age_hours < 24:
+                    print(f"   📊 Source channel insights from cache ({len(cache.get('videos', []))} videos, {age_hours:.0f}h old)")
+                    return cache.get("videos", [])
+        except Exception as e:
+            print(f"   📊 Source channel cache read failed: {e}")
+
+    print("   📊 Fetching source channel data (YouTube Data API — read only)...")
+    base_url = "https://www.googleapis.com/youtube/v3"
+
+    try:
+        # Step 1: Get video IDs from channel (search.list — 100 quota units)
+        search_resp = requests.get(f"{base_url}/search", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "channelId": SOURCE_CHANNEL_ID,
+            "part": "id",
+            "order": "date",
+            "maxResults": 50,
+            "type": "video",
+        }, timeout=15)
+        search_resp.raise_for_status()
+        search_data = search_resp.json()
+
+        video_ids = [item["id"]["videoId"] for item in search_data.get("items", []) if item["id"].get("videoId")]
+        if not video_ids:
+            print("   ⚠️ No videos found on source channel")
+            return []
+
+        # Step 2: Get video details (videos.list — 1 quota unit per 50 videos)
+        videos_resp = requests.get(f"{base_url}/videos", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "id": ",".join(video_ids),
+            "part": "snippet,statistics",
+        }, timeout=15)
+        videos_resp.raise_for_status()
+        videos_data = videos_resp.json()
+
+        videos = []
+        for item in videos_data.get("items", []):
+            snippet = item.get("snippet", {})
+            stats = item.get("statistics", {})
+            videos.append({
+                "video_id": item.get("id", ""),
+                "title": snippet.get("title", ""),
+                "views": int(stats.get("viewCount", 0)),
+                "likes": int(stats.get("likeCount", 0)),
+                "comments": int(stats.get("commentCount", 0)),
+                "published": snippet.get("publishedAt", ""),
+            })
+
+        # Sort by views descending
+        videos.sort(key=lambda v: v["views"], reverse=True)
+
+        # Cache results
+        cache_data = {
+            "fetched_at": datetime.now().isoformat(),
+            "channel_id": SOURCE_CHANNEL_ID,
+            "videos": videos,
+        }
+        with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
+            json.dump(cache_data, f, indent=2, ensure_ascii=False)
+
+        print(f"   ✅ Fetched {len(videos)} videos from source channel (top: {videos[0]['views']:,} views)")
+        return videos
+
+    except Exception as e:
+        print(f"   ⚠️ Source channel fetch failed: {e}")
+        return []
+
+
+def get_source_channel_top_topics(n=10):
+    """Return top N video titles from source channel, ranked by views."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        return []
+    return [v["title"] for v in videos[:n]]
+
+
+def get_source_channel_category_ranking():
+    """Analyze source channel videos and rank categories by avg views.
+    Same logic as get_top_performing_categories() but using source channel data."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        print("   📊 Source category ranking: no data available")
+        return []
+
+    cat_stats = {}
+    for v in videos:
+        title_lower = v["title"].lower()
+        views = v["views"]
+        for cat_name, cat_data in TOPIC_SERIES_TAGS.items():
+            if any(kw in title_lower for kw in cat_data["keywords"]):
+                cat_stats.setdefault(cat_name, []).append(views)
+                break
+
+    if not cat_stats:
+        return []
+
+    ranked = sorted(
+        cat_stats.items(),
+        key=lambda x: sum(x[1]) / len(x[1]),
+        reverse=True,
+    )
+    return [cat for cat, _ in ranked]
+
+
+def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
+    """Fetch top comments from source channel's best videos (read-only).
+    Uses commentThreads.list API. Returns list of comment strings.
+    Quota cost: ~1 unit per call, max 5 calls = ~5 units."""
+
+    videos = fetch_source_channel_insights()
+    if not videos or not SOURCE_CHANNEL_API_KEY:
+        print("   💬 Comment mining: skipped (no source channel data)")
+        return []
+
+    # Check cache (stored inside source_channel_insights.json)
+    if os.path.exists(SOURCE_CHANNEL_CACHE_FILE):
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cached_comments = cache.get("top_comments", [])
+            if cached_comments:
+                print(f"   💬 Comment mining: {len(cached_comments)} comments from cache")
+                return cached_comments
+        except Exception as e:
+            print(f"   💬 Comment cache read failed: {e}")
+
+    print("   💬 Fetching comments from source channel top videos...")
+    base_url = "https://www.googleapis.com/youtube/v3"
+    all_comments = []
+    fetch_errors = 0
+
+    # Pick top videos by views (most engaged = best comments)
+    top_videos = [v for v in videos if v.get("video_id") and v.get("comments", 0) > 0][:max_videos]
+
+    for video in top_videos:
+        try:
+            resp = requests.get(f"{base_url}/commentThreads", params={
+                "key": SOURCE_CHANNEL_API_KEY,
+                "videoId": video["video_id"],
+                "part": "snippet",
+                "order": "relevance",
+                "maxResults": max_comments_per_video,
+                "textFormat": "plainText",
+            }, timeout=10)
+            if resp.status_code != 200:
+                fetch_errors += 1
+                continue
+            data = resp.json()
+
+            for item in data.get("items", []):
+                comment_text = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+                like_count = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", 0)
+                # Only keep meaningful comments (>10 chars, not just emojis)
+                if len(comment_text) > 10:
+                    all_comments.append({
+                        "text": comment_text[:200],  # Truncate long comments
+                        "likes": like_count,
+                        "video_title": video["title"][:60],
+                    })
+        except Exception as e:
+            fetch_errors += 1
+            continue
+
+    if fetch_errors:
+        print(f"   💬 Comment fetch: {fetch_errors}/{len(top_videos)} videos had errors")
+
+    # Sort by likes — most liked comments = what audience cares about
+    all_comments.sort(key=lambda c: c["likes"], reverse=True)
+    top_comments = all_comments[:30]  # Keep top 30
+
+    # Save to cache
+    if top_comments:
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cache["top_comments"] = top_comments
+            with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
+                json.dump(cache, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"   ⚠️ Comment cache save failed: {e}")
+
+    print(f"   💬 Comment mining: {len(top_comments)} comments collected ({len(top_videos)} videos scanned)")
+    return top_comments
+
+
+def get_audience_questions(n=10):
+    """Extract audience questions/requests from source channel comments.
+    Returns formatted string for use in prompts."""
+    comments = fetch_source_channel_comments()
+    if not comments:
+        return "No comment data available."
+
+    # Filter for questions (comments with ?, kaise, kya, kyu, etc.)
+    question_words = ["?", "kaise", "kya", "kyu", "kyun", "konsa", "kaunsa", "kitna",
+                      "how", "what", "why", "which", "best", "suggest", "recommend",
+                      "bata", "batao", "samjhao", "explain"]
+    questions = [c for c in comments if any(w in c["text"].lower() for w in question_words)]
+
+    # If not enough questions, include most-liked comments
+    if len(questions) < 3:
+        questions = comments[:n]
+    else:
+        questions = questions[:n]
+
+    lines = []
+    for q in questions:
+        lines.append(f"  - \"{q['text'][:100]}\" ({q['likes']} likes, on: {q['video_title']})")
+    return "\n".join(lines) if lines else "No relevant comments found."
+
+
+def get_source_channel_posting_patterns():
+    """Analyze source channel videos to find best posting hour (IST).
+    Returns dict: {hour: avg_views} for hours that have data."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        print("   ⏰ Source posting patterns: no data available")
+        return {}
+
+    ist = pytz.timezone(TIMEZONE)
+    hour_stats = {}  # {hour: [views, views, ...]}
+
+    for v in videos:
+        published = v.get("published", "")
+        views = v.get("views", 0)
+        if not published:
+            continue
+        try:
+            # Parse ISO datetime and convert to IST
+            pub_dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+            pub_ist = pub_dt.astimezone(ist)
+            hour = pub_ist.hour
+            hour_stats.setdefault(hour, []).append(views)
+        except Exception:
+            continue
+
+    if not hour_stats:
+        return {}
+
+    # Average views per hour
+    return {h: int(sum(views) / len(views)) for h, views in hour_stats.items()}
+
+
+def get_source_optimized_slot():
+    """Return best publish slot based on source channel posting patterns.
+    Returns (hour, minute, label) or None."""
+    hour_views = get_source_channel_posting_patterns()
+    if not hour_views or len(hour_views) < 2:
+        return None
+
+    best_hour = max(hour_views, key=hour_views.get)
+    best_views = hour_views[best_hour]
+
+    # Only use if significantly better than average (>30%)
+    avg_views = sum(hour_views.values()) / len(hour_views)
+    if best_views <= avg_views * 1.3:
+        return None
+
+    # Find closest PUBLISH_SLOT or use exact hour
+    closest_slot = None
+    min_diff = 24
+    for hour, minute, label in PUBLISH_SLOTS:
+        diff = abs(hour - best_hour)
+        if diff < min_diff:
+            min_diff = diff
+            closest_slot = (hour, minute, label)
+
+    # If best hour is far from any slot (>2h), create new slot
+    if min_diff > 2:
+        label = f"{best_hour}:00 {'AM' if best_hour < 12 else 'PM'}"
+        if best_hour > 12:
+            label = f"{best_hour - 12}:00 PM"
+        elif best_hour == 0:
+            label = "12:00 AM"
+        return (best_hour, 0, f"{label} (source-optimized)")
+
+    return closest_slot
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # SCRIPT PROMPT
 # ═══════════════════════════════════════════════════════════════════════
+
+def _get_recent_clip_prompts():
+    """Return recent Veo prompts as a string for deduplication in the script prompt."""
+    try:
+        if not os.path.exists(CLIP_HISTORY_FILE):
+            return "No history yet."
+        with open(CLIP_HISTORY_FILE, "r") as f:
+            clip_history = json.load(f)
+        # Last 5 videos' prompts (compact summary)
+        recent = clip_history[-5:]
+        lines = []
+        for entry in recent:
+            for p in entry.get("prompts", [])[:2]:  # First 2 prompts per video
+                lines.append(f"  - {p[:80]}...")
+        return "\n".join(lines) if lines else "No history yet."
+    except Exception:
+        return "No history yet."
+
 
 def get_script_prompt(topic):
     return f"""
@@ -1189,6 +1662,11 @@ BUSINESS CONTEXT (use this knowledge, but do NOT promote the brand in voice):
 {BUSINESS_CONTEXT}
 
 TOPIC: {topic}
+
+━━━ AUDIENCE INTELLIGENCE (from our main channel with 50K subs) ━━━
+These are PROVEN top-performing video titles from our existing audience — use this to understand
+what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
+{json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -1291,38 +1769,33 @@ RULES for ending:
 - Add "..." before the final phrase for a natural pause feel
 - The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
 
-━━━ NATURAL SPEECH FILLERS (CRITICAL for human feel) ━━━
+━━━ NATURAL SPEECH FILLERS (for human feel) ━━━
 
-The voice MUST sound like a REAL person thinking and talking, NOT a script being read.
-Add NATURAL HINDI FILLERS and THINKING PAUSES throughout the script:
+Add a few NATURAL HINDI FILLERS to make it sound real, not read:
 
-FILLER WORDS to use naturally (pick 4-5 per script for the longer format):
-- "Dekho..." (Look/See... — opening filler)
-- "Matlab..." (Meaning... — thinking pause)
-- "Accha..." (Okay/Right... — transition filler)
-- "Hmm..." (thinking sound)
-- "Toh basically..." (So basically... — explanation starter)
-- "Aur ek baat..." (And one thing... — adding a point)
-- "Samjho..." (Understand... — before explaining)
-- "Seedhi baat hai..." (Straight talk... — before a direct statement)
-- "Ab dekho..." (Now see... — transitioning)
-- "Accha toh suno..." (Ok so listen... — before key point)
-- "Wahi toh problem hai..." (That's the problem... — frustration filler)
+FILLER WORDS (pick 2-3 per script, NOT more):
+- "Dekho," (Look/See — opening)
+- "Matlab," (Meaning — thinking)
+- "Toh basically," (explanation starter)
+- "Aur ek baat," (adding a point)
+- "Ab dekho," (transitioning)
 
 EXAMPLE with fillers (natural flow):
-"Dekho... ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
-2 wash mein print fade ho gaya. Matlab... pre-treatment hi nahi kiya tha. Ab DTG
-mein ye zaroori hota hai — ink fabric mein absorb hone ke liye pre-treatment lagta hai.
-Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Accha... toh solution
-simple hai — pre-treatment spray ya machine use karo, phir print karo. Cost thoda
-badhega par return zero ho jayega. Aur ek baat... pre-treatment ka coat uniform hona
-chahiye, warna patchy print aayega... toh bas itna dhyan rakho, complaint nahi aayegi."
+"Dekho, ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
+2 wash mein print fade ho gaya. Matlab, pre-treatment hi nahi kiya tha. Ab DTG
+mein ye zaroori hota hai, ink fabric mein absorb hone ke liye pre-treatment lagta hai.
+Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Toh solution simple hai,
+pre-treatment spray ya machine use karo, phir print karo. Cost thoda badhega par
+return zero ho jayega. Aur ek baat, pre-treatment ka coat uniform hona chahiye,
+warna patchy print aayega. Toh bas itna dhyan rakho, complaint nahi aayegi."
 
-RULES for fillers:
-- Place fillers at SENTENCE STARTS and BEFORE explanations, never mid-word
-- Use "..." (ellipsis) after fillers to indicate natural pause
-- Use 4-5 fillers naturally spread across the longer script
-- Fillers should FLOW with the sentence, not feel forced
+CRITICAL RULES for fillers and pauses:
+- Use COMMA after fillers, NOT "..." (ellipsis). The TTS engine reads "..." as a very long pause.
+- NEVER use "..." anywhere in script_voice. Use comma or dash instead.
+- NEVER write elongated sounds like "aaaaaa", "hmmmm", "ummmm", "bekaaaar"
+- NEVER write "Hmm..." or "Accha..." — these sound distorted in TTS
+- Maximum 2-3 filler words per script, NOT more
+- Keep the flow CLEAN and CRISP — fillers are seasoning, not the main dish
 
 ━━━ LANGUAGE RULES ━━━
 
@@ -1358,6 +1831,7 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Describe EXACTLY what the camera sees — this is for an AI that generates video
 - Include camera angle, lighting, movement, and specific objects
 - Focus on t-shirt/textile/manufacturing/printing industry visuals
+- CRITICAL: Every clip must START with a visible, well-lit scene from frame 1. NO black intros, NO fade-from-black, NO dark openings. Begin with action immediately.
 - Be SPECIFIC: "Close-up of Indian man's hands holding a thick white cotton
   round-neck t-shirt, turning it to show the smooth bio-washed fabric texture,
   warm indoor lighting, slight camera dolly forward" — NOT "a tshirt"
@@ -1367,6 +1841,8 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Each prompt should be 40-80 words for best results
 - Describe REALISTIC scenes that could exist in a real Indian textile business
 - Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
+- AVOID repeating visuals from recent videos. These prompts were used recently (DO NOT reuse similar scenes):
+{_get_recent_clip_prompts()}
 
 The 5 clips should follow the story arc:
 - Clip 1: HOOK — the problem or dramatic moment
@@ -1512,7 +1988,17 @@ def get_best_publish_slot(youtube):
         else:
             print(f"   📊 No clear winner yet — continuing A/B rotation")
 
-    # Fallback: A/B rotation schedule
+    # Fallback 2: Source channel posting patterns (if own channel has no data yet)
+    source_slot = get_source_optimized_slot()
+    if source_slot:
+        hour_views = get_source_channel_posting_patterns()
+        print(f"   📊 Source channel posting patterns (IST):")
+        for h in sorted(hour_views):
+            print(f"      {h}:00 → {hour_views[h]:,} avg views")
+        print(f"   🏆 Source-optimized: using {source_slot[2]}")
+        return source_slot
+
+    # Fallback 3: A/B rotation schedule
     return None
 
 
@@ -1558,6 +2044,17 @@ def get_youtube_service():
         try:
             creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
         except:
+            creds = None
+
+    # Check if token has all required scopes (catches stale tokens missing force-ssl)
+    if creds and creds.valid and creds.scopes:
+        required = set(SCOPES)
+        granted = set(creds.scopes)
+        missing_scopes = required - granted
+        if missing_scopes:
+            print(f"   ⚠️ YouTube token missing scopes: {missing_scopes}")
+            print(f"   🔄 Deleting stale token — re-auth needed with full scopes.")
+            os.remove(TOKEN_FILE)
             creds = None
 
     if not creds or not creds.valid:
@@ -2006,8 +2503,14 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-TOP PERFORMING VIDEOS (make MORE topics like these — they got the most views):
-{json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "No engagement data yet — generate based on search trends."}
+TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL (make MORE topics like these):
+{json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "New channel — no data yet."}
+
+PROVEN WINNERS FROM OUR MAIN CHANNEL (50K subs, 5.5L monthly views — these topics WORK with our audience):
+{json.dumps(get_source_channel_top_topics(10), ensure_ascii=False) if get_source_channel_top_topics(10) else "No source channel data available."}
+
+AUDIENCE QUESTIONS (real comments from our viewers — these are topics they WANT explained):
+{get_audience_questions(10)}
 
 STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
 Each topic should be 1 line, specific, and contain a hook element.
@@ -2060,6 +2563,9 @@ TOPIC: {topic}
 RECENTLY USED TOPICS (avoid similar ones):
 {json.dumps(recent_topics[-10:], ensure_ascii=False)}
 
+WHAT OUR AUDIENCE IS ASKING (real comments — bonus points if topic answers these):
+{get_audience_questions(5)}
+
 Score each (1-10):
 
 1. SEARCH POTENTIAL — Would printing business owners actively search for this on YouTube?
@@ -2101,8 +2607,30 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     unused = [t for t in topic_bank if t not in topic_history]
 
     if unused:
-        # Pick from bank, but validate — ensure it's timely
-        candidate = random.choice(unused)
+        # Prefer topics from high-performing categories (engagement-based)
+        # Priority: own channel data > source channel data > random
+        top_cats = get_top_performing_categories()
+        cat_source = "own channel"
+        if not top_cats:
+            top_cats = get_source_channel_category_ranking()
+            cat_source = "source channel (50K)"
+        if top_cats:
+            # Sort unused topics: ones matching top categories come first
+            def _cat_priority(topic):
+                t_lower = topic.lower()
+                for rank, cat in enumerate(top_cats):
+                    cat_data = TOPIC_SERIES_TAGS.get(cat, {})
+                    if any(kw in t_lower for kw in cat_data.get("keywords", [])):
+                        return rank  # Lower = higher priority
+                return len(top_cats)  # No match = lowest priority
+            prioritized = sorted(unused, key=_cat_priority)
+            # Pick from top 30% (biased towards high-performing categories)
+            pool_size = max(3, len(prioritized) // 3)
+            candidate = random.choice(prioritized[:pool_size])
+            print(f"   📊 Top categories by engagement ({cat_source}): {', '.join(top_cats[:3])}")
+        else:
+            candidate = random.choice(unused)
+
         score, feedback = review_topic(claude_client, candidate, topic_history)
         print(f"   📋 Bank topic score: {score}/40 — {feedback}")
         if score >= TOPIC_MIN_SCORE:
@@ -2150,9 +2678,14 @@ Return ONLY the topic text, nothing else."""}]
     return best_topic
 
 
-def review_script(claude_client, script_voice, script_english, topic):
+def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
-    Returns (approved: bool, feedback: str)."""
+    Returns (approved: bool, score: int, weakest: str, feedback: str)."""
+
+    prompts_section = ""
+    if video_prompts:
+        prompts_list = "\n".join(f"  Clip {i+1}: {p}" for i, p in enumerate(video_prompts) if p.strip())
+        prompts_section = f"\nVEO VIDEO PROMPTS:\n{prompts_list}\n"
 
     review_prompt = f"""You are a YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
 Review this script and decide: is this GOOD ENOUGH to publish?
@@ -2163,7 +2696,7 @@ A factory owner explaining something practical IS valuable — don't expect Boll
 TOPIC: {topic}
 HINDI SCRIPT: {script_voice}
 ENGLISH: {script_english}
-
+{prompts_section}
 Score each (1-10):
 
 1. HOOK (first 2 seconds) — Does it start with a STORY, customer incident, or surprising fact?
@@ -2181,11 +2714,16 @@ Score each (1-10):
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
+6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
+   Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
+   Good: prompts that show the EXACT scenario being discussed — the specific fabric, the specific test, the specific machine, the specific problem from the script.
+   If no video prompts provided, score 6 (neutral).
+
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "total_score": sum_of_5_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve if total_score >= 30 (out of 50)
+- Approve if total_score >= 36 (out of 60)
 - REJECT only if ANY single score is below 4
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
@@ -2211,6 +2749,81 @@ RULES:
         return True, 0, "", "review error"
 
 
+def optimize_title(claude_client, original_title, script_english, topic):
+    """Generate 3 title variants and pick the best one for CTR.
+    Uses source channel's top titles as reference for what works."""
+    print(f"   🏷️ Title optimization: generating A/B variants...")
+
+    source_titles = get_source_channel_top_topics(5)
+    source_context = ""
+    if source_titles:
+        source_context = f"""
+REFERENCE: These titles got the MOST views on our main channel (50K subs):
+{json.dumps(source_titles, ensure_ascii=False)}
+Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
+
+    prompt = f"""You are a YouTube Shorts title optimizer for an Indian B2B t-shirt brand.
+
+CURRENT TITLE: {original_title}
+TOPIC: {topic}
+SCRIPT SUMMARY: {script_english[:200]}
+{source_context}
+
+Generate 3 alternative titles. Each must be:
+- Max 70 characters (YouTube Shorts limit for mobile visibility)
+- SEO optimized (include searchable keywords like "GSM", "DTG", "t-shirt", "printing")
+- Curiosity-driven (make viewer NEED to watch)
+- English (for broader reach + SEO, but Hinglish words OK if they add punch)
+
+TITLE STYLES TO TRY:
+1. QUESTION style — "Why Does Your DTG Print Fade After 2 Washes?"
+2. SHOCK/NUMBER style — "Rs 45 T-shirt vs Rs 90: The Print Quality Difference"
+3. MISTAKE/WARNING style — "Stop Making This GSM Mistake (Most Printers Do)"
+
+OUTPUT THIS JSON ONLY (no markdown):
+{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks"}}
+
+"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR."""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        result = json.loads(raw)
+
+        titles = result.get("titles", [])
+        best_idx = result.get("best", 0)
+        reason = result.get("reason", "")
+
+        if not titles:
+            return original_title
+
+        # Validate best_idx
+        if best_idx < 0 or best_idx >= len(titles):
+            best_idx = 0
+
+        best_title = titles[best_idx]
+
+        # Ensure it's not too long
+        if len(best_title) > 100:
+            best_title = best_title[:97] + "..."
+
+        print(f"   🏷️ Title variants:")
+        for i, t in enumerate(titles):
+            marker = " ← PICKED" if i == best_idx else ""
+            print(f"      {i+1}. {t}{marker}")
+        print(f"      Reason: {reason}")
+
+        return best_title
+
+    except Exception as e:
+        print(f"   ⚠️ Title optimization failed ({e}), using original")
+        return original_title
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
@@ -2222,6 +2835,64 @@ def main():
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
+
+    # ── Feature Dashboard ──
+    elevenlabs_available = bool(os.environ.get('ELEVENLABS_API_KEY'))
+    ig_available = bool(os.environ.get('INSTAGRAM_ACCESS_TOKEN'))
+
+    print()
+    print("   ╔═══════════════════════════════════════════════════╗")
+    print("   ║           FEATURE STATUS DASHBOARD                ║")
+    print("   ╠═══════════════════════════════════════════════════╣")
+    print("   ║ ── MODE ──                                        ║")
+    print(f"   ║ Test Mode             : {'ON (free run)' if TEST_MODE else 'OFF (production)':>25} ║")
+    print(f"   ║ Skip Clips            : {'ON (placeholders)' if SKIP_CLIPS else 'OFF (Veo clips)':>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── CONTENT INTELLIGENCE ──                        ║")
+    print(f"   ║ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>25} ║")
+    print(f"   ║ Comment Mining         : {'ON' if SOURCE_CHANNEL_API_KEY else 'OFF (no API key)':>25} ║")
+    print(f"   ║ Title A/B Optimization : {'ON':>25} ║")
+    print(f"   ║ Smart Posting Time     : {'ON':>25} ║")
+    print(f"   ║ Script Quality Gate    : {'ON (6 dims, /60)':>25} ║")
+    print(f"   ║ Visual Alignment Check : {'ON':>25} ║")
+    print(f"   ║ Topic Bank             : {f'{len(TOPIC_BANK)} topics':>25} ║")
+    print(f"   ║ Script Max Attempts    : {SCRIPT_MAX_ATTEMPTS:>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── VIDEO GENERATION ──                            ║")
+    print(f"   ║ Veo Model              : {VEO_MODEL:>25} ║")
+    print(f"   ║ Clips per Video        : {VEO_CLIPS_PER_VIDEO:>25} ║")
+    print(f"   ║ Veo Duration/Clip      : {str(VEO_DURATION) + 's':>25} ║")
+    print(f"   ║ Veo Retries            : {VEO_MAX_RETRIES:>25} ║")
+    print(f"   ║ Clip Loop Guard        : {'ON':>25} ║")
+    print(f"   ║ Ken Burns Effect       : {'ON':>25} ║")
+    print(f"   ║ Black Intro Trim       : {'ON':>25} ║")
+    print(f"   ║ Clip Fade Transition   : {str(CLIP_FADE_DURATION) + 's':>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── AUDIO ──                                       ║")
+    print(f"   ║ TTS Primary            : {'ElevenLabs' if elevenlabs_available else 'OpenAI (no 11Labs key)':>25} ║")
+    print(f"   ║ TTS Fallback           : {'OpenAI gpt-4o-mini-tts':>25} ║")
+    print(f"   ║ Audio Normalization    : {'ON (-16 LUFS)':>25} ║")
+    print(f"   ║ Background Music       : {'ON' if ADD_BG_MUSIC else 'OFF':>25} ║")
+    print(f"   ║ Hook SFX (bass drop)   : {'ON' if ADD_HOOK_SFX else 'OFF':>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── OVERLAYS ──                                    ║")
+    print(f"   ║ Subtitles             : {'ON' if ADD_SUBTITLES else 'OFF':>25} ║")
+    print(f"   ║ Hook Text (scroll-stop): {'ON (' + str(HOOK_DURATION) + 's)' if ADD_HOOK_TEXT else 'OFF':>25} ║")
+    print(f"   ║ Watermark             : {'ON' if ADD_WATERMARK else 'OFF':>25} ║")
+    print(f"   ║ CTA End Card          : {'ON' if ADD_CTA_OVERLAY else 'OFF':>25} ║")
+    print(f"   ║ Thumbnail             : {'ON (yellow highlight)' if GENERATE_THUMBNAIL else 'OFF':>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── PUBLISHING ──                                  ║")
+    print(f"   ║ Schedule Publish       : {'ON (A/B slots)' if SCHEDULE_PUBLISH else 'OFF (immediate)':>25} ║")
+    print(f"   ║ Upload as Short        : {'ON' if UPLOAD_AS_SHORT else 'OFF':>25} ║")
+    print(f"   ║ Auto-Pin Comment       : {'ON' if AUTO_PIN_COMMENT else 'OFF':>25} ║")
+    print(f"   ║ Auto-Playlist          : {'ON' if AUTO_PLAYLIST else 'OFF':>25} ║")
+    print(f"   ║ Instagram Cross-Post   : {'ON' if CROSS_POST_INSTAGRAM and ig_available else 'OFF (no IG token)' if not ig_available else 'OFF':>25} ║")
+    print("   ║                                                   ║")
+    print("   ║ ── SAFETY ──                                      ║")
+    print(f"   ║ Daily Cost Limit       : {'$' + str(DAILY_COST_LIMIT_USD):>25} ║")
+    print(f"   ║ Engagement Feedback    : {'ON (' + str(ENGAGEMENT_CHECK_DELAY_HOURS) + 'h delay)':>25} ║")
+    print("   ╚═══════════════════════════════════════════════════╝")
     print()
 
     # ── 1. API Keys ──
@@ -2246,9 +2917,20 @@ def main():
     # Initialize cost tracker
     cost = CostTracker()
 
+    # Circuit breaker: check daily spending limit
+    within_limit, today_spend = CostTracker.check_daily_limit()
+    if not within_limit:
+        print(f"🚫 Daily cost limit exceeded: ${today_spend:.2f} / ${DAILY_COST_LIMIT_USD:.2f}. Skipping today's video.")
+        return
+    if today_spend > 0:
+        print(f"   💰 Today's spend so far: ${today_spend:.2f} / ${DAILY_COST_LIMIT_USD:.2f}")
+
     from google import genai
     from google.genai import types
     veo_client = genai.Client(api_key=google_key)
+
+    # ── 1b. Fetch source channel insights (read-only, cached 24h) ──
+    fetch_source_channel_insights()
 
     # ── 2. Pick Topic (Smart: trending search + Claude review gate) ──
     topic_history = []
@@ -2289,17 +2971,18 @@ def main():
 
         print(f"   🗣️ Script: {script_voice[:80]}...")
 
-        # Quality gate: Claude reviews its own script
-        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic)
+        # Quality gate: Claude reviews its own script + video prompts alignment
+        candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
+        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts)
 
         if approved:
-            print(f"   ✅ Script APPROVED (score: {score}/50) — {feedback}")
+            print(f"   ✅ Script APPROVED (score: {score}/60) — {feedback}")
             data = candidate
             break
         else:
-            print(f"   ❌ Script REJECTED (score: {score}/50, weak: {weakest})")
+            print(f"   ❌ Script REJECTED (score: {score}/60, weak: {weakest})")
             print(f"      Reason: {feedback}")
-            previous_feedback = f"Score {score}/50. Weakest: {weakest}. {feedback}"
+            previous_feedback = f"Score {score}/60. Weakest: {weakest}. {feedback}"
             if attempt < SCRIPT_MAX_ATTEMPTS:
                 print(f"      Regenerating with feedback...")
 
@@ -2309,8 +2992,14 @@ def main():
         data = candidate
 
     script_voice = data["script_voice"]
+    # Sanitize script for TTS: strip ellipsis and elongated sounds that cause distortion
+    import re
+    script_voice = script_voice.replace("...", ",").replace("..", ",")
+    script_voice = re.sub(r'(\w)\1{3,}', lambda m: m.group(0)[:2], script_voice)  # "aaaaaa" → "aa"
+    script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
+
     script_english = data["script_english"]
-    yt_title = data["title"]
+    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic)
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
@@ -2318,6 +3007,24 @@ def main():
     video_prompts = [data.get(f"video_prompt_{i}","") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
     # Filter out empty prompts, keep at least the first 3
     video_prompts = [p for p in video_prompts if p.strip()] or video_prompts[:3]
+
+    # Save Veo prompts to clip history for deduplication in future runs
+    try:
+        clip_history = []
+        if os.path.exists(CLIP_HISTORY_FILE):
+            with open(CLIP_HISTORY_FILE, "r") as f:
+                clip_history = json.load(f)
+        clip_history.append({
+            "topic": fresh_topic,
+            "prompts": video_prompts,
+            "date": datetime.now().isoformat(),
+        })
+        # Keep last 30 videos worth of prompts
+        clip_history = clip_history[-30:]
+        with open(CLIP_HISTORY_FILE, "w") as f:
+            json.dump(clip_history, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
 
     print(f"   🎵 Mood: {music_mood}")
 
@@ -2371,6 +3078,23 @@ def main():
         except Exception as e:
             print(f"   ❌ OpenAI TTS also failed: {e}")
             return
+
+    # ── 4b. Normalize voice audio loudness (consistent -16 LUFS across all videos) ──
+    try:
+        import subprocess
+        normalized_path = audio_path.replace(".mp3", "_norm.mp3")
+        subprocess.run([
+            "ffmpeg", "-i", audio_path,
+            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+            "-y", normalized_path,
+        ], capture_output=True, timeout=30)
+        if os.path.exists(normalized_path) and os.path.getsize(normalized_path) > 0:
+            os.replace(normalized_path, audio_path)
+            print("   🔊 Voice normalized to -16 LUFS")
+        else:
+            print("   ⚠️ Loudness normalization skipped (ffmpeg output empty)")
+    except Exception as e:
+        print(f"   ⚠️ Loudness normalization skipped: {e}")
 
     # ── 5. Generate Video Clips (Veo 3.1) ──
     downloaded_clips = []
@@ -2446,7 +3170,11 @@ def main():
         return
 
     if not TEST_MODE and not SKIP_CLIPS:
-        cost.track_veo(len(downloaded_clips))
+        expected = VEO_CLIPS_PER_VIDEO
+        got = len(downloaded_clips)
+        cost.track_veo(got)
+        if got < expected:
+            print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
     # ── 6. Subtitles (Whisper) ──
@@ -2467,7 +3195,7 @@ def main():
 
     try:
         import whisper
-        wmodel = whisper.load_model("base")
+        wmodel = whisper.load_model("small")
         result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
         all_words = []
         for seg in result.get("segments", []):
@@ -2536,6 +3264,29 @@ def main():
         except Exception:
             return clip  # Fallback: return original if zoom fails
 
+    def trim_black_intro(clip, threshold=15, max_trim=3.0):
+        """Detect and skip black frames at the start of a clip.
+        threshold: average pixel brightness below which a frame is 'black'.
+        max_trim: maximum seconds to trim from the start."""
+        try:
+            import numpy as np
+            step = 0.25  # Check every 0.25 seconds
+            trim_to = 0.0
+            for t in [i * step for i in range(int(max_trim / step) + 1)]:
+                if t >= clip.duration:
+                    break
+                frame = clip.get_frame(t)
+                avg_brightness = np.mean(frame)
+                if avg_brightness > threshold:
+                    trim_to = t
+                    break
+            if trim_to > 0:
+                print(f"      Trimmed {trim_to:.1f}s black intro")
+                return clip.subclip(trim_to)
+            return clip
+        except Exception:
+            return clip
+
     video_objects = []
     for fname in downloaded_clips:
         try:
@@ -2552,6 +3303,8 @@ def main():
             v = VideoFileClip(fixed_fname)
             v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
             v = v.without_audio()
+            # Trim black frames from Veo clip intros
+            v = trim_black_intro(v)
             # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
             v = apply_ken_burns(v, zoom_percent=3)
             video_objects.append(v)
@@ -2568,16 +3321,35 @@ def main():
         cd = total_duration / len(video_objects)
         trimmed = [v.subclip(0, min(cd, v.duration)) for v in video_objects]
     else:
-        sf = max(total_clip_duration / total_duration, 0.5)
-        from moviepy.video.fx.speedx import speedx
-        trimmed = [speedx(v, sf) for v in video_objects]
+        # Loop clips cyclically to fill duration (instead of slow-mo)
+        looped = []
+        accumulated = 0
+        idx = 0
+        while accumulated < total_duration:
+            clip = video_objects[idx % len(video_objects)]
+            if clip.duration <= 0:
+                print(f"   ⚠️ Clip {idx} has zero duration — skipping")
+                idx += 1
+                continue
+            remaining = total_duration - accumulated
+            if clip.duration <= remaining:
+                looped.append(clip)
+                accumulated += clip.duration
+            else:
+                looped.append(clip.subclip(0, remaining))
+                accumulated += remaining
+            idx += 1
+        trimmed = looped
+        print(f"   🔁 Clips looped ({len(video_objects)} clips → {len(looped)} segments to fill {total_duration:.1f}s)")
 
     if CLIP_FADE_DURATION > 0 and len(trimmed) > 1:
-        for idx in range(len(trimmed)):
-            if idx > 0: trimmed[idx] = trimmed[idx].crossfadein(CLIP_FADE_DURATION)
-            if idx < len(trimmed) - 1: trimmed[idx] = trimmed[idx].crossfadeout(CLIP_FADE_DURATION)
-
-    base_video = concatenate_videoclips(trimmed, method="compose")
+        # Use padding_and_crossfade for clean transitions (no black gaps)
+        try:
+            base_video = concatenate_videoclips(trimmed, method="compose", padding=-CLIP_FADE_DURATION)
+        except Exception:
+            base_video = concatenate_videoclips(trimmed, method="chain")
+    else:
+        base_video = concatenate_videoclips(trimmed, method="chain")
     if base_video.duration > total_duration:
         base_video = base_video.subclip(0, total_duration)
 
@@ -2622,7 +3394,8 @@ def main():
                     bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
                     txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
                     layers.extend([bg, txt])
-            except: pass
+            except Exception as e:
+                print(f"   ⚠️ Subtitle overlay failed: {e}")
 
     # Watermark badge — small left-side tag (positioned to avoid YouTube Shorts UI)
     # YT Shorts UI: top = channel name, right = like/comment/share, bottom = desc/music
@@ -2647,25 +3420,69 @@ def main():
                 (badge_x + WATERMARK_PADDING_H, badge_y + WATERMARK_PADDING_V)
             ).set_duration(total_duration)
             layers.extend([wm_bg, wm_txt])
-        except: pass
+        except Exception as e:
+            print(f"   ⚠️ Watermark overlay failed: {e}")
 
-    # Hook — curiosity-driven text from Claude (or fallback to topic words)
+    # Hook — scroll-stopping text overlay (first 2 seconds)
+    # Design: large bold white text, first word in YELLOW for attention
     if ADD_HOOK_TEXT:
         try:
             hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
-            # Truncate to max 4 words (punchier for Shorts scroll-stop)
             hook_words = hook_line.split()[:4]
-            hook_line = " ".join(hook_words)
 
-            ht = TextClip(hook_line, fontsize=56, font=SUBTITLE_FONT, color="white",
-                stroke_color="black", stroke_width=3, method='caption',
-                size=(VIDEO_WIDTH - 180, None), align='center')
-            ht_w, ht_h = ht.size
-            hbg = ColorClip(size=(ht_w + 40, ht_h + 30), color=(0,0,0)).set_opacity(0.80)
-            hbg = hbg.set_position(((VIDEO_WIDTH-ht_w-40)//2, int(VIDEO_HEIGHT*0.22))).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
-            ht = ht.set_position(((VIDEO_WIDTH-ht_w)//2, int(VIDEO_HEIGHT*0.22)+15)).set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.3)
-            layers.extend([hbg, ht])
-        except: pass
+            # First word = yellow (attention grab), rest = white
+            first_word = hook_words[0] if hook_words else ""
+            rest_words = " ".join(hook_words[1:]) if len(hook_words) > 1 else ""
+
+            hook_y = int(VIDEO_HEIGHT * 0.18)
+
+            # Semi-transparent dark panel behind text (taller for bigger text)
+            # Build text clips first to measure total height
+            text_layers = []
+
+            # First word — YELLOW, extra large
+            if first_word:
+                ht1 = TextClip(first_word, fontsize=80, font=SUBTITLE_FONT, color="#FFD700",
+                    stroke_color="black", stroke_width=4, method='caption',
+                    size=(VIDEO_WIDTH - 120, None), align='center')
+                text_layers.append(("first", ht1))
+
+            # Remaining words — WHITE, large
+            if rest_words:
+                ht2 = TextClip(rest_words, fontsize=68, font=SUBTITLE_FONT, color="white",
+                    stroke_color="black", stroke_width=4, method='caption',
+                    size=(VIDEO_WIDTH - 120, None), align='center')
+                text_layers.append(("rest", ht2))
+
+            # Calculate total height for background panel
+            total_text_h = sum(tc.size[1] for _, tc in text_layers) + 20 * len(text_layers)
+            max_text_w = max((tc.size[0] for _, tc in text_layers), default=VIDEO_WIDTH - 200)
+            panel_w = min(max_text_w + 80, VIDEO_WIDTH - 40)
+            panel_h = total_text_h + 50
+
+            # Dark panel with slight transparency
+            hbg = ColorClip(size=(panel_w, panel_h), color=(0, 0, 0)).set_opacity(0.75)
+            hbg = hbg.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+            hbg = hbg.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            layers.append(hbg)
+
+            # Yellow accent bar on left edge of panel (MrBeast style)
+            accent_bar = ColorClip(size=(6, panel_h), color=(255, 215, 0)).set_opacity(0.95)
+            accent_bar = accent_bar.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+            accent_bar = accent_bar.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+            layers.append(accent_bar)
+
+            # Position text clips
+            current_y = hook_y + 10
+            for label, tc in text_layers:
+                tc_w, tc_h = tc.size
+                tc = tc.set_position(((VIDEO_WIDTH - tc_w) // 2, current_y))
+                tc = tc.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+                layers.append(tc)
+                current_y += tc_h + 15
+
+        except Exception as e:
+            print(f"   ⚠️ Hook text overlay failed: {e}")
 
     # CTA — end-of-video branded strip (professional bar style)
     if ADD_CTA_OVERLAY:
@@ -2691,7 +3508,8 @@ def main():
             cta_txt = cta_txt.set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
 
             layers.extend([cta_bar, accent_line, cta_txt])
-        except: pass
+        except Exception as e:
+            print(f"   ⚠️ CTA overlay failed: {e}")
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
@@ -2768,8 +3586,47 @@ def main():
                     if thumbnail_path:
                         upload_thumbnail(youtube, vid_id, thumbnail_path)
 
-                    # ── 10b. Pin CTA comment ──
+                    # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
+                    # Scheduled videos are private — YouTube blocks comments on private videos.
+                    # Temporarily switch to unlisted, post comment, then restore scheduled state.
+                    original_publish_at = None
+                    switched_to_unlisted = False
+                    if SCHEDULE_PUBLISH:
+                        try:
+                            # Save original publishAt before switching
+                            vid_status = youtube.videos().list(part="status", id=vid_id).execute()
+                            if vid_status.get("items"):
+                                original_publish_at = vid_status["items"][0]["status"].get("publishAt")
+                            youtube.videos().update(
+                                part="status",
+                                body={"id": vid_id, "status": {"privacyStatus": "unlisted"}}
+                            ).execute()
+                            switched_to_unlisted = True
+                            print("   🔓 Temporarily set to unlisted for commenting...")
+                        except Exception as e:
+                            print(f"   ⚠️ Could not switch to unlisted: {e}")
+
+                    print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
+                    time.sleep(30)
                     pin_comment(youtube, vid_id)
+
+                    # Restore scheduled/private status
+                    if switched_to_unlisted and original_publish_at:
+                        try:
+                            youtube.videos().update(
+                                part="status",
+                                body={
+                                    "id": vid_id,
+                                    "status": {
+                                        "privacyStatus": "private",
+                                        "publishAt": original_publish_at,
+                                    }
+                                }
+                            ).execute()
+                            print(f"   🔒 Restored scheduled/private status")
+                        except Exception as e:
+                            print(f"   ⚠️ Could not restore private status: {e}")
+                            print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
 
                     # ── 10c. Add to series playlist ──
                     add_to_playlist(youtube, vid_id, fresh_topic)

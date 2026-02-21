@@ -41,7 +41,7 @@ flow = InstalledAppFlow.from_client_secrets_file(
     scopes=[
         "https://www.googleapis.com/auth/youtube.upload",
         "https://www.googleapis.com/auth/youtube.readonly",
-        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/youtube.force-ssl",  # For comments + playlists
     ]
 )
 creds = flow.run_local_server(port=8080)

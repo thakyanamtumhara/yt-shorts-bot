@@ -16,12 +16,16 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: daily-short-generation
+  cancel-in-progress: true
+
 jobs:
   create-and-upload:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repo
@@ -60,6 +64,8 @@ jobs:
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
         run: python daily_short.py
 
@@ -68,9 +74,14 @@ jobs:
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
-          git add topic_history.json cost_tracker.json engagement_history.json || true
-          git commit -m "Update topic history + cost tracker + engagement [skip ci]" || true
-          git push || true
+          git add topic_history.json || true
+          git add cost_tracker.json || true
+          git add engagement_history.json || true
+          git add clip_history.json || true
+          git add source_channel_insights.json || true
+          git commit -m "Update tracking files (topic + cost + engagement + clips + source insights) [skip ci]" || true
+          git pull --rebase origin main || true
+          git push
 
       - name: Upload test video
         if: ${{ github.event.inputs.test_mode == 'true' }}
@@ -93,3 +104,27 @@ jobs:
             /tmp/yt_shorts/upload_meta.json
           retention-days: 3
           if-no-files-found: ignore
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Skip if an open bot-failure issue already exists
+          EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            echo "Open issue #$EXISTING already exists — adding comment instead"
+            gh issue comment "$EXISTING" --body "Another failure at $(date -u +'%H:%M UTC %d %b').
+          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+          else
+            gh issue create \
+              --title "⚠️ Daily Short failed — $(date -u +'%d %b %Y')" \
+              --body "Pipeline failed at $(date -u +'%H:%M UTC').
+
+          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Trigger:** ${{ github.event_name }}
+
+          Check logs for: Veo API errors, TTS failures, YouTube upload issues, or cost limit exceeded." \
+              --label "bot-failure" || true
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
