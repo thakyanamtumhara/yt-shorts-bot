@@ -7,7 +7,11 @@ Used by the retry-upload GitHub Actions workflow.
 import json, os, sys, time, random
 
 WORK_DIR = os.environ.get("WORK_DIR", "/tmp/yt_shorts")
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+]
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 META_FILE = f"{WORK_DIR}/upload_meta.json"
