@@ -16,6 +16,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: daily-short-generation
+  cancel-in-progress: true
+
 jobs:
   create-and-upload:
     permissions:

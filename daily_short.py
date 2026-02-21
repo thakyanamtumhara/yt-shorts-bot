@@ -1289,6 +1289,24 @@ def get_top_performing_categories():
 # SCRIPT PROMPT
 # ═══════════════════════════════════════════════════════════════════════
 
+def _get_recent_clip_prompts():
+    """Return recent Veo prompts as a string for deduplication in the script prompt."""
+    try:
+        if not os.path.exists(CLIP_HISTORY_FILE):
+            return "No history yet."
+        with open(CLIP_HISTORY_FILE, "r") as f:
+            clip_history = json.load(f)
+        # Last 5 videos' prompts (compact summary)
+        recent = clip_history[-5:]
+        lines = []
+        for entry in recent:
+            for p in entry.get("prompts", [])[:2]:  # First 2 prompts per video
+                lines.append(f"  - {p[:80]}...")
+        return "\n".join(lines) if lines else "No history yet."
+    except Exception:
+        return "No history yet."
+
+
 def get_script_prompt(topic):
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
@@ -1473,6 +1491,8 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Each prompt should be 40-80 words for best results
 - Describe REALISTIC scenes that could exist in a real Indian textile business
 - Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
+- AVOID repeating visuals from recent videos. These prompts were used recently (DO NOT reuse similar scenes):
+{_get_recent_clip_prompts()}
 
 The 5 clips should follow the story arc:
 - Clip 1: HOOK — the problem or dramatic moment
@@ -2445,6 +2465,24 @@ def main():
     # Filter out empty prompts, keep at least the first 3
     video_prompts = [p for p in video_prompts if p.strip()] or video_prompts[:3]
 
+    # Save Veo prompts to clip history for deduplication in future runs
+    try:
+        clip_history = []
+        if os.path.exists(CLIP_HISTORY_FILE):
+            with open(CLIP_HISTORY_FILE, "r") as f:
+                clip_history = json.load(f)
+        clip_history.append({
+            "topic": fresh_topic,
+            "prompts": video_prompts,
+            "date": datetime.now().isoformat(),
+        })
+        # Keep last 30 videos worth of prompts
+        clip_history = clip_history[-30:]
+        with open(CLIP_HISTORY_FILE, "w") as f:
+            json.dump(clip_history, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
     print(f"   🎵 Mood: {music_mood}")
 
     # ── 3b. Load Background Music ──
@@ -2497,6 +2535,23 @@ def main():
         except Exception as e:
             print(f"   ❌ OpenAI TTS also failed: {e}")
             return
+
+    # ── 4b. Normalize voice audio loudness (consistent -16 LUFS across all videos) ──
+    try:
+        import subprocess
+        normalized_path = audio_path.replace(".mp3", "_norm.mp3")
+        subprocess.run([
+            "ffmpeg", "-i", audio_path,
+            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+            "-y", normalized_path,
+        ], capture_output=True, timeout=30)
+        if os.path.exists(normalized_path) and os.path.getsize(normalized_path) > 0:
+            os.replace(normalized_path, audio_path)
+            print("   🔊 Voice normalized to -16 LUFS")
+        else:
+            print("   ⚠️ Loudness normalization skipped (ffmpeg output empty)")
+    except Exception as e:
+        print(f"   ⚠️ Loudness normalization skipped: {e}")
 
     # ── 5. Generate Video Clips (Veo 3.1) ──
     downloaded_clips = []
@@ -2573,7 +2628,11 @@ def main():
         return
 
     if not TEST_MODE and not SKIP_CLIPS:
-        cost.track_veo(len(downloaded_clips))
+        expected = VEO_CLIPS_PER_VIDEO
+        got = len(downloaded_clips)
+        cost.track_veo(got)
+        if got < expected:
+            print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
     # ── 6. Subtitles (Whisper) ──
