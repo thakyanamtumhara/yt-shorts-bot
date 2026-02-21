@@ -267,6 +267,7 @@ CROSS_POST_INSTAGRAM = True
 
 # Cost Tracker — log per-video API costs
 COST_TRACKER_FILE = "cost_tracker.json"  # In repo root for git tracking
+DAILY_COST_LIMIT_USD = 10.0  # Circuit breaker: skip video if today's spend exceeds this
 
 # Engagement Feedback Loop — check video performance after 48h
 ENGAGEMENT_FILE = "engagement_history.json"  # In repo root for git tracking
@@ -1138,6 +1139,24 @@ class CostTracker:
             json.dump(history, f, indent=2)
 
         print(f"   💾 Cost logged: ${self.total():.4f} → {COST_TRACKER_FILE}")
+
+    @staticmethod
+    def check_daily_limit():
+        """Check if today's total spend exceeds DAILY_COST_LIMIT_USD.
+        Returns (within_limit: bool, today_spend: float)."""
+        if not os.path.exists(COST_TRACKER_FILE):
+            return True, 0.0
+        try:
+            with open(COST_TRACKER_FILE, "r") as f:
+                history = json.load(f)
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            today_spend = sum(
+                e.get("total_usd", 0) for e in history
+                if e.get("date", "").startswith(today_str)
+            )
+            return today_spend < DAILY_COST_LIMIT_USD, today_spend
+        except Exception:
+            return True, 0.0
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -2385,6 +2404,14 @@ def main():
 
     # Initialize cost tracker
     cost = CostTracker()
+
+    # Circuit breaker: check daily spending limit
+    within_limit, today_spend = CostTracker.check_daily_limit()
+    if not within_limit:
+        print(f"🚫 Daily cost limit exceeded: ${today_spend:.2f} / ${DAILY_COST_LIMIT_USD:.2f}. Skipping today's video.")
+        return
+    if today_spend > 0:
+        print(f"   💰 Today's spend so far: ${today_spend:.2f} / ${DAILY_COST_LIMIT_USD:.2f}")
 
     from google import genai
     from google.genai import types

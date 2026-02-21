@@ -74,7 +74,8 @@ jobs:
           git config user.email "bot@sale91.com"
           git add topic_history.json cost_tracker.json engagement_history.json || true
           git commit -m "Update topic history + cost tracker + engagement [skip ci]" || true
-          git push || true
+          git pull --rebase origin main || true
+          git push
 
       - name: Upload test video
         if: ${{ github.event.inputs.test_mode == 'true' }}
@@ -97,3 +98,20 @@ jobs:
             /tmp/yt_shorts/upload_meta.json
           retention-days: 3
           if-no-files-found: ignore
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Create a GitHub issue for visibility
+          gh issue create \
+            --title "⚠️ Daily Short failed — $(date -u +'%d %b %Y')" \
+            --body "Pipeline failed at $(date -u +'%H:%M UTC').
+
+          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Trigger:** ${{ github.event_name }}
+
+          Check logs for: Veo API errors, TTS failures, YouTube upload issues, or cost limit exceeded." \
+            --label "bot-failure" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
