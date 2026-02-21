@@ -2812,6 +2812,9 @@ def main():
         idx = 0
         while accumulated < total_duration:
             clip = video_objects[idx % len(video_objects)]
+            if clip.duration <= 0:
+                idx += 1
+                continue
             remaining = total_duration - accumulated
             if clip.duration <= remaining:
                 looped.append(clip)
