@@ -2037,6 +2037,7 @@ def get_publish_time(youtube=None):
 def get_youtube_service():
     from googleapiclient.discovery import build
     from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
 
     creds = None
     if os.path.exists(TOKEN_FILE):
@@ -2058,17 +2059,30 @@ def get_youtube_service():
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            from google.auth.transport.requests import Request
             try:
                 creds.refresh(Request())
                 print("   🔄 YouTube token refreshed!")
                 with open(TOKEN_FILE, "w") as f:
                     f.write(creds.to_json())
             except Exception as e:
-                print(f"   ❌ Token refresh failed: {e}")
-                return None
+                if "invalid_scope" in str(e):
+                    print(f"   ⚠️ Scope mismatch detected, trying with token's original scopes...")
+                    try:
+                        # Load without enforcing scopes — let the token use whatever it was granted
+                        creds = Credentials.from_authorized_user_file(TOKEN_FILE)
+                        creds.refresh(Request())
+                        print("   🔄 YouTube token refreshed (with original scopes)!")
+                        print("   ⚠️ Note: Re-run generate_token.py to get full scopes (comments, playlists, analytics)")
+                        with open(TOKEN_FILE, "w") as f:
+                            f.write(creds.to_json())
+                    except Exception as e2:
+                        print(f"   ❌ Token refresh failed: {e2}")
+                        return None
+                else:
+                    print(f"   ❌ Token refresh failed: {e}")
+                    return None
         else:
-            print("   ❌ No valid YouTube token. Run Colab Block 4 once to get token.")
+            print("   ❌ No valid YouTube token. Run generate_token.py to get a new token.")
             return None
 
     return build("youtube", "v3", credentials=creds)
