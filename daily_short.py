@@ -1371,6 +1371,7 @@ def fetch_source_channel_insights():
             snippet = item.get("snippet", {})
             stats = item.get("statistics", {})
             videos.append({
+                "video_id": item.get("id", ""),
                 "title": snippet.get("title", ""),
                 "views": int(stats.get("viewCount", 0)),
                 "likes": int(stats.get("likeCount", 0)),
@@ -1431,6 +1432,170 @@ def get_source_channel_category_ranking():
         reverse=True,
     )
     return [cat for cat, _ in ranked]
+
+
+def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
+    """Fetch top comments from source channel's best videos (read-only).
+    Uses commentThreads.list API. Returns list of comment strings.
+    Quota cost: ~1 unit per call, max 5 calls = ~5 units."""
+
+    videos = fetch_source_channel_insights()
+    if not videos or not SOURCE_CHANNEL_API_KEY:
+        return []
+
+    # Check cache (stored inside source_channel_insights.json)
+    if os.path.exists(SOURCE_CHANNEL_CACHE_FILE):
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cached_comments = cache.get("top_comments", [])
+            if cached_comments:
+                return cached_comments
+        except Exception:
+            pass
+
+    base_url = "https://www.googleapis.com/youtube/v3"
+    all_comments = []
+
+    # Pick top videos by views (most engaged = best comments)
+    top_videos = [v for v in videos if v.get("video_id") and v.get("comments", 0) > 0][:max_videos]
+
+    for video in top_videos:
+        try:
+            resp = requests.get(f"{base_url}/commentThreads", params={
+                "key": SOURCE_CHANNEL_API_KEY,
+                "videoId": video["video_id"],
+                "part": "snippet",
+                "order": "relevance",
+                "maxResults": max_comments_per_video,
+                "textFormat": "plainText",
+            }, timeout=10)
+            if resp.status_code != 200:
+                continue
+            data = resp.json()
+
+            for item in data.get("items", []):
+                comment_text = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+                like_count = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", 0)
+                # Only keep meaningful comments (>10 chars, not just emojis)
+                if len(comment_text) > 10:
+                    all_comments.append({
+                        "text": comment_text[:200],  # Truncate long comments
+                        "likes": like_count,
+                        "video_title": video["title"][:60],
+                    })
+        except Exception:
+            continue
+
+    # Sort by likes — most liked comments = what audience cares about
+    all_comments.sort(key=lambda c: c["likes"], reverse=True)
+    top_comments = all_comments[:30]  # Keep top 30
+
+    # Save to cache
+    if top_comments:
+        try:
+            with open(SOURCE_CHANNEL_CACHE_FILE, "r") as f:
+                cache = json.load(f)
+            cache["top_comments"] = top_comments
+            with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
+                json.dump(cache, f, indent=2, ensure_ascii=False)
+            print(f"   💬 Fetched {len(top_comments)} top comments from source channel")
+        except Exception:
+            pass
+
+    return top_comments
+
+
+def get_audience_questions(n=10):
+    """Extract audience questions/requests from source channel comments.
+    Returns formatted string for use in prompts."""
+    comments = fetch_source_channel_comments()
+    if not comments:
+        return "No comment data available."
+
+    # Filter for questions (comments with ?, kaise, kya, kyu, etc.)
+    question_words = ["?", "kaise", "kya", "kyu", "kyun", "konsa", "kaunsa", "kitna",
+                      "how", "what", "why", "which", "best", "suggest", "recommend",
+                      "bata", "batao", "samjhao", "explain"]
+    questions = [c for c in comments if any(w in c["text"].lower() for w in question_words)]
+
+    # If not enough questions, include most-liked comments
+    if len(questions) < 3:
+        questions = comments[:n]
+    else:
+        questions = questions[:n]
+
+    lines = []
+    for q in questions:
+        lines.append(f"  - \"{q['text'][:100]}\" ({q['likes']} likes, on: {q['video_title']})")
+    return "\n".join(lines) if lines else "No relevant comments found."
+
+
+def get_source_channel_posting_patterns():
+    """Analyze source channel videos to find best posting hour (IST).
+    Returns dict: {hour: avg_views} for hours that have data."""
+    videos = fetch_source_channel_insights()
+    if not videos:
+        return {}
+
+    ist = pytz.timezone(TIMEZONE)
+    hour_stats = {}  # {hour: [views, views, ...]}
+
+    for v in videos:
+        published = v.get("published", "")
+        views = v.get("views", 0)
+        if not published:
+            continue
+        try:
+            # Parse ISO datetime and convert to IST
+            pub_dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+            pub_ist = pub_dt.astimezone(ist)
+            hour = pub_ist.hour
+            hour_stats.setdefault(hour, []).append(views)
+        except Exception:
+            continue
+
+    if not hour_stats:
+        return {}
+
+    # Average views per hour
+    return {h: int(sum(views) / len(views)) for h, views in hour_stats.items()}
+
+
+def get_source_optimized_slot():
+    """Return best publish slot based on source channel posting patterns.
+    Returns (hour, minute, label) or None."""
+    hour_views = get_source_channel_posting_patterns()
+    if not hour_views or len(hour_views) < 2:
+        return None
+
+    best_hour = max(hour_views, key=hour_views.get)
+    best_views = hour_views[best_hour]
+
+    # Only use if significantly better than average (>30%)
+    avg_views = sum(hour_views.values()) / len(hour_views)
+    if best_views <= avg_views * 1.3:
+        return None
+
+    # Find closest PUBLISH_SLOT or use exact hour
+    closest_slot = None
+    min_diff = 24
+    for hour, minute, label in PUBLISH_SLOTS:
+        diff = abs(hour - best_hour)
+        if diff < min_diff:
+            min_diff = diff
+            closest_slot = (hour, minute, label)
+
+    # If best hour is far from any slot (>2h), create new slot
+    if min_diff > 2:
+        label = f"{best_hour}:00 {'AM' if best_hour < 12 else 'PM'}"
+        if best_hour > 12:
+            label = f"{best_hour - 12}:00 PM"
+        elif best_hour == 0:
+            label = "12:00 AM"
+        return (best_hour, 0, f"{label} (source-optimized)")
+
+    return closest_slot
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1791,7 +1956,17 @@ def get_best_publish_slot(youtube):
         else:
             print(f"   📊 No clear winner yet — continuing A/B rotation")
 
-    # Fallback: A/B rotation schedule
+    # Fallback 2: Source channel posting patterns (if own channel has no data yet)
+    source_slot = get_source_optimized_slot()
+    if source_slot:
+        hour_views = get_source_channel_posting_patterns()
+        print(f"   📊 Source channel posting patterns (IST):")
+        for h in sorted(hour_views):
+            print(f"      {h}:00 → {hour_views[h]:,} avg views")
+        print(f"   🏆 Source-optimized: using {source_slot[2]}")
+        return source_slot
+
+    # Fallback 3: A/B rotation schedule
     return None
 
 
@@ -2288,6 +2463,9 @@ TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL (make MORE topics like these):
 PROVEN WINNERS FROM OUR MAIN CHANNEL (50K subs, 5.5L monthly views — these topics WORK with our audience):
 {json.dumps(get_source_channel_top_topics(10), ensure_ascii=False) if get_source_channel_top_topics(10) else "No source channel data available."}
 
+AUDIENCE QUESTIONS (real comments from our viewers — these are topics they WANT explained):
+{get_audience_questions(10)}
+
 STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
 Each topic should be 1 line, specific, and contain a hook element.
 
@@ -2338,6 +2516,9 @@ TOPIC: {topic}
 
 RECENTLY USED TOPICS (avoid similar ones):
 {json.dumps(recent_topics[-10:], ensure_ascii=False)}
+
+WHAT OUR AUDIENCE IS ASKING (real comments — bonus points if topic answers these):
+{get_audience_questions(5)}
 
 Score each (1-10):
 
@@ -2522,6 +2703,80 @@ RULES:
         return True, 0, "", "review error"
 
 
+def optimize_title(claude_client, original_title, script_english, topic):
+    """Generate 3 title variants and pick the best one for CTR.
+    Uses source channel's top titles as reference for what works."""
+
+    source_titles = get_source_channel_top_topics(5)
+    source_context = ""
+    if source_titles:
+        source_context = f"""
+REFERENCE: These titles got the MOST views on our main channel (50K subs):
+{json.dumps(source_titles, ensure_ascii=False)}
+Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
+
+    prompt = f"""You are a YouTube Shorts title optimizer for an Indian B2B t-shirt brand.
+
+CURRENT TITLE: {original_title}
+TOPIC: {topic}
+SCRIPT SUMMARY: {script_english[:200]}
+{source_context}
+
+Generate 3 alternative titles. Each must be:
+- Max 70 characters (YouTube Shorts limit for mobile visibility)
+- SEO optimized (include searchable keywords like "GSM", "DTG", "t-shirt", "printing")
+- Curiosity-driven (make viewer NEED to watch)
+- English (for broader reach + SEO, but Hinglish words OK if they add punch)
+
+TITLE STYLES TO TRY:
+1. QUESTION style — "Why Does Your DTG Print Fade After 2 Washes?"
+2. SHOCK/NUMBER style — "Rs 45 T-shirt vs Rs 90: The Print Quality Difference"
+3. MISTAKE/WARNING style — "Stop Making This GSM Mistake (Most Printers Do)"
+
+OUTPUT THIS JSON ONLY (no markdown):
+{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks"}}
+
+"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR."""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        result = json.loads(raw)
+
+        titles = result.get("titles", [])
+        best_idx = result.get("best", 0)
+        reason = result.get("reason", "")
+
+        if not titles:
+            return original_title
+
+        # Validate best_idx
+        if best_idx < 0 or best_idx >= len(titles):
+            best_idx = 0
+
+        best_title = titles[best_idx]
+
+        # Ensure it's not too long
+        if len(best_title) > 100:
+            best_title = best_title[:97] + "..."
+
+        print(f"   🏷️ Title variants:")
+        for i, t in enumerate(titles):
+            marker = " ← PICKED" if i == best_idx else ""
+            print(f"      {i+1}. {t}{marker}")
+        print(f"      Reason: {reason}")
+
+        return best_title
+
+    except Exception as e:
+        print(f"   ⚠️ Title optimization failed ({e}), using original")
+        return original_title
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
@@ -2639,7 +2894,7 @@ def main():
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
 
     script_english = data["script_english"]
-    yt_title = data["title"]
+    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic)
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
