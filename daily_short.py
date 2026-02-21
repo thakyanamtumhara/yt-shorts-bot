@@ -238,7 +238,7 @@ PUBLISH_SLOT_SCHEDULE = {
 
 # Files
 TOPIC_HISTORY_FILE = "topic_history.json"  # In repo root for git tracking
-CLIP_HISTORY_FILE = f"{WORK_DIR}/clip_history.json"
+CLIP_HISTORY_FILE = "clip_history.json"  # In repo root for git tracking
 CLIENT_SECRETS_FILE = f"{WORK_DIR}/client_secret.json"
 TOKEN_FILE = f"{WORK_DIR}/youtube_token.json"
 SCOPES = [
