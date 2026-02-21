@@ -690,32 +690,56 @@ def pin_comment(youtube, video_id, comment_text=None):
         return
     try:
         text = comment_text or PIN_COMMENT_TEXT
-        # Insert the comment
-        comment_body = {
-            "snippet": {
-                "videoId": video_id,
-                "topLevelComment": {
+
+        # Get our channel ID (required by commentThreads.insert)
+        channel_id = None
+        try:
+            ch_resp = youtube.channels().list(part="id", mine=True).execute()
+            if ch_resp.get("items"):
+                channel_id = ch_resp["items"][0]["id"]
+        except Exception:
+            pass
+
+        # Insert the comment (retry with delay — freshly uploaded videos need processing time)
+        comment_response = None
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                comment_body = {
                     "snippet": {
-                        "textOriginal": text,
+                        "videoId": video_id,
+                        "topLevelComment": {
+                            "snippet": {
+                                "textOriginal": text,
+                            }
+                        }
                     }
                 }
-            }
-        }
-        comment_response = youtube.commentThreads().insert(
-            part="snippet", body=comment_body
-        ).execute()
+                if channel_id:
+                    comment_body["snippet"]["channelId"] = channel_id
+
+                comment_response = youtube.commentThreads().insert(
+                    part="snippet", body=comment_body
+                ).execute()
+                break  # Success
+            except Exception as e:
+                error_msg = str(e)
+                if attempt < max_retries and ("403" in error_msg or "processing" in error_msg.lower()):
+                    wait = 30 * attempt
+                    print(f"   ⏳ Comment attempt {attempt} failed, retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
+
+        if not comment_response:
+            print(f"   ⚠️ Pin comment failed after {max_retries} attempts")
+            return None
 
         comment_id = comment_response["snippet"]["topLevelComment"]["id"]
         print(f"   💬 CTA comment posted: {comment_id}")
 
-        # Pin the comment (set as held-for-review moderation status doesn't pin,
-        # we need to use the comments.setModerationStatus or simply mark via the API)
-        # YouTube Data API v3: to pin, we set the comment as "heldForReview" then "published"
-        # Actually, pinning requires using the channelId approach:
-        # The simplest method: use the comment's ID to pin via setModerationStatus
-        # Note: YouTube API doesn't have a direct "pin" endpoint.
-        # Workaround: the channel owner's first comment is prominent by default.
-        # For actual pinning, we use the undocumented but functional approach:
+        # Channel owner's first comment is automatically prominent.
+        # setModerationStatus as "published" ensures it's visible immediately.
         try:
             youtube.comments().setModerationStatus(
                 id=comment_id, moderationStatus="published"
@@ -879,28 +903,75 @@ def cross_post_to_instagram(video_path, title, description, topic):
 
     try:
         # Instagram Reels need the video hosted at a public URL.
-        # Upload to a temporary public host first, OR use a pre-signed URL.
-        # For GitHub Actions, we upload the video to a temporary file.io endpoint.
+        # Upload to a temporary public host (with fallback chain).
         print("   📸 Cross-posting to Instagram Reels...")
 
-        # Step 0: Upload video to temporary public URL (file.io — auto-deletes after download)
-        with open(video_path, "rb") as vf:
-            upload_resp = requests.post(
-                "https://file.io",
-                files={"file": (os.path.basename(video_path), vf, "video/mp4")},
-                timeout=120,
-            )
-        if upload_resp.status_code != 200:
-            print(f"   ⚠️ Instagram: temp upload failed ({upload_resp.status_code})")
-            return None
+        # Step 0: Upload video to temporary public URL
+        public_url = None
+        file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
 
-        upload_data = upload_resp.json()
-        if not upload_data.get("success"):
-            print(f"   ⚠️ Instagram: temp upload failed: {upload_data}")
-            return None
+        # Host 1: 0x0.st (up to 512MB, direct URL, no account needed)
+        if not public_url:
+            try:
+                print(f"   📤 Uploading to 0x0.st ({file_size_mb:.0f}MB)...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://0x0.st",
+                        files={"file": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=300,
+                    )
+                if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                    public_url = resp.text.strip()
+                    print(f"   📤 Video hosted via 0x0.st")
+                else:
+                    print(f"   ⚠️ 0x0.st failed ({resp.status_code}): {resp.text[:100]}")
+            except Exception as e:
+                print(f"   ⚠️ 0x0.st error: {e}")
 
-        public_url = upload_data.get("link")
-        print(f"   📤 Video hosted temporarily for Instagram")
+        # Host 2: litterbox.catbox.moe (up to 1GB, 72h expiry)
+        if not public_url:
+            try:
+                print(f"   📤 Trying litterbox.catbox.moe...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://litterbox.catbox.moe/resources/internals/api.php",
+                        data={"reqtype": "fileupload", "time": "72h"},
+                        files={"fileToUpload": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=300,
+                    )
+                if resp.status_code == 200 and resp.text.strip().startswith("http"):
+                    public_url = resp.text.strip()
+                    print(f"   📤 Video hosted via litterbox.catbox.moe")
+                else:
+                    print(f"   ⚠️ litterbox failed ({resp.status_code}): {resp.text[:100]}")
+            except Exception as e:
+                print(f"   ⚠️ litterbox error: {e}")
+
+        # Host 3: file.io (fallback, 100MB limit)
+        if not public_url:
+            try:
+                print(f"   📤 Trying file.io (fallback)...")
+                with open(video_path, "rb") as vf:
+                    resp = requests.post(
+                        "https://file.io",
+                        files={"file": (os.path.basename(video_path), vf, "video/mp4")},
+                        timeout=120,
+                    )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("success"):
+                        public_url = data.get("link")
+                        print(f"   📤 Video hosted via file.io")
+                    else:
+                        print(f"   ⚠️ file.io failed: {data}")
+                else:
+                    print(f"   ⚠️ file.io failed ({resp.status_code})")
+            except Exception as e:
+                print(f"   ⚠️ file.io error: {e}")
+
+        if not public_url:
+            print(f"   ❌ Instagram: all temp hosts failed. Skipping cross-post.")
+            return None
 
         # Step 1: Create media container (Reels)
         # Build caption: title + hashtags
@@ -1557,6 +1628,17 @@ def get_youtube_service():
         try:
             creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
         except:
+            creds = None
+
+    # Check if token has all required scopes (catches stale tokens missing force-ssl)
+    if creds and creds.valid and creds.scopes:
+        required = set(SCOPES)
+        granted = set(creds.scopes)
+        missing_scopes = required - granted
+        if missing_scopes:
+            print(f"   ⚠️ YouTube token missing scopes: {missing_scopes}")
+            print(f"   🔄 Deleting stale token — re-auth needed with full scopes.")
+            os.remove(TOKEN_FILE)
             creds = None
 
     if not creds or not creds.valid:
@@ -2755,7 +2837,9 @@ def main():
                     if thumbnail_path:
                         upload_thumbnail(youtube, vid_id, thumbnail_path)
 
-                    # ── 10b. Pin CTA comment ──
+                    # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
+                    print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
+                    time.sleep(30)
                     pin_comment(youtube, vid_id)
 
                     # ── 10c. Add to series playlist ──
