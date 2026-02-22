@@ -44,8 +44,16 @@ REDIRECT_URI = "http://localhost:8888/callback"
 GRAPH_API_VERSION = "v21.0"
 GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
-# Permissions needed for Instagram Reels publishing + insights
-SCOPES = [
+# Permissions — tries Instagram Business Login scopes first,
+# falls back to legacy Instagram Graph API scopes.
+# Your app needs at least one of these product sets configured.
+SCOPES_BUSINESS_LOGIN = [
+    "instagram_business_basic",
+    "instagram_business_content_publish",
+    "instagram_business_manage_messages",
+]
+
+SCOPES_LEGACY = [
     "pages_show_list",
     "pages_read_engagement",
     "instagram_basic",
@@ -152,12 +160,73 @@ def get_pages(user_token):
     return data["data"]
 
 
+def do_oauth_login(scopes, label):
+    """Run OAuth flow with given scopes. Returns auth code or None."""
+    OAuthCallbackHandler.auth_code = None
+
+    auth_url = (
+        f"https://www.facebook.com/{GRAPH_API_VERSION}/dialog/oauth?"
+        + urlencode({
+            "client_id": FB_APP_ID,
+            "redirect_uri": REDIRECT_URI,
+            "scope": ",".join(scopes),
+            "response_type": "code",
+        })
+    )
+
+    server = HTTPServer(("localhost", 8888), OAuthCallbackHandler)
+    server.timeout = 120
+
+    print(f"   Opening Facebook login ({label})...")
+    print(f"   Waiting for login (timeout: 2 minutes)...")
+    print()
+    webbrowser.open(auth_url)
+
+    while OAuthCallbackHandler.auth_code is None:
+        server.handle_request()
+
+    code = OAuthCallbackHandler.auth_code
+    server.server_close()
+    return code
+
+
+def try_business_login_flow(long_user_token):
+    """Instagram Business Login flow — direct IG token, no Page needed."""
+    print("\n4. Getting Instagram account (Business Login)...")
+
+    # With Instagram Business Login, /me/accounts gives IG accounts directly
+    data = api_get("me", {
+        "fields": "id,name,instagram_business_account{id,name,username}",
+        "access_token": long_user_token,
+    })
+
+    # Also try to get IG user info directly
+    ig_data = api_get("me/accounts", {
+        "fields": "id,name,username,instagram_business_account{id,name,username},access_token",
+        "access_token": long_user_token,
+    })
+
+    # Check if we got pages with IG accounts
+    if ig_data and ig_data.get("data"):
+        return ig_data["data"], "page"
+
+    # For Instagram Business Login, try getting IG user directly
+    ig_user = api_get("me/instagram_accounts", {
+        "fields": "id,name,username",
+        "access_token": long_user_token,
+    })
+
+    if ig_user and ig_user.get("data"):
+        return ig_user["data"], "direct"
+
+    return None, None
+
+
 def main():
     global FB_APP_ID, FB_APP_SECRET
 
     print("=" * 60)
     print("  Instagram Setup for YT Shorts Bot (Sale91)")
-    print("  One-time setup — token NEVER expires!")
     print("=" * 60)
     print()
 
@@ -176,91 +245,105 @@ def main():
         print("App ID and App Secret are required!")
         sys.exit(1)
 
-    # ── Step 1: OAuth Login ───────────────────────────────────────
-    print("1. Opening Facebook login in your browser...")
-    auth_url = (
-        f"https://www.facebook.com/{GRAPH_API_VERSION}/dialog/oauth?"
-        + urlencode({
-            "client_id": FB_APP_ID,
-            "redirect_uri": REDIRECT_URI,
-            "scope": ",".join(SCOPES),
-            "response_type": "code",
-        })
-    )
-
-    # Start local server to catch the callback
-    server = HTTPServer(("localhost", 8888), OAuthCallbackHandler)
-    server.timeout = 120  # 2 minute timeout
-
-    print("   Waiting for login (timeout: 2 minutes)...")
+    # ── Step 1: Choose API mode ───────────────────────────────────
+    print("Which product does your Facebook App have?")
+    print("  [1] Instagram Business Login (newer — recommended)")
+    print("  [2] Facebook Login + Instagram Graph API (legacy)")
     print()
-    webbrowser.open(auth_url)
+    mode = input("Enter 1 or 2 [default: 1]: ").strip() or "1"
 
-    # Wait for callback
-    while OAuthCallbackHandler.auth_code is None:
-        server.handle_request()
+    if mode == "2":
+        scopes = SCOPES_LEGACY
+        label = "Facebook Login + Instagram Graph API"
+    else:
+        scopes = SCOPES_BUSINESS_LOGIN
+        label = "Instagram Business Login"
 
-    auth_code = OAuthCallbackHandler.auth_code
-    server.server_close()
+    # ── Step 2: OAuth Login ───────────────────────────────────────
+    print(f"\n1. Starting OAuth login...")
+    auth_code = do_oauth_login(scopes, label)
+    if not auth_code:
+        print("   Login failed!")
+        sys.exit(1)
     print("   Login successful!")
 
-    # ── Step 2: Exchange code for short-lived token ───────────────
+    # ── Step 3: Exchange code for tokens ──────────────────────────
     short_token = exchange_code_for_token(auth_code)
     if not short_token:
         sys.exit(1)
 
-    # ── Step 3: Exchange for long-lived user token ────────────────
     long_user_token = get_long_lived_user_token(short_token)
     if not long_user_token:
         sys.exit(1)
 
-    # ── Step 4: Get Pages + Instagram accounts ────────────────────
-    pages = get_pages(long_user_token)
-    if not pages:
-        print("\nNo Facebook Pages found!")
-        print("Make sure:")
-        print("  1. You have a Facebook Page")
-        print("  2. Your Instagram Business account is connected to it")
-        print("  3. Your app has 'pages_show_list' permission approved")
-        sys.exit(1)
+    # ── Step 4: Find Instagram account ────────────────────────────
+    if mode == "2":
+        # Legacy flow: get Pages with connected Instagram
+        pages = get_pages(long_user_token)
+        if not pages:
+            print("\nNo Facebook Pages found!")
+            print("Make sure:")
+            print("  1. You have a Facebook Page")
+            print("  2. Your Instagram Business account is connected to it")
+            print("  3. Your app has 'pages_show_list' permission approved")
+            sys.exit(1)
+    else:
+        # Business Login flow
+        pages, flow_type = try_business_login_flow(long_user_token)
+        if not pages:
+            # Fallback: try legacy page lookup anyway
+            print("   Trying page-based lookup as fallback...")
+            pages = get_pages(long_user_token)
+            if not pages:
+                print("\nCould not find Instagram account!")
+                print("Make sure your Instagram is a Business or Creator account")
+                print("and is connected to your Facebook Page.")
+                sys.exit(1)
 
-    # ── Step 5: Let user select the right Page ────────────────────
-    print(f"\n   Found {len(pages)} page(s):\n")
+    # ── Step 5: Select the right Page/Account ─────────────────────
+    print(f"\n   Found {len(pages)} account(s):\n")
 
     pages_with_ig = []
     for i, page in enumerate(pages):
         ig = page.get("instagram_business_account", {})
-        ig_id = ig.get("id", "NOT CONNECTED")
+        ig_id = ig.get("id", "")
         ig_name = ig.get("username", ig.get("name", ""))
-        has_ig = bool(ig.get("id"))
+
+        # For direct IG accounts (Business Login), the page itself IS the IG account
+        if not ig_id and page.get("username"):
+            ig = page
+            ig_id = page.get("id", "")
+            ig_name = page.get("username", page.get("name", ""))
+
+        has_ig = bool(ig_id)
         pages_with_ig.append((page, ig, has_ig))
 
-        status = f"@{ig_name}" if ig_name else ig_id
+        status = f"@{ig_name}" if ig_name else (ig_id or "NOT CONNECTED")
         marker = "" if has_ig else " (no Instagram connected)"
-        print(f"   [{i + 1}] {page['name']} -> Instagram: {status}{marker}")
+        print(f"   [{i + 1}] {page.get('name', page.get('username', 'Unknown'))} -> Instagram: {status}{marker}")
 
-    # Filter pages with Instagram connected
+    # Filter accounts with Instagram
     ig_pages = [(p, ig) for p, ig, has_ig in pages_with_ig if has_ig]
     if not ig_pages:
-        print("\n   None of your pages have an Instagram Business account connected!")
-        print("\n   To connect Instagram to your Facebook Page:")
-        print("   1. Open your Facebook Page -> Settings -> Linked Accounts")
-        print("   2. Connect your Instagram Business/Creator account")
+        print("\n   No Instagram Business account found!")
+        print("\n   Make sure:")
+        print("   1. Your Instagram is a Business or Creator account")
+        print("   2. It's connected to your Facebook Page")
         print("   3. Run this script again")
         sys.exit(1)
 
     if len(ig_pages) == 1:
         selected_page, selected_ig = ig_pages[0]
-        print(f"\n   Auto-selected: {selected_page['name']}")
+        print(f"\n   Auto-selected: {selected_page.get('name', selected_page.get('username', ''))}")
     else:
         while True:
-            choice = input(f"\n   Select page number [1-{len(pages)}]: ").strip()
+            choice = input(f"\n   Select number [1-{len(pages)}]: ").strip()
             try:
                 idx = int(choice) - 1
                 if 0 <= idx < len(pages):
                     page, ig, has_ig = pages_with_ig[idx]
                     if not has_ig:
-                        print("   That page has no Instagram connected. Pick another.")
+                        print("   That has no Instagram connected. Pick another.")
                         continue
                     selected_page, selected_ig = page, ig
                     break
@@ -268,12 +351,15 @@ def main():
                 pass
             print("   Invalid choice, try again.")
 
-    # ── Step 6: Get the permanent Page access token ───────────────
-    # Page tokens obtained from long-lived user tokens are PERMANENT
-    # (they never expire unless password change or app removal)
-    page_access_token = selected_page["access_token"]
-    ig_business_id = selected_ig["id"]
+    # ── Step 6: Get the access token ──────────────────────────────
+    # Page tokens from long-lived user tokens are PERMANENT (never expire)
+    # Direct IG tokens (Business Login) last 60 days but can be refreshed
+    page_access_token = selected_page.get("access_token", long_user_token)
+    ig_business_id = selected_ig.get("id", selected_ig.get("user_id", ""))
     ig_username = selected_ig.get("username", selected_ig.get("name", ""))
+
+    is_page_token = "access_token" in selected_page and mode == "2"
+    token_type = "PERMANENT (Page token)" if is_page_token else "Long-lived (60 days)"
 
     print(f"\n5. Verifying Instagram Business Account...")
     verify = api_get(ig_business_id, {
@@ -284,18 +370,23 @@ def main():
         print(f"   Account: @{verify.get('username', verify.get('name', ig_business_id))}")
         print(f"   Followers: {verify.get('followers_count', '?')}")
         print(f"   Posts: {verify.get('media_count', '?')}")
+        if not ig_username:
+            ig_username = verify.get("username", verify.get("name", ""))
+        if not ig_business_id:
+            ig_business_id = verify.get("id", "")
     else:
         print("   Warning: Could not verify, but token was obtained.")
 
     # ── Step 7: Output results ────────────────────────────────────
     print()
     print("=" * 60)
-    print("  SETUP COMPLETE! Token NEVER expires.")
+    print(f"  SETUP COMPLETE! Token type: {token_type}")
     print("=" * 60)
     print()
     print(f"  Instagram: @{ig_username}")
     print(f"  Business ID: {ig_business_id}")
     print(f"  Token length: {len(page_access_token)} chars")
+    print(f"  Token type: {token_type}")
     print()
     print("-" * 60)
     print("  ADD THESE TO YOUR GITHUB SECRETS:")
@@ -315,9 +406,15 @@ def main():
     print("-" * 60)
     print("  NOTES:")
     print("-" * 60)
-    print("  - This Page token NEVER expires (permanent!)")
-    print("  - No need to refresh every 60 days")
-    print("  - Only expires if you change FB password or remove the app")
+    if is_page_token:
+        print("  - This Page token NEVER expires (permanent!)")
+        print("  - No need to refresh every 60 days")
+        print("  - Only expires if you change FB password or remove the app")
+    else:
+        print("  - This token is valid for 60 days")
+        print("  - Run this script again before it expires to get a new one")
+        print("  - Or switch to Facebook Login + Instagram Graph API (option 2)")
+        print("    for a permanent token")
     print("  - DELETE instagram_token.txt after copying to GitHub!")
     print("  - NEVER commit the token file to git!")
     print()
