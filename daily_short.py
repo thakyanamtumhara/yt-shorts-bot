@@ -144,8 +144,8 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
-VEO_MAX_RETRIES = 3
-VEO_RETRY_WAIT = 30
+VEO_MAX_RETRIES = 4
+VEO_RETRY_WAIT = 60
 VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 
 # Subtitles
@@ -3120,9 +3120,9 @@ def main():
     if not TEST_MODE and not SKIP_CLIPS:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
         for i in range(VEO_CLIPS_PER_VIDEO):
-            if i > 0 and i % 2 == 0:
-                print(f"   ⏸️ RPM limit — waiting 30s...")
-                time.sleep(30)
+            if i > 0:
+                print(f"   ⏸️ RPM cooldown — waiting 45s...")
+                time.sleep(45)
 
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
