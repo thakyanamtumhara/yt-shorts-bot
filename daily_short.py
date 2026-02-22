@@ -15,6 +15,7 @@ Required environment variables:
 Optional environment variables:
   ELEVENLABS_API_KEY  — ElevenLabs TTS (primary voice; falls back to OpenAI if missing)
   REPLICATE_API_TOKEN — Replicate token for AI background music generation
+  FAL_KEY             — fal.ai API key for Kling video fallback (auto-fallback when Veo rate-limits)
 """
 
 import anthropic
@@ -150,6 +151,17 @@ VEO_DURATION = 8
 VEO_MAX_RETRIES = 4
 VEO_RETRY_WAIT = 60
 VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
+
+# ── Kling Fallback (via fal.ai) ──
+# Auto-activates when Veo rate-limits (429/RESOURCE_EXHAUSTED).
+# Uses Kling v2.6 Pro for cost-effective fallback ($0.07/s, no audio).
+# Set FAL_KEY env var to enable. Without it, Kling fallback is skipped.
+KLING_ENABLED = bool(os.environ.get("FAL_KEY", ""))
+KLING_MODEL = "fal-ai/kling-video/v2.6/pro/text-to-video"
+KLING_DURATION = "5"  # "5" or "10" seconds (5s = $0.35/clip, 10s = $0.70/clip)
+KLING_ASPECT_RATIO = "9:16"
+KLING_MAX_RETRIES = 3
+KLING_NEGATIVE_PROMPT = "blur, distort, low quality, text, watermark, face, human face"
 
 # Subtitles
 ADD_SUBTITLES = True
@@ -1079,6 +1091,7 @@ COST_RATES = {
     "openai_tts_per_char": 0.000015,    # $15/1M chars
     "elevenlabs_per_char": 0.00003,     # ~$0.30/1K chars (pro plan)
     "veo_per_clip": 0.50,              # ~$0.50 per 8s clip (estimate)
+    "kling_per_clip": 0.35,            # ~$0.35 per 5s clip ($0.07/s via fal.ai)
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
     "whisper_per_minute": 0.006,        # $0.006/min
 }
@@ -1122,6 +1135,11 @@ class CostTracker:
         """Track Veo video generation cost."""
         cost = num_clips * COST_RATES["veo_per_clip"]
         self.add("veo_clips", cost, f"{num_clips} clips")
+
+    def track_kling(self, num_clips):
+        """Track Kling (fal.ai) fallback video generation cost."""
+        cost = num_clips * COST_RATES["kling_per_clip"]
+        self.add("kling_clips", cost, f"{num_clips} clips (fallback)")
 
     def track_replicate(self):
         """Track Replicate ACE-Step music generation cost."""
@@ -2831,6 +2849,47 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# KLING FALLBACK (fal.ai)
+# ═══════════════════════════════════════════════════════════════════════
+
+def generate_clip_kling(prompt_text, output_path):
+    """Generate a single video clip via Kling (fal.ai) as Veo fallback.
+
+    Returns (output_path, success_bool).
+    Requires FAL_KEY env var to be set.
+    """
+    import fal_client
+
+    for attempt in range(1, KLING_MAX_RETRIES + 1):
+        try:
+            print(f"      🎬 Kling attempt {attempt}...", end=" ")
+            result = fal_client.subscribe(
+                KLING_MODEL,
+                arguments={
+                    "prompt": prompt_text,
+                    "duration": KLING_DURATION,
+                    "aspect_ratio": KLING_ASPECT_RATIO,
+                    "negative_prompt": KLING_NEGATIVE_PROMPT,
+                    "cfg_scale": 0.5,
+                    "generate_audio": False,
+                },
+            )
+            video_url = result["video"]["url"]
+            resp = requests.get(video_url, timeout=120)
+            resp.raise_for_status()
+            with open(output_path, "wb") as f:
+                f.write(resp.content)
+            print("✅")
+            return output_path, True
+        except Exception as e:
+            print(f"error: {str(e)[:80]}")
+            if attempt < KLING_MAX_RETRIES:
+                time.sleep(5 * attempt)
+
+    return output_path, False
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -2878,6 +2937,10 @@ def main():
     print(f"   ║ Ken Burns Effect       : {'ON':>25} ║")
     print(f"   ║ Black Intro Trim       : {'ON':>25} ║")
     print(f"   ║ Clip Fade Transition   : {str(CLIP_FADE_DURATION) + 's':>25} ║")
+    print(f"   ║ Kling Fallback         : {'ON (fal.ai)' if KLING_ENABLED else 'OFF (no FAL_KEY)':>25} ║")
+    if KLING_ENABLED:
+        print(f"   ║ Kling Model            : {'v2.6 Pro':>25} ║")
+        print(f"   ║ Kling Duration/Clip    : {KLING_DURATION + 's':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── AUDIO ──                                       ║")
     print(f"   ║ TTS Primary            : {'ElevenLabs' if elevenlabs_available else 'OpenAI (no 11Labs key)':>25} ║")
@@ -3107,8 +3170,10 @@ def main():
     except Exception as e:
         print(f"   ⚠️ Loudness normalization skipped: {e}")
 
-    # ── 5. Generate Video Clips (Veo 3.1) ──
+    # ── 5. Generate Video Clips (Veo 3.1, Kling fallback) ──
     downloaded_clips = []
+    kling_clips = 0  # Track Kling fallback clips across all modes
+    veo_clips_count = 0
 
     if TEST_MODE or SKIP_CLIPS:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
@@ -3189,57 +3254,87 @@ def main():
 
     else:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
-        for i in range(VEO_CLIPS_PER_VIDEO):
-            if i > 0:
-                print(f"   ⏸️ RPM cooldown — waiting 45s...")
-                time.sleep(45)
+        if KLING_ENABLED:
+            print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
 
+        use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
+
+        for i in range(VEO_CLIPS_PER_VIDEO):
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
             clip_success = False
 
-            for attempt in range(1, VEO_MAX_RETRIES + 1):
-                try:
-                    print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
-                    operation = veo_client.models.generate_videos(
-                        model=VEO_MODEL,
-                        prompt=prompt_text,
-                        config=types.GenerateVideosConfig(
-                            aspect_ratio=VEO_ASPECT_RATIO,
-                            number_of_videos=1,
-                            duration_seconds=VEO_DURATION,
-                        ),
-                    )
-                    poll_start = time.time()
-                    while not operation.done:
-                        if time.time() - poll_start > VEO_POLL_TIMEOUT:
-                            raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
-                        time.sleep(10)
-                        operation = veo_client.operations.get(operation)
+            # ── Try Veo first (unless already switched to Kling) ──
+            if not use_kling_fallback:
+                if i > 0:
+                    print(f"   ⏸️ RPM cooldown — waiting 45s...")
+                    time.sleep(45)
 
-                    if operation.response and operation.response.generated_videos:
-                        video = operation.response.generated_videos[0]
-                        video_data = veo_client.files.download(file=video.video)
-                        with open(clip_path, "wb") as f:
-                            f.write(video_data)
-                        downloaded_clips.append(clip_path)
-                        clip_success = True
-                        print("✅")
-                        break
-                    else:
-                        print("empty response")
-                except BaseException as e:
-                    error_msg = str(e)
-                    if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                        wait = VEO_RETRY_WAIT * attempt
-                        print(f"rate limited — waiting {wait}s")
-                        time.sleep(wait)
-                    else:
-                        print(f"error: {error_msg[:60]}")
-                        break
+                for attempt in range(1, VEO_MAX_RETRIES + 1):
+                    try:
+                        print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
+                        operation = veo_client.models.generate_videos(
+                            model=VEO_MODEL,
+                            prompt=prompt_text,
+                            config=types.GenerateVideosConfig(
+                                aspect_ratio=VEO_ASPECT_RATIO,
+                                number_of_videos=1,
+                                duration_seconds=VEO_DURATION,
+                            ),
+                        )
+                        poll_start = time.time()
+                        while not operation.done:
+                            if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                                raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
+                            time.sleep(10)
+                            operation = veo_client.operations.get(operation)
+
+                        if operation.response and operation.response.generated_videos:
+                            video = operation.response.generated_videos[0]
+                            video_data = veo_client.files.download(file=video.video)
+                            with open(clip_path, "wb") as f:
+                                f.write(video_data)
+                            downloaded_clips.append(clip_path)
+                            clip_success = True
+                            veo_clips_count += 1
+                            print("✅")
+                            break
+                        else:
+                            print("empty response")
+                    except BaseException as e:
+                        error_msg = str(e)
+                        if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                            if KLING_ENABLED:
+                                print(f"rate limited — switching to Kling fallback")
+                                use_kling_fallback = True
+                                break
+                            else:
+                                wait = VEO_RETRY_WAIT * attempt
+                                print(f"rate limited — waiting {wait}s")
+                                time.sleep(wait)
+                        else:
+                            print(f"error: {error_msg[:60]}")
+                            break
+
+            # ── Kling fallback (rate limit or Veo failure) ──
+            if not clip_success and KLING_ENABLED:
+                if kling_clips == 0:
+                    remaining = VEO_CLIPS_PER_VIDEO - i
+                    print(f"   🔄 Kling fallback: generating {remaining} remaining clip(s)...")
+                print(f"   ⏳ Clip {i+1} (Kling):")
+                _, clip_success = generate_clip_kling(prompt_text, clip_path)
+                if clip_success:
+                    downloaded_clips.append(clip_path)
+                    kling_clips += 1
 
             if not clip_success:
-                print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
+                print(f"   ⚠️ Clip {i+1} failed after all attempts")
+
+        # Summary
+        if kling_clips > 0:
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo + {kling_clips} Kling fallback)")
+        else:
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo)")
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
@@ -3248,7 +3343,11 @@ def main():
     if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
-        cost.track_veo(got)
+        veo_count = got - kling_clips
+        if veo_count > 0:
+            cost.track_veo(veo_count)
+        if kling_clips > 0:
+            cost.track_kling(kling_clips)
         if got < expected:
             print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
     print(f"   ✅ {len(downloaded_clips)} clips ready")
