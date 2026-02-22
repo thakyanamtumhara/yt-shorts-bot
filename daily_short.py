@@ -953,6 +953,30 @@ def cross_post_to_instagram(video_path, title, description, topic):
         return None
 
     try:
+        # Pre-flight: validate token with a lightweight /me call
+        print(f"   🔑 Verifying Instagram token (len={len(ig_token)}, prefix={ig_token[:6]}...{ig_token[-4:]})...")
+        me_resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{ig_business_id}",
+            params={"fields": "id,name,username", "access_token": ig_token},
+            timeout=10,
+        )
+        if me_resp.status_code != 200:
+            error_data = me_resp.json().get("error", {})
+            err_code = error_data.get("code", "")
+            err_msg = error_data.get("message", me_resp.text[:150])
+            print(f"   ❌ Instagram token invalid (code {err_code}): {err_msg}")
+            if err_code == 190:
+                sub_code = error_data.get("error_subcode", "")
+                if sub_code == 463:
+                    print(f"      🔑 Token EXPIRED — generate new long-lived token and update INSTAGRAM_ACCESS_TOKEN secret")
+                else:
+                    print(f"      🔑 Token cannot be parsed — check for extra quotes/newlines/spaces in the GitHub secret")
+                    print(f"         Token should start with 'EAA' or 'IGA' (yours starts with '{ig_token[:3]}')")
+            return None
+        else:
+            ig_info = me_resp.json()
+            print(f"   ✅ Token valid — account: {ig_info.get('name', ig_info.get('username', ig_info.get('id')))}")
+
         # Instagram Reels need the video hosted at a public URL.
         # Upload to a temporary public host (with fallback chain).
         print("   📸 Cross-posting to Instagram Reels...")
