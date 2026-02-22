@@ -100,6 +100,9 @@ KEY FACTS:
 TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 # Skip clips mode: use placeholder clips but still run everything else (including YouTube upload).
 SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
+# Single Veo test: generate only 1 real Veo clip (clip #1), remaining 4 use blank placeholders.
+# Full pipeline runs (upload, Instagram etc.) — saves ~80% Veo cost while testing end-to-end.
+SINGLE_VEO_TEST = os.environ.get("SINGLE_VEO_TEST", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -2835,6 +2838,8 @@ def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
     if TEST_MODE:
         print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
+    elif SINGLE_VEO_TEST:
+        print("   🧪 SINGLE VEO TEST — 1 real clip + 4 blank, full upload pipeline")
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
@@ -2850,6 +2855,7 @@ def main():
     print("   ║ ── MODE ──                                        ║")
     print(f"   ║ Test Mode             : {'ON (free run)' if TEST_MODE else 'OFF (production)':>25} ║")
     print(f"   ║ Skip Clips            : {'ON (placeholders)' if SKIP_CLIPS else 'OFF (Veo clips)':>25} ║")
+    print(f"   ║ Single Veo Test       : {'ON (1 real + 4 blank)' if SINGLE_VEO_TEST else 'OFF':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── CONTENT INTELLIGENCE ──                        ║")
     print(f"   ║ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>25} ║")
@@ -3117,7 +3123,71 @@ def main():
             downloaded_clips.append(placeholder_path)
         print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-    if not TEST_MODE and not SKIP_CLIPS:
+    elif SINGLE_VEO_TEST:
+        # Single Veo test: 1 real Veo clip + 4 blank placeholders
+        # Full pipeline runs (upload etc.) — saves ~80% Veo cost
+        print(f"   🧪 SINGLE VEO TEST: 1 real clip + {VEO_CLIPS_PER_VIDEO - 1} blank placeholders...")
+
+        # Generate 1 real Veo clip (first prompt)
+        prompt_text = video_prompts[0] if video_prompts else "A professional t-shirt manufacturing factory"
+        clip_path = f"{WORK_DIR}/veo_clip_0_{random.randint(100,999)}.mp4"
+        clip_success = False
+
+        for attempt in range(1, VEO_MAX_RETRIES + 1):
+            try:
+                print(f"   ⏳ Real Clip 1: attempt {attempt}...", end=" ")
+                operation = veo_client.models.generate_videos(
+                    model=VEO_MODEL,
+                    prompt=prompt_text,
+                    config=types.GenerateVideosConfig(
+                        aspect_ratio=VEO_ASPECT_RATIO,
+                        number_of_videos=1,
+                        duration_seconds=VEO_DURATION,
+                    ),
+                )
+                poll_start = time.time()
+                while not operation.done:
+                    if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                        raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
+                    time.sleep(10)
+                    operation = veo_client.operations.get(operation)
+
+                if operation.response and operation.response.generated_videos:
+                    video = operation.response.generated_videos[0]
+                    video_data = veo_client.files.download(file=video.video)
+                    with open(clip_path, "wb") as f:
+                        f.write(video_data)
+                    downloaded_clips.append(clip_path)
+                    clip_success = True
+                    print("✅")
+                    break
+                else:
+                    print("empty response")
+            except BaseException as e:
+                error_msg = str(e)
+                if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                    wait = VEO_RETRY_WAIT * attempt
+                    print(f"rate limited — waiting {wait}s")
+                    time.sleep(wait)
+                else:
+                    print(f"error: {error_msg[:60]}")
+                    break
+
+        if not clip_success:
+            print(f"   ⚠️ Real clip failed — falling back to all placeholders")
+
+        # Fill remaining slots with blank (black) placeholders
+        for i in range(1, VEO_CLIPS_PER_VIDEO):
+            placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
+            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=(0, 0, 0), duration=VEO_DURATION)
+            placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
+            downloaded_clips.append(placeholder_path)
+
+        real_count = 1 if clip_success else 0
+        cost.track_veo(real_count)
+        print(f"   ✅ {len(downloaded_clips)} clips ready ({real_count} real Veo + {VEO_CLIPS_PER_VIDEO - real_count} blank)")
+
+    else:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             if i > 0:
@@ -3175,7 +3245,7 @@ def main():
         print("❌ No clips generated. Stopping.")
         return
 
-    if not TEST_MODE and not SKIP_CLIPS:
+    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
         cost.track_veo(got)

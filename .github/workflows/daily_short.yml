@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      single_veo_test:
+        description: 'Single Veo test (1 real clip + 4 blank — full upload pipeline, saves ~80% Veo cost)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-short-generation
@@ -65,6 +70,7 @@ jobs:
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
+          SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
