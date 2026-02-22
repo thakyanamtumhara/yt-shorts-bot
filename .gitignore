@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+instagram_token.txt
+client_secret.json
+new_youtube_token.json
+*.env
