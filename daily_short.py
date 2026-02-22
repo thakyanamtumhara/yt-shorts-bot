@@ -939,11 +939,17 @@ def cross_post_to_instagram(video_path, title, description, topic):
     if not CROSS_POST_INSTAGRAM:
         return None
 
-    ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
-    ig_business_id = os.environ.get("INSTAGRAM_BUSINESS_ID")
+    ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
+    ig_business_id = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
 
     if not ig_token or not ig_business_id:
         print("   ℹ️ Instagram cross-post skipped (no INSTAGRAM_ACCESS_TOKEN/INSTAGRAM_BUSINESS_ID)")
+        return None
+
+    # Quick token sanity check — catch obviously broken tokens early
+    if len(ig_token) < 20 or " " in ig_token:
+        print(f"   ⚠️ Instagram token looks malformed (len={len(ig_token)}). Skipping cross-post.")
+        print(f"      Hint: refresh your long-lived token via Facebook Graph API Explorer")
         return None
 
     try:
@@ -1036,7 +1042,11 @@ def cross_post_to_instagram(video_path, title, description, topic):
         )
 
         if container_resp.status_code != 200:
-            print(f"   ⚠️ Instagram container creation failed: {container_resp.text[:200]}")
+            error_text = container_resp.text[:200]
+            print(f"   ⚠️ Instagram container creation failed: {error_text}")
+            if "OAuthException" in error_text or "access token" in error_text.lower():
+                print(f"      🔑 Token expired/invalid — refresh at: https://developers.facebook.com/tools/explorer/")
+                print(f"         1. Generate new long-lived token  2. Update INSTAGRAM_ACCESS_TOKEN secret")
             return None
 
         container_id = container_resp.json().get("id")
@@ -3238,8 +3248,17 @@ def main():
                     print(f"error: {error_msg[:60]}")
                     break
 
+        # ── Kling fallback for single Veo test (when Veo rate-limits) ──
+        if not clip_success and KLING_ENABLED:
+            print(f"   🔄 Kling fallback: generating 1 real clip...")
+            print(f"   ⏳ Clip 1 (Kling):")
+            _, clip_success = generate_clip_kling(prompt_text, clip_path)
+            if clip_success:
+                downloaded_clips.append(clip_path)
+                cost.track_kling(1)
+
         if not clip_success:
-            print(f"   ⚠️ Real clip failed — falling back to all placeholders")
+            print(f"   ⚠️ Real clip failed (Veo + Kling) — falling back to all placeholders")
 
         # Fill remaining slots with blank (black) placeholders
         for i in range(1, VEO_CLIPS_PER_VIDEO):
