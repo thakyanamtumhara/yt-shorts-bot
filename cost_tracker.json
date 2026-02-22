@@ -25,5 +25,19 @@
       "tts_elevenlabs": 0.0259,
       "whisper": 0.0052
     }
+  },
+  {
+    "date": "2026-02-22T03:22:59.414300",
+    "topic": "200 GSM sweet spot hai printing ke liye \u2014 na mota na patla",
+    "title": "180 GSM vs 200 GSM: The Mistake Killing Your Print Business",
+    "total_usd": 0.1112,
+    "duration_min": 19.6,
+    "breakdown": {
+      "claude_sonnet": 0.0308,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.025,
+      "veo_clips": 0.0,
+      "whisper": 0.0053
+    }
   }
 ]
