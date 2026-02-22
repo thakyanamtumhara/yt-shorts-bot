@@ -25,7 +25,10 @@ Or with env vars:
 
 import json
 import os
+import ssl
+import subprocess
 import sys
+import tempfile
 import time
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -40,7 +43,7 @@ import requests
 
 FB_APP_ID = os.environ.get("FB_APP_ID", "")
 FB_APP_SECRET = os.environ.get("FB_APP_SECRET", "")
-REDIRECT_URI = "http://localhost:8888/callback"
+REDIRECT_URI = "https://localhost:8888/callback"
 GRAPH_API_VERSION = "v21.0"
 GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
@@ -176,6 +179,23 @@ def do_oauth_login(scopes, label):
 
     server = HTTPServer(("localhost", 8888), OAuthCallbackHandler)
     server.timeout = 120
+
+    # Create self-signed SSL cert for HTTPS localhost
+    cert_dir = tempfile.mkdtemp()
+    cert_file = os.path.join(cert_dir, "cert.pem")
+    key_file = os.path.join(cert_dir, "key.pem")
+    subprocess.run(
+        [
+            "openssl", "req", "-x509", "-newkey", "rsa:2048",
+            "-keyout", key_file, "-out", cert_file,
+            "-days", "1", "-nodes",
+            "-subj", "/CN=localhost",
+        ],
+        capture_output=True,
+    )
+    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_ctx.load_cert_chain(cert_file, key_file)
+    server.socket = ssl_ctx.wrap_socket(server.socket, server_side=True)
 
     print(f"   Opening Facebook login ({label})...")
     print(f"   Waiting for login (timeout: 2 minutes)...")
