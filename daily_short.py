@@ -932,6 +932,95 @@ def add_to_playlist(youtube, video_id, topic):
 # INSTAGRAM REELS CROSS-POST
 # ═══════════════════════════════════════════════════════════════════════
 
+def get_instagram_best_time(ig_token, ig_business_id):
+    """Query Instagram Insights API to find the best posting hour today.
+
+    Uses the 'online_followers' metric which returns hourly follower
+    activity for each day of the week (0-23 hours, timezone of the account).
+    Returns a datetime (IST) for the next best posting slot, or None on failure.
+    """
+    ist = pytz.timezone("Asia/Kolkata")
+    now_ist = datetime.now(ist)
+    today_weekday = now_ist.weekday()  # 0=Mon, 6=Sun
+
+    try:
+        resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{ig_business_id}/insights",
+            params={
+                "metric": "online_followers",
+                "period": "lifetime",
+                "access_token": ig_token,
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            print(f"   ⚠️ Instagram Insights API failed ({resp.status_code}): {resp.text[:120]}")
+            return None
+
+        data = resp.json().get("data", [])
+        if not data:
+            print(f"   ⚠️ No Instagram Insights data returned")
+            return None
+
+        # online_followers returns {day_name: {hour: count}} for each day
+        values = data[0].get("values", [])
+        if not values:
+            return None
+
+        # Map day index to Instagram's day names
+        ig_day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        today_name = ig_day_names[today_weekday]
+
+        # Get today's hourly data
+        today_data = None
+        for v in values:
+            day_data = v.get("value", {})
+            if today_name in day_data:
+                today_data = day_data[today_name]
+                break
+
+        if not today_data:
+            # Fallback: try to get any day's data and use it
+            for v in values:
+                day_data = v.get("value", {})
+                if day_data:
+                    # Use the first available day
+                    first_day = list(day_data.keys())[0]
+                    today_data = day_data[first_day]
+                    print(f"   ℹ️ Using {first_day}'s data as proxy for today")
+                    break
+
+        if not today_data:
+            return None
+
+        # today_data is {hour_str: follower_count}
+        # Find the top 3 hours with most online followers
+        sorted_hours = sorted(today_data.items(), key=lambda x: x[1], reverse=True)
+        print(f"   📊 Instagram audience peak hours today ({today_name}):")
+        for h, count in sorted_hours[:3]:
+            print(f"      {int(h):02d}:00 IST — {count:,} followers online")
+
+        # Pick the best hour that's still in the future (at least 15 min from now)
+        min_schedule_time = now_ist + timedelta(minutes=15)
+        for hour_str, _ in sorted_hours:
+            hour = int(hour_str)
+            candidate = now_ist.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if candidate > min_schedule_time:
+                print(f"   🕐 Best posting slot: {candidate.strftime('%I:%M %p IST')} ({today_name})")
+                return candidate
+
+        # All peak hours have passed today — schedule for tomorrow's best hour
+        best_hour = int(sorted_hours[0][0])
+        tomorrow = now_ist + timedelta(days=1)
+        candidate = tomorrow.replace(hour=best_hour, minute=0, second=0, microsecond=0)
+        print(f"   🕐 Today's peak passed — scheduling for tomorrow {candidate.strftime('%I:%M %p IST')}")
+        return candidate
+
+    except Exception as e:
+        print(f"   ⚠️ Instagram best-time detection failed: {e}")
+        return None
+
+
 def cross_post_to_instagram(video_path, title, description, topic):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
@@ -1048,20 +1137,45 @@ def cross_post_to_instagram(video_path, title, description, topic):
             print(f"   ❌ Instagram: all temp hosts failed. Skipping cross-post.")
             return None
 
-        # Step 1: Create media container (Reels)
-        # Build caption: title + hashtags
+        # Step 1: Detect best posting time from audience insights
+        best_time = get_instagram_best_time(ig_token, ig_business_id)
+        schedule_for_later = False
+        schedule_timestamp = None
+
+        if best_time:
+            ist = pytz.timezone("Asia/Kolkata")
+            now_ist = datetime.now(ist)
+            # Only schedule if best time is >15 min away (IG minimum)
+            diff_minutes = (best_time - now_ist).total_seconds() / 60
+            if diff_minutes > 15:
+                schedule_for_later = True
+                schedule_timestamp = int(best_time.timestamp())
+                print(f"   📅 Will schedule Reel for {best_time.strftime('%d %b %I:%M %p IST')} (in {int(diff_minutes)} min)")
+            else:
+                print(f"   ⚡ Peak time is now — publishing immediately")
+        else:
+            print(f"   ℹ️ Insights unavailable — publishing immediately")
+
+        # Step 2: Create media container (Reels)
         topic_hashtags = get_topic_hashtags(topic)
         ig_caption = f"{title}\n\n{description.split(chr(10))[0]}\n\n{' '.join(topic_hashtags[:10])}\n\n📦 Order: Sale91.com"
 
+        container_data = {
+            "media_type": "REELS",
+            "video_url": public_url,
+            "caption": ig_caption[:2200],  # IG caption limit
+            "share_to_feed": "true",
+            "access_token": ig_token,
+        }
+
+        if schedule_for_later and schedule_timestamp:
+            # Schedule instead of instant publish — IG handles it
+            container_data["published"] = "false"
+            container_data["scheduled_publish_time"] = str(schedule_timestamp)
+
         container_resp = requests.post(
             f"https://graph.facebook.com/v21.0/{ig_business_id}/media",
-            data={
-                "media_type": "REELS",
-                "video_url": public_url,
-                "caption": ig_caption[:2200],  # IG caption limit
-                "share_to_feed": "true",
-                "access_token": ig_token,
-            },
+            data=container_data,
             timeout=30,
         )
 
@@ -1076,7 +1190,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         container_id = container_resp.json().get("id")
         print(f"   📦 Instagram container created: {container_id}")
 
-        # Step 2: Wait for processing (Instagram processes video async)
+        # Step 3: Wait for processing (Instagram processes video async)
         for check in range(20):  # Max 10 minutes
             time.sleep(30)
             status_resp = requests.get(
@@ -1092,20 +1206,27 @@ def cross_post_to_instagram(video_path, title, description, topic):
                 return None
             print(f"   ⏳ Instagram processing... ({check + 1}/20)")
 
-        # Step 3: Publish
-        publish_resp = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
-            data={"creation_id": container_id, "access_token": ig_token},
-            timeout=30,
-        )
-
-        if publish_resp.status_code == 200:
-            ig_media_id = publish_resp.json().get("id")
-            print(f"   ✅ Instagram Reel published! ID: {ig_media_id}")
-            return ig_media_id
+        # Step 4: Publish (or confirm schedule)
+        if schedule_for_later:
+            # Scheduled posts are auto-published by Instagram at the set time
+            print(f"   ✅ Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
+            print(f"      Container ID: {container_id} — Instagram will auto-publish")
+            return container_id
         else:
-            print(f"   ⚠️ Instagram publish failed: {publish_resp.text[:200]}")
-            return None
+            # Immediate publish
+            publish_resp = requests.post(
+                f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
+                data={"creation_id": container_id, "access_token": ig_token},
+                timeout=30,
+            )
+
+            if publish_resp.status_code == 200:
+                ig_media_id = publish_resp.json().get("id")
+                print(f"   ✅ Instagram Reel published! ID: {ig_media_id}")
+                return ig_media_id
+            else:
+                print(f"   ⚠️ Instagram publish failed: {publish_resp.text[:200]}")
+                return None
 
     except Exception as e:
         print(f"   ⚠️ Instagram cross-post failed: {e}")
