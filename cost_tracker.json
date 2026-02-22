@@ -12,5 +12,18 @@
       "veo_clips": 2.5,
       "whisper": 0.0056
     }
+  },
+  {
+    "date": "2026-02-22T02:40:57.749116",
+    "topic": "30s aur 40s yarn count ka matlab \u2014 patla aur mota fabric aise banta hai",
+    "title": "30s vs 40s Yarn Count \u2014 Why Your Fabric Feels Thin \ud83e\udd14",
+    "total_usd": 0.1124,
+    "duration_min": 9.8,
+    "breakdown": {
+      "claude_sonnet": 0.0313,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0259,
+      "whisper": 0.0052
+    }
   }
 ]
