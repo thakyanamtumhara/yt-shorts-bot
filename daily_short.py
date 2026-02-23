@@ -290,6 +290,7 @@ DAILY_COST_LIMIT_USD = 10.0  # Circuit breaker: skip video if today's spend exce
 # Engagement Feedback Loop — check video performance after 48h
 ENGAGEMENT_FILE = "engagement_history.json"  # In repo root for git tracking
 ENGAGEMENT_CHECK_DELAY_HOURS = 48
+NEW_CHANNEL_VIEWS_THRESHOLD = 100_000  # 1 lakh — use main channel data until new channel crosses this
 
 # Source Channel — read engagement data from existing 50K channel to inform topic selection
 SOURCE_CHANNEL_ID = os.environ.get("CHANNEL_ID_2", "")
@@ -1508,6 +1509,20 @@ def get_top_performing_categories():
         return []
 
 
+def get_new_channel_total_views():
+    """Return total views across all tracked videos on the new channel.
+    Used to decide whether new channel has enough data (1L threshold)
+    to override main channel signals for publish time and engagement."""
+    if not os.path.exists(ENGAGEMENT_FILE):
+        return 0
+    try:
+        with open(ENGAGEMENT_FILE, "r") as f:
+            engagement = json.load(f)
+        return sum(e.get("views", 0) for e in engagement)
+    except Exception:
+        return 0
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # SOURCE CHANNEL INSIGHTS (read-only from existing 50K channel)
 # ═══════════════════════════════════════════════════════════════════════
@@ -1875,10 +1890,12 @@ STRUCTURE (follow this EVERY time):
    - Include specific numbers, methods, or techniques
    - "Dekho... agar tum 180 GSM loge toh summer ke liye theek hai, par printing ke liye 200 minimum rakho"
 
-4. NATURAL ENDING (1-2 sentences) — Trail off conclusively:
-   - "...toh bas itna yaad rakhna, fark dikh jayega."
+4. NATURAL ENDING (1-2 sentences) — Trail off conclusively (ROTATE — use a DIFFERENT ending each video):
    - "...simple hai, pehle check kar lo, phir order karo."
    - "...bas yehi galti mat karna, aur kuch nahi."
+   - "...toh wahi hota hai, bas."
+   - "...itna kar lo, complaint nahi aayegi."
+   - "...wo jyada theek rahega, try karke dekh lo."
 
 Study these REAL examples from the actual business owner — match this tone PERFECTLY:
 
@@ -1913,8 +1930,9 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
    Don't sugarcoat. Don't be defensive. Accept reality.
 5. COMPARISON STYLE — "jyada GSM matlab mota, kam GSM matlab patla"
-6. SIGNATURE ENDINGS — "usi ko... bolte hai", "bas...hota hai",
-   "wo jyada theek rahega", "simple hai", "fark dikh jayega"
+6. SIGNATURE ENDINGS (use a DIFFERENT one each video — NEVER repeat the same ending twice in a row):
+   "usi ko... bolte hai", "bas...hota hai", "wo jyada theek rahega",
+   "simple hai", "itna kar lo bas", "complaint nahi aayegi", "try karke dekh lo"
 7. Use "aap/aapka/aapko" — respectful. NEVER "tu/tera/tujhe/bhai/yaar"
 8. COMPOUND VERBS — "kar lo", "kar doge", "ho jayega", "dikh jayega",
    "leke try kar lo" — NOT "karo", "kiya", "hoga"
@@ -1931,19 +1949,22 @@ The listener can SENSE the sentence is ending BEFORE the last word.
 Your script MUST end this way — NOT like it was cut mid-thought.
 
 GOOD endings (trailing, conclusive — listener feels the wrap-up):
-- "...bas itna samajh lo, fark dikh jayega."
 - "...toh wahi hota hai, simple hai."
 - "...isi ko bolte hai... bas."
 - "...wo jyada theek rahega."
 - "...bas yehi hai, kuch aur nahi."
 - "...toh bas... yehi galti mat karna, aur kuch nahi."
+- "...itna kar lo, complaint kabhi nahi aayegi."
+- "...try karke dekh lo, samajh aa jayega."
+- "...bas yehi tha, kuch aur nahi."
 
 BAD endings (feel abrupt — like more was coming):
 - "Aur ye 200 GSM hota hai." (sounds like next point is coming)
 - "Print karke dekh lo." (too commanding, no sense of conclusion)
 
 RULES for ending:
-- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "fark dikh jayega"
+- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "complaint nahi aayegi", "try karke dekh lo"
+- IMPORTANT: Use a DIFFERENT ending phrase every video. NEVER default to the same phrase repeatedly.
 - The last 3-4 words should feel like they're naturally trailing off
 - Add "..." before the final phrase for a natural pause feel
 - The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
@@ -2131,53 +2152,64 @@ def fetch_recent_video_analytics(youtube):
 
 def get_best_publish_slot(youtube):
     """Analyze past performance and return the best publish time slot.
-    Falls back to the A/B rotation schedule if analytics are unavailable."""
+    Strategy: Main channel data PRIMARY until new channel crosses 1L total views.
+    After 1L, new channel's own analytics take priority."""
 
-    analytics = None
-    if youtube:
-        analytics = fetch_recent_video_analytics(youtube)
+    total_views = get_new_channel_total_views()
+    use_own_data = total_views >= NEW_CHANNEL_VIEWS_THRESHOLD
 
-    if analytics and len(analytics) >= 2:
-        # Save analytics to file for tracking
-        try:
-            with open(ANALYTICS_FILE, "w") as f:
-                json.dump({"last_updated": datetime.now().isoformat(), "slots": analytics}, f, indent=2)
-        except Exception:
-            pass
+    if use_own_data:
+        print(f"   📊 New channel: {total_views:,} total views (≥1L) — own analytics PRIMARY")
+    else:
+        print(f"   📊 New channel: {total_views:,} total views (<1L) — main channel data PRIMARY")
 
-        # Find the best performing slot
-        best_label = max(analytics, key=lambda k: analytics[k]["avg_views"])
-        best_avg = analytics[best_label]["avg_views"]
+    # ── Priority 1 (when ≥1L): Own channel analytics ──
+    if use_own_data:
+        analytics = None
+        if youtube:
+            analytics = fetch_recent_video_analytics(youtube)
 
-        print(f"   📊 YouTube Analytics (last 21 videos):")
-        for label, data in sorted(analytics.items()):
-            marker = " ← BEST" if label == best_label else ""
-            print(f"      {label}: {data['avg_views']} avg views ({data['count']} videos){marker}")
+        if analytics and len(analytics) >= 2:
+            # Save analytics to file for tracking
+            try:
+                with open(ANALYTICS_FILE, "w") as f:
+                    json.dump({"last_updated": datetime.now().isoformat(), "slots": analytics}, f, indent=2)
+            except Exception:
+                pass
 
-        # Use best slot if it has significantly more views (>20% better than average)
-        all_avgs = [d["avg_views"] for d in analytics.values()]
-        overall_avg = sum(all_avgs) / len(all_avgs) if all_avgs else 0
+            # Find the best performing slot
+            best_label = max(analytics, key=lambda k: analytics[k]["avg_views"])
+            best_avg = analytics[best_label]["avg_views"]
 
-        if best_avg > overall_avg * 1.2:
-            print(f"   🏆 Analytics-optimized: using {best_label} (best performer)")
-            # Find the slot tuple
-            for hour, minute, label in PUBLISH_SLOTS:
-                if label == best_label:
-                    return hour, minute, label
-        else:
-            print(f"   📊 No clear winner yet — continuing A/B rotation")
+            print(f"   📊 YouTube Analytics (last 21 videos):")
+            for label, data in sorted(analytics.items()):
+                marker = " ← BEST" if label == best_label else ""
+                print(f"      {label}: {data['avg_views']} avg views ({data['count']} videos){marker}")
 
-    # Fallback 2: Source channel posting patterns (if own channel has no data yet)
+            # Use best slot if significantly better (>20% above average)
+            all_avgs = [d["avg_views"] for d in analytics.values()]
+            overall_avg = sum(all_avgs) / len(all_avgs) if all_avgs else 0
+
+            if best_avg > overall_avg * 1.2:
+                print(f"   🏆 Analytics-optimized: using {best_label} (own channel best performer)")
+                for hour, minute, label in PUBLISH_SLOTS:
+                    if label == best_label:
+                        return hour, minute, label
+            else:
+                print(f"   📊 No clear winner in own data — falling through")
+
+    # ── Priority 2: Source/main channel posting patterns ──
+    # PRIMARY when <1L views, FALLBACK when ≥1L views
     source_slot = get_source_optimized_slot()
     if source_slot:
         hour_views = get_source_channel_posting_patterns()
-        print(f"   📊 Source channel posting patterns (IST):")
+        print(f"   📊 Main channel posting patterns (IST):")
         for h in sorted(hour_views):
             print(f"      {h}:00 → {hour_views[h]:,} avg views")
-        print(f"   🏆 Source-optimized: using {source_slot[2]}")
+        print(f"   🏆 Main-channel-optimized: using {source_slot[2]}")
         return source_slot
 
-    # Fallback 3: A/B rotation schedule
+    # ── Priority 3: A/B rotation schedule ──
     return None
 
 
@@ -2787,12 +2819,20 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
 
     if unused:
         # Prefer topics from high-performing categories (engagement-based)
-        # Priority: own channel data > source channel data > random
-        top_cats = get_top_performing_categories()
-        cat_source = "own channel"
-        if not top_cats:
+        # Main channel PRIMARY until new channel crosses 1L total views
+        total_views = get_new_channel_total_views()
+        if total_views >= NEW_CHANNEL_VIEWS_THRESHOLD:
+            top_cats = get_top_performing_categories()
+            cat_source = "own channel"
+            if not top_cats:
+                top_cats = get_source_channel_category_ranking()
+                cat_source = "main channel (fallback)"
+        else:
             top_cats = get_source_channel_category_ranking()
-            cat_source = "source channel (50K)"
+            cat_source = f"main channel (new ch: {total_views:,} views <1L)"
+            if not top_cats:
+                top_cats = get_top_performing_categories()
+                cat_source = "own channel (fallback)"
         if top_cats:
             # Sort unused topics: ones matching top categories come first
             def _cat_priority(topic):

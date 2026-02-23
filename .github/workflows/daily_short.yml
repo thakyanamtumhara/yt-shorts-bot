@@ -46,8 +46,13 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq imagemagick ffmpeg fonts-noto-core
+          # Kill background apt processes that hold the lock on GitHub runners
+          sudo killall -9 apt-get apt unattended-upgr 2>/dev/null || true
+          sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock
+          sudo dpkg --configure -a 2>/dev/null || true
+          export DEBIAN_FRONTEND=noninteractive
+          sudo -E apt-get update -qq
+          sudo -E apt-get install -y -qq imagemagick ffmpeg fonts-noto-core
           sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
 
       - name: Install Python packages
