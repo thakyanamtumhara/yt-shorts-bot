@@ -15,6 +15,7 @@ Required environment variables:
 Optional environment variables:
   ELEVENLABS_API_KEY  — ElevenLabs TTS (primary voice; falls back to OpenAI if missing)
   REPLICATE_API_TOKEN — Replicate token for AI background music generation
+  FAL_KEY             — fal.ai API key for Kling video fallback (auto-fallback when Veo rate-limits)
 """
 
 import anthropic
@@ -100,6 +101,9 @@ KEY FACTS:
 TEST_MODE = os.environ.get("TEST_MODE", "").strip() in ("1", "true", "yes")
 # Skip clips mode: use placeholder clips but still run everything else (including YouTube upload).
 SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
+# Single Veo test: generate only 1 real Veo clip (clip #1), remaining 4 use blank placeholders.
+# Full pipeline runs (upload, Instagram etc.) — saves ~80% Veo cost while testing end-to-end.
+SINGLE_VEO_TEST = os.environ.get("SINGLE_VEO_TEST", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -144,6 +148,20 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
+VEO_MAX_RETRIES = 4
+VEO_RETRY_WAIT = 60
+VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
+
+# ── Kling Fallback (via fal.ai) ──
+# Auto-activates when Veo rate-limits (429/RESOURCE_EXHAUSTED).
+# Uses Kling v2.6 Pro for cost-effective fallback ($0.07/s, no audio).
+# Set FAL_KEY env var to enable. Without it, Kling fallback is skipped.
+KLING_ENABLED = bool(os.environ.get("FAL_KEY", ""))
+KLING_MODEL = "fal-ai/kling-video/v2.6/pro/text-to-video"
+KLING_DURATION = "5"  # "5" or "10" seconds (5s = $0.35/clip, 10s = $0.70/clip)
+KLING_ASPECT_RATIO = "9:16"
+KLING_MAX_RETRIES = 3
+KLING_NEGATIVE_PROMPT = "blur, distort, low quality, text, watermark, face, human face"
 
 # Subtitles
 ADD_SUBTITLES = True
@@ -914,6 +932,95 @@ def add_to_playlist(youtube, video_id, topic):
 # INSTAGRAM REELS CROSS-POST
 # ═══════════════════════════════════════════════════════════════════════
 
+def get_instagram_best_time(ig_token, ig_business_id):
+    """Query Instagram Insights API to find the best posting hour today.
+
+    Uses the 'online_followers' metric which returns hourly follower
+    activity for each day of the week (0-23 hours, timezone of the account).
+    Returns a datetime (IST) for the next best posting slot, or None on failure.
+    """
+    ist = pytz.timezone("Asia/Kolkata")
+    now_ist = datetime.now(ist)
+    today_weekday = now_ist.weekday()  # 0=Mon, 6=Sun
+
+    try:
+        resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{ig_business_id}/insights",
+            params={
+                "metric": "online_followers",
+                "period": "lifetime",
+                "access_token": ig_token,
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            print(f"   ⚠️ Instagram Insights API failed ({resp.status_code}): {resp.text[:120]}")
+            return None
+
+        data = resp.json().get("data", [])
+        if not data:
+            print(f"   ⚠️ No Instagram Insights data returned")
+            return None
+
+        # online_followers returns {day_name: {hour: count}} for each day
+        values = data[0].get("values", [])
+        if not values:
+            return None
+
+        # Map day index to Instagram's day names
+        ig_day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        today_name = ig_day_names[today_weekday]
+
+        # Get today's hourly data
+        today_data = None
+        for v in values:
+            day_data = v.get("value", {})
+            if today_name in day_data:
+                today_data = day_data[today_name]
+                break
+
+        if not today_data:
+            # Fallback: try to get any day's data and use it
+            for v in values:
+                day_data = v.get("value", {})
+                if day_data:
+                    # Use the first available day
+                    first_day = list(day_data.keys())[0]
+                    today_data = day_data[first_day]
+                    print(f"   ℹ️ Using {first_day}'s data as proxy for today")
+                    break
+
+        if not today_data:
+            return None
+
+        # today_data is {hour_str: follower_count}
+        # Find the top 3 hours with most online followers
+        sorted_hours = sorted(today_data.items(), key=lambda x: x[1], reverse=True)
+        print(f"   📊 Instagram audience peak hours today ({today_name}):")
+        for h, count in sorted_hours[:3]:
+            print(f"      {int(h):02d}:00 IST — {count:,} followers online")
+
+        # Pick the best hour that's still in the future (at least 15 min from now)
+        min_schedule_time = now_ist + timedelta(minutes=15)
+        for hour_str, _ in sorted_hours:
+            hour = int(hour_str)
+            candidate = now_ist.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if candidate > min_schedule_time:
+                print(f"   🕐 Best posting slot: {candidate.strftime('%I:%M %p IST')} ({today_name})")
+                return candidate
+
+        # All peak hours have passed today — schedule for tomorrow's best hour
+        best_hour = int(sorted_hours[0][0])
+        tomorrow = now_ist + timedelta(days=1)
+        candidate = tomorrow.replace(hour=best_hour, minute=0, second=0, microsecond=0)
+        print(f"   🕐 Today's peak passed — scheduling for tomorrow {candidate.strftime('%I:%M %p IST')}")
+        return candidate
+
+    except Exception as e:
+        print(f"   ⚠️ Instagram best-time detection failed: {e}")
+        return None
+
+
 def cross_post_to_instagram(video_path, title, description, topic):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
@@ -921,14 +1028,44 @@ def cross_post_to_instagram(video_path, title, description, topic):
     if not CROSS_POST_INSTAGRAM:
         return None
 
-    ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
-    ig_business_id = os.environ.get("INSTAGRAM_BUSINESS_ID")
+    ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
+    ig_business_id = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
 
     if not ig_token or not ig_business_id:
         print("   ℹ️ Instagram cross-post skipped (no INSTAGRAM_ACCESS_TOKEN/INSTAGRAM_BUSINESS_ID)")
         return None
 
+    # Quick token sanity check — catch obviously broken tokens early
+    if len(ig_token) < 20 or " " in ig_token:
+        print(f"   ⚠️ Instagram token looks malformed (len={len(ig_token)}). Skipping cross-post.")
+        print(f"      Hint: refresh your long-lived token via Facebook Graph API Explorer")
+        return None
+
     try:
+        # Pre-flight: validate token with a lightweight /me call
+        print(f"   🔑 Verifying Instagram token (len={len(ig_token)}, prefix={ig_token[:6]}...{ig_token[-4:]})...")
+        me_resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{ig_business_id}",
+            params={"fields": "id,name,username", "access_token": ig_token},
+            timeout=10,
+        )
+        if me_resp.status_code != 200:
+            error_data = me_resp.json().get("error", {})
+            err_code = error_data.get("code", "")
+            err_msg = error_data.get("message", me_resp.text[:150])
+            print(f"   ❌ Instagram token invalid (code {err_code}): {err_msg}")
+            if err_code == 190:
+                sub_code = error_data.get("error_subcode", "")
+                if sub_code == 463:
+                    print(f"      🔑 Token EXPIRED — generate new long-lived token and update INSTAGRAM_ACCESS_TOKEN secret")
+                else:
+                    print(f"      🔑 Token cannot be parsed — check for extra quotes/newlines/spaces in the GitHub secret")
+                    print(f"         Token should start with 'EAA' or 'IGA' (yours starts with '{ig_token[:3]}')")
+            return None
+        else:
+            ig_info = me_resp.json()
+            print(f"   ✅ Token valid — account: {ig_info.get('name', ig_info.get('username', ig_info.get('id')))}")
+
         # Instagram Reels need the video hosted at a public URL.
         # Upload to a temporary public host (with fallback chain).
         print("   📸 Cross-posting to Instagram Reels...")
@@ -1000,31 +1137,60 @@ def cross_post_to_instagram(video_path, title, description, topic):
             print(f"   ❌ Instagram: all temp hosts failed. Skipping cross-post.")
             return None
 
-        # Step 1: Create media container (Reels)
-        # Build caption: title + hashtags
+        # Step 1: Detect best posting time from audience insights
+        best_time = get_instagram_best_time(ig_token, ig_business_id)
+        schedule_for_later = False
+        schedule_timestamp = None
+
+        if best_time:
+            ist = pytz.timezone("Asia/Kolkata")
+            now_ist = datetime.now(ist)
+            # Only schedule if best time is >15 min away (IG minimum)
+            diff_minutes = (best_time - now_ist).total_seconds() / 60
+            if diff_minutes > 15:
+                schedule_for_later = True
+                schedule_timestamp = int(best_time.timestamp())
+                print(f"   📅 Will schedule Reel for {best_time.strftime('%d %b %I:%M %p IST')} (in {int(diff_minutes)} min)")
+            else:
+                print(f"   ⚡ Peak time is now — publishing immediately")
+        else:
+            print(f"   ℹ️ Insights unavailable — publishing immediately")
+
+        # Step 2: Create media container (Reels)
         topic_hashtags = get_topic_hashtags(topic)
         ig_caption = f"{title}\n\n{description.split(chr(10))[0]}\n\n{' '.join(topic_hashtags[:10])}\n\n📦 Order: Sale91.com"
 
+        container_data = {
+            "media_type": "REELS",
+            "video_url": public_url,
+            "caption": ig_caption[:2200],  # IG caption limit
+            "share_to_feed": "true",
+            "access_token": ig_token,
+        }
+
+        if schedule_for_later and schedule_timestamp:
+            # Schedule instead of instant publish — IG handles it
+            container_data["published"] = "false"
+            container_data["scheduled_publish_time"] = str(schedule_timestamp)
+
         container_resp = requests.post(
             f"https://graph.facebook.com/v21.0/{ig_business_id}/media",
-            data={
-                "media_type": "REELS",
-                "video_url": public_url,
-                "caption": ig_caption[:2200],  # IG caption limit
-                "share_to_feed": "true",
-                "access_token": ig_token,
-            },
+            data=container_data,
             timeout=30,
         )
 
         if container_resp.status_code != 200:
-            print(f"   ⚠️ Instagram container creation failed: {container_resp.text[:200]}")
+            error_text = container_resp.text[:200]
+            print(f"   ⚠️ Instagram container creation failed: {error_text}")
+            if "OAuthException" in error_text or "access token" in error_text.lower():
+                print(f"      🔑 Token expired/invalid — refresh at: https://developers.facebook.com/tools/explorer/")
+                print(f"         1. Generate new long-lived token  2. Update INSTAGRAM_ACCESS_TOKEN secret")
             return None
 
         container_id = container_resp.json().get("id")
         print(f"   📦 Instagram container created: {container_id}")
 
-        # Step 2: Wait for processing (Instagram processes video async)
+        # Step 3: Wait for processing (Instagram processes video async)
         for check in range(20):  # Max 10 minutes
             time.sleep(30)
             status_resp = requests.get(
@@ -1040,20 +1206,27 @@ def cross_post_to_instagram(video_path, title, description, topic):
                 return None
             print(f"   ⏳ Instagram processing... ({check + 1}/20)")
 
-        # Step 3: Publish
-        publish_resp = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
-            data={"creation_id": container_id, "access_token": ig_token},
-            timeout=30,
-        )
-
-        if publish_resp.status_code == 200:
-            ig_media_id = publish_resp.json().get("id")
-            print(f"   ✅ Instagram Reel published! ID: {ig_media_id}")
-            return ig_media_id
+        # Step 4: Publish (or confirm schedule)
+        if schedule_for_later:
+            # Scheduled posts are auto-published by Instagram at the set time
+            print(f"   ✅ Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
+            print(f"      Container ID: {container_id} — Instagram will auto-publish")
+            return container_id
         else:
-            print(f"   ⚠️ Instagram publish failed: {publish_resp.text[:200]}")
-            return None
+            # Immediate publish
+            publish_resp = requests.post(
+                f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
+                data={"creation_id": container_id, "access_token": ig_token},
+                timeout=30,
+            )
+
+            if publish_resp.status_code == 200:
+                ig_media_id = publish_resp.json().get("id")
+                print(f"   ✅ Instagram Reel published! ID: {ig_media_id}")
+                return ig_media_id
+            else:
+                print(f"   ⚠️ Instagram publish failed: {publish_resp.text[:200]}")
+                return None
 
     except Exception as e:
         print(f"   ⚠️ Instagram cross-post failed: {e}")
@@ -1073,6 +1246,7 @@ COST_RATES = {
     "openai_tts_per_char": 0.000015,    # $15/1M chars
     "elevenlabs_per_char": 0.00003,     # ~$0.30/1K chars (pro plan)
     "veo_per_clip": 0.50,              # ~$0.50 per 8s clip (estimate)
+    "kling_per_clip": 0.35,            # ~$0.35 per 5s clip ($0.07/s via fal.ai)
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
     "whisper_per_minute": 0.006,        # $0.006/min
 }
@@ -1116,6 +1290,11 @@ class CostTracker:
         """Track Veo video generation cost."""
         cost = num_clips * COST_RATES["veo_per_clip"]
         self.add("veo_clips", cost, f"{num_clips} clips")
+
+    def track_kling(self, num_clips):
+        """Track Kling (fal.ai) fallback video generation cost."""
+        cost = num_clips * COST_RATES["kling_per_clip"]
+        self.add("kling_clips", cost, f"{num_clips} clips (fallback)")
 
     def track_replicate(self):
         """Track Replicate ACE-Step music generation cost."""
@@ -2825,6 +3004,47 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# KLING FALLBACK (fal.ai)
+# ═══════════════════════════════════════════════════════════════════════
+
+def generate_clip_kling(prompt_text, output_path):
+    """Generate a single video clip via Kling (fal.ai) as Veo fallback.
+
+    Returns (output_path, success_bool).
+    Requires FAL_KEY env var to be set.
+    """
+    import fal_client
+
+    for attempt in range(1, KLING_MAX_RETRIES + 1):
+        try:
+            print(f"      🎬 Kling attempt {attempt}...", end=" ")
+            result = fal_client.subscribe(
+                KLING_MODEL,
+                arguments={
+                    "prompt": prompt_text,
+                    "duration": KLING_DURATION,
+                    "aspect_ratio": KLING_ASPECT_RATIO,
+                    "negative_prompt": KLING_NEGATIVE_PROMPT,
+                    "cfg_scale": 0.5,
+                    "generate_audio": False,
+                },
+            )
+            video_url = result["video"]["url"]
+            resp = requests.get(video_url, timeout=120)
+            resp.raise_for_status()
+            with open(output_path, "wb") as f:
+                f.write(resp.content)
+            print("✅")
+            return output_path, True
+        except Exception as e:
+            print(f"error: {str(e)[:80]}")
+            if attempt < KLING_MAX_RETRIES:
+                time.sleep(5 * attempt)
+
+    return output_path, False
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN EXECUTION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -2832,6 +3052,8 @@ def main():
     print("🚀 SALE91.COM — Daily YouTube Short Generator")
     if TEST_MODE:
         print("   🧪 TEST MODE — no Veo clips, no YouTube upload (free run)")
+    elif SINGLE_VEO_TEST:
+        print("   🧪 SINGLE VEO TEST — 1 real clip + 4 blank, full upload pipeline")
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
@@ -2847,6 +3069,7 @@ def main():
     print("   ║ ── MODE ──                                        ║")
     print(f"   ║ Test Mode             : {'ON (free run)' if TEST_MODE else 'OFF (production)':>25} ║")
     print(f"   ║ Skip Clips            : {'ON (placeholders)' if SKIP_CLIPS else 'OFF (Veo clips)':>25} ║")
+    print(f"   ║ Single Veo Test       : {'ON (1 real + 4 blank)' if SINGLE_VEO_TEST else 'OFF':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── CONTENT INTELLIGENCE ──                        ║")
     print(f"   ║ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>25} ║")
@@ -2863,10 +3086,16 @@ def main():
     print(f"   ║ Clips per Video        : {VEO_CLIPS_PER_VIDEO:>25} ║")
     print(f"   ║ Veo Duration/Clip      : {str(VEO_DURATION) + 's':>25} ║")
     print(f"   ║ Veo Retries            : {VEO_MAX_RETRIES:>25} ║")
+    print(f"   ║ Veo Poll Timeout       : {str(VEO_POLL_TIMEOUT) + 's':>25} ║")
+    print(f"   ║ Veo Retry Wait         : {str(VEO_RETRY_WAIT) + 's':>25} ║")
     print(f"   ║ Clip Loop Guard        : {'ON':>25} ║")
     print(f"   ║ Ken Burns Effect       : {'ON':>25} ║")
     print(f"   ║ Black Intro Trim       : {'ON':>25} ║")
     print(f"   ║ Clip Fade Transition   : {str(CLIP_FADE_DURATION) + 's':>25} ║")
+    print(f"   ║ Kling Fallback         : {'ON (fal.ai)' if KLING_ENABLED else 'OFF (no FAL_KEY)':>25} ║")
+    if KLING_ENABLED:
+        print(f"   ║ Kling Model            : {'v2.6 Pro':>25} ║")
+        print(f"   ║ Kling Duration/Clip    : {KLING_DURATION + 's':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── AUDIO ──                                       ║")
     print(f"   ║ TTS Primary            : {'ElevenLabs' if elevenlabs_available else 'OpenAI (no 11Labs key)':>25} ║")
@@ -3096,10 +3325,10 @@ def main():
     except Exception as e:
         print(f"   ⚠️ Loudness normalization skipped: {e}")
 
-    # ── 5. Generate Video Clips (Veo 3.1) ──
+    # ── 5. Generate Video Clips (Veo 3.1, Kling fallback) ──
     downloaded_clips = []
-    VEO_MAX_RETRIES = 5
-    VEO_RETRY_WAIT = 90
+    kling_clips = 0  # Track Kling fallback clips across all modes
+    veo_clips_count = 0
 
     if TEST_MODE or SKIP_CLIPS:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
@@ -3114,65 +3343,175 @@ def main():
             downloaded_clips.append(placeholder_path)
         print(f"   ✅ {len(downloaded_clips)} test clips created (free)")
 
-    if not TEST_MODE and not SKIP_CLIPS:
-        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
-        for i in range(VEO_CLIPS_PER_VIDEO):
-            if i > 0 and i % 2 == 0:
-                print(f"   ⏸️ RPM limit — waiting 60s...")
-                time.sleep(60)
+    elif SINGLE_VEO_TEST:
+        # Single Veo test: 1 real Veo clip + 4 blank placeholders
+        # Full pipeline runs (upload etc.) — saves ~80% Veo cost
+        print(f"   🧪 SINGLE VEO TEST: 1 real clip + {VEO_CLIPS_PER_VIDEO - 1} blank placeholders...")
 
+        # Generate 1 real Veo clip (first prompt)
+        prompt_text = video_prompts[0] if video_prompts else "A professional t-shirt manufacturing factory"
+        clip_path = f"{WORK_DIR}/veo_clip_0_{random.randint(100,999)}.mp4"
+        clip_success = False
+
+        for attempt in range(1, VEO_MAX_RETRIES + 1):
+            try:
+                print(f"   ⏳ Real Clip 1: attempt {attempt}...", end=" ")
+                operation = veo_client.models.generate_videos(
+                    model=VEO_MODEL,
+                    prompt=prompt_text,
+                    config=types.GenerateVideosConfig(
+                        aspect_ratio=VEO_ASPECT_RATIO,
+                        number_of_videos=1,
+                        duration_seconds=VEO_DURATION,
+                    ),
+                )
+                poll_start = time.time()
+                while not operation.done:
+                    if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                        raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
+                    time.sleep(10)
+                    operation = veo_client.operations.get(operation)
+
+                if operation.response and operation.response.generated_videos:
+                    video = operation.response.generated_videos[0]
+                    video_data = veo_client.files.download(file=video.video)
+                    with open(clip_path, "wb") as f:
+                        f.write(video_data)
+                    downloaded_clips.append(clip_path)
+                    clip_success = True
+                    print("✅")
+                    break
+                else:
+                    print("empty response")
+            except BaseException as e:
+                error_msg = str(e)
+                if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                    wait = VEO_RETRY_WAIT * attempt
+                    print(f"rate limited — waiting {wait}s")
+                    time.sleep(wait)
+                else:
+                    print(f"error: {error_msg[:60]}")
+                    break
+
+        # ── Kling fallback for single Veo test (when Veo rate-limits) ──
+        if not clip_success and KLING_ENABLED:
+            print(f"   🔄 Kling fallback: generating 1 real clip...")
+            print(f"   ⏳ Clip 1 (Kling):")
+            _, clip_success = generate_clip_kling(prompt_text, clip_path)
+            if clip_success:
+                downloaded_clips.append(clip_path)
+                cost.track_kling(1)
+
+        if not clip_success:
+            print(f"   ⚠️ Real clip failed (Veo + Kling) — falling back to all placeholders")
+
+        # Fill remaining slots with blank (black) placeholders
+        for i in range(1, VEO_CLIPS_PER_VIDEO):
+            placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
+            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=(0, 0, 0), duration=VEO_DURATION)
+            placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
+            downloaded_clips.append(placeholder_path)
+
+        real_count = 1 if clip_success else 0
+        cost.track_veo(real_count)
+        print(f"   ✅ {len(downloaded_clips)} clips ready ({real_count} real Veo + {VEO_CLIPS_PER_VIDEO - real_count} blank)")
+
+    else:
+        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
+        if KLING_ENABLED:
+            print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
+
+        use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
+
+        for i in range(VEO_CLIPS_PER_VIDEO):
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
             clip_success = False
 
-            for attempt in range(1, VEO_MAX_RETRIES + 1):
-                try:
-                    print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
-                    operation = veo_client.models.generate_videos(
-                        model=VEO_MODEL,
-                        prompt=prompt_text,
-                        config=types.GenerateVideosConfig(
-                            aspect_ratio=VEO_ASPECT_RATIO,
-                            number_of_videos=1,
-                            duration_seconds=VEO_DURATION,
-                        ),
-                    )
-                    while not operation.done:
-                        time.sleep(10)
-                        operation = veo_client.operations.get(operation)
+            # ── Try Veo first (unless already switched to Kling) ──
+            if not use_kling_fallback:
+                if i > 0:
+                    print(f"   ⏸️ RPM cooldown — waiting 45s...")
+                    time.sleep(45)
 
-                    if operation.response and operation.response.generated_videos:
-                        video = operation.response.generated_videos[0]
-                        video_data = veo_client.files.download(file=video.video)
-                        with open(clip_path, "wb") as f:
-                            f.write(video_data)
-                        downloaded_clips.append(clip_path)
-                        clip_success = True
-                        print("✅")
-                        break
-                    else:
-                        print("empty response")
-                except BaseException as e:
-                    error_msg = str(e)
-                    if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                        wait = VEO_RETRY_WAIT * attempt
-                        print(f"rate limited — waiting {wait}s")
-                        time.sleep(wait)
-                    else:
-                        print(f"error: {error_msg[:60]}")
-                        break
+                for attempt in range(1, VEO_MAX_RETRIES + 1):
+                    try:
+                        print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
+                        operation = veo_client.models.generate_videos(
+                            model=VEO_MODEL,
+                            prompt=prompt_text,
+                            config=types.GenerateVideosConfig(
+                                aspect_ratio=VEO_ASPECT_RATIO,
+                                number_of_videos=1,
+                                duration_seconds=VEO_DURATION,
+                            ),
+                        )
+                        poll_start = time.time()
+                        while not operation.done:
+                            if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                                raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
+                            time.sleep(10)
+                            operation = veo_client.operations.get(operation)
+
+                        if operation.response and operation.response.generated_videos:
+                            video = operation.response.generated_videos[0]
+                            video_data = veo_client.files.download(file=video.video)
+                            with open(clip_path, "wb") as f:
+                                f.write(video_data)
+                            downloaded_clips.append(clip_path)
+                            clip_success = True
+                            veo_clips_count += 1
+                            print("✅")
+                            break
+                        else:
+                            print("empty response")
+                    except BaseException as e:
+                        error_msg = str(e)
+                        if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                            if KLING_ENABLED:
+                                print(f"rate limited — switching to Kling fallback")
+                                use_kling_fallback = True
+                                break
+                            else:
+                                wait = VEO_RETRY_WAIT * attempt
+                                print(f"rate limited — waiting {wait}s")
+                                time.sleep(wait)
+                        else:
+                            print(f"error: {error_msg[:60]}")
+                            break
+
+            # ── Kling fallback (rate limit or Veo failure) ──
+            if not clip_success and KLING_ENABLED:
+                if kling_clips == 0:
+                    remaining = VEO_CLIPS_PER_VIDEO - i
+                    print(f"   🔄 Kling fallback: generating {remaining} remaining clip(s)...")
+                print(f"   ⏳ Clip {i+1} (Kling):")
+                _, clip_success = generate_clip_kling(prompt_text, clip_path)
+                if clip_success:
+                    downloaded_clips.append(clip_path)
+                    kling_clips += 1
 
             if not clip_success:
-                print(f"   ⚠️ Clip {i+1} failed after {VEO_MAX_RETRIES} attempts")
+                print(f"   ⚠️ Clip {i+1} failed after all attempts")
+
+        # Summary
+        if kling_clips > 0:
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo + {kling_clips} Kling fallback)")
+        else:
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo)")
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
         return
 
-    if not TEST_MODE and not SKIP_CLIPS:
+    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
-        cost.track_veo(got)
+        veo_count = got - kling_clips
+        if veo_count > 0:
+            cost.track_veo(veo_count)
+        if kling_clips > 0:
+            cost.track_kling(kling_clips)
         if got < expected:
             print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
     print(f"   ✅ {len(downloaded_clips)} clips ready")
