@@ -1875,10 +1875,12 @@ STRUCTURE (follow this EVERY time):
    - Include specific numbers, methods, or techniques
    - "Dekho... agar tum 180 GSM loge toh summer ke liye theek hai, par printing ke liye 200 minimum rakho"
 
-4. NATURAL ENDING (1-2 sentences) — Trail off conclusively:
-   - "...toh bas itna yaad rakhna, fark dikh jayega."
+4. NATURAL ENDING (1-2 sentences) — Trail off conclusively (ROTATE — use a DIFFERENT ending each video):
    - "...simple hai, pehle check kar lo, phir order karo."
    - "...bas yehi galti mat karna, aur kuch nahi."
+   - "...toh wahi hota hai, bas."
+   - "...itna kar lo, complaint nahi aayegi."
+   - "...wo jyada theek rahega, try karke dekh lo."
 
 Study these REAL examples from the actual business owner — match this tone PERFECTLY:
 
@@ -1913,8 +1915,9 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
    Don't sugarcoat. Don't be defensive. Accept reality.
 5. COMPARISON STYLE — "jyada GSM matlab mota, kam GSM matlab patla"
-6. SIGNATURE ENDINGS — "usi ko... bolte hai", "bas...hota hai",
-   "wo jyada theek rahega", "simple hai", "fark dikh jayega"
+6. SIGNATURE ENDINGS (use a DIFFERENT one each video — NEVER repeat the same ending twice in a row):
+   "usi ko... bolte hai", "bas...hota hai", "wo jyada theek rahega",
+   "simple hai", "itna kar lo bas", "complaint nahi aayegi", "try karke dekh lo"
 7. Use "aap/aapka/aapko" — respectful. NEVER "tu/tera/tujhe/bhai/yaar"
 8. COMPOUND VERBS — "kar lo", "kar doge", "ho jayega", "dikh jayega",
    "leke try kar lo" — NOT "karo", "kiya", "hoga"
@@ -1931,19 +1934,22 @@ The listener can SENSE the sentence is ending BEFORE the last word.
 Your script MUST end this way — NOT like it was cut mid-thought.
 
 GOOD endings (trailing, conclusive — listener feels the wrap-up):
-- "...bas itna samajh lo, fark dikh jayega."
 - "...toh wahi hota hai, simple hai."
 - "...isi ko bolte hai... bas."
 - "...wo jyada theek rahega."
 - "...bas yehi hai, kuch aur nahi."
 - "...toh bas... yehi galti mat karna, aur kuch nahi."
+- "...itna kar lo, complaint kabhi nahi aayegi."
+- "...try karke dekh lo, samajh aa jayega."
+- "...bas yehi tha, kuch aur nahi."
 
 BAD endings (feel abrupt — like more was coming):
 - "Aur ye 200 GSM hota hai." (sounds like next point is coming)
 - "Print karke dekh lo." (too commanding, no sense of conclusion)
 
 RULES for ending:
-- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "fark dikh jayega"
+- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "complaint nahi aayegi", "try karke dekh lo"
+- IMPORTANT: Use a DIFFERENT ending phrase every video. NEVER default to the same phrase repeatedly.
 - The last 3-4 words should feel like they're naturally trailing off
 - Add "..." before the final phrase for a natural pause feel
 - The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
