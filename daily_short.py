@@ -156,7 +156,7 @@ VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 # Auto-activates when Veo rate-limits (429/RESOURCE_EXHAUSTED).
 # Uses Kling v2.6 Pro for cost-effective fallback ($0.07/s, no audio).
 # Set FAL_KEY env var to enable. Without it, Kling fallback is skipped.
-KLING_ENABLED = bool(os.environ.get("FAL_KEY", ""))
+KLING_ENABLED = False  # Disabled: fal.ai account admin-locked. Re-enable when resolved: bool(os.environ.get("FAL_KEY", ""))
 KLING_MODEL = "fal-ai/kling-video/v2.6/pro/text-to-video"
 KLING_DURATION = "5"  # "5" or "10" seconds (5s = $0.35/clip, 10s = $0.70/clip)
 KLING_ASPECT_RATIO = "9:16"
@@ -3044,6 +3044,60 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# VIDEO CLIP VALIDATION
+# ═══════════════════════════════════════════════════════════════════════
+
+def validate_video_file(path, min_size_bytes=10_000):
+    """Check if a downloaded video file is valid and playable.
+
+    Uses ffprobe to verify the file has a video stream with non-zero duration.
+    Returns (is_valid, reason_string).
+    """
+    import subprocess as _sp
+
+    if not os.path.exists(path):
+        return False, "file does not exist"
+
+    file_size = os.path.getsize(path)
+    if file_size < min_size_bytes:
+        return False, f"file too small ({file_size} bytes)"
+
+    try:
+        probe = _sp.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=duration,codec_name,width,height",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=30
+        )
+        if probe.returncode != 0:
+            return False, f"ffprobe failed: {probe.stderr[:120]}"
+
+        output = probe.stdout.strip()
+        if not output:
+            return False, "ffprobe returned no video stream info"
+
+        parts = output.split(",")
+        if len(parts) < 3:
+            return False, f"unexpected ffprobe output: {output[:80]}"
+
+        # Check that width and height are nonzero
+        try:
+            w = int(parts[2]) if len(parts) > 2 else 0
+            h = int(parts[3]) if len(parts) > 3 else 0
+        except (ValueError, IndexError):
+            w, h = 0, 0
+        if w == 0 or h == 0:
+            return False, f"invalid dimensions: {w}x{h}"
+
+        return True, "ok"
+
+    except _sp.TimeoutExpired:
+        return False, "ffprobe timed out"
+    except Exception as e:
+        return False, f"validation error: {str(e)[:80]}"
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # KLING FALLBACK (fal.ai)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -3074,6 +3128,12 @@ def generate_clip_kling(prompt_text, output_path):
             resp.raise_for_status()
             with open(output_path, "wb") as f:
                 f.write(resp.content)
+            valid, reason = validate_video_file(output_path)
+            if not valid:
+                print(f"corrupted ({reason}) — retrying")
+                if attempt < KLING_MAX_RETRIES:
+                    time.sleep(5 * attempt)
+                continue
             print("✅")
             return output_path, True
         except Exception as e:
@@ -3417,6 +3477,10 @@ def main():
                     video_data = veo_client.files.download(file=video.video)
                     with open(clip_path, "wb") as f:
                         f.write(video_data)
+                    valid, reason = validate_video_file(clip_path)
+                    if not valid:
+                        print(f"corrupted ({reason}) — retrying")
+                        continue
                     downloaded_clips.append(clip_path)
                     clip_success = True
                     print("✅")
@@ -3498,6 +3562,10 @@ def main():
                             video_data = veo_client.files.download(file=video.video)
                             with open(clip_path, "wb") as f:
                                 f.write(video_data)
+                            valid, reason = validate_video_file(clip_path)
+                            if not valid:
+                                print(f"corrupted ({reason}) — retrying")
+                                continue
                             downloaded_clips.append(clip_path)
                             clip_success = True
                             veo_clips_count += 1
@@ -3667,7 +3735,8 @@ def main():
             return clip
 
     video_objects = []
-    for fname in downloaded_clips:
+    placeholder_colors = [(30,60,90), (50,80,40), (80,40,60), (60,30,70), (40,70,50)]
+    for clip_idx, fname in enumerate(downloaded_clips):
         try:
             fixed_fname = fname.replace(".mp4", "_fixed.mp4")
             import subprocess
@@ -3689,7 +3758,10 @@ def main():
             video_objects.append(v)
             print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
         except Exception as e:
-            print(f"   Failed to load {fname}: {e}")
+            print(f"   ⚠️ Corrupted clip {fname}: {e} — substituting placeholder")
+            color = placeholder_colors[clip_idx % len(placeholder_colors)]
+            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
+            video_objects.append(placeholder)
 
     if not video_objects:
         print("❌ No usable clips")
@@ -3704,7 +3776,8 @@ def main():
         looped = []
         accumulated = 0
         idx = 0
-        while accumulated < total_duration:
+        max_iterations = len(video_objects) * 20  # Safety: prevent infinite loop
+        while accumulated < total_duration and idx < max_iterations:
             clip = video_objects[idx % len(video_objects)]
             if clip.duration <= 0:
                 print(f"   ⚠️ Clip {idx} has zero duration — skipping")
