@@ -156,7 +156,7 @@ VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 # Auto-activates when Veo rate-limits (429/RESOURCE_EXHAUSTED).
 # Uses Kling v2.6 Pro for cost-effective fallback ($0.07/s, no audio).
 # Set FAL_KEY env var to enable. Without it, Kling fallback is skipped.
-KLING_ENABLED = bool(os.environ.get("FAL_KEY", ""))
+KLING_ENABLED = False  # Disabled: fal.ai account admin-locked. Re-enable when resolved: bool(os.environ.get("FAL_KEY", ""))
 KLING_MODEL = "fal-ai/kling-video/v2.6/pro/text-to-video"
 KLING_DURATION = "5"  # "5" or "10" seconds (5s = $0.35/clip, 10s = $0.70/clip)
 KLING_ASPECT_RATIO = "9:16"
