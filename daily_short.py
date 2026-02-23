@@ -3776,7 +3776,8 @@ def main():
         looped = []
         accumulated = 0
         idx = 0
-        while accumulated < total_duration:
+        max_iterations = len(video_objects) * 20  # Safety: prevent infinite loop
+        while accumulated < total_duration and idx < max_iterations:
             clip = video_objects[idx % len(video_objects)]
             if clip.duration <= 0:
                 print(f"   ⚠️ Clip {idx} has zero duration — skipping")
