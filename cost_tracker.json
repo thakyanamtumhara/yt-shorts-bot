@@ -39,5 +39,19 @@
       "veo_clips": 0.0,
       "whisper": 0.0053
     }
+  },
+  {
+    "date": "2026-02-23T16:04:30.860889",
+    "topic": "Bamboo cotton blend trending hai \u2014 par printing ke liye theek hai ya nahi",
+    "title": "Bamboo Cotton Blend DTG Print \u2014 Cracked After 3 Washes? Truth",
+    "total_usd": 0.616,
+    "duration_min": 11.6,
+    "breakdown": {
+      "claude_sonnet": 0.0311,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.029,
+      "veo_clips": 0.5,
+      "whisper": 0.006
+    }
   }
 ]
