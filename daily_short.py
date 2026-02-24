@@ -3050,7 +3050,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 def validate_video_file(path, min_size_bytes=10_000):
     """Check if a downloaded video file is valid and playable.
 
-    Uses ffprobe to verify the file has a video stream with non-zero duration.
+    Uses ffprobe to verify the file has a video stream with non-zero dimensions.
     Returns (is_valid, reason_string).
     """
     import subprocess as _sp
@@ -3065,8 +3065,8 @@ def validate_video_file(path, min_size_bytes=10_000):
     try:
         probe = _sp.run(
             ["ffprobe", "-v", "error", "-select_streams", "v:0",
-             "-show_entries", "stream=duration,codec_name,width,height",
-             "-of", "csv=p=0", path],
+             "-show_entries", "stream=width,height",
+             "-of", "json", path],
             capture_output=True, text=True, timeout=30
         )
         if probe.returncode != 0:
@@ -3076,16 +3076,13 @@ def validate_video_file(path, min_size_bytes=10_000):
         if not output:
             return False, "ffprobe returned no video stream info"
 
-        parts = output.split(",")
-        if len(parts) < 3:
-            return False, f"unexpected ffprobe output: {output[:80]}"
+        data = json.loads(output)
+        streams = data.get("streams", [])
+        if not streams:
+            return False, "no video stream found"
 
-        # Check that width and height are nonzero
-        try:
-            w = int(parts[2]) if len(parts) > 2 else 0
-            h = int(parts[3]) if len(parts) > 3 else 0
-        except (ValueError, IndexError):
-            w, h = 0, 0
+        w = streams[0].get("width", 0)
+        h = streams[0].get("height", 0)
         if w == 0 or h == 0:
             return False, f"invalid dimensions: {w}x{h}"
 
