@@ -148,7 +148,7 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
-VEO_MAX_RETRIES = 4
+VEO_MAX_RETRIES = 3
 VEO_RETRY_WAIT = 60
 VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 
@@ -3050,7 +3050,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 def validate_video_file(path, min_size_bytes=10_000):
     """Check if a downloaded video file is valid and playable.
 
-    Uses ffprobe to verify the file has a video stream with non-zero duration.
+    Uses ffprobe to verify the file has a video stream with non-zero dimensions.
     Returns (is_valid, reason_string).
     """
     import subprocess as _sp
@@ -3065,8 +3065,8 @@ def validate_video_file(path, min_size_bytes=10_000):
     try:
         probe = _sp.run(
             ["ffprobe", "-v", "error", "-select_streams", "v:0",
-             "-show_entries", "stream=duration,codec_name,width,height",
-             "-of", "csv=p=0", path],
+             "-show_entries", "stream=width,height",
+             "-of", "json", path],
             capture_output=True, text=True, timeout=30
         )
         if probe.returncode != 0:
@@ -3076,16 +3076,13 @@ def validate_video_file(path, min_size_bytes=10_000):
         if not output:
             return False, "ffprobe returned no video stream info"
 
-        parts = output.split(",")
-        if len(parts) < 3:
-            return False, f"unexpected ffprobe output: {output[:80]}"
+        data = json.loads(output)
+        streams = data.get("streams", [])
+        if not streams:
+            return False, "no video stream found"
 
-        # Check that width and height are nonzero
-        try:
-            w = int(parts[2]) if len(parts) > 2 else 0
-            h = int(parts[3]) if len(parts) > 3 else 0
-        except (ValueError, IndexError):
-            w, h = 0, 0
+        w = streams[0].get("width", 0)
+        h = streams[0].get("height", 0)
         if w == 0 or h == 0:
             return False, f"invalid dimensions: {w}x{h}"
 
@@ -3476,7 +3473,7 @@ def main():
                 if hasattr(operation, 'error') and operation.error:
                     print(f"generation failed: {str(operation.error)[:120]}")
                     if attempt < VEO_MAX_RETRIES:
-                        time.sleep(30)
+                        time.sleep(15)
                     continue
 
                 if operation.response and operation.response.generated_videos:
@@ -3486,7 +3483,7 @@ def main():
                         data_len = len(video_data) if video_data else 0
                         print(f"download too small ({data_len} bytes) — retrying")
                         if attempt < VEO_MAX_RETRIES:
-                            time.sleep(30)
+                            time.sleep(15)
                         continue
                     with open(clip_path, "wb") as f:
                         f.write(video_data)
@@ -3495,7 +3492,7 @@ def main():
                     if not valid:
                         print(f"corrupted ({reason}) — retrying")
                         if attempt < VEO_MAX_RETRIES:
-                            time.sleep(30)
+                            time.sleep(15)
                         continue
                     downloaded_clips.append(clip_path)
                     clip_success = True
@@ -3509,7 +3506,7 @@ def main():
                         err_detail = f" | response has no generated_videos"
                     print(f"empty response{err_detail}")
                     if attempt < VEO_MAX_RETRIES:
-                        time.sleep(30)
+                        time.sleep(15)
             except BaseException as e:
                 error_msg = str(e)
                 if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
@@ -3519,7 +3516,7 @@ def main():
                 else:
                     print(f"error: {error_msg[:120]}")
                     if attempt < VEO_MAX_RETRIES:
-                        time.sleep(30)
+                        time.sleep(15)
                     else:
                         break
 
@@ -3552,11 +3549,18 @@ def main():
             print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
 
         use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
+        consecutive_failures = 0  # Early termination: stop if Veo is persistently broken
 
         for i in range(VEO_CLIPS_PER_VIDEO):
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
             clip_success = False
+
+            # ── Early termination: if 2+ consecutive clips failed, Veo is likely broken ──
+            if consecutive_failures >= 2 and not KLING_ENABLED:
+                remaining = VEO_CLIPS_PER_VIDEO - i
+                print(f"   ⛔ Veo persistently failing ({consecutive_failures} clips in a row) — skipping {remaining} remaining clip(s)")
+                break
 
             # ── Try Veo first (unless already switched to Kling) ──
             if not use_kling_fallback:
@@ -3587,7 +3591,7 @@ def main():
                         if hasattr(operation, 'error') and operation.error:
                             print(f"generation failed: {str(operation.error)[:120]}")
                             if attempt < VEO_MAX_RETRIES:
-                                time.sleep(30)
+                                time.sleep(15)
                             continue
 
                         if operation.response and operation.response.generated_videos:
@@ -3598,7 +3602,7 @@ def main():
                                 data_len = len(video_data) if video_data else 0
                                 print(f"download too small ({data_len} bytes) — retrying")
                                 if attempt < VEO_MAX_RETRIES:
-                                    time.sleep(30)
+                                    time.sleep(15)
                                 continue
                             with open(clip_path, "wb") as f:
                                 f.write(video_data)
@@ -3607,7 +3611,7 @@ def main():
                             if not valid:
                                 print(f"corrupted ({reason}) — retrying")
                                 if attempt < VEO_MAX_RETRIES:
-                                    time.sleep(30)
+                                    time.sleep(15)
                                 continue
                             downloaded_clips.append(clip_path)
                             clip_success = True
@@ -3623,7 +3627,7 @@ def main():
                                 err_detail = f" | response has no generated_videos"
                             print(f"empty response{err_detail}")
                             if attempt < VEO_MAX_RETRIES:
-                                time.sleep(30)
+                                time.sleep(15)
                     except BaseException as e:
                         error_msg = str(e)
                         if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
@@ -3638,7 +3642,7 @@ def main():
                         else:
                             print(f"error: {error_msg[:120]}")
                             if attempt < VEO_MAX_RETRIES:
-                                time.sleep(30)
+                                time.sleep(15)
                             else:
                                 break
 
@@ -3653,7 +3657,10 @@ def main():
                     downloaded_clips.append(clip_path)
                     kling_clips += 1
 
-            if not clip_success:
+            if clip_success:
+                consecutive_failures = 0
+            else:
+                consecutive_failures += 1
                 print(f"   ⚠️ Clip {i+1} failed after all attempts")
 
         # Summary
