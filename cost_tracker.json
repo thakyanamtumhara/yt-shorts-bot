@@ -81,5 +81,20 @@
       "veo_clips": 2.5,
       "whisper": 0.0055
     }
+  },
+  {
+    "date": "2026-02-24T17:31:17.114887",
+    "topic": "430 GSM hoodie blank \u2014 winter mein demand sabse zyada isi ki hoti hai",
+    "title": "He Ordered 320 GSM for Winter \ud83d\ude31 | 430 GSM Hoodie Blanks Demand",
+    "total_usd": 0.7451,
+    "duration_min": 15.5,
+    "breakdown": {
+      "claude_sonnet": 0.1581,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0279,
+      "veo_clips": 0.5,
+      "whisper": 0.006,
+      "blog_images": 0.003
+    }
   }
 ]
