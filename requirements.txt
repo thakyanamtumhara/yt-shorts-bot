@@ -10,3 +10,4 @@ google-genai
 pytz
 replicate
 fal-client
+boto3

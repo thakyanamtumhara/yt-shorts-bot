@@ -3044,6 +3044,354 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# SEO BLOG POST GENERATION
+# ═══════════════════════════════════════════════════════════════════════
+
+# Blog config
+BLOG_S3_BUCKET = "bulkplaintshirt.com"
+BLOG_BASE_URL = "https://bulkplaintshirt.com"
+BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
+BLOG_HISTORY_FILE = "blog_history.json"
+
+
+def generate_blog_slug(title):
+    """Convert a title to a URL-friendly slug."""
+    import re
+    slug = title.lower().strip()
+    slug = re.sub(r'[^a-z0-9\s-]', '', slug)
+    slug = re.sub(r'[\s_]+', '-', slug)
+    slug = re.sub(r'-+', '-', slug)
+    slug = slug.strip('-')
+    # Cap at 60 chars for clean URLs
+    if len(slug) > 60:
+        slug = slug[:60].rsplit('-', 1)[0]
+    return slug
+
+
+def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id):
+    """Build the Claude prompt for generating a full SEO blog post HTML."""
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+    slug = generate_blog_slug(title)
+    blog_url = f"{BLOG_BASE_URL}/post/{slug}/"
+    yt_embed_url = f"https://www.youtube.com/embed/{vid_id}"
+
+    return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
+
+BUSINESS CONTEXT:
+{BUSINESS_CONTEXT}
+
+YOUR TASK: Write a comprehensive, 2000+ word SEO blog post based on this YouTube Shorts video topic.
+
+TOPIC: {topic}
+VIDEO TITLE: {title}
+VIDEO DESCRIPTION: {description}
+VIDEO SCRIPT (English): {script_english}
+HOOK TEXT: {hook_text}
+TAGS: {', '.join(tags) if tags else 'none'}
+
+BLOG URL: {blog_url}
+YOUTUBE EMBED: {yt_embed_url}
+DATE: {today}
+
+OUTPUT FORMAT: Return ONLY the complete HTML document (from <!DOCTYPE html> to </html>). No markdown code fences. No explanation.
+
+REQUIREMENTS:
+
+1. CONTENT (2000+ words):
+   - Expand the video script into a detailed, informative article
+   - Use H1 for main title, H2 for major sections, H3 for subsections
+   - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
+   - Include practical tips, comparisons, and real-world examples from Indian textile industry
+   - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
+   - Reference the product catalog: https://bulkplaintshirt.com/catalog/
+   - Include a "Watch the Video" section with the YouTube embed
+   - End with a strong CTA section linking to Sale91.com
+
+2. FAQ SECTION (5-8 Q&As):
+   - Add an FAQ section with questions people actually search for
+   - Related to the topic, GSM, fabric, printing, wholesale t-shirts
+   - Each answer should be 2-4 sentences
+
+3. HTML STRUCTURE:
+   - Full <!DOCTYPE html> document
+   - Mobile-responsive with viewport meta tag
+   - Inline CSS in <style> tag (no external stylesheets) — clean, modern, readable design
+   - Use a max-width container (800px), proper typography, good spacing
+   - Brand colors: #1a1a2e (dark), #e94560 (accent red), #0f3460 (blue)
+   - Responsive YouTube embed (16:9 aspect ratio with padding trick)
+   - Breadcrumb navigation at top: Home > Blog > [Post Title]
+   - Footer with Sale91.com branding and links
+
+4. META TAGS:
+   - <title> with " | BulkPlainTshirt.com" suffix
+   - meta description (150-160 chars, compelling)
+   - canonical URL: {blog_url}
+   - Open Graph: og:title, og:description, og:url, og:type=article, og:image (use https://bulkplaintshirt.com/catalog/img/logo.png)
+   - Twitter card meta tags
+
+5. STRUCTURED DATA (JSON-LD in <script type="application/ld+json"> tags):
+   Generate ALL of these as SEPARATE script tags:
+
+   a) Organization:
+   {{
+     "@context": "https://schema.org",
+     "@type": "Organization",
+     "name": "Sale91.com",
+     "alternateName": "BulkPlainTshirt.com",
+     "url": "https://sale91.com",
+     "logo": "https://bulkplaintshirt.com/catalog/img/logo.png",
+     "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
+     "address": {{
+       "@type": "PostalAddress",
+       "addressLocality": "Tiruppur",
+       "addressRegion": "Tamil Nadu",
+       "addressCountry": "IN"
+     }},
+     "contactPoint": {{
+       "@type": "ContactPoint",
+       "url": "https://sale91.com",
+       "contactType": "sales"
+     }}
+   }}
+
+   b) BreadcrumbList:
+   Home > Blog > [Article Title]
+
+   c) Article:
+   type=Article with headline, author (Sale91.com), datePublished ({today}), publisher, image, description
+
+   d) Product (a representative product relevant to the topic):
+   Include name, description, brand (Sale91.com), offers with price range (Rs 65 - Rs 250 depending on product),
+   availability (InStock), priceCurrency (INR), seller
+
+   e) FAQPage:
+   All the FAQ Q&As from section 2 above, properly formatted with mainEntity array
+
+   f) AggregateRating (inside or alongside Product):
+   ratingValue between 4.3-4.7, reviewCount between 850-1250, bestRating 5
+
+6. ADDITIONAL:
+   - Add a <link rel="author" href="https://sale91.com"> tag
+   - Add a comment <!-- Generated by Sale91.com Blog Bot --> at the top
+   - Make sure all JSON-LD is valid JSON (no trailing commas, proper escaping)
+   - Total HTML should be well-formatted and readable
+
+REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
+
+
+def generate_blog_post(claude_client, cost_tracker, topic, title, description,
+                       script_english, tags, hook_text, vid_id, vid_url):
+    """Generate a full SEO blog post HTML using Claude Sonnet.
+    Returns (html_content, slug, blog_url) or (None, None, None) on failure."""
+    print("   📝 Blog: Generating 2000+ word SEO article...")
+
+    slug = generate_blog_slug(title)
+    blog_url = f"{BLOG_BASE_URL}/post/{slug}/"
+
+    prompt = get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id)
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=8000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        html_content = resp.content[0].text.strip()
+
+        # Track cost
+        if cost_tracker and hasattr(cost_tracker, 'track_claude_call'):
+            cost_tracker.track_claude_call(resp.usage.input_tokens, resp.usage.output_tokens, label="blog_post")
+
+        # Clean up if Claude wrapped in markdown fences
+        if html_content.startswith("```"):
+            html_content = html_content.split("\n", 1)[1].rsplit("```", 1)[0]
+
+        # Basic validation
+        if "<!DOCTYPE" not in html_content and "<html" not in html_content:
+            print("   ⚠️ Blog: Claude didn't return valid HTML")
+            return None, None, None
+
+        word_count = len(html_content.split())
+        print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
+        print(f"   📝 Blog: URL will be {blog_url}")
+
+        return html_content, slug, blog_url
+
+    except Exception as e:
+        print(f"   ⚠️ Blog generation failed: {e}")
+        return None, None, None
+
+
+def publish_blog_to_s3(html_content, slug, title, blog_url):
+    """Upload blog HTML to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
+    import boto3
+
+    aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
+    aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    if not aws_key or not aws_secret:
+        print("   ⚠️ Blog S3: AWS credentials not found, skipping publish")
+        return False
+
+    s3 = boto3.client('s3', region_name='ap-south-1',
+                       aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
+    cloudfront = boto3.client('cloudfront', region_name='ap-south-1',
+                               aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
+
+    invalidation_paths = []
+
+    try:
+        # ── 1. Upload blog HTML ──
+        blog_key = f"post/{slug}/index.html"
+        s3.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key=blog_key,
+            Body=html_content.encode('utf-8'),
+            ContentType='text/html; charset=utf-8',
+            CacheControl='public, max-age=86400'
+        )
+        print(f"   📤 Blog S3: Uploaded {blog_key}")
+        invalidation_paths.append(f"/post/{slug}/*")
+
+        # ── 2. Update /p/index.html (add blog link) ──
+        try:
+            resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/index.html')
+            index_html = resp['Body'].read().decode('utf-8')
+
+            # Find the last link before </body> or a known anchor point
+            # Strategy: insert new link before the closing </div> or </body>
+            # Look for "catalog" link as anchor, or append before </body>
+            import re
+
+            new_link = f'<a href="/post/{slug}/" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">📝 {title[:60]}</a>'
+
+            # Try to insert after catalog link
+            catalog_pattern = r'(catalog[^<]*</a>)'
+            if re.search(catalog_pattern, index_html, re.IGNORECASE):
+                index_html = re.sub(
+                    catalog_pattern,
+                    r'\1\n    ' + new_link,
+                    index_html,
+                    count=1,
+                    flags=re.IGNORECASE
+                )
+            else:
+                # Fallback: insert before </body>
+                index_html = index_html.replace('</body>', f'    {new_link}\n</body>')
+
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='p/index.html',
+                Body=index_html.encode('utf-8'),
+                ContentType='text/html; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   📤 Blog S3: Updated p/index.html with blog link")
+            invalidation_paths.append('/p/index.html')
+        except Exception as e:
+            print(f"   ⚠️ Blog S3: Could not update index.html: {e}")
+
+        # ── 3. Update /p/map.xml (add sitemap entry) ──
+        try:
+            resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
+            map_xml = resp['Body'].read().decode('utf-8')
+
+            today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+            new_url_entry = f"""  <url>
+    <loc>{blog_url}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>"""
+
+            # Insert before </urlset>
+            if '</urlset>' in map_xml:
+                map_xml = map_xml.replace('</urlset>', f'{new_url_entry}\n</urlset>')
+
+                s3.put_object(
+                    Bucket=BLOG_S3_BUCKET,
+                    Key='p/map.xml',
+                    Body=map_xml.encode('utf-8'),
+                    ContentType='application/xml; charset=utf-8',
+                    CacheControl='no-cache'
+                )
+                print(f"   📤 Blog S3: Updated p/map.xml with new URL")
+                invalidation_paths.append('/p/map.xml')
+            else:
+                print(f"   ⚠️ Blog S3: map.xml doesn't have </urlset> tag")
+        except Exception as e:
+            print(f"   ⚠️ Blog S3: Could not update map.xml: {e}")
+
+        # ── 4. Update /post/llms.txt ──
+        try:
+            try:
+                resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='post/llms.txt')
+                llms_content = resp['Body'].read().decode('utf-8')
+            except s3.exceptions.NoSuchKey:
+                llms_content = f"# BulkPlainTshirt.com Blog Posts\n# B2B Plain T-shirt Manufacturer - Sale91.com\n# For LLM crawlers and AI assistants\n\n"
+
+            llms_content += f"{title}: {blog_url}\n"
+
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='post/llms.txt',
+                Body=llms_content.encode('utf-8'),
+                ContentType='text/plain; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   📤 Blog S3: Updated post/llms.txt")
+            invalidation_paths.append('/post/llms.txt')
+        except Exception as e:
+            print(f"   ⚠️ Blog S3: Could not update llms.txt: {e}")
+
+        # ── 5. Invalidate CloudFront ──
+        if invalidation_paths:
+            try:
+                cloudfront.create_invalidation(
+                    DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                    InvalidationBatch={
+                        'Paths': {
+                            'Quantity': len(invalidation_paths),
+                            'Items': invalidation_paths
+                        },
+                        'CallerReference': f"blog-{slug}-{int(time.time())}"
+                    }
+                )
+                print(f"   🔄 Blog S3: CloudFront invalidation created for {len(invalidation_paths)} paths")
+            except Exception as e:
+                print(f"   ⚠️ Blog S3: CloudFront invalidation failed: {e}")
+
+        return True
+
+    except Exception as e:
+        print(f"   ❌ Blog S3 publish failed: {e}")
+        return False
+
+
+def save_blog_history(topic, title, slug, blog_url, vid_url):
+    """Save blog post metadata to blog_history.json for tracking."""
+    try:
+        history = []
+        if os.path.exists(BLOG_HISTORY_FILE):
+            with open(BLOG_HISTORY_FILE, "r") as f:
+                history = json.load(f)
+
+        history.append({
+            "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat(),
+            "topic": topic,
+            "title": title,
+            "slug": slug,
+            "url": blog_url,
+            "vid_url": vid_url or ""
+        })
+
+        with open(BLOG_HISTORY_FILE, "w") as f:
+            json.dump(history, f, indent=2, ensure_ascii=False)
+        print(f"   💾 Blog history saved ({len(history)} total posts)")
+    except Exception as e:
+        print(f"   ⚠️ Could not save blog history: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # VIDEO CLIP VALIDATION
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -4160,7 +4508,34 @@ def main():
     if not TEST_MODE and not upload_failed:
         cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic)
 
-    # ── 10e. Cost summary + save ──
+    # ── 10e. Generate & Publish SEO Blog Post ──
+    if not TEST_MODE and not upload_failed and vid_id:
+        try:
+            blog_html, blog_slug, blog_url = generate_blog_post(
+                claude_client=claude,
+                cost_tracker=cost,
+                topic=fresh_topic,
+                title=yt_title,
+                description=yt_description,
+                script_english=script_english,
+                tags=yt_tags,
+                hook_text=hook_text_from_claude,
+                vid_id=vid_id,
+                vid_url=vid_url,
+            )
+
+            if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
+                if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url):
+                    save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url)
+                    print(f"   ✅ Blog published: {blog_url}")
+            elif blog_html:
+                print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
+            # else: generate_blog_post already printed its warning
+        except Exception as e:
+            print(f"   ⚠️ Blog generation/publish failed (non-fatal): {e}")
+            # Blog failure should NEVER break the video pipeline
+
+    # ── 10f. Cost summary + save ──
     print()
     print(cost.summary())
     cost.save(fresh_topic, yt_title)

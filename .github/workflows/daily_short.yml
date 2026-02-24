@@ -79,6 +79,9 @@ jobs:
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'ap-south-1'
           OAUTHLIB_INSECURE_TRANSPORT: '1'
         run: python daily_short.py
 
@@ -92,7 +95,8 @@ jobs:
           git add engagement_history.json || true
           git add clip_history.json || true
           git add source_channel_insights.json || true
-          git commit -m "Update tracking files (topic + cost + engagement + clips + source insights) [skip ci]" || true
+          git add blog_history.json || true
+          git commit -m "Update tracking files (topic + cost + engagement + clips + source insights + blog) [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}
 
