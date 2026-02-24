@@ -15,7 +15,7 @@ Required environment variables:
 Optional environment variables:
   ELEVENLABS_API_KEY  — ElevenLabs TTS (primary voice; falls back to OpenAI if missing)
   REPLICATE_API_TOKEN — Replicate token for AI background music generation
-  FAL_KEY             — fal.ai API key for Kling video fallback (auto-fallback when Veo rate-limits)
+  FAL_KEY             — fal.ai API key for Kling video fallback + FLUX image fallback
 """
 
 import anthropic
@@ -156,7 +156,7 @@ VEO_POLL_TIMEOUT = 300  # 5 min max wait per clip generation
 # Auto-activates when Veo rate-limits (429/RESOURCE_EXHAUSTED).
 # Uses Kling v2.6 Pro for cost-effective fallback ($0.07/s, no audio).
 # Set FAL_KEY env var to enable. Without it, Kling fallback is skipped.
-KLING_ENABLED = False  # Disabled: fal.ai account admin-locked. Re-enable when resolved: bool(os.environ.get("FAL_KEY", ""))
+KLING_ENABLED = bool(os.environ.get("FAL_KEY", ""))  # Re-enabled: fal.ai account active again
 KLING_MODEL = "fal-ai/kling-video/v2.6/pro/text-to-video"
 KLING_DURATION = "5"  # "5" or "10" seconds (5s = $0.35/clip, 10s = $0.70/clip)
 KLING_ASPECT_RATIO = "9:16"
@@ -3237,19 +3237,60 @@ REQUIREMENTS:
 REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
 
 
+def _generate_image_replicate(prompt, aspect_ratio):
+    """Generate a single image via Replicate FLUX Dev. Returns image bytes or None."""
+    import replicate
+    output = replicate.run(
+        "black-forest-labs/flux-dev",
+        input={
+            "prompt": prompt,
+            "num_outputs": 1,
+            "aspect_ratio": aspect_ratio,
+            "output_format": "webp",
+            "output_quality": 85,
+            "guidance": 3.5,
+        },
+    )
+    img_output = output[0] if isinstance(output, list) else output
+    if hasattr(img_output, 'read'):
+        return img_output.read()
+    elif isinstance(img_output, str) and img_output.startswith("http"):
+        from urllib.request import urlopen
+        return urlopen(img_output).read()
+    return None
+
+
+def _generate_image_fal(prompt, aspect_ratio):
+    """Generate a single image via fal.ai FLUX Dev. Returns image bytes or None."""
+    import fal_client
+    # fal.ai uses different aspect ratio format — same as Replicate (e.g. "16:9")
+    result = fal_client.subscribe(
+        "fal-ai/flux/dev",
+        arguments={
+            "prompt": prompt,
+            "num_images": 1,
+            "image_size": {"width": 1280, "height": 720} if aspect_ratio == "16:9" else {"width": 1024, "height": 768},
+            "enable_safety_checker": False,
+        },
+    )
+    images = result.get("images", [])
+    if images and images[0].get("url"):
+        resp = requests.get(images[0]["url"], timeout=60)
+        resp.raise_for_status()
+        return resp.content
+    return None
+
+
 def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
-    """Generate 3 AI images for the blog post using Replicate FLUX Schnell.
+    """Generate 3 AI images for the blog post using Replicate FLUX Dev.
+    Falls back to fal.ai FLUX Dev if Replicate fails.
     Uses the Veo video prompts as inspiration for image descriptions.
     Returns list of (image_bytes, filename) tuples, or empty list on failure."""
-    api_token = os.environ.get("REPLICATE_API_TOKEN")
-    if not api_token:
-        print("   📷 Blog images: No REPLICATE_API_TOKEN, skipping image generation")
-        return []
+    has_replicate = bool(os.environ.get("REPLICATE_API_TOKEN"))
+    has_fal = bool(os.environ.get("FAL_KEY"))
 
-    try:
-        import replicate
-    except ImportError:
-        print("   📷 Blog images: replicate package not installed, skipping")
+    if not has_replicate and not has_fal:
+        print("   📷 Blog images: No REPLICATE_API_TOKEN or FAL_KEY, skipping image generation")
         return []
 
     # Build 3 image prompts from video scene descriptions
@@ -3274,45 +3315,39 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
     image_style = "professional commercial photography, high quality, sharp focus, well-lit, 4K, realistic"
 
     results = []
+    replicate_failed = False  # sticky flag: if Replicate fails, switch to fal.ai for remaining
+
     for i, base in enumerate(base_prompts[:3]):
-        try:
-            # Clean the video prompt (remove video-specific language) and add photo style
-            prompt = f"{base}. {image_style}"
-            filename = f"hero.webp" if i == 0 else f"img{i}.webp"
+        prompt = f"{base}. {image_style}"
+        filename = "hero.webp" if i == 0 else f"img{i}.webp"
+        aspect = "16:9" if i == 0 else "4:3"
+        img_bytes = None
 
-            print(f"   📷 Blog images: Generating {filename} via FLUX Dev...")
-            output = replicate.run(
-                "black-forest-labs/flux-dev",
-                input={
-                    "prompt": prompt,
-                    "num_outputs": 1,
-                    "aspect_ratio": "16:9" if i == 0 else "4:3",
-                    "output_format": "webp",
-                    "output_quality": 85,
-                    "guidance": 3.5,
-                },
-            )
+        # Try Replicate first (unless it already failed)
+        if has_replicate and not replicate_failed:
+            try:
+                print(f"   📷 Blog images: Generating {filename} via Replicate FLUX Dev...")
+                img_bytes = _generate_image_replicate(prompt, aspect)
+            except Exception as e:
+                print(f"   ⚠️ Blog images: Replicate failed for {filename}: {e}")
+                replicate_failed = True  # switch to fal.ai for remaining images
 
-            # Handle output (list of FileOutput or URLs)
-            img_output = output[0] if isinstance(output, list) else output
-            if hasattr(img_output, 'read'):
-                img_bytes = img_output.read()
-            elif isinstance(img_output, str) and img_output.startswith("http"):
-                from urllib.request import urlopen
-                img_bytes = urlopen(img_output).read()
-            else:
-                print(f"   ⚠️ Blog images: Unexpected output type for {filename}: {type(img_output)}")
-                continue
+        # Fallback to fal.ai
+        if not img_bytes and has_fal:
+            try:
+                provider = "fal.ai FLUX Dev (fallback)" if has_replicate else "fal.ai FLUX Dev"
+                print(f"   📷 Blog images: Generating {filename} via {provider}...")
+                img_bytes = _generate_image_fal(prompt, aspect)
+            except Exception as e:
+                print(f"   ⚠️ Blog images: fal.ai failed for {filename}: {e}")
 
-            if img_bytes and len(img_bytes) > 1000:
-                results.append((img_bytes, filename))
-                print(f"   📷 Blog images: {filename} generated ({len(img_bytes)//1024}KB)")
-            else:
-                print(f"   ⚠️ Blog images: {filename} too small, skipping")
-
-        except Exception as e:
-            print(f"   ⚠️ Blog images: Failed to generate image {i+1}: {e}")
-            continue
+        if img_bytes and len(img_bytes) > 1000:
+            results.append((img_bytes, filename))
+            print(f"   📷 Blog images: {filename} generated ({len(img_bytes)//1024}KB)")
+        elif img_bytes:
+            print(f"   ⚠️ Blog images: {filename} too small, skipping")
+        else:
+            print(f"   ⚠️ Blog images: {filename} generation failed on all providers")
 
     if results and cost_tracker:
         cost_tracker.track_blog_images(len(results))
