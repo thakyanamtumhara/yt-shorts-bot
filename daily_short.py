@@ -3125,7 +3125,11 @@ REQUIREMENTS:
    - Include practical tips, comparisons, and real-world examples from Indian textile industry
    - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
    - Reference the product catalog: https://bulkplaintshirt.com/catalog/
-   - Include a "Watch the Video" section with the YouTube embed
+   - MANDATORY: Include a "Watch the Video" section with this EXACT YouTube embed code:
+     <div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:20px 0;border-radius:12px;">
+       <iframe src="{yt_embed_url}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
+     </div>
+     Place this video embed BEFORE the FAQ section. Do NOT skip the video embed — it is required.
    - End with a strong CTA section linking to Sale91.com
 
 2. FAQ SECTION (5-8 Q&As):
@@ -3158,10 +3162,19 @@ REQUIREMENTS:
    CONTENT AREA:
    - Clean white background, max-width 800px, centered with auto margins
    - Good typography: 16px base font-size, line-height 1.7, font-family system-ui/sans-serif
-   - H1 in dark green (#1a5c2e) or dark brand color
+   - Use DIFFERENT colors for different text elements to create visual hierarchy:
+     * H1: dark green (#1a5c2e), bold, font-size 28px
+     * H2: dark navy (#0f3460), font-size 22px
+     * H3: dark charcoal (#2d2d2d), font-size 18px
+     * Body text: #333333 (soft dark)
+     * Links: #007bff (blue) with hover underline
+     * FAQ questions: #1a5c2e (green), bold
+     * Breadcrumb text: #666 (gray), small font
+     * Blockquotes/highlights: left border #d4a832 (gold), background #fffdf5
    - Proper spacing between sections (margin 1.5em)
+   - Lists should use consistent styling: padding-left 30px, li margin 8px 0, bullet color #d4a832
    - Responsive YouTube embed (16:9 aspect ratio with padding trick)
-   - Breadcrumb navigation below header: Home > Blog > [Post Title]
+   - Breadcrumb navigation below header: Home > [Post Title] (do NOT include "Blog" in breadcrumb)
 
    FOOTER (above the sticky bottom bar):
    - Simple Sale91.com branding and links
@@ -3200,7 +3213,7 @@ REQUIREMENTS:
    }}
 
    b) BreadcrumbList:
-   Home > Blog > [Article Title]
+   Home > [Article Title] (only 2 items, no "Blog" in between)
 
    c) Article:
    type=Article with headline, author (Sale91.com), datePublished ({today}), publisher, image, description
@@ -3362,7 +3375,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
         return None, None, None, []
 
 
-def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
+def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
 
@@ -3419,21 +3432,31 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
             # Look for "catalog" link as anchor, or append before </body>
             import re
 
-            new_link = f'<a href="/p/{slug}.html" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">📝 {title[:60]}</a>'
+            # Build blog link matching sitemap list style (same as Posts section items)
+            yt_thumb = f'https://img.youtube.com/vi/{vid_id}/hqdefault.jpg' if vid_id else ''
+            yt_short_url = f'https://youtube.com/shorts/{vid_id}' if vid_id else ''
 
-            # Try to insert after catalog link
-            catalog_pattern = r'(catalog[^<]*</a>)'
-            if re.search(catalog_pattern, index_html, re.IGNORECASE):
-                index_html = re.sub(
-                    catalog_pattern,
-                    r'\1\n    ' + new_link,
-                    index_html,
-                    count=1,
-                    flags=re.IGNORECASE
-                )
+            # Card-style entry matching the sitemap grid format with YouTube thumbnail
+            video_html = ''
+            if vid_id:
+                video_html = f'''<a href="{yt_short_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;">
+          <img src="{yt_thumb}" alt="{title[:50]}" style="width:100%;max-width:280px;border-radius:8px;border:1px solid #e0e0e0;" loading="lazy">
+        </a>'''
+
+            new_link = f'''<div style="padding:12px 0;border-bottom:1px solid #eee;">
+        <a href="/p/{slug}.html" style="color:#007bff;text-decoration:none;font-size:16px;font-weight:500;">{title[:60]}</a>
+        {video_html}
+      </div>'''
+
+            # Try to insert in the Posts section (after last item)
+            posts_section_pattern = r'(Posts</h[23]>.*?)(</div>\s*(?:<div class|</div>|</body>))'
+            posts_match = re.search(posts_section_pattern, index_html, re.DOTALL | re.IGNORECASE)
+            if posts_match:
+                insert_pos = posts_match.end(1)
+                index_html = index_html[:insert_pos] + '\n      ' + new_link + index_html[insert_pos:]
             else:
                 # Fallback: insert before </body>
-                index_html = index_html.replace('</body>', f'    {new_link}\n</body>')
+                index_html = index_html.replace('</body>', f'      {new_link}\n</body>')
 
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
@@ -4683,7 +4706,7 @@ def main():
             )
 
             if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
-                if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url, blog_images):
+                if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url, blog_images, vid_id=vid_id):
                     save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url)
                     print(f"   ✅ Blog published: {blog_url}")
             elif blog_html:
