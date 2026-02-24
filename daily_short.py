@@ -2731,7 +2731,7 @@ Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
 
     try:
         resp = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=800,
+            model="claude-sonnet-4-6", max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -2797,7 +2797,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-sonnet-4-6", max_tokens=200,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -2873,7 +2873,7 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
         # Absolute fallback: single topic generation (old behavior)
         print("   🔄 Fallback: single topic generation...")
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-sonnet-4-6", max_tokens=200,
             messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
@@ -3006,7 +3006,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            model="claude-sonnet-4-6", max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -3284,7 +3284,7 @@ def main():
             prompt += f"\n\n━━━ IMPORTANT: PREVIOUS ATTEMPT WAS REJECTED ━━━\nReviewer feedback: {previous_feedback}\nFix these issues in your new script. Write a DIFFERENT and BETTER script."
 
         resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=1500,
+            model="claude-sonnet-4-6", max_tokens=1500,
             messages=[{"role": "user", "content": prompt}]
         )
         cost.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
