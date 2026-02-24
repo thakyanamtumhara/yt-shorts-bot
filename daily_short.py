@@ -3078,7 +3078,7 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     """Build the Claude prompt for generating a full SEO blog post HTML."""
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
     slug = generate_blog_slug(title)
-    blog_url = f"{BLOG_BASE_URL}/post/{slug}/"
+    blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
     yt_embed_url = f"https://www.youtube.com/embed/{vid_id}"
 
     image_instructions = ""
@@ -3292,7 +3292,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     print("   📝 Blog: Generating SEO article with images...")
 
     slug = generate_blog_slug(title)
-    blog_url = f"{BLOG_BASE_URL}/post/{slug}/"
+    blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
 
     # Step 1: Generate AI images for the blog (if Replicate available)
     blog_images = generate_blog_images(video_prompts, topic, slug, cost_tracker)
@@ -3300,7 +3300,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     # Build image URLs for the HTML (so Claude can embed them)
     image_urls = []
     for _, filename in blog_images:
-        image_urls.append(f"{BLOG_BASE_URL}/post/{slug}/{filename}")
+        image_urls.append(f"{BLOG_BASE_URL}/p/{slug}-{filename}")
 
     # Step 2: Generate blog HTML with image URLs embedded
     prompt = get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls)
@@ -3357,7 +3357,7 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
 
     try:
         # ── 1. Upload blog HTML ──
-        blog_key = f"post/{slug}/index.html"
+        blog_key = f"p/{slug}.html"
         s3.put_object(
             Bucket=BLOG_S3_BUCKET,
             Key=blog_key,
@@ -3366,13 +3366,13 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
             CacheControl='public, max-age=86400'
         )
         print(f"   📤 Blog S3: Uploaded {blog_key}")
-        invalidation_paths.append(f"/post/{slug}/*")
+        invalidation_paths.append(f"/p/{slug}.html")
 
         # ── 1b. Upload blog images ──
         if blog_images:
             for img_bytes, filename in blog_images:
                 try:
-                    img_key = f"post/{slug}/{filename}"
+                    img_key = f"p/{slug}-{filename}"
                     content_type = "image/webp" if filename.endswith(".webp") else "image/jpeg"
                     s3.put_object(
                         Bucket=BLOG_S3_BUCKET,
@@ -3395,7 +3395,7 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
             # Look for "catalog" link as anchor, or append before </body>
             import re
 
-            new_link = f'<a href="/post/{slug}/" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">📝 {title[:60]}</a>'
+            new_link = f'<a href="/p/{slug}.html" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">📝 {title[:60]}</a>'
 
             # Try to insert after catalog link
             catalog_pattern = r'(catalog[^<]*</a>)'
@@ -3454,10 +3454,10 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
         except Exception as e:
             print(f"   ⚠️ Blog S3: Could not update map.xml: {e}")
 
-        # ── 4. Update /post/llms.txt ──
+        # ── 4. Update /p/llms.txt ──
         try:
             try:
-                resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='post/llms.txt')
+                resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/llms.txt')
                 llms_content = resp['Body'].read().decode('utf-8')
             except s3.exceptions.NoSuchKey:
                 llms_content = f"# BulkPlainTshirt.com Blog Posts\n# B2B Plain T-shirt Manufacturer - Sale91.com\n# For LLM crawlers and AI assistants\n\n"
@@ -3466,13 +3466,13 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None):
 
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
-                Key='post/llms.txt',
+                Key='p/llms.txt',
                 Body=llms_content.encode('utf-8'),
                 ContentType='text/plain; charset=utf-8',
                 CacheControl='no-cache'
             )
-            print(f"   📤 Blog S3: Updated post/llms.txt")
-            invalidation_paths.append('/post/llms.txt')
+            print(f"   📤 Blog S3: Updated p/llms.txt")
+            invalidation_paths.append('/p/llms.txt')
         except Exception as e:
             print(f"   ⚠️ Blog S3: Could not update llms.txt: {e}")
 
