@@ -67,5 +67,19 @@
       "veo_clips": 2.5,
       "whisper": 0.006
     }
+  },
+  {
+    "date": "2026-02-24T13:07:07.696179",
+    "topic": "Fabric ka GSM check karne ka tarika \u2014 round cutter aur scale se",
+    "title": "200 GSM Fabric Feels Thin? Here's How to Check Real GSM \ud83d\udd25",
+    "total_usd": 2.6133,
+    "duration_min": 20.7,
+    "breakdown": {
+      "claude_sonnet": 0.0315,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0263,
+      "veo_clips": 2.5,
+      "whisper": 0.0055
+    }
   }
 ]
