@@ -1249,7 +1249,7 @@ COST_RATES = {
     "veo_per_clip": 0.50,              # ~$0.50 per 8s clip (estimate)
     "kling_per_clip": 0.35,            # ~$0.35 per 5s clip ($0.07/s via fal.ai)
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
-    "replicate_flux_image": 0.003,      # ~$0.003 per FLUX Schnell image
+    "replicate_flux_image": 0.025,      # ~$0.025 per FLUX Dev image
     "whisper_per_minute": 0.006,        # $0.006/min
 }
 
@@ -3137,11 +3137,35 @@ REQUIREMENTS:
    - Full <!DOCTYPE html> document
    - Mobile-responsive with viewport meta tag
    - Inline CSS in <style> tag (no external stylesheets) — clean, modern, readable design
-   - Use a max-width container (800px), proper typography, good spacing
-   - Brand colors: #1a1a2e (dark), #e94560 (accent red), #0f3460 (blue)
+   - Max-width container (800px) for content, full-width for header and bottom bar
+
+   HEADER (fixed/sticky at top of page, z-index 1000):
+   - Full-width yellow/gold background (use #d4a832 or similar warm gold)
+   - "BulkPlainTshirt.com" in large bold dark text (#1a1a1a), centered
+   - Below it in smaller text: "Own Knitted Blank Wears | sale91.com"
+   - Padding: 12px top/bottom
+   - This header must always stay visible at the top when scrolling
+
+   STICKY BOTTOM BAR (fixed at bottom of viewport, z-index 1000):
+   - Full-width bar, display flex, two equal-width buttons side by side, no gap
+   - LEFT button: "Order Now" — background #1a1a1a (black), white bold text, links to https://sale91.com
+   - RIGHT button: "WhatsApp Us" — background #25D366 (WhatsApp green), white bold text, links to https://whatsapp.sale91.com
+   - Both buttons: min-height 50px, font-size 16px, no border, cursor pointer
+   - Bar has a subtle top box-shadow for depth (0 -2px 8px rgba(0,0,0,0.15))
+   - Add padding-bottom: 60px to body so content is not hidden behind sticky bar
+   - Add padding-top: 80px to body so content is not hidden behind sticky header
+
+   CONTENT AREA:
+   - Clean white background, max-width 800px, centered with auto margins
+   - Good typography: 16px base font-size, line-height 1.7, font-family system-ui/sans-serif
+   - H1 in dark green (#1a5c2e) or dark brand color
+   - Proper spacing between sections (margin 1.5em)
    - Responsive YouTube embed (16:9 aspect ratio with padding trick)
-   - Breadcrumb navigation at top: Home > Blog > [Post Title]
-   - Footer with Sale91.com branding and links
+   - Breadcrumb navigation below header: Home > Blog > [Post Title]
+
+   FOOTER (above the sticky bottom bar):
+   - Simple Sale91.com branding and links
+   - Keep minimal so it does not clash with sticky bar
 
 4. META TAGS:
    - <title> with " | BulkPlainTshirt.com" suffix
@@ -3243,16 +3267,16 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
             prompt = f"{base}. {image_style}"
             filename = f"hero.webp" if i == 0 else f"img{i}.webp"
 
-            print(f"   📷 Blog images: Generating {filename} via FLUX Schnell...")
+            print(f"   📷 Blog images: Generating {filename} via FLUX Dev...")
             output = replicate.run(
-                "black-forest-labs/flux-schnell",
+                "black-forest-labs/flux-dev",
                 input={
                     "prompt": prompt,
                     "num_outputs": 1,
                     "aspect_ratio": "16:9" if i == 0 else "4:3",
                     "output_format": "webp",
                     "output_quality": 85,
-                    "go_fast": True,
+                    "guidance": 3.5,
                 },
             )
 
