@@ -3466,9 +3466,10 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             # Simple <li><a> entry — matches existing index.html list format
             new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
 
-            # Insert before </ul> (append to the existing list)
-            if '</ul>' in index_html:
-                index_html = index_html.replace('</ul>', f'  {new_li}\n</ul>', 1)
+            # Insert before the LAST </ul> (Posts section, not Main Pages)
+            last_ul_pos = index_html.rfind('</ul>')
+            if last_ul_pos != -1:
+                index_html = index_html[:last_ul_pos] + f'  {new_li}\n' + index_html[last_ul_pos:]
             else:
                 # Fallback: wrap in <ul> and insert before </body>
                 index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
@@ -3785,8 +3786,8 @@ def submit_to_search_engines(blog_url, s3_client=None):
     # 2. IndexNow (Bing, Yandex, AI search engines)
     ping_indexnow(blog_url)
 
-    # 3. Sitemap ping (Google + Bing)
-    ping_search_engine_sitemaps()
+    # 3. Sitemap ping — removed (Google deprecated 2023, Bing returns 410)
+    # Google Indexing API + IndexNow already cover all major engines
 
     print(f"   🔍 Indexing: All submissions complete for {blog_url}")
 
