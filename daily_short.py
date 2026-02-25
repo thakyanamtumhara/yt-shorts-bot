@@ -3055,13 +3055,13 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 # Blog config
 BLOG_S3_BUCKET = "bulkplaintshirt.com"
-BLOG_BASE_URL = "https://bulkplaintshirt.com"
+BLOG_BASE_URL = "https://www.bulkplaintshirt.com"
 BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
 BLOG_HISTORY_FILE = "blog_history.json"
 INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
 
 
-def inject_blog_seo(html_content, title, description, blog_url, today, slug):
+def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=None):
     """Inject JSON-LD structured data and sticky bottom bar into blog HTML.
     This runs AFTER Claude generates the HTML, so it's 100% reliable."""
     import re as _re
@@ -3088,7 +3088,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug):
         "name": "Sale91.com",
         "alternateName": "BulkPlainTshirt.com",
         "url": "https://sale91.com",
-        "logo": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "logo": "https://www.bulkplaintshirt.com/catalog/img/logo.png",
         "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
         "address": {
             "@type": "PostalAddress",
@@ -3107,7 +3107,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug):
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://bulkplaintshirt.com"},
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.bulkplaintshirt.com"},
             {"@type": "ListItem", "position": 2, "name": title, "item": blog_url}
         ]
     }
@@ -3124,9 +3124,9 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug):
         "publisher": {
             "@type": "Organization",
             "name": "BulkPlainTshirt.com",
-            "logo": {"@type": "ImageObject", "url": "https://bulkplaintshirt.com/catalog/img/logo.png"}
+            "logo": {"@type": "ImageObject", "url": "https://www.bulkplaintshirt.com/catalog/img/logo.png"}
         },
-        "image": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "image": og_image_url or "https://www.bulkplaintshirt.com/catalog/img/logo.png",
         "mainEntityOfPage": {"@type": "WebPage", "@id": blog_url}
     }
 
@@ -3137,7 +3137,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug):
         "description": "Bio-washed, pre-shrunk plain t-shirts for printing businesses. 180-220 GSM, own knitted from Tiruppur.",
         "brand": {"@type": "Brand", "name": "Sale91.com"},
         "url": "https://sale91.com",
-        "image": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "image": "https://www.bulkplaintshirt.com/catalog/img/logo.png",
         "offers": {
             "@type": "AggregateOffer",
             "lowPrice": "65",
@@ -3229,7 +3229,9 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     yt_embed_url = f"https://www.youtube.com/embed/{vid_id}"
 
     image_instructions = ""
+    og_image_url = "https://www.bulkplaintshirt.com/catalog/img/logo.png"
     if image_urls:
+        og_image_url = image_urls[0]  # Use first AI image for social sharing
         img_list = "\n".join(f"   - Image {i+1}: {url}" for i, url in enumerate(image_urls))
         image_instructions = f"""
 7. IMAGES:
@@ -3241,6 +3243,7 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
    - Add loading="lazy" to all images except the hero
    - Style images: width:100%; border-radius:12px; margin:20px 0;
    - Wrap each image in a <figure> with a <figcaption> describing what's shown
+   - IMPORTANT: Use {og_image_url} as the og:image and twitter:image in meta tags
 """
 
     return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
@@ -3271,7 +3274,7 @@ REQUIREMENTS:
    - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
    - Include practical tips, comparisons, and real-world examples from Indian textile industry
    - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
-   - Reference the product catalog: https://bulkplaintshirt.com/catalog/
+   - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
    - MANDATORY: Include a "Watch the Video" section with this EXACT YouTube embed code:
      <div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:20px 0;border-radius:12px;">
        <iframe src="{yt_embed_url}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
@@ -3331,8 +3334,8 @@ REQUIREMENTS:
    - <title> with " | BulkPlainTshirt.com" suffix
    - meta description (150-160 chars, compelling)
    - canonical URL: {blog_url}
-   - Open Graph: og:title, og:description, og:url, og:type=article, og:image (use https://bulkplaintshirt.com/catalog/img/logo.png)
-   - Twitter card meta tags
+   - Open Graph: og:title, og:description, og:url, og:type=article, og:image (see below)
+   - Twitter card meta tags (twitter:image same as og:image)
 
 5. STRUCTURED DATA: Do NOT include any JSON-LD script tags — they will be injected automatically by the system.
 
@@ -3515,7 +3518,8 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 
         # Inject JSON-LD schemas + sticky bottom bar (reliable, not prompt-dependent)
         today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
-        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug)
+        first_image_url = image_urls[0] if image_urls else None
+        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=first_image_url)
 
         word_count = len(html_content.split())
         print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
@@ -3527,6 +3531,67 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     except Exception as e:
         print(f"   ⚠️ Blog generation failed: {e}")
         return None, None, None, []
+
+
+def repair_existing_blog_posts(s3_client, cloudfront_client):
+    """One-time repair: inject JSON-LD + bottom bar into existing blog posts that are missing them."""
+    blog_history_path = "blog_history.json"
+    if not os.path.exists(blog_history_path):
+        return
+
+    try:
+        with open(blog_history_path) as f:
+            history = json.load(f)
+    except Exception:
+        return
+
+    repaired = []
+    for entry in history:
+        slug = entry.get("slug", "")
+        title = entry.get("title", "")
+        blog_url = entry.get("url", "")
+        date = entry.get("date", datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d"))
+        key = f"p/{slug}.html"
+
+        try:
+            resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key=key)
+            html = resp['Body'].read().decode('utf-8')
+
+            # Skip if already has JSON-LD (already repaired)
+            if 'application/ld+json' in html:
+                continue
+
+            # Inject JSON-LD + bottom bar
+            html = inject_blog_seo(html, title, "", blog_url, date, slug)
+
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=key,
+                Body=html.encode('utf-8'),
+                ContentType='text/html; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            repaired.append(slug)
+            print(f"   🔧 Repair: Fixed {slug}.html (JSON-LD + bottom bar)")
+        except Exception as e:
+            print(f"   ⚠️ Repair: Could not fix {slug}.html: {e}")
+
+    if repaired:
+        # Invalidate repaired pages in CloudFront
+        try:
+            paths = [f'/p/{s}.html' for s in repaired]
+            cloudfront_client.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    'Paths': {'Quantity': len(paths), 'Items': paths},
+                    'CallerReference': f"repair-{int(time.time())}"
+                }
+            )
+            print(f"   🔧 Repair: CloudFront invalidation for {len(repaired)} fixed posts")
+        except Exception as e:
+            print(f"   ⚠️ Repair: CloudFront invalidation failed: {e}")
+    else:
+        print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
@@ -3545,6 +3610,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                                aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
 
     invalidation_paths = []
+
+    # Repair any existing posts missing JSON-LD + bottom bar (one-time, idempotent)
+    repair_existing_blog_posts(s3, cloudfront)
 
     try:
         # ── 1. Upload blog HTML ──
@@ -3613,6 +3681,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             new_url_entry = f"""  <url>
     <loc>{blog_url}</loc>
     <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>"""
 
             # Insert before </urlset>
@@ -3763,7 +3833,7 @@ def ping_indexnow(blog_url):
     ChatGPT (via Bing), Copilot, Perplexity, etc."""
     try:
         payload = {
-            'host': 'bulkplaintshirt.com',
+            'host': 'www.bulkplaintshirt.com',
             'key': INDEXNOW_API_KEY,
             'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
             'urlList': [blog_url]
@@ -3845,8 +3915,21 @@ def ensure_robots_txt(s3_client):
     """Upload/update robots.txt with sitemap reference (idempotent)."""
     robots_content = f"""User-agent: *
 Allow: /
+Disallow: /track.html
+Disallow: /p/post-template.html
+Disallow: /policy.html
+Disallow: /shiping-cal.html
+Disallow: /term.html
+Disallow: /zxcvf.html
+Disallow: /bill.html
+Disallow: /map3.html
+Disallow: /disclaimer.html
 
 Sitemap: {BLOG_BASE_URL}/p/map.xml
+
+# LLM-friendly content index
+# See https://llmstxt.org
+LLMs.txt: {BLOG_BASE_URL}/p/llms.txt
 
 # AI Crawlers welcome
 User-agent: GPTBot
