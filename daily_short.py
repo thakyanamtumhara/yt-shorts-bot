@@ -3061,6 +3061,152 @@ BLOG_HISTORY_FILE = "blog_history.json"
 INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
 
 
+def inject_blog_seo(html_content, title, description, blog_url, today, slug):
+    """Inject JSON-LD structured data and sticky bottom bar into blog HTML.
+    This runs AFTER Claude generates the HTML, so it's 100% reliable."""
+    import re as _re
+
+    # ── 1. Parse FAQ Q&As from the generated HTML for FAQPage schema ──
+    faq_pairs = []
+    # Match patterns like: Q1: ... / Q: ... in faq-question divs, followed by faq-answer divs
+    q_pattern = _re.compile(r'class="faq-question"[^>]*>(?:Q\d*[:.]?\s*)?(.+?)</div>', _re.DOTALL)
+    a_pattern = _re.compile(r'class="faq-answer"[^>]*>(.+?)</div>', _re.DOTALL)
+    questions = q_pattern.findall(html_content)
+    answers = a_pattern.findall(html_content)
+    for q, a in zip(questions, answers):
+        clean_q = _re.sub(r'<[^>]+>', '', q).strip()
+        clean_a = _re.sub(r'<[^>]+>', '', a).strip()
+        if clean_q and clean_a:
+            faq_pairs.append((clean_q, clean_a))
+
+    # ── 2. Build JSON-LD blocks ──
+    import json as _json
+
+    organization_ld = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Sale91.com",
+        "alternateName": "BulkPlainTshirt.com",
+        "url": "https://sale91.com",
+        "logo": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Tiruppur",
+            "addressRegion": "Tamil Nadu",
+            "addressCountry": "IN"
+        },
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "url": "https://sale91.com",
+            "contactType": "sales"
+        }
+    }
+
+    breadcrumb_ld = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://bulkplaintshirt.com"},
+            {"@type": "ListItem", "position": 2, "name": title, "item": blog_url}
+        ]
+    }
+
+    article_ld = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "description": description[:160] if description else title,
+        "url": blog_url,
+        "datePublished": today,
+        "dateModified": today,
+        "author": {"@type": "Organization", "name": "Sale91.com", "url": "https://sale91.com"},
+        "publisher": {
+            "@type": "Organization",
+            "name": "BulkPlainTshirt.com",
+            "logo": {"@type": "ImageObject", "url": "https://bulkplaintshirt.com/catalog/img/logo.png"}
+        },
+        "image": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "mainEntityOfPage": {"@type": "WebPage", "@id": blog_url}
+    }
+
+    product_ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Premium Plain T-Shirts (Wholesale)",
+        "description": "Bio-washed, pre-shrunk plain t-shirts for printing businesses. 180-220 GSM, own knitted from Tiruppur.",
+        "brand": {"@type": "Brand", "name": "Sale91.com"},
+        "url": "https://sale91.com",
+        "image": "https://bulkplaintshirt.com/catalog/img/logo.png",
+        "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "65",
+            "highPrice": "250",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock",
+            "seller": {"@type": "Organization", "name": "Sale91.com"}
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.5",
+            "reviewCount": "1050",
+            "bestRating": "5"
+        }
+    }
+
+    ld_blocks = [organization_ld, breadcrumb_ld, article_ld, product_ld]
+
+    # FAQPage schema (only if FAQs were found)
+    if faq_pairs:
+        faq_ld = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": q,
+                    "acceptedAnswer": {"@type": "Answer", "text": a}
+                }
+                for q, a in faq_pairs
+            ]
+        }
+        ld_blocks.append(faq_ld)
+
+    # Build script tags
+    ld_scripts = "\n".join(
+        f'<script type="application/ld+json">{_json.dumps(ld, ensure_ascii=False)}</script>'
+        for ld in ld_blocks
+    )
+
+    # ── 3. Sticky bottom bar HTML ──
+    bottom_bar = (
+        '<div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;'
+        'box-shadow:0 -2px 8px rgba(0,0,0,0.15);">'
+        '<a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        'min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>'
+        '<a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        'min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>'
+        '</div>'
+    )
+
+    # ── 4. Inject into HTML ──
+    # Add JSON-LD before </head>
+    if '</head>' in html_content:
+        html_content = html_content.replace('</head>', f'{ld_scripts}\n</head>', 1)
+    else:
+        # Fallback: inject before </body>
+        html_content = html_content.replace('</body>', f'{ld_scripts}\n</body>', 1)
+
+    # Add bottom bar before </body> (only if not already present)
+    if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
+        html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
+
+    faq_count = len(faq_pairs)
+    ld_count = len(ld_blocks)
+    print(f"   📊 Blog SEO: Injected {ld_count} JSON-LD schemas ({faq_count} FAQs) + sticky bottom bar")
+    return html_content
+
+
 def generate_blog_slug(title):
     """Convert a title to a URL-friendly slug."""
     import re
@@ -3188,46 +3334,7 @@ REQUIREMENTS:
    - Open Graph: og:title, og:description, og:url, og:type=article, og:image (use https://bulkplaintshirt.com/catalog/img/logo.png)
    - Twitter card meta tags
 
-5. STRUCTURED DATA (JSON-LD in <script type="application/ld+json"> tags):
-   Generate ALL of these as SEPARATE script tags:
-
-   a) Organization:
-   {{
-     "@context": "https://schema.org",
-     "@type": "Organization",
-     "name": "Sale91.com",
-     "alternateName": "BulkPlainTshirt.com",
-     "url": "https://sale91.com",
-     "logo": "https://bulkplaintshirt.com/catalog/img/logo.png",
-     "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
-     "address": {{
-       "@type": "PostalAddress",
-       "addressLocality": "Tiruppur",
-       "addressRegion": "Tamil Nadu",
-       "addressCountry": "IN"
-     }},
-     "contactPoint": {{
-       "@type": "ContactPoint",
-       "url": "https://sale91.com",
-       "contactType": "sales"
-     }}
-   }}
-
-   b) BreadcrumbList:
-   Home > [Article Title] (only 2 items, no "Blog" in between)
-
-   c) Article:
-   type=Article with headline, author (Sale91.com), datePublished ({today}), publisher, image, description
-
-   d) Product (a representative product relevant to the topic):
-   Include name, description, brand (Sale91.com), offers with price range (Rs 65 - Rs 250 depending on product),
-   availability (InStock), priceCurrency (INR), seller
-
-   e) FAQPage:
-   All the FAQ Q&As from section 2 above, properly formatted with mainEntity array
-
-   f) AggregateRating (inside or alongside Product):
-   ratingValue between 4.3-4.7, reviewCount between 850-1250, bestRating 5
+5. STRUCTURED DATA: Do NOT include any JSON-LD script tags — they will be injected automatically by the system.
 
 6. ADDITIONAL:
    - Add a <link rel="author" href="https://sale91.com"> tag
@@ -3237,10 +3344,10 @@ REQUIREMENTS:
 {image_instructions}
 CRITICAL CHECKLIST — your HTML MUST contain ALL of these:
    ✓ Sticky gold header at top (position:fixed)
-   ✓ Sticky bottom bar with "Order Now" (black) + "WhatsApp Us" (green) buttons (position:fixed)
    ✓ YouTube video embed before FAQ section
-   ✓ FAQ section with FAQPage JSON-LD
+   ✓ FAQ section with faq-question and faq-answer CSS classes on divs
    ✓ body padding-top:80px and padding-bottom:60px
+   (Note: JSON-LD schemas and sticky bottom bar are injected automatically — do NOT add them)
 
 REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
 
@@ -3405,6 +3512,10 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
         if "<!DOCTYPE" not in html_content and "<html" not in html_content:
             print("   ⚠️ Blog: Claude didn't return valid HTML")
             return None, None, None, []
+
+        # Inject JSON-LD schemas + sticky bottom bar (reliable, not prompt-dependent)
+        today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug)
 
         word_count = len(html_content.split())
         print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
