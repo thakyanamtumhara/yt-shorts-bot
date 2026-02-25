@@ -109,5 +109,21 @@
       "tts_elevenlabs": 0.0277,
       "whisper": 0.0066
     }
+  },
+  {
+    "date": "2026-02-25T08:03:24.664244",
+    "topic": "Rib fabric kahan use hota hai \u2014 collar cuff aur hem mein fark hai",
+    "title": "Collar Fine But Hem Twisted? Check This Rib Fabric Trick",
+    "total_usd": 2.6697,
+    "duration_min": 22.4,
+    "breakdown": {
+      "claude_sonnet": 0.1625,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0268,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0054,
+      "blog_images": 0.075
+    }
   }
 ]
