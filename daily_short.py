@@ -3168,10 +3168,156 @@ OUTPUT THIS JSON ONLY (no markdown):
 
 # Blog config
 BLOG_S3_BUCKET = "bulkplaintshirt.com"
-BLOG_BASE_URL = "https://bulkplaintshirt.com"
+BLOG_BASE_URL = "https://www.bulkplaintshirt.com"
 BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
 BLOG_HISTORY_FILE = "blog_history.json"
 INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
+
+
+def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=None):
+    """Inject JSON-LD structured data and sticky bottom bar into blog HTML.
+    This runs AFTER Claude generates the HTML, so it's 100% reliable."""
+    import re as _re
+
+    # ── 1. Parse FAQ Q&As from the generated HTML for FAQPage schema ──
+    faq_pairs = []
+    # Match patterns like: Q1: ... / Q: ... in faq-question divs, followed by faq-answer divs
+    q_pattern = _re.compile(r'class="faq-question"[^>]*>(?:Q\d*[:.]?\s*)?(.+?)</div>', _re.DOTALL)
+    a_pattern = _re.compile(r'class="faq-answer"[^>]*>(.+?)</div>', _re.DOTALL)
+    questions = q_pattern.findall(html_content)
+    answers = a_pattern.findall(html_content)
+    for q, a in zip(questions, answers):
+        clean_q = _re.sub(r'<[^>]+>', '', q).strip()
+        clean_a = _re.sub(r'<[^>]+>', '', a).strip()
+        if clean_q and clean_a:
+            faq_pairs.append((clean_q, clean_a))
+
+    # ── 2. Build JSON-LD blocks ──
+    import json as _json
+
+    organization_ld = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Sale91.com",
+        "alternateName": "BulkPlainTshirt.com",
+        "url": "https://sale91.com",
+        "logo": "https://www.bulkplaintshirt.com/catalog/img/logo.png",
+        "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Tiruppur",
+            "addressRegion": "Tamil Nadu",
+            "addressCountry": "IN"
+        },
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "url": "https://sale91.com",
+            "contactType": "sales"
+        }
+    }
+
+    breadcrumb_ld = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.bulkplaintshirt.com"},
+            {"@type": "ListItem", "position": 2, "name": title, "item": blog_url}
+        ]
+    }
+
+    article_ld = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "description": description[:160] if description else title,
+        "url": blog_url,
+        "datePublished": today,
+        "dateModified": today,
+        "author": {"@type": "Organization", "name": "Sale91.com", "url": "https://sale91.com"},
+        "publisher": {
+            "@type": "Organization",
+            "name": "BulkPlainTshirt.com",
+            "logo": {"@type": "ImageObject", "url": "https://www.bulkplaintshirt.com/catalog/img/logo.png"}
+        },
+        "image": og_image_url or "https://www.bulkplaintshirt.com/catalog/img/logo.png",
+        "mainEntityOfPage": {"@type": "WebPage", "@id": blog_url}
+    }
+
+    product_ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Premium Plain T-Shirts (Wholesale)",
+        "description": "Bio-washed, pre-shrunk plain t-shirts for printing businesses. 180-220 GSM, own knitted from Tiruppur.",
+        "brand": {"@type": "Brand", "name": "Sale91.com"},
+        "url": "https://sale91.com",
+        "image": "https://www.bulkplaintshirt.com/catalog/img/logo.png",
+        "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "65",
+            "highPrice": "250",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock",
+            "seller": {"@type": "Organization", "name": "Sale91.com"}
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.5",
+            "reviewCount": "1050",
+            "bestRating": "5"
+        }
+    }
+
+    ld_blocks = [organization_ld, breadcrumb_ld, article_ld, product_ld]
+
+    # FAQPage schema (only if FAQs were found)
+    if faq_pairs:
+        faq_ld = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": q,
+                    "acceptedAnswer": {"@type": "Answer", "text": a}
+                }
+                for q, a in faq_pairs
+            ]
+        }
+        ld_blocks.append(faq_ld)
+
+    # Build script tags
+    ld_scripts = "\n".join(
+        f'<script type="application/ld+json">{_json.dumps(ld, ensure_ascii=False)}</script>'
+        for ld in ld_blocks
+    )
+
+    # ── 3. Sticky bottom bar HTML ──
+    bottom_bar = (
+        '<div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;'
+        'box-shadow:0 -2px 8px rgba(0,0,0,0.15);">'
+        '<a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        'min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>'
+        '<a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        'min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>'
+        '</div>'
+    )
+
+    # ── 4. Inject into HTML ──
+    # Add JSON-LD before </head>
+    if '</head>' in html_content:
+        html_content = html_content.replace('</head>', f'{ld_scripts}\n</head>', 1)
+    else:
+        # Fallback: inject before </body>
+        html_content = html_content.replace('</body>', f'{ld_scripts}\n</body>', 1)
+
+    # Add bottom bar before </body> (only if not already present)
+    if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
+        html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
+
+    faq_count = len(faq_pairs)
+    ld_count = len(ld_blocks)
+    print(f"   📊 Blog SEO: Injected {ld_count} JSON-LD schemas ({faq_count} FAQs) + sticky bottom bar")
+    return html_content
 
 
 def generate_blog_slug(title):
@@ -3196,7 +3342,9 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     yt_embed_url = f"https://www.youtube.com/embed/{vid_id}"
 
     image_instructions = ""
+    og_image_url = "https://www.bulkplaintshirt.com/catalog/img/logo.png"
     if image_urls:
+        og_image_url = image_urls[0]  # Use first AI image for social sharing
         img_list = "\n".join(f"   - Image {i+1}: {url}" for i, url in enumerate(image_urls))
         image_instructions = f"""
 7. IMAGES:
@@ -3208,6 +3356,7 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
    - Add loading="lazy" to all images except the hero
    - Style images: width:100%; border-radius:12px; margin:20px 0;
    - Wrap each image in a <figure> with a <figcaption> describing what's shown
+   - IMPORTANT: Use {og_image_url} as the og:image and twitter:image in meta tags
 """
 
     return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
@@ -3238,7 +3387,7 @@ REQUIREMENTS:
    - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
    - Include practical tips, comparisons, and real-world examples from Indian textile industry
    - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
-   - Reference the product catalog: https://bulkplaintshirt.com/catalog/
+   - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
    - MANDATORY: Include a "Watch the Video" section with this EXACT YouTube embed code:
      <div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:20px 0;border-radius:12px;">
        <iframe src="{yt_embed_url}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
@@ -3264,12 +3413,12 @@ REQUIREMENTS:
    - Padding: 12px top/bottom
    - This header must always stay visible at the top when scrolling
 
-   STICKY BOTTOM BAR (fixed at bottom of viewport, z-index 1000):
-   - Full-width bar, display flex, two equal-width buttons side by side, no gap
-   - LEFT button: "Order Now" — background #1a1a1a (black), white bold text, links to https://sale91.com
-   - RIGHT button: "WhatsApp Us" — background #25D366 (WhatsApp green), white bold text, links to https://whatsapp.sale91.com
-   - Both buttons: min-height 50px, font-size 16px, no border, cursor pointer
-   - Bar has a subtle top box-shadow for depth (0 -2px 8px rgba(0,0,0,0.15))
+   MANDATORY STICKY BOTTOM BAR — you MUST include this EXACT HTML just before </body>:
+     <div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;box-shadow:0 -2px 8px rgba(0,0,0,0.15);">
+       <a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>
+       <a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>
+     </div>
+   Do NOT skip this bottom bar — it is REQUIRED just like the YouTube embed.
    - Add padding-bottom: 60px to body so content is not hidden behind sticky bar
    - Add padding-top: 80px to body so content is not hidden behind sticky header
 
@@ -3298,49 +3447,10 @@ REQUIREMENTS:
    - <title> with " | BulkPlainTshirt.com" suffix
    - meta description (150-160 chars, compelling)
    - canonical URL: {blog_url}
-   - Open Graph: og:title, og:description, og:url, og:type=article, og:image (use https://bulkplaintshirt.com/catalog/img/logo.png)
-   - Twitter card meta tags
+   - Open Graph: og:title, og:description, og:url, og:type=article, og:image (see below)
+   - Twitter card meta tags (twitter:image same as og:image)
 
-5. STRUCTURED DATA (JSON-LD in <script type="application/ld+json"> tags):
-   Generate ALL of these as SEPARATE script tags:
-
-   a) Organization:
-   {{
-     "@context": "https://schema.org",
-     "@type": "Organization",
-     "name": "Sale91.com",
-     "alternateName": "BulkPlainTshirt.com",
-     "url": "https://sale91.com",
-     "logo": "https://bulkplaintshirt.com/catalog/img/logo.png",
-     "description": "B2B plain t-shirt manufacturer & supplier. Own knitted blank wears from Tiruppur.",
-     "address": {{
-       "@type": "PostalAddress",
-       "addressLocality": "Tiruppur",
-       "addressRegion": "Tamil Nadu",
-       "addressCountry": "IN"
-     }},
-     "contactPoint": {{
-       "@type": "ContactPoint",
-       "url": "https://sale91.com",
-       "contactType": "sales"
-     }}
-   }}
-
-   b) BreadcrumbList:
-   Home > [Article Title] (only 2 items, no "Blog" in between)
-
-   c) Article:
-   type=Article with headline, author (Sale91.com), datePublished ({today}), publisher, image, description
-
-   d) Product (a representative product relevant to the topic):
-   Include name, description, brand (Sale91.com), offers with price range (Rs 65 - Rs 250 depending on product),
-   availability (InStock), priceCurrency (INR), seller
-
-   e) FAQPage:
-   All the FAQ Q&As from section 2 above, properly formatted with mainEntity array
-
-   f) AggregateRating (inside or alongside Product):
-   ratingValue between 4.3-4.7, reviewCount between 850-1250, bestRating 5
+5. STRUCTURED DATA: Do NOT include any JSON-LD script tags — they will be injected automatically by the system.
 
 6. ADDITIONAL:
    - Add a <link rel="author" href="https://sale91.com"> tag
@@ -3348,6 +3458,13 @@ REQUIREMENTS:
    - Make sure all JSON-LD is valid JSON (no trailing commas, proper escaping)
    - Total HTML should be well-formatted and readable
 {image_instructions}
+CRITICAL CHECKLIST — your HTML MUST contain ALL of these:
+   ✓ Sticky gold header at top (position:fixed)
+   ✓ YouTube video embed before FAQ section
+   ✓ FAQ section with faq-question and faq-answer CSS classes on divs
+   ✓ body padding-top:80px and padding-bottom:60px
+   (Note: JSON-LD schemas and sticky bottom bar are injected automatically — do NOT add them)
+
 REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
 
 
@@ -3512,6 +3629,11 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
             print("   ⚠️ Blog: Claude didn't return valid HTML")
             return None, None, None, []
 
+        # Inject JSON-LD schemas + sticky bottom bar (reliable, not prompt-dependent)
+        today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+        first_image_url = image_urls[0] if image_urls else None
+        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=first_image_url)
+
         word_count = len(html_content.split())
         print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
         print(f"   📝 Blog: URL will be {blog_url}")
@@ -3522,6 +3644,67 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     except Exception as e:
         print(f"   ⚠️ Blog generation failed: {e}")
         return None, None, None, []
+
+
+def repair_existing_blog_posts(s3_client, cloudfront_client):
+    """One-time repair: inject JSON-LD + bottom bar into existing blog posts that are missing them."""
+    blog_history_path = "blog_history.json"
+    if not os.path.exists(blog_history_path):
+        return
+
+    try:
+        with open(blog_history_path) as f:
+            history = json.load(f)
+    except Exception:
+        return
+
+    repaired = []
+    for entry in history:
+        slug = entry.get("slug", "")
+        title = entry.get("title", "")
+        blog_url = entry.get("url", "")
+        date = entry.get("date", datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d"))
+        key = f"p/{slug}.html"
+
+        try:
+            resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key=key)
+            html = resp['Body'].read().decode('utf-8')
+
+            # Skip if already has JSON-LD (already repaired)
+            if 'application/ld+json' in html:
+                continue
+
+            # Inject JSON-LD + bottom bar
+            html = inject_blog_seo(html, title, "", blog_url, date, slug)
+
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=key,
+                Body=html.encode('utf-8'),
+                ContentType='text/html; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            repaired.append(slug)
+            print(f"   🔧 Repair: Fixed {slug}.html (JSON-LD + bottom bar)")
+        except Exception as e:
+            print(f"   ⚠️ Repair: Could not fix {slug}.html: {e}")
+
+    if repaired:
+        # Invalidate repaired pages in CloudFront
+        try:
+            paths = [f'/p/{s}.html' for s in repaired]
+            cloudfront_client.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    'Paths': {'Quantity': len(paths), 'Items': paths},
+                    'CallerReference': f"repair-{int(time.time())}"
+                }
+            )
+            print(f"   🔧 Repair: CloudFront invalidation for {len(repaired)} fixed posts")
+        except Exception as e:
+            print(f"   ⚠️ Repair: CloudFront invalidation failed: {e}")
+    else:
+        print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
@@ -3540,6 +3723,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                                aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
 
     invalidation_paths = []
+
+    # Repair any existing posts missing JSON-LD + bottom bar (one-time, idempotent)
+    repair_existing_blog_posts(s3, cloudfront)
 
     try:
         # ── 1. Upload blog HTML ──
@@ -3579,9 +3765,10 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             # Simple <li><a> entry — matches existing index.html list format
             new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
 
-            # Insert before </ul> (append to the existing list)
-            if '</ul>' in index_html:
-                index_html = index_html.replace('</ul>', f'  {new_li}\n</ul>', 1)
+            # Insert before the LAST </ul> (Posts section, not Main Pages)
+            last_ul_pos = index_html.rfind('</ul>')
+            if last_ul_pos != -1:
+                index_html = index_html[:last_ul_pos] + f'  {new_li}\n' + index_html[last_ul_pos:]
             else:
                 # Fallback: wrap in <ul> and insert before </body>
                 index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
@@ -3607,6 +3794,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             new_url_entry = f"""  <url>
     <loc>{blog_url}</loc>
     <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>"""
 
             # Insert before </urlset>
@@ -3757,7 +3946,7 @@ def ping_indexnow(blog_url):
     ChatGPT (via Bing), Copilot, Perplexity, etc."""
     try:
         payload = {
-            'host': 'bulkplaintshirt.com',
+            'host': 'www.bulkplaintshirt.com',
             'key': INDEXNOW_API_KEY,
             'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
             'urlList': [blog_url]
@@ -3839,8 +4028,21 @@ def ensure_robots_txt(s3_client):
     """Upload/update robots.txt with sitemap reference (idempotent)."""
     robots_content = f"""User-agent: *
 Allow: /
+Disallow: /track.html
+Disallow: /p/post-template.html
+Disallow: /policy.html
+Disallow: /shiping-cal.html
+Disallow: /term.html
+Disallow: /zxcvf.html
+Disallow: /bill.html
+Disallow: /map3.html
+Disallow: /disclaimer.html
 
 Sitemap: {BLOG_BASE_URL}/p/map.xml
+
+# LLM-friendly content index
+# See https://llmstxt.org
+LLMs.txt: {BLOG_BASE_URL}/p/llms.txt
 
 # AI Crawlers welcome
 User-agent: GPTBot
@@ -3898,8 +4100,8 @@ def submit_to_search_engines(blog_url, s3_client=None):
     # 2. IndexNow (Bing, Yandex, AI search engines)
     ping_indexnow(blog_url)
 
-    # 3. Sitemap ping (Google + Bing)
-    ping_search_engine_sitemaps()
+    # 3. Sitemap ping — removed (Google deprecated 2023, Bing returns 410)
+    # Google Indexing API + IndexNow already cover all major engines
 
     print(f"   🔍 Indexing: All submissions complete for {blog_url}")
 
