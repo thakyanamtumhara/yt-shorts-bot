@@ -3457,41 +3457,20 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                 except Exception as e:
                     print(f"   ⚠️ Blog S3: Image upload failed for {filename}: {e}")
 
-        # ── 2. Update /p/index.html (add blog link) ──
+        # ── 2. Update /p/index.html (add blog link as simple list item) ──
         try:
             resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/index.html')
             index_html = resp['Body'].read().decode('utf-8')
 
-            # Find the last link before </body> or a known anchor point
-            # Strategy: insert new link before the closing </div> or </body>
-            # Look for "catalog" link as anchor, or append before </body>
-            import re
+            # Simple <li><a> entry — matches existing index.html list format
+            new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
 
-            # Build blog link matching sitemap list style (same as Posts section items)
-            yt_thumb = f'https://img.youtube.com/vi/{vid_id}/hqdefault.jpg' if vid_id else ''
-            yt_short_url = f'https://youtube.com/shorts/{vid_id}' if vid_id else ''
-
-            # Card-style entry matching the sitemap grid format with YouTube thumbnail
-            video_html = ''
-            if vid_id:
-                video_html = f'''<a href="{yt_short_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;">
-          <img src="{yt_thumb}" alt="{title[:50]}" style="width:100%;max-width:280px;border-radius:8px;border:1px solid #e0e0e0;" loading="lazy">
-        </a>'''
-
-            new_link = f'''<div style="padding:12px 0;border-bottom:1px solid #eee;">
-        <a href="/p/{slug}.html" style="color:#007bff;text-decoration:none;font-size:16px;font-weight:500;">{title[:60]}</a>
-        {video_html}
-      </div>'''
-
-            # Try to insert in the Posts section (after last item)
-            posts_section_pattern = r'(Posts</h[23]>.*?)(</div>\s*(?:<div class|</div>|</body>))'
-            posts_match = re.search(posts_section_pattern, index_html, re.DOTALL | re.IGNORECASE)
-            if posts_match:
-                insert_pos = posts_match.end(1)
-                index_html = index_html[:insert_pos] + '\n      ' + new_link + index_html[insert_pos:]
+            # Insert before </ul> (append to the existing list)
+            if '</ul>' in index_html:
+                index_html = index_html.replace('</ul>', f'  {new_li}\n</ul>', 1)
             else:
-                # Fallback: insert before </body>
-                index_html = index_html.replace('</body>', f'      {new_link}\n</body>')
+                # Fallback: wrap in <ul> and insert before </body>
+                index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
 
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
