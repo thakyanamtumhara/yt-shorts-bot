@@ -125,5 +125,21 @@
       "whisper": 0.0054,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-25T13:09:12.758218",
+    "topic": "Customer bola collar yellow ho gaya \u2014 sweat stain tha ya fabric issue?",
+    "title": "Collar Yellow Ho Gaya? Sweat Stain Ya Fabric Issue \ud83e\udd14",
+    "total_usd": 2.5395,
+    "duration_min": 23.1,
+    "breakdown": {
+      "claude_sonnet": 0.0323,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0269,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0054,
+      "blog_images": 0.075
+    }
   }
 ]
