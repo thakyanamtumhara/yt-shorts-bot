@@ -3151,12 +3151,12 @@ REQUIREMENTS:
    - Padding: 12px top/bottom
    - This header must always stay visible at the top when scrolling
 
-   STICKY BOTTOM BAR (fixed at bottom of viewport, z-index 1000):
-   - Full-width bar, display flex, two equal-width buttons side by side, no gap
-   - LEFT button: "Order Now" — background #1a1a1a (black), white bold text, links to https://sale91.com
-   - RIGHT button: "WhatsApp Us" — background #25D366 (WhatsApp green), white bold text, links to https://whatsapp.sale91.com
-   - Both buttons: min-height 50px, font-size 16px, no border, cursor pointer
-   - Bar has a subtle top box-shadow for depth (0 -2px 8px rgba(0,0,0,0.15))
+   MANDATORY STICKY BOTTOM BAR — you MUST include this EXACT HTML just before </body>:
+     <div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;box-shadow:0 -2px 8px rgba(0,0,0,0.15);">
+       <a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>
+       <a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>
+     </div>
+   Do NOT skip this bottom bar — it is REQUIRED just like the YouTube embed.
    - Add padding-bottom: 60px to body so content is not hidden behind sticky bar
    - Add padding-top: 80px to body so content is not hidden behind sticky header
 
@@ -3235,6 +3235,13 @@ REQUIREMENTS:
    - Make sure all JSON-LD is valid JSON (no trailing commas, proper escaping)
    - Total HTML should be well-formatted and readable
 {image_instructions}
+CRITICAL CHECKLIST — your HTML MUST contain ALL of these:
+   ✓ Sticky gold header at top (position:fixed)
+   ✓ Sticky bottom bar with "Order Now" (black) + "WhatsApp Us" (green) buttons (position:fixed)
+   ✓ YouTube video embed before FAQ section
+   ✓ FAQ section with FAQPage JSON-LD
+   ✓ body padding-top:80px and padding-bottom:60px
+
 REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
 
 
