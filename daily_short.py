@@ -3058,6 +3058,7 @@ BLOG_S3_BUCKET = "bulkplaintshirt.com"
 BLOG_BASE_URL = "https://bulkplaintshirt.com"
 BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
 BLOG_HISTORY_FILE = "blog_history.json"
+INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
 
 
 def generate_blog_slug(title):
@@ -3552,6 +3553,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             except Exception as e:
                 print(f"   ⚠️ Blog S3: CloudFront invalidation failed: {e}")
 
+        # ── 6. Submit to search engines & AI crawlers ──
+        submit_to_search_engines(blog_url, s3_client=s3)
+
         return True
 
     except Exception as e:
@@ -3581,6 +3585,210 @@ def save_blog_history(topic, title, slug, blog_url, vid_url):
         print(f"   💾 Blog history saved ({len(history)} total posts)")
     except Exception as e:
         print(f"   ⚠️ Could not save blog history: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# SEARCH ENGINE INDEXING & AI SEARCH SUBMISSION
+# ═══════════════════════════════════════════════════════════════════════
+
+def ping_google_indexing_api(blog_url):
+    """Use Google Indexing API to request instant indexing of a new blog post.
+    Requires GOOGLE_SERVICE_ACCOUNT_JSON env var with service account credentials."""
+    sa_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+    if not sa_json:
+        print("   ℹ️ Indexing: GOOGLE_SERVICE_ACCOUNT_JSON not set — skipping Google Indexing API")
+        return False
+
+    try:
+        from google.oauth2 import service_account
+        from google.auth.transport.requests import Request as GoogleAuthRequest
+
+        creds_dict = json.loads(sa_json)
+        credentials = service_account.Credentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/indexing']
+        )
+        credentials.refresh(GoogleAuthRequest())
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {credentials.token}'
+        }
+        payload = {
+            'url': blog_url,
+            'type': 'URL_UPDATED'
+        }
+        resp = requests.post(
+            'https://indexing.googleapis.com/v3/urlNotifications:publish',
+            headers=headers,
+            json=payload,
+            timeout=15
+        )
+        if resp.status_code == 200:
+            print(f"   ✅ Indexing: Google Indexing API — URL submitted successfully")
+            return True
+        else:
+            print(f"   ⚠️ Indexing: Google Indexing API returned {resp.status_code}: {resp.text[:200]}")
+            return False
+    except ImportError:
+        print("   ⚠️ Indexing: google-auth package not installed — pip install google-auth")
+        return False
+    except Exception as e:
+        print(f"   ⚠️ Indexing: Google Indexing API failed: {e}")
+        return False
+
+
+def ping_indexnow(blog_url):
+    """Submit URL to IndexNow API (Bing, Yandex, DuckDuckGo, AI search engines).
+    This notifies Bing/Yandex/Naver/Seznam and indirectly feeds AI search like
+    ChatGPT (via Bing), Copilot, Perplexity, etc."""
+    try:
+        payload = {
+            'host': 'bulkplaintshirt.com',
+            'key': INDEXNOW_API_KEY,
+            'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
+            'urlList': [blog_url]
+        }
+
+        # Submit to multiple IndexNow endpoints
+        endpoints = [
+            'https://api.indexnow.org/indexnow',
+            'https://www.bing.com/indexnow',
+            'https://yandex.com/indexnow',
+        ]
+
+        success = False
+        for endpoint in endpoints:
+            try:
+                resp = requests.post(endpoint, json=payload, timeout=10,
+                                     headers={'Content-Type': 'application/json'})
+                if resp.status_code in (200, 202):
+                    engine = endpoint.split('/')[2]
+                    print(f"   ✅ Indexing: IndexNow → {engine} accepted")
+                    success = True
+                else:
+                    engine = endpoint.split('/')[2]
+                    print(f"   ⚠️ Indexing: IndexNow → {engine} returned {resp.status_code}")
+            except Exception as e:
+                engine = endpoint.split('/')[2]
+                print(f"   ⚠️ Indexing: IndexNow → {engine} failed: {e}")
+
+        return success
+    except Exception as e:
+        print(f"   ⚠️ Indexing: IndexNow failed: {e}")
+        return False
+
+
+def ping_search_engine_sitemaps():
+    """Ping Google and Bing with updated sitemap URL.
+    Simple HTTP GET that tells search engines the sitemap has been updated."""
+    sitemap_url = f"{BLOG_BASE_URL}/p/map.xml"
+    pings = [
+        f"https://www.google.com/ping?sitemap={sitemap_url}",
+        f"https://www.bing.com/ping?sitemap={sitemap_url}",
+    ]
+
+    for ping_url in pings:
+        try:
+            resp = requests.get(ping_url, timeout=10)
+            engine = ping_url.split('/')[2].replace('www.', '')
+            if resp.status_code == 200:
+                print(f"   ✅ Indexing: Sitemap ping → {engine} OK")
+            else:
+                print(f"   ⚠️ Indexing: Sitemap ping → {engine} returned {resp.status_code}")
+        except Exception as e:
+            engine = ping_url.split('/')[2].replace('www.', '')
+            print(f"   ⚠️ Indexing: Sitemap ping → {engine} failed: {e}")
+
+
+def ensure_indexnow_key_file(s3_client):
+    """Upload the IndexNow verification key file to S3 root (one-time, idempotent)."""
+    key_file_key = f"{INDEXNOW_API_KEY}.txt"
+    try:
+        # Check if key file already exists
+        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=key_file_key)
+    except Exception:
+        # Upload key file
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=key_file_key,
+                Body=INDEXNOW_API_KEY.encode('utf-8'),
+                ContentType='text/plain',
+                CacheControl='public, max-age=2592000'
+            )
+            print(f"   📤 Indexing: Uploaded IndexNow key file ({key_file_key})")
+        except Exception as e:
+            print(f"   ⚠️ Indexing: Could not upload IndexNow key file: {e}")
+
+
+def ensure_robots_txt(s3_client):
+    """Upload/update robots.txt with sitemap reference (idempotent)."""
+    robots_content = f"""User-agent: *
+Allow: /
+
+Sitemap: {BLOG_BASE_URL}/p/map.xml
+
+# AI Crawlers welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+"""
+    try:
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='robots.txt',
+            Body=robots_content.encode('utf-8'),
+            ContentType='text/plain; charset=utf-8',
+            CacheControl='public, max-age=86400'
+        )
+        print(f"   📤 Indexing: robots.txt uploaded with sitemap reference")
+    except Exception as e:
+        print(f"   ⚠️ Indexing: Could not upload robots.txt: {e}")
+
+
+def submit_to_search_engines(blog_url, s3_client=None):
+    """Master function: submit a new blog URL to all search engines and AI crawlers."""
+    print(f"   🔍 Indexing: Submitting {blog_url} to search engines & AI...")
+
+    # Ensure IndexNow key file exists in S3
+    if s3_client:
+        ensure_indexnow_key_file(s3_client)
+        ensure_robots_txt(s3_client)
+
+    # 1. Google Indexing API (instant indexing)
+    ping_google_indexing_api(blog_url)
+
+    # 2. IndexNow (Bing, Yandex, AI search engines)
+    ping_indexnow(blog_url)
+
+    # 3. Sitemap ping (Google + Bing)
+    ping_search_engine_sitemaps()
+
+    print(f"   🔍 Indexing: All submissions complete for {blog_url}")
 
 
 # ═══════════════════════════════════════════════════════════════════════
