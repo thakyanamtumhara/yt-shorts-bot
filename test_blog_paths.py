@@ -59,7 +59,7 @@ class MockS3:
     def get_object(self, **kwargs):
         key = kwargs['Key']
         if key == 'p/index.html':
-            return {'Body': MockBody(b'<html><body><a href="/catalog/">Catalog</a></body></html>')}
+            return {'Body': MockBody(b'<html><body><h2>Posts</h2><ul>\n  <li><a href="/p/existing-post.html">Existing Post</a></li>\n</ul></body></html>')}
         elif key == 'p/map.xml':
             return {'Body': MockBody(b'<?xml version="1.0"?>\n<urlset>\n  <url><loc>https://bulkplaintshirt.com/catalog/index.html</loc></url>\n</urlset>')}
         elif key == 'p/llms.txt':
