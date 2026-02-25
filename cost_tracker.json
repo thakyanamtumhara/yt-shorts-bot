@@ -96,5 +96,18 @@
       "whisper": 0.006,
       "blog_images": 0.003
     }
+  },
+  {
+    "date": "2026-02-25T07:23:23.737130",
+    "topic": "Pricing galat rakhi toh loss hoga \u2014 fabric plus print plus margin calculate karo",
+    "title": "\u20b9150 Blank + \u20b980 Print = Loss? Pricing Formula Every Printer Needs",
+    "total_usd": 0.1167,
+    "duration_min": 11.7,
+    "breakdown": {
+      "claude_sonnet": 0.0324,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0277,
+      "whisper": 0.0066
+    }
   }
 ]
