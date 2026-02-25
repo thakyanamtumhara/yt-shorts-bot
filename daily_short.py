@@ -1022,6 +1022,119 @@ def get_instagram_best_time(ig_token, ig_business_id):
         return None
 
 
+def refresh_instagram_token_if_needed():
+    """Check Instagram token expiry and auto-refresh if expiring within 7 days.
+    Updates GitHub Secrets in yt-shorts-bot and yt-reply-tool repos."""
+    ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
+    fb_app_id = (os.environ.get("FB_APP_ID") or "").strip()
+    fb_app_secret = (os.environ.get("FB_APP_SECRET") or "").strip()
+    gh_pat = (os.environ.get("GH_PAT") or "").strip()
+
+    if not ig_token or not fb_app_id or not fb_app_secret:
+        return ig_token  # Can't refresh without credentials
+
+    # Step 1: Check token expiry via debug_token API
+    try:
+        debug_resp = requests.get(
+            "https://graph.facebook.com/v21.0/debug_token",
+            params={
+                "input_token": ig_token,
+                "access_token": f"{fb_app_id}|{fb_app_secret}",
+            },
+            timeout=10,
+        )
+        if debug_resp.status_code != 200:
+            print(f"   ⚠️ Token debug check failed ({debug_resp.status_code}): {debug_resp.text[:150]}")
+            return ig_token
+
+        token_data = debug_resp.json().get("data", {})
+        expires_at = token_data.get("expires_at", 0)
+        is_valid = token_data.get("is_valid", False)
+
+        if not is_valid:
+            print("   ❌ Instagram token is INVALID — manual refresh required")
+            print("      Go to: https://developers.facebook.com/tools/debug/accesstoken/")
+            return ig_token
+
+        if expires_at == 0:
+            print("   ✅ Instagram token never expires (page token)")
+            return ig_token
+
+        now_ts = int(time.time())
+        days_left = (expires_at - now_ts) / 86400
+        expires_date = datetime.fromtimestamp(expires_at, pytz.timezone("Asia/Kolkata")).strftime("%d %b %Y")
+        print(f"   🔑 Instagram token expires: {expires_date} ({days_left:.0f} days left)")
+
+        if days_left > 7:
+            print(f"   ✅ Token OK — no refresh needed (>{7} days remaining)")
+            return ig_token
+
+        print(f"   ⚠️ Token expiring soon ({days_left:.0f} days) — refreshing...")
+
+    except Exception as e:
+        print(f"   ⚠️ Token expiry check failed: {e}")
+        return ig_token
+
+    # Step 2: Exchange for new long-lived token
+    try:
+        refresh_resp = requests.get(
+            "https://graph.facebook.com/v21.0/oauth/access_token",
+            params={
+                "grant_type": "fb_exchange_token",
+                "client_id": fb_app_id,
+                "client_secret": fb_app_secret,
+                "fb_exchange_token": ig_token,
+            },
+            timeout=15,
+        )
+        if refresh_resp.status_code != 200:
+            print(f"   ❌ Token refresh failed ({refresh_resp.status_code}): {refresh_resp.text[:200]}")
+            print("      Manual refresh: https://developers.facebook.com/tools/debug/accesstoken/")
+            return ig_token
+
+        new_token = refresh_resp.json().get("access_token", "")
+        if not new_token:
+            print(f"   ❌ Token refresh returned empty token: {refresh_resp.text[:200]}")
+            return ig_token
+
+        print(f"   ✅ New long-lived token obtained (len={len(new_token)}, prefix={new_token[:6]}...)")
+
+        # Update current process env
+        os.environ["INSTAGRAM_ACCESS_TOKEN"] = new_token
+
+    except Exception as e:
+        print(f"   ❌ Token refresh request failed: {e}")
+        return ig_token
+
+    # Step 3: Update GitHub Secrets in both repos
+    if not gh_pat:
+        print("   ⚠️ GH_PAT not set — cannot auto-update GitHub Secrets")
+        print(f"      Manually update INSTAGRAM_ACCESS_TOKEN in GitHub Secrets")
+        return new_token
+
+    import subprocess
+
+    repos = ["thakyanamtumhara/yt-shorts-bot", "thakyanamtumhara/yt-reply-tool"]
+    for repo in repos:
+        try:
+            result = subprocess.run(
+                ["gh", "secret", "set", "INSTAGRAM_ACCESS_TOKEN", "--repo", repo],
+                input=new_token,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env={**os.environ, "GH_TOKEN": gh_pat},
+            )
+            if result.returncode == 0:
+                print(f"   ✅ Secret updated in {repo}")
+            else:
+                print(f"   ⚠️ Failed to update secret in {repo}: {result.stderr[:150]}")
+        except Exception as e:
+            print(f"   ⚠️ Failed to update secret in {repo}: {e}")
+
+    return new_token
+
+
 def cross_post_to_instagram(video_path, title, description, topic):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
@@ -4906,6 +5019,10 @@ def main():
 
     # ── 10d. Cross-post to Instagram Reels ──
     if not TEST_MODE and not upload_failed:
+        # Auto-refresh Instagram token if expiring within 7 days
+        if CROSS_POST_INSTAGRAM and os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
+            print("\n📸 Instagram Token Check...")
+            refresh_instagram_token_if_needed()
         cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
