@@ -3493,8 +3493,6 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             new_url_entry = f"""  <url>
     <loc>{blog_url}</loc>
     <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
   </url>"""
 
             # Insert before </urlset>
