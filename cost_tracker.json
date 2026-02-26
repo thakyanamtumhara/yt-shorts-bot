@@ -141,5 +141,20 @@
       "whisper": 0.0054,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-26T00:26:12.484726",
+    "topic": "Discharge printing kya hai \u2014 bleach se design banta hai fabric pe",
+    "title": "Stop Using White Ink on Dark Fabric (Use This Instead) \ud83d\udd25",
+    "total_usd": 2.8243,
+    "duration_min": 29.5,
+    "breakdown": {
+      "claude_sonnet": 0.1615,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0317,
+      "veo_clips": 2.5,
+      "whisper": 0.0061,
+      "blog_images": 0.075
+    }
   }
 ]
