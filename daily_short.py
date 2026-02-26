@@ -3948,7 +3948,7 @@ def ping_indexnow(blog_url):
         payload = {
             'host': 'www.bulkplaintshirt.com',
             'key': INDEXNOW_API_KEY,
-            'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
+            'keyLocation': f'{BLOG_BASE_URL}/p/{INDEXNOW_API_KEY}.txt',
             'urlList': [blog_url]
         }
 
@@ -4004,8 +4004,8 @@ def ping_search_engine_sitemaps():
 
 
 def ensure_indexnow_key_file(s3_client):
-    """Upload the IndexNow verification key file to S3 root (one-time, idempotent)."""
-    key_file_key = f"{INDEXNOW_API_KEY}.txt"
+    """Upload the IndexNow verification key file to S3 under p/ prefix (one-time, idempotent)."""
+    key_file_key = f"p/{INDEXNOW_API_KEY}.txt"
     try:
         # Check if key file already exists
         s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=key_file_key)
@@ -4025,7 +4025,7 @@ def ensure_indexnow_key_file(s3_client):
 
 
 def ensure_robots_txt(s3_client):
-    """Upload/update robots.txt with sitemap reference (idempotent)."""
+    """Upload/update robots.txt with sitemap reference under p/ prefix (idempotent)."""
     robots_content = f"""User-agent: *
 Allow: /
 Disallow: /track.html
@@ -4075,12 +4075,12 @@ Allow: /
     try:
         s3_client.put_object(
             Bucket=BLOG_S3_BUCKET,
-            Key='robots.txt',
+            Key='p/robots.txt',
             Body=robots_content.encode('utf-8'),
             ContentType='text/plain; charset=utf-8',
             CacheControl='public, max-age=86400'
         )
-        print(f"   📤 Indexing: robots.txt uploaded with sitemap reference")
+        print(f"   📤 Indexing: p/robots.txt uploaded with sitemap reference")
     except Exception as e:
         print(f"   ⚠️ Indexing: Could not upload robots.txt: {e}")
 
