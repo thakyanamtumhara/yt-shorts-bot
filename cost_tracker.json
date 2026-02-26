@@ -185,5 +185,20 @@
       "whisper": 0.0046,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-26T19:09:42.890732",
+    "topic": "Myth: Washing instructions koi nahi padhta \u2014 par return isi se hota hai",
+    "title": "Why 50 T-Shirts Got Returned? Washing Tag Galti #tshirtwholesaler",
+    "total_usd": 2.1127,
+    "duration_min": 27.1,
+    "breakdown": {
+      "claude_sonnet": 0.2068,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0257,
+      "kling_clips": 1.75,
+      "whisper": 0.0053,
+      "blog_images": 0.075
+    }
   }
 ]
