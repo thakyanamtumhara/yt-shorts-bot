@@ -282,6 +282,7 @@ PLAYLIST_CACHE_FILE = f"{WORK_DIR}/playlist_cache.json"  # Cache playlist IDs
 
 # Instagram Reels Cross-Post (requires INSTAGRAM_ACCESS_TOKEN + INSTAGRAM_BUSINESS_ID secrets)
 CROSS_POST_INSTAGRAM = True
+IG_API_VERSION = "v21.0"  # v22.0 causes "Carousel item cannot be published standalone" error
 
 # Cost Tracker — log per-video API costs
 COST_TRACKER_FILE = "cost_tracker.json"  # In repo root for git tracking
@@ -978,7 +979,7 @@ def get_instagram_best_time(ig_token, ig_business_id):
 
     try:
         resp = requests.get(
-            f"https://graph.facebook.com/v22.0/{ig_business_id}/insights",
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/insights",
             params={
                 "metric": "online_followers",
                 "period": "lifetime",
@@ -1068,7 +1069,7 @@ def refresh_instagram_token_if_needed():
     # Step 1: Check token expiry via debug_token API
     try:
         debug_resp = requests.get(
-            "https://graph.facebook.com/v22.0/debug_token",
+            f"https://graph.facebook.com/{IG_API_VERSION}/debug_token",
             params={
                 "input_token": ig_token,
                 "access_token": f"{fb_app_id}|{fb_app_secret}",
@@ -1110,7 +1111,7 @@ def refresh_instagram_token_if_needed():
     # Step 2: Exchange for new long-lived token
     try:
         refresh_resp = requests.get(
-            "https://graph.facebook.com/v22.0/oauth/access_token",
+            f"https://graph.facebook.com/{IG_API_VERSION}/oauth/access_token",
             params={
                 "grant_type": "fb_exchange_token",
                 "client_id": fb_app_id,
@@ -1191,7 +1192,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # Pre-flight: validate token with a lightweight /me call
         print(f"   🔑 Verifying Instagram token (len={len(ig_token)}, prefix={ig_token[:6]}...{ig_token[-4:]})...")
         me_resp = requests.get(
-            f"https://graph.facebook.com/v22.0/{ig_business_id}",
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}",
             params={"fields": "id,name,username", "access_token": ig_token},
             timeout=10,
         )
@@ -1322,7 +1323,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
             container_data["scheduled_publish_time"] = str(schedule_timestamp)
 
         container_resp = requests.post(
-            f"https://graph.facebook.com/v22.0/{ig_business_id}/media",
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
             data=container_data,
             timeout=30,
         )
@@ -1343,7 +1344,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         for check in range(20):  # Max 10 minutes
             time.sleep(30)
             status_resp = requests.get(
-                f"https://graph.facebook.com/v22.0/{container_id}",
+                f"https://graph.facebook.com/{IG_API_VERSION}/{container_id}",
                 params={"fields": "status_code,status", "access_token": ig_token},
                 timeout=15,
             )
@@ -1362,27 +1363,52 @@ def cross_post_to_instagram(video_path, title, description, topic):
             print(f"   ❌ Instagram processing timed out after 10 minutes")
             return None
 
+        # Step 3b: Verify container is REELS (catch carousel misclassification)
+        try:
+            verify_resp = requests.get(
+                f"https://graph.facebook.com/{IG_API_VERSION}/{container_id}",
+                params={"fields": "status_code,media_type,media_product_type", "access_token": ig_token},
+                timeout=15,
+            )
+            verify_data = verify_resp.json()
+            c_type = verify_data.get("media_type", "?")
+            c_product = verify_data.get("media_product_type", "?")
+            print(f"   \U0001f50d Container type: media_type={c_type}, product={c_product}")
+        except Exception:
+            pass
+
         # Step 4: Publish (or confirm schedule)
         if schedule_for_later:
             # Scheduled posts are auto-published by Instagram at the set time
-            print(f"   ✅ Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
-            print(f"      Container ID: {container_id} — Instagram will auto-publish")
+            print(f"   \u2705 Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
+            print(f"      Container ID: {container_id} \u2014 Instagram will auto-publish")
             return container_id
         else:
-            # Immediate publish
-            publish_resp = requests.post(
-                f"https://graph.facebook.com/v22.0/{ig_business_id}/media_publish",
-                data={"creation_id": container_id, "access_token": ig_token},
-                timeout=30,
-            )
+            # Immediate publish — try current version, then fallback
+            for api_ver in [IG_API_VERSION, "v20.0"]:
+                publish_resp = requests.post(
+                    f"https://graph.facebook.com/{api_ver}/{ig_business_id}/media_publish",
+                    data={"creation_id": container_id, "access_token": ig_token},
+                    timeout=30,
+                )
 
-            if publish_resp.status_code == 200:
-                ig_media_id = publish_resp.json().get("id")
-                print(f"   ✅ Instagram Reel published! ID: {ig_media_id}")
-                return ig_media_id
-            else:
-                print(f"   ⚠️ Instagram publish failed: {publish_resp.text[:200]}")
-                return None
+                if publish_resp.status_code == 200:
+                    ig_media_id = publish_resp.json().get("id")
+                    print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")
+                    return ig_media_id
+
+                error_text = publish_resp.text[:300]
+                print(f"   \u26a0\ufe0f Instagram publish failed (api={api_ver}): {error_text}")
+
+                # If carousel error, retry with next version
+                if "2207089" in error_text or "carousel" in error_text.lower():
+                    print(f"   \U0001f504 Carousel error detected — retrying with fallback API version...")
+                    time.sleep(5)
+                    continue
+                else:
+                    break  # Different error — don't retry
+
+            return None
 
     except Exception as e:
         print(f"   ⚠️ Instagram cross-post failed: {e}")
