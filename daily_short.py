@@ -3707,6 +3707,60 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
+def repair_sitemap(s3_client):
+    """One-time repair: fix non-www URLs and add missing static pages to map.xml (idempotent)."""
+    try:
+        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
+        map_xml = resp['Body'].read().decode('utf-8')
+    except Exception:
+        return
+
+    original = map_xml
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+
+    # Fix 1: Replace non-www URLs with www
+    map_xml = map_xml.replace('https://bulkplaintshirt.com/', 'https://www.bulkplaintshirt.com/')
+
+    # Fix 2: Add missing static pages (idempotent — skip if already present)
+    static_pages = [
+        (f"{BLOG_BASE_URL}/", "daily", "1.0"),
+        (f"{BLOG_BASE_URL}/catalog/index.html", "weekly", "0.9"),
+        (f"{BLOG_BASE_URL}/contactus.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/seller.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/p/FQA.html", "monthly", "0.8"),
+        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/returnpolicy.html", "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/refundpolicy.html", "yearly", "0.3"),
+    ]
+
+    for page_url, changefreq, priority in static_pages:
+        if page_url in map_xml:
+            continue
+        entry = f"""  <url>
+    <loc>{page_url}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>"""
+        map_xml = map_xml.replace('</urlset>', f'{entry}\n</urlset>')
+
+    if map_xml == original:
+        print(f"   ✅ Sitemap: map.xml already up to date")
+        return
+
+    try:
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='p/map.xml',
+            Body=map_xml.encode('utf-8'),
+            ContentType='application/xml; charset=utf-8',
+            CacheControl='no-cache'
+        )
+        print(f"   🔧 Sitemap: Fixed non-www URLs + added missing static pages")
+    except Exception as e:
+        print(f"   ⚠️ Sitemap: Could not repair map.xml: {e}")
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -3726,6 +3780,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
     # Repair any existing posts missing JSON-LD + bottom bar (one-time, idempotent)
     repair_existing_blog_posts(s3, cloudfront)
+
+    # Repair sitemap: fix non-www URLs + add missing static pages (one-time, idempotent)
+    repair_sitemap(s3)
 
     try:
         # ── 1. Upload blog HTML ──
@@ -3948,7 +4005,7 @@ def ping_indexnow(blog_url):
         payload = {
             'host': 'www.bulkplaintshirt.com',
             'key': INDEXNOW_API_KEY,
-            'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
+            'keyLocation': f'{BLOG_BASE_URL}/p/{INDEXNOW_API_KEY}.txt',
             'urlList': [blog_url]
         }
 
@@ -4004,8 +4061,8 @@ def ping_search_engine_sitemaps():
 
 
 def ensure_indexnow_key_file(s3_client):
-    """Upload the IndexNow verification key file to S3 root (one-time, idempotent)."""
-    key_file_key = f"{INDEXNOW_API_KEY}.txt"
+    """Upload the IndexNow verification key file to S3 under p/ prefix (one-time, idempotent)."""
+    key_file_key = f"p/{INDEXNOW_API_KEY}.txt"
     try:
         # Check if key file already exists
         s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=key_file_key)
@@ -4025,7 +4082,9 @@ def ensure_indexnow_key_file(s3_client):
 
 
 def ensure_robots_txt(s3_client):
-    """Upload/update robots.txt with sitemap reference (idempotent)."""
+    """Upload/update robots.txt at domain root for SEO (idempotent).
+    Requires s3:PutObject on bucket root. If IAM only allows p/* prefix,
+    upload robots.txt manually via AWS Console once."""
     robots_content = f"""User-agent: *
 Allow: /
 Disallow: /track.html
@@ -4073,26 +4132,32 @@ User-agent: Bytespider
 Allow: /
 """
     try:
-        s3_client.put_object(
-            Bucket=BLOG_S3_BUCKET,
-            Key='robots.txt',
-            Body=robots_content.encode('utf-8'),
-            ContentType='text/plain; charset=utf-8',
-            CacheControl='public, max-age=86400'
-        )
-        print(f"   📤 Indexing: robots.txt uploaded with sitemap reference")
-    except Exception as e:
-        print(f"   ⚠️ Indexing: Could not upload robots.txt: {e}")
+        # Check if robots.txt already exists at root
+        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key='robots.txt')
+        # Already exists — skip (manual upload is fine)
+    except Exception:
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='robots.txt',
+                Body=robots_content.encode('utf-8'),
+                ContentType='text/plain; charset=utf-8',
+                CacheControl='public, max-age=86400'
+            )
+            print(f"   📤 Indexing: robots.txt uploaded at domain root")
+        except Exception as e:
+            print(f"   ⚠️ Indexing: robots.txt upload skipped (upload manually to S3 root via AWS Console)")
 
 
 def submit_to_search_engines(blog_url, s3_client=None):
     """Master function: submit a new blog URL to all search engines and AI crawlers."""
     print(f"   🔍 Indexing: Submitting {blog_url} to search engines & AI...")
 
-    # Ensure IndexNow key file exists in S3
+    # Ensure IndexNow key file exists in S3 (idempotent, skips if already there)
     if s3_client:
         ensure_indexnow_key_file(s3_client)
-        ensure_robots_txt(s3_client)
+        # robots.txt is a one-time setup — upload manually to S3 root via AWS Console
+        # No need to re-upload on every blog post
 
     # 1. Google Indexing API (instant indexing)
     ping_google_indexing_api(blog_url)
