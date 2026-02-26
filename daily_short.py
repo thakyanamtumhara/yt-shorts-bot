@@ -3762,6 +3762,72 @@ def repair_sitemap(s3_client):
         print(f"   ⚠️ Sitemap: Could not repair map.xml: {e}")
 
 
+def repair_index_html(s3_client):
+    """One-time repair: fix misplaced entries in index.html (idempotent)."""
+    try:
+        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/index.html')
+        index_html = resp['Body'].read().decode('utf-8')
+    except Exception:
+        return
+
+    original = index_html
+
+    # Fix 1: Remove misplaced entry from Main Pages section (Collar Rib Fabric Trick)
+    misplaced_main = '<li><a href="/p/collar-fine-but-hem-twisted-check-this-rib-fabric-trick.html">Collar Fine But Hem Twisted? Check This Rib Fabric Trick</a></li>'
+    # Remove from Main Pages (it appears between FQA and </ul>)
+    index_html = index_html.replace(f'              {misplaced_main}\n', '')
+    index_html = index_html.replace(f'  {misplaced_main}\n', '')
+
+    # Fix 2: Remove misplaced entry from Other Pages section (Stop Using White Ink)
+    misplaced_other = '<li><a href="/p/stop-using-white-ink-on-dark-fabric-use-this-instead.html">Stop Using White Ink on Dark Fabric (Use This Instead) \U0001f525</a></li>'
+    index_html = index_html.replace(f'              {misplaced_other}\n', '')
+    index_html = index_html.replace(f'  {misplaced_other}\n', '')
+
+    # Fix 3: Fix the broken Catalog entry (He Ordered 320 GSM crammed inside it)
+    broken_catalog = '''<li><a href="/catalog/index.html">Catalog</a>
+    <a href="/p/he-ordered-320-gsm-for-winter-430-gsm-hoodie-blanks-demand.html" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">\U0001f4dd He Ordered 320 GSM for Winter \U0001f631 | 430 GSM Hoodie Blanks Dema</a></li>'''
+    fixed_catalog = '<li><a href="/catalog/index.html">Catalog</a></li>'
+    index_html = index_html.replace(broken_catalog, fixed_catalog)
+
+    # Now add all 3 entries properly into the Posts section
+    posts_to_add = [
+        ('/p/he-ordered-320-gsm-for-winter-430-gsm-hoodie-blanks-demand.html',
+         '\U0001f4dd He Ordered 320 GSM for Winter \U0001f631 | 430 GSM Hoodie Blanks Demand'),
+        ('/p/collar-fine-but-hem-twisted-check-this-rib-fabric-trick.html',
+         'Collar Fine But Hem Twisted? Check This Rib Fabric Trick'),
+        ('/p/stop-using-white-ink-on-dark-fabric-use-this-instead.html',
+         'Stop Using White Ink on Dark Fabric (Use This Instead) \U0001f525'),
+    ]
+
+    posts_header = index_html.find('>Posts<')
+    if posts_header != -1:
+        posts_ul_end = index_html.find('</ul>', posts_header)
+        if posts_ul_end != -1:
+            new_entries = ''
+            for href, text in posts_to_add:
+                entry = f'<li><a href="{href}">{text}</a></li>'
+                if entry not in index_html:
+                    new_entries += f'                {entry}\n'
+            if new_entries:
+                index_html = index_html[:posts_ul_end] + new_entries + '            ' + index_html[posts_ul_end:]
+
+    if index_html == original:
+        print(f"   \u2705 Index: p/index.html already correct")
+        return
+
+    try:
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='p/index.html',
+            Body=index_html.encode('utf-8'),
+            ContentType='text/html; charset=utf-8',
+            CacheControl='no-cache'
+        )
+        print(f"   \U0001f527 Index: Fixed misplaced entries in p/index.html")
+    except Exception as e:
+        print(f"   \u26a0\ufe0f Index: Could not repair index.html: {e}")
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -3784,6 +3850,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
     # Repair sitemap: fix non-www URLs + add missing static pages (one-time, idempotent)
     repair_sitemap(s3)
+
+    # Repair index.html: fix misplaced entries (one-time, idempotent)
+    repair_index_html(s3)
 
     try:
         # ── 1. Upload blog HTML ──
@@ -3823,13 +3892,24 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             # Simple <li><a> entry — matches existing index.html list format
             new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
 
-            # Insert before the LAST </ul> (Posts section, not Main Pages)
-            last_ul_pos = index_html.rfind('</ul>')
-            if last_ul_pos != -1:
-                index_html = index_html[:last_ul_pos] + f'  {new_li}\n' + index_html[last_ul_pos:]
+            # Find the "Posts" section <ul> and insert before its </ul>
+            posts_header = index_html.find('>Posts<')
+            if posts_header != -1:
+                posts_ul_end = index_html.find('</ul>', posts_header)
+                if posts_ul_end != -1:
+                    index_html = index_html[:posts_ul_end] + f'  {new_li}\n            ' + index_html[posts_ul_end:]
+                else:
+                    index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
             else:
-                # Fallback: wrap in <ul> and insert before </body>
-                index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
+                # Fallback: find first </ul> after "sitemap-column" (skip Main Pages)
+                first_col = index_html.find('sitemap-column')
+                second_col = index_html.find('sitemap-column', first_col + 1) if first_col != -1 else -1
+                if second_col != -1:
+                    ul_end = index_html.find('</ul>', second_col)
+                    if ul_end != -1:
+                        index_html = index_html[:ul_end] + f'  {new_li}\n            ' + index_html[ul_end:]
+                else:
+                    index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
 
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
