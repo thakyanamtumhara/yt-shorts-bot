@@ -4024,6 +4024,19 @@ def build_blog_index_html(new_post=None):
         </article>
 '''
 
+    # Build plain-HTML article links for Google crawlability (no JS needed)
+    footer_links_html = ''
+    if posts:
+        link_items = ''.join(
+            f'<li><a href="/p/{_html.escape(p.get("slug", ""))}.html">{_html.escape(p.get("title", p.get("slug", "")))}</a></li>\n'
+            for p in posts
+        )
+        footer_links_html = f'''    <footer class="all-articles">
+        <h2>All Articles</h2>
+        <ul>
+{link_items}        </ul>
+    </footer>'''
+
     # Build post URLs for JSON-LD
     post_urls = [f"{BLOG_BASE_URL}/p/{p.get('slug', '')}.html" for p in posts]
     collection_ld = {
@@ -4114,6 +4127,12 @@ def build_blog_index_html(new_post=None):
         .bottom-bar .whatsapp {{ background: #25D366; color: #fff; }}
         .post-count {{ text-align: center; color: #999; font-size: 13px; margin-top: 16px; }}
         .no-results {{ text-align: center; color: #999; font-size: 15px; padding: 60px 20px; display: none; }}
+        .all-articles {{ max-width: 1100px; margin: 40px auto 20px; padding: 24px 20px; background: #fff; border-radius: 12px; border: 1px solid #e8e8e0; }}
+        .all-articles h2 {{ font-size: 18px; color: #1a1a1a; margin-bottom: 12px; }}
+        .all-articles ul {{ list-style: none; padding: 0; columns: 2; column-gap: 24px; }}
+        .all-articles li {{ padding: 4px 0; break-inside: avoid; }}
+        .all-articles a {{ color: #333; font-size: 13px; text-decoration: none; line-height: 1.5; }}
+        .all-articles a:hover {{ color: #b08c1a; text-decoration: underline; }}
         @media (max-width: 600px) {{
             .posts-grid {{ grid-template-columns: 1fr; gap: 16px; padding: 0 12px; }}
             .hero h1 {{ font-size: 21px; }}
@@ -4135,10 +4154,9 @@ def build_blog_index_html(new_post=None):
     </section>
 
     <nav class="nav-links">
-        <a href="{BLOG_BASE_URL}">Home</a>
+        <a href="https://sale91.com" style="background:#d4a832;color:#1a1a1a;border-color:#d4a832;font-weight:700;">Buy Now</a>
         <a href="/catalog/index.html">Catalog</a>
-        <a href="/p/fqa.html">FAQ</a>
-        <a href="https://sale91.com">Shop</a>
+        <a href="/p/FQA.html">FAQ</a>
         <a href="https://whatsapp.sale91.com">WhatsApp</a>
     </nav>
 
@@ -4154,6 +4172,8 @@ def build_blog_index_html(new_post=None):
 {cards_html}    </section>
 
     <p class="no-results" id="no-results">No articles match your search.</p>
+
+{footer_links_html}
 
     <div class="bottom-bar">
         <a class="order" href="https://sale91.com">Order Now</a>
