@@ -3825,7 +3825,7 @@ def build_sitemap_xml(new_post=None):
 
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
 
-    # Static pages
+    # Static pages — every page on the site for full crawlability
     static_pages = [
         (f"{BLOG_BASE_URL}/", today, "daily", "1.0"),
         (f"{BLOG_BASE_URL}/catalog/index.html", today, "weekly", "0.9"),
@@ -3835,8 +3835,11 @@ def build_sitemap_xml(new_post=None):
         (f"{BLOG_BASE_URL}/seller.html", today, "monthly", "0.6"),
         (f"{BLOG_BASE_URL}/p/FQA.html", today, "monthly", "0.8"),
         (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", today, "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/policy.html", today, "yearly", "0.3"),
         (f"{BLOG_BASE_URL}/returnpolicy.html", today, "yearly", "0.3"),
         (f"{BLOG_BASE_URL}/refundpolicy.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/term.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/disclaimer.html", today, "yearly", "0.3"),
     ]
 
     # Blog posts from history
@@ -4024,7 +4027,20 @@ def build_blog_index_html(new_post=None):
         </article>
 '''
 
-    # Build plain-HTML article links for Google crawlability (no JS needed)
+    # Build plain-HTML site navigation + article links for Google crawlability (no JS needed)
+    # These ensure search engines discover every page on the site from index.html.
+    site_nav_html = '''    <footer class="all-articles">
+        <h2>Main Pages</h2>
+        <ul>
+<li><a href="/">Home</a></li>
+<li><a href="/seller.html">About Us</a></li>
+<li><a href="/contactus.html">Contact Us</a></li>
+<li><a href="/p/FQA.html">FAQ</a></li>
+<li><a href="/catalog/index.html">Catalog</a></li>
+<li><a href="https://sale91.com">Shop — sale91.com</a></li>
+        </ul>
+    </footer>'''
+
     footer_links_html = ''
     if posts:
         link_items = ''.join(
@@ -4037,8 +4053,36 @@ def build_blog_index_html(new_post=None):
 {link_items}        </ul>
     </footer>'''
 
-    # Build post URLs for JSON-LD
+    policy_nav_html = '''    <footer class="all-articles">
+        <h2>Policy &amp; Legal</h2>
+        <ul>
+<li><a href="/policy.html">Privacy Policy</a></li>
+<li><a href="/returnpolicy.html">Shipping and Delivery Policy</a></li>
+<li><a href="/refundpolicy.html">Return and Refund Policy</a></li>
+<li><a href="/term.html">Terms and Conditions</a></li>
+<li><a href="/disclaimer.html">Disclaimer</a></li>
+        </ul>
+    </footer>'''
+
+    footer_links_html = site_nav_html + '\n\n' + footer_links_html + '\n\n' + policy_nav_html
+
+    # Build all site URLs for JSON-LD (posts + main pages + policy pages)
+    site_pages = [
+        f"{BLOG_BASE_URL}/",
+        f"{BLOG_BASE_URL}/seller.html",
+        f"{BLOG_BASE_URL}/contactus.html",
+        f"{BLOG_BASE_URL}/p/FQA.html",
+        f"{BLOG_BASE_URL}/catalog/index.html",
+    ]
     post_urls = [f"{BLOG_BASE_URL}/p/{p.get('slug', '')}.html" for p in posts]
+    policy_urls = [
+        f"{BLOG_BASE_URL}/policy.html",
+        f"{BLOG_BASE_URL}/returnpolicy.html",
+        f"{BLOG_BASE_URL}/refundpolicy.html",
+        f"{BLOG_BASE_URL}/term.html",
+        f"{BLOG_BASE_URL}/disclaimer.html",
+    ]
+    all_urls = site_pages + post_urls + policy_urls
     collection_ld = {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
@@ -4053,10 +4097,10 @@ def build_blog_index_html(new_post=None):
         },
         "mainEntity": {
             "@type": "ItemList",
-            "numberOfItems": len(post_urls),
+            "numberOfItems": len(all_urls),
             "itemListElement": [
                 {"@type": "ListItem", "position": i + 1, "url": url}
-                for i, url in enumerate(post_urls)
+                for i, url in enumerate(all_urls)
             ]
         }
     }
