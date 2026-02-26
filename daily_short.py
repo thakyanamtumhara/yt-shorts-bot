@@ -3023,14 +3023,18 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     if not trending:
         # Absolute fallback: single topic generation (old behavior)
         print("   🔄 Fallback: single topic generation...")
-        resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
-            messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
+        try:
+            resp = claude_client.messages.create(
+                model="claude-sonnet-4-5-20250929", max_tokens=200,
+                messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
 Return ONLY the topic text, nothing else."""}]
-        )
-        return resp.content[0].text.strip()
+            )
+            return resp.content[0].text.strip()
+        except Exception as e:
+            print(f"   ⚠️ Fallback topic generation failed: {e}")
+            return "Plain T-Shirt Quality Check — GSM aur Fabric Basics"
 
     # Score all trending candidates and pick the best
     best_topic = trending[0]
@@ -3901,36 +3905,34 @@ def repair_index_html(s3_client):
         if posts_ul_end != -1:
             new_entries = ''
             for href, text in posts_to_add:
-                # Check if this slug already exists in Posts section (by href, not by exact text)
+                clean_entry = f'<li><a href="{href}">{text}</a></li>'
+
+                # If clean entry already exists, skip
+                if clean_entry in index_html:
+                    continue
+
+                # Remove ANY existing malformed version of this entry from Posts section
+                # (styled links, emoji-laden text, bare <a> tags, etc.)
                 posts_section = index_html[posts_start:posts_ul_end]
                 if href in posts_section:
-                    # Already in Posts — but check if format is wrong (has style= or emoji-heavy)
-                    # Remove malformed entry so we can re-add it cleanly
-                    bad_entry = _re.search(
+                    # Remove <li><a href="...">...</a></li> variants (any attributes/text)
+                    cleaned = _re.sub(
                         r'\s*<li>\s*<a\s+href="' + _re.escape(href) + r'"[^>]*>[^<]*</a>\s*</li>',
-                        posts_section
+                        '', posts_section
                     )
-                    if bad_entry and ('style=' in bad_entry.group() or '\U0001f4dd' in bad_entry.group() or '\U0001f631' in bad_entry.group()):
-                        index_html = index_html[:posts_start] + posts_section.replace(bad_entry.group(), '') + index_html[posts_ul_end:]
+                    # Also remove bare styled <a> tags not wrapped in <li>
+                    cleaned = _re.sub(
+                        r'\s*<a\s+href="' + _re.escape(href) + r'"[^>]*>[^<]*</a>',
+                        '', cleaned
+                    )
+                    if cleaned != posts_section:
+                        index_html = index_html[:posts_start] + cleaned + index_html[posts_ul_end:]
                         posts_start = index_html.find('>Posts<')
                         posts_ul_end = index_html.find('</ul>', posts_start)
-                        posts_section = index_html[posts_start:posts_ul_end]
-                    elif href in posts_section:
-                        continue  # Already exists with correct format
-                # Also check if it exists as a styled <a> not inside proper <li>
-                styled_pattern = _re.compile(
-                    r'\s*<a\s+href="' + _re.escape(href) + r'"[^>]*style=[^>]*>[^<]*</a>',
-                )
-                posts_section = index_html[posts_start:posts_ul_end]
-                styled_match = styled_pattern.search(posts_section)
-                if styled_match:
-                    index_html = index_html[:posts_start] + posts_section.replace(styled_match.group(), '') + index_html[posts_ul_end:]
-                    posts_start = index_html.find('>Posts<')
-                    posts_ul_end = index_html.find('</ul>', posts_start)
 
-                entry = f'<li><a href="{href}">{text}</a></li>'
-                if entry not in index_html:
-                    new_entries += f'                {entry}\n'
+                # Add clean entry
+                new_entries += f'                {clean_entry}\n'
+
             if new_entries:
                 posts_ul_end = index_html.find('</ul>', posts_start)
                 index_html = index_html[:posts_ul_end] + new_entries + '            ' + index_html[posts_ul_end:]
@@ -4721,8 +4723,12 @@ def main():
     # ── 2. Pick Topic (Smart: trending search + Claude review gate) ──
     topic_history = []
     if os.path.exists(TOPIC_HISTORY_FILE):
-        with open(TOPIC_HISTORY_FILE, "r") as f:
-            topic_history = json.load(f)
+        try:
+            with open(TOPIC_HISTORY_FILE, "r") as f:
+                topic_history = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"   ⚠️ Could not read topic history ({e}), starting fresh")
+            topic_history = []
 
     print("   🎯 Smart topic selection (with quality gate)...")
     fresh_topic = smart_pick_topic(claude, TOPIC_BANK, topic_history)
@@ -4744,12 +4750,17 @@ def main():
         if previous_feedback:
             prompt += f"\n\n━━━ IMPORTANT: PREVIOUS ATTEMPT WAS REJECTED ━━━\nReviewer feedback: {previous_feedback}\nFix these issues in your new script. Write a DIFFERENT and BETTER script."
 
-        resp = claude.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=1500,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        cost.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
-        raw = resp.content[0].text.strip()
+        try:
+            resp = claude.messages.create(
+                model="claude-sonnet-4-5-20250929", max_tokens=1500,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            cost.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
+            raw = resp.content[0].text.strip()
+        except Exception as e:
+            print(f"   ⚠️ Claude API error (attempt {attempt}): {e}")
+            previous_feedback = "API call failed, please try again."
+            continue
         if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
 
         # Robust JSON parsing — LLM may return malformed JSON
@@ -4776,6 +4787,7 @@ def main():
         if "script_voice" not in candidate or "script_english" not in candidate:
             print(f"   ⚠️ Missing required keys in JSON (attempt {attempt}), retrying...")
             previous_feedback = "Your JSON was missing required keys (script_voice, script_english). Include ALL required fields."
+            candidate = None  # Don't keep incomplete candidate as fallback
             continue
 
         script_voice = candidate["script_voice"]
