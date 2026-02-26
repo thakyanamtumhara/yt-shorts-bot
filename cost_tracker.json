@@ -156,5 +156,19 @@
       "whisper": 0.0061,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-26T13:08:40.742314",
+    "topic": "Customer ne 5 supplier try kiye \u2014 phir humse kyu ruka? GSM consistency",
+    "title": "5 Suppliers Failed \u2014 GSM Consistency Secret That Made Him Stay",
+    "total_usd": 2.6175,
+    "duration_min": 22.2,
+    "breakdown": {
+      "claude_sonnet": 0.0358,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0261,
+      "veo_clips": 2.5,
+      "whisper": 0.0056
+    }
   }
 ]
