@@ -3835,42 +3835,104 @@ def repair_index_html(s3_client):
 
     original = index_html
 
-    # ── Fix 1: Remove misplaced entry from Main Pages section ──
-    misplaced_main = '<li><a href="/p/collar-fine-but-hem-twisted-check-this-rib-fabric-trick.html">Collar Fine But Hem Twisted? Check This Rib Fabric Trick</a></li>'
-    index_html = index_html.replace(f'              {misplaced_main}\n', '')
-    index_html = index_html.replace(f'  {misplaced_main}\n', '')
+    # ── Fix 1 & 2: Remove blog post entries (/p/*.html) from Main Pages and Other Pages sections ──
+    # These should only be in the Posts section. Use regex for whitespace-flexible matching.
+    misplaced_slugs = [
+        'collar-fine-but-hem-twisted-check-this-rib-fabric-trick',
+        'stop-using-white-ink-on-dark-fabric-use-this-instead',
+    ]
 
-    # ── Fix 2: Remove misplaced entry from Other Pages section ──
-    misplaced_other = '<li><a href="/p/stop-using-white-ink-on-dark-fabric-use-this-instead.html">Stop Using White Ink on Dark Fabric (Use This Instead) \U0001f525</a></li>'
-    index_html = index_html.replace(f'              {misplaced_other}\n', '')
-    index_html = index_html.replace(f'  {misplaced_other}\n', '')
+    # Find section boundaries
+    main_pages_start = index_html.find('>Main Pages<')
+    other_pages_start = index_html.find('>Other Pages<')
+    posts_start = index_html.find('>Posts<')
 
-    # ── Fix 3: Fix broken Catalog entry ──
-    broken_catalog = '''<li><a href="/catalog/index.html">Catalog</a>
-    <a href="/p/he-ordered-320-gsm-for-winter-430-gsm-hoodie-blanks-demand.html" style="display:block;margin:8px 0;color:#0f3460;text-decoration:none;font-size:16px;">\U0001f4dd He Ordered 320 GSM for Winter \U0001f631 | 430 GSM Hoodie Blanks Dema</a></li>'''
-    fixed_catalog = '<li><a href="/catalog/index.html">Catalog</a></li>'
-    index_html = index_html.replace(broken_catalog, fixed_catalog)
+    for slug in misplaced_slugs:
+        # Remove from Main Pages section (between Main Pages header and its </ul>)
+        if main_pages_start != -1:
+            main_ul_end = index_html.find('</ul>', main_pages_start)
+            if main_ul_end != -1:
+                section = index_html[main_pages_start:main_ul_end]
+                cleaned = _re.sub(r'\s*<li>\s*<a\s+href="/p/' + _re.escape(slug) + r'\.html">[^<]*</a>\s*</li>', '', section)
+                if cleaned != section:
+                    index_html = index_html[:main_pages_start] + cleaned + index_html[main_ul_end:]
+                    # Recalculate positions after modification
+                    main_pages_start = index_html.find('>Main Pages<')
+                    other_pages_start = index_html.find('>Other Pages<')
+                    posts_start = index_html.find('>Posts<')
 
-    # ── Fix 4: Re-add misplaced entries into Posts section ──
+        # Remove from Other Pages section
+        if other_pages_start != -1:
+            other_ul_end = index_html.find('</ul>', other_pages_start)
+            if other_ul_end != -1:
+                section = index_html[other_pages_start:other_ul_end]
+                cleaned = _re.sub(r'\s*<li>\s*<a\s+href="/p/' + _re.escape(slug) + r'\.html">[^<]*</a>\s*</li>', '', section)
+                if cleaned != section:
+                    index_html = index_html[:other_pages_start] + cleaned + index_html[other_ul_end:]
+                    main_pages_start = index_html.find('>Main Pages<')
+                    other_pages_start = index_html.find('>Other Pages<')
+                    posts_start = index_html.find('>Posts<')
+
+    # ── Fix 3: Fix broken Catalog entry (has "He Ordered" link jammed inside it) ──
+    # Use regex to match any <li> containing both catalog/index.html AND he-ordered slug
+    catalog_fix = _re.sub(
+        r'<li>\s*<a\s+href="/catalog/index\.html">Catalog</a>\s*'
+        r'<a\s+href="/p/he-ordered-320-gsm[^"]*"[^>]*>[^<]*</a>\s*</li>',
+        '<li><a href="/catalog/index.html">Catalog</a></li>',
+        index_html
+    )
+    if catalog_fix != index_html:
+        index_html = catalog_fix
+        posts_start = index_html.find('>Posts<')
+
+    # ── Fix 4: Re-add misplaced entries into Posts section with correct format ──
     posts_to_add = [
         ('/p/he-ordered-320-gsm-for-winter-430-gsm-hoodie-blanks-demand.html',
-         '\U0001f4dd He Ordered 320 GSM for Winter \U0001f631 | 430 GSM Hoodie Blanks Demand'),
+         'He Ordered 320 GSM for Winter | 430 GSM Hoodie Blanks Demand'),
         ('/p/collar-fine-but-hem-twisted-check-this-rib-fabric-trick.html',
          'Collar Fine But Hem Twisted? Check This Rib Fabric Trick'),
         ('/p/stop-using-white-ink-on-dark-fabric-use-this-instead.html',
-         'Stop Using White Ink on Dark Fabric (Use This Instead) \U0001f525'),
+         'Stop Using White Ink on Dark Fabric (Use This Instead)'),
     ]
 
-    posts_header = index_html.find('>Posts<')
-    if posts_header != -1:
-        posts_ul_end = index_html.find('</ul>', posts_header)
+    posts_start = index_html.find('>Posts<')
+    if posts_start != -1:
+        posts_ul_end = index_html.find('</ul>', posts_start)
         if posts_ul_end != -1:
             new_entries = ''
             for href, text in posts_to_add:
+                # Check if this slug already exists in Posts section (by href, not by exact text)
+                posts_section = index_html[posts_start:posts_ul_end]
+                if href in posts_section:
+                    # Already in Posts — but check if format is wrong (has style= or emoji-heavy)
+                    # Remove malformed entry so we can re-add it cleanly
+                    bad_entry = _re.search(
+                        r'\s*<li>\s*<a\s+href="' + _re.escape(href) + r'"[^>]*>[^<]*</a>\s*</li>',
+                        posts_section
+                    )
+                    if bad_entry and ('style=' in bad_entry.group() or '\U0001f4dd' in bad_entry.group() or '\U0001f631' in bad_entry.group()):
+                        index_html = index_html[:posts_start] + posts_section.replace(bad_entry.group(), '') + index_html[posts_ul_end:]
+                        posts_start = index_html.find('>Posts<')
+                        posts_ul_end = index_html.find('</ul>', posts_start)
+                        posts_section = index_html[posts_start:posts_ul_end]
+                    elif href in posts_section:
+                        continue  # Already exists with correct format
+                # Also check if it exists as a styled <a> not inside proper <li>
+                styled_pattern = _re.compile(
+                    r'\s*<a\s+href="' + _re.escape(href) + r'"[^>]*style=[^>]*>[^<]*</a>',
+                )
+                posts_section = index_html[posts_start:posts_ul_end]
+                styled_match = styled_pattern.search(posts_section)
+                if styled_match:
+                    index_html = index_html[:posts_start] + posts_section.replace(styled_match.group(), '') + index_html[posts_ul_end:]
+                    posts_start = index_html.find('>Posts<')
+                    posts_ul_end = index_html.find('</ul>', posts_start)
+
                 entry = f'<li><a href="{href}">{text}</a></li>'
                 if entry not in index_html:
                     new_entries += f'                {entry}\n'
             if new_entries:
+                posts_ul_end = index_html.find('</ul>', posts_start)
                 index_html = index_html[:posts_ul_end] + new_entries + '            ' + index_html[posts_ul_end:]
 
     # ── SEO Fix 5: Upgrade <title> and add meta description ──
@@ -4082,24 +4144,23 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             # Simple <li><a> entry — matches existing index.html list format
             new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
 
-            # Find the "Posts" section <ul> and insert before its </ul>
-            posts_header = index_html.find('>Posts<')
-            if posts_header != -1:
-                posts_ul_end = index_html.find('</ul>', posts_header)
-                if posts_ul_end != -1:
-                    index_html = index_html[:posts_ul_end] + f'  {new_li}\n            ' + index_html[posts_ul_end:]
-                else:
-                    index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
+            # Skip if this post already exists in the index
+            if f'/p/{slug}.html' in index_html:
+                print(f"   ℹ️ Blog S3: Post already in index.html, skipping")
             else:
-                # Fallback: find first </ul> after "sitemap-column" (skip Main Pages)
-                first_col = index_html.find('sitemap-column')
-                second_col = index_html.find('sitemap-column', first_col + 1) if first_col != -1 else -1
-                if second_col != -1:
-                    ul_end = index_html.find('</ul>', second_col)
-                    if ul_end != -1:
-                        index_html = index_html[:ul_end] + f'  {new_li}\n            ' + index_html[ul_end:]
+                # Find the "Posts" section <ul> and insert before its </ul>
+                posts_header = index_html.find('>Posts<')
+                if posts_header != -1:
+                    posts_ul_end = index_html.find('</ul>', posts_header)
+                    if posts_ul_end != -1:
+                        index_html = index_html[:posts_ul_end] + f'  {new_li}\n            ' + index_html[posts_ul_end:]
+                    else:
+                        print(f"   ⚠️ Blog S3: Found Posts header but no </ul>, appending before </body>")
+                        index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
                 else:
-                    index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
+                    # Posts section not found — this should not happen, log warning
+                    print(f"   ⚠️ Blog S3: Posts section not found in index.html! Adding before </body>")
+                    index_html = index_html.replace('</body>', f'<h3>Posts</h3>\n<ul>\n  {new_li}\n</ul>\n</body>')
 
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
