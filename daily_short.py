@@ -4690,7 +4690,32 @@ def main():
         raw = resp.content[0].text.strip()
         if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
 
-        candidate = json.loads(raw)
+        # Robust JSON parsing — LLM may return malformed JSON
+        try:
+            candidate = json.loads(raw)
+        except json.JSONDecodeError as e:
+            print(f"   ⚠️ JSON parse error (attempt {attempt}): {e}")
+            # Try to extract JSON object from the response
+            json_match = re.search(r'\{[\s\S]*\}', raw)
+            if json_match:
+                try:
+                    candidate = json.loads(json_match.group())
+                    print(f"   🔧 Recovered JSON from response")
+                except json.JSONDecodeError:
+                    print(f"   ❌ Could not recover JSON, retrying...")
+                    previous_feedback = "Your previous response was NOT valid JSON. Return ONLY a valid JSON object, no extra text."
+                    continue
+            else:
+                print(f"   ❌ No JSON found in response, retrying...")
+                previous_feedback = "Your previous response was NOT valid JSON. Return ONLY a valid JSON object, no extra text."
+                continue
+
+        # Validate required keys exist
+        if "script_voice" not in candidate or "script_english" not in candidate:
+            print(f"   ⚠️ Missing required keys in JSON (attempt {attempt}), retrying...")
+            previous_feedback = "Your JSON was missing required keys (script_voice, script_english). Include ALL required fields."
+            continue
+
         script_voice = candidate["script_voice"]
         script_english = candidate["script_english"]
 
