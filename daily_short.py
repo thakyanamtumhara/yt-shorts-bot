@@ -501,6 +501,38 @@ def get_topic_tags(topic):
     return matched_tags
 
 
+def sanitize_tags(tags):
+    """Clean and validate tags for YouTube API (prevents invalidTags error).
+
+    YouTube rules:
+    - Each tag must be a non-empty string
+    - No angle brackets < >, no commas (used as internal separator)
+    - Individual tag max ~100 chars, total of all tags max 500 chars
+    - No leading/trailing whitespace
+    """
+    import re as _re
+    cleaned = []
+    total_chars = 0
+    seen = set()
+    for tag in tags:
+        if not isinstance(tag, str):
+            tag = str(tag)
+        # Strip whitespace and remove problematic characters
+        tag = tag.strip()
+        tag = _re.sub(r'[<>",]', '', tag)          # Remove < > " ,
+        tag = _re.sub(r'\s+', ' ', tag)             # Collapse multiple spaces
+        tag = tag[:100]                              # Individual tag limit
+        if not tag or tag.lower() in seen:
+            continue
+        # YouTube total tags character limit is 500
+        if total_chars + len(tag) > 500:
+            break
+        seen.add(tag.lower())
+        cleaned.append(tag)
+        total_chars += len(tag)
+    return cleaned
+
+
 def get_topic_hashtags(topic):
     """Generate topic-specific hashtags for YouTube description."""
     topic_lower = topic.lower()
@@ -2457,7 +2489,7 @@ Custom printing businesses | Merch brands | Corporate orders
     for t in ["shorts", "youtubeshorts", "viral", "trending"]:
         if t not in [x.lower() for x in all_tags]:
             all_tags.append(t)
-    all_tags = all_tags[:30]
+    all_tags = sanitize_tags(all_tags[:30])
 
     body = {
         "snippet": {
