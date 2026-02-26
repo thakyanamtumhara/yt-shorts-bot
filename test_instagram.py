@@ -73,24 +73,33 @@ def make_test_video(path="/tmp/ig_test_video.mp4"):
 
 
 # ── Upload video to public URL ──
+BLOG_S3_BUCKET = "bulkplaintshirt.com"
+BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
+S3_TEST_KEY = "tmp/ig_test_video.mp4"
+
+
 def upload_to_public_host(video_path):
-    """Upload video to a temporary public host. Returns URL or None."""
+    """Upload video to a publicly accessible URL. Returns URL or None."""
     file_mb = os.path.getsize(video_path) / (1024 * 1024)
 
-    # Host 1: 0x0.st
+    # Primary: S3 + CloudFront (Instagram can always reach this)
     try:
-        print(f"   📤 Uploading to 0x0.st ({file_mb:.1f} MB)...")
-        with open(video_path, "rb") as f:
-            resp = requests.post("https://0x0.st", files={"file": (os.path.basename(video_path), f, "video/mp4")}, timeout=300)
-        if resp.status_code == 200 and resp.text.strip().startswith("http"):
-            url = resp.text.strip()
-            print(f"   ✅ Hosted at: {url}")
-            return url
-        print(f"   ⚠️ 0x0.st failed ({resp.status_code}): {resp.text[:100]}")
+        import boto3
+        print(f"   📤 Uploading to S3 ({file_mb:.1f} MB)...")
+        s3 = boto3.client("s3")
+        s3.upload_file(
+            video_path,
+            BLOG_S3_BUCKET,
+            S3_TEST_KEY,
+            ExtraArgs={"ContentType": "video/mp4", "CacheControl": "no-cache"},
+        )
+        url = f"https://www.bulkplaintshirt.com/{S3_TEST_KEY}"
+        print(f"   ✅ Hosted at: {url}")
+        return url
     except Exception as e:
-        print(f"   ⚠️ 0x0.st error: {e}")
+        print(f"   ⚠️ S3 upload failed: {e}")
 
-    # Host 2: litterbox.catbox.moe
+    # Fallback: litterbox.catbox.moe
     try:
         print(f"   📤 Trying litterbox.catbox.moe...")
         with open(video_path, "rb") as f:
