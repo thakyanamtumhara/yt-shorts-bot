@@ -3825,7 +3825,7 @@ def build_sitemap_xml(new_post=None):
 
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
 
-    # Static pages
+    # Static pages — every page on the site for full crawlability
     static_pages = [
         (f"{BLOG_BASE_URL}/", today, "daily", "1.0"),
         (f"{BLOG_BASE_URL}/catalog/index.html", today, "weekly", "0.9"),
@@ -3835,8 +3835,11 @@ def build_sitemap_xml(new_post=None):
         (f"{BLOG_BASE_URL}/seller.html", today, "monthly", "0.6"),
         (f"{BLOG_BASE_URL}/p/FQA.html", today, "monthly", "0.8"),
         (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", today, "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/policy.html", today, "yearly", "0.3"),
         (f"{BLOG_BASE_URL}/returnpolicy.html", today, "yearly", "0.3"),
         (f"{BLOG_BASE_URL}/refundpolicy.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/term.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/disclaimer.html", today, "yearly", "0.3"),
     ]
 
     # Blog posts from history
@@ -3883,6 +3886,32 @@ def build_sitemap_xml(new_post=None):
     <lastmod>{p_date}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+'''
+
+    # Legacy/manual posts NOT in blog_history.json but live on the site
+    legacy_sitemap_posts = [
+        "240gsmtshirt", "DelhiBIGGESTPlainTShirtWarehouse",
+        "Biggest-Plain-Tshirt-Warehouse", "build-tshirt-brand",
+        "premium-plain-t-shirts-bulk-supplier-india", "wholesale-plain-t-shirts",
+        "fast-delivery-plain-t-shirts-maharashtra",
+        "plain-t-shirt-wholesale-near-me-delhi-india",
+        "dropshipping", "AcidWashTshirt",
+        "Price-Drop-240gsm-Dropshoulder-Tshirts", "Wholesale-Blanks",
+        "wholesale-blank-t-shirts", "Shipping-Method", "acid-wash-tshirts",
+        "Dropshoulders", "plainhoodie", "430gsm-dropshoulder-hoodie",
+        "b2b-dropshipping-guide", "next-day-train-delivery",
+        "how-to-order", "third-party-printing-service",
+        "true-bio-rneck", "cloud-dancer-tshirts",
+    ]
+    for slug in legacy_sitemap_posts:
+        if slug not in seen_slugs:
+            seen_slugs.add(slug)
+            urls_xml += f'''  <url>
+    <loc>{BLOG_BASE_URL}/p/{slug}.html</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 '''
 
@@ -4024,21 +4053,107 @@ def build_blog_index_html(new_post=None):
         </article>
 '''
 
-    # Build plain-HTML article links for Google crawlability (no JS needed)
-    footer_links_html = ''
-    if posts:
-        link_items = ''.join(
-            f'<li><a href="/p/{_html.escape(p.get("slug", ""))}.html">{_html.escape(p.get("title", p.get("slug", "")))}</a></li>\n'
-            for p in posts
-        )
-        footer_links_html = f'''    <footer class="all-articles">
-        <h2>All Articles</h2>
+    # Build plain-HTML site navigation + article links for Google crawlability (no JS needed)
+    # These ensure search engines discover every page on the site from index.html.
+    site_nav_html = '''    <footer class="all-articles">
+        <h2>Main Pages</h2>
         <ul>
-{link_items}        </ul>
+<li><a href="/">Home</a></li>
+<li><a href="/seller.html">About Us</a></li>
+<li><a href="/contactus.html">Contact Us</a></li>
+<li><a href="/p/FQA.html">FAQ</a></li>
+<li><a href="/catalog/index.html">Catalog</a></li>
+<li><a href="https://sale91.com">Shop — sale91.com</a></li>
+        </ul>
     </footer>'''
 
-    # Build post URLs for JSON-LD
+    # Legacy/manual posts that are NOT in blog_history.json but exist on the site.
+    # These must always appear in footer for search engine crawlability.
+    legacy_posts = [
+        ("/p/240gsmtshirt.html", "240gsm Dropshoulder Tshirts"),
+        ("/p/DelhiBIGGESTPlainTShirtWarehouse.html", "Delhi's BIGGEST Plain T Shirt Warehouse"),
+        ("/p/Biggest-Plain-Tshirt-Warehouse.html", "Biggest Plain T shirt Warehouse"),
+        ("/p/build-tshirt-brand.html", "Build your own t-shirt brand"),
+        ("/p/premium-plain-t-shirts-bulk-supplier-india.html", "Premium Plain T-Shirts in Bulk"),
+        ("/p/wholesale-plain-t-shirts.html", "Wholesale Plain T-Shirts for Custom Printing"),
+        ("/p/fast-delivery-plain-t-shirts-maharashtra.html", "Fast 2-Day Plain T-Shirt Delivery in Maharashtra"),
+        ("/p/plain-t-shirt-wholesale-near-me-delhi-india.html", "Top T Shirt Wholesalers in Delhi"),
+        ("/p/dropshipping.html", "B2B Dropshipping Plain T shirt"),
+        ("/p/AcidWashTshirt.html", "AcidWash Plain T shirts"),
+        ("/p/Price-Drop-240gsm-Dropshoulder-Tshirts.html", "Price Drop 240gsm Dropshoulder T shirt"),
+        ("/p/Wholesale-Blanks.html", "Wholesale Blanks"),
+        ("/p/wholesale-blank-t-shirts.html", "Wholesale Blank T-Shirts"),
+        ("/p/Shipping-Method.html", "PAN India Fast Delivery for Wholesale Orders"),
+        ("/p/acid-wash-tshirts.html", "Acid Wash T-Shirts Wholesale India"),
+        ("/p/Dropshoulders.html", "Dropshoulder 240gsm"),
+        ("/p/plainhoodie.html", "Plain Hoodies 320gsm, 430gsm"),
+        ("/p/430gsm-dropshoulder-hoodie.html", "430gsm Dropshoulder Hoodie"),
+        ("/p/b2b-dropshipping-guide.html", "B2B Dropshipping Guide"),
+        ("/p/next-day-train-delivery.html", "Next Day Train Delivery"),
+        ("/p/how-to-order.html", "How to Order"),
+        ("/p/third-party-printing-service.html", "Third Party Printing Service"),
+        ("/p/true-bio-rneck.html", "True Bio RNeck T Shirts"),
+        ("/p/cloud-dancer-tshirts.html", "Cloud Dancer T shirts"),
+    ]
+
+    # Combine blog_history.json posts + legacy posts (deduplicate by URL)
+    all_link_items = ''
+    seen_urls = set()
+
+    # First: posts from blog_history.json (newest first)
+    for p in posts:
+        slug = p.get('slug', '')
+        if not slug:
+            continue
+        url = f"/p/{slug}.html"
+        if url not in seen_urls:
+            seen_urls.add(url)
+            all_link_items += f'<li><a href="{url}">{_html.escape(p.get("title", slug))}</a></li>\n'
+
+    # Then: legacy manual posts (skip if already in blog_history)
+    for url, title in legacy_posts:
+        if url not in seen_urls:
+            seen_urls.add(url)
+            all_link_items += f'<li><a href="{url}">{_html.escape(title)}</a></li>\n'
+
+    footer_links_html = f'''    <footer class="all-articles">
+        <h2>All Articles</h2>
+        <ul>
+{all_link_items}        </ul>
+    </footer>'''
+
+    policy_nav_html = '''    <footer class="all-articles">
+        <h2>Policy &amp; Legal</h2>
+        <ul>
+<li><a href="/policy.html">Privacy Policy</a></li>
+<li><a href="/returnpolicy.html">Shipping and Delivery Policy</a></li>
+<li><a href="/refundpolicy.html">Return and Refund Policy</a></li>
+<li><a href="/term.html">Terms and Conditions</a></li>
+<li><a href="/disclaimer.html">Disclaimer</a></li>
+        </ul>
+    </footer>'''
+
+    footer_links_html = site_nav_html + '\n\n' + footer_links_html + '\n\n' + policy_nav_html
+
+    # Build all site URLs for JSON-LD (posts + main pages + policy pages)
+    site_pages = [
+        f"{BLOG_BASE_URL}/",
+        f"{BLOG_BASE_URL}/seller.html",
+        f"{BLOG_BASE_URL}/contactus.html",
+        f"{BLOG_BASE_URL}/p/FQA.html",
+        f"{BLOG_BASE_URL}/catalog/index.html",
+    ]
     post_urls = [f"{BLOG_BASE_URL}/p/{p.get('slug', '')}.html" for p in posts]
+    legacy_post_urls = [f"{BLOG_BASE_URL}{url}" for url, _ in legacy_posts
+                        if f"{BLOG_BASE_URL}{url}" not in post_urls]
+    policy_urls = [
+        f"{BLOG_BASE_URL}/policy.html",
+        f"{BLOG_BASE_URL}/returnpolicy.html",
+        f"{BLOG_BASE_URL}/refundpolicy.html",
+        f"{BLOG_BASE_URL}/term.html",
+        f"{BLOG_BASE_URL}/disclaimer.html",
+    ]
+    all_urls = site_pages + post_urls + legacy_post_urls + policy_urls
     collection_ld = {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
@@ -4053,10 +4168,10 @@ def build_blog_index_html(new_post=None):
         },
         "mainEntity": {
             "@type": "ItemList",
-            "numberOfItems": len(post_urls),
+            "numberOfItems": len(all_urls),
             "itemListElement": [
                 {"@type": "ListItem", "position": i + 1, "url": url}
-                for i, url in enumerate(post_urls)
+                for i, url in enumerate(all_urls)
             ]
         }
     }
