@@ -37,44 +37,36 @@ def make_test_video(path="/tmp/ig_test_video.mp4"):
         return path
 
     print("📹 Generating 5-sec test video...")
-    # Try with text overlay first
+    # Instagram requires: H.264 video, AAC audio, 3-60s, proper MP4 container.
+    # Key: use 'duration' in lavfi source (not -t/-shortest which can produce 0-byte files).
     cmds = [
-        # Attempt 1: color + drawtext + silent audio
+        # Attempt 1: H.264 + AAC (standard)
         [
             "ffmpeg", "-y",
-            "-f", "lavfi", "-i", "color=c=blue:size=1080x1920:rate=30:d=5",
-            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-            "-vf", "drawtext=text='IG Test':fontsize=80:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2",
+            "-f", "lavfi", "-i", "color=c=blue:size=1080x1920:rate=30:duration=5",
+            "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100:duration=5",
             "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k",
-            "-t", "5", "-shortest", path,
+            "-movflags", "+faststart", path,
         ],
-        # Attempt 2: no drawtext (font missing)
+        # Attempt 2: mpeg4 fallback (if libx264 missing)
         [
             "ffmpeg", "-y",
-            "-f", "lavfi", "-i", "color=c=blue:size=1080x1920:rate=30:d=5",
-            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "128k",
-            "-t", "5", "-shortest", path,
-        ],
-        # Attempt 3: mpeg4 encoder (if libx264 missing)
-        [
-            "ffmpeg", "-y",
-            "-f", "lavfi", "-i", "color=c=blue:size=1080x1920:rate=30:d=5",
-            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+            "-f", "lavfi", "-i", "color=c=blue:size=1080x1920:rate=30:duration=5",
+            "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100:duration=5",
             "-c:v", "mpeg4", "-q:v", "5", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k",
-            "-t", "5", "-shortest", path,
+            "-movflags", "+faststart", path,
         ],
     ]
 
     for i, cmd in enumerate(cmds):
         result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode == 0 and os.path.isfile(path) and os.path.getsize(path) > 1000:
-            print(f"📹 Test video created (attempt {i+1}): {path}")
+        if result.returncode == 0 and os.path.isfile(path) and os.path.getsize(path) > 10000:
+            size_kb = os.path.getsize(path) / 1024
+            print(f"📹 Test video created (attempt {i+1}): {path} ({size_kb:.0f} KB)")
             return path
-        print(f"   ⚠️ Attempt {i+1} failed: {result.stderr[-200:]}")
+        print(f"   ⚠️ Attempt {i+1} failed: {result.stderr[-300:]}")
 
     print("❌ All ffmpeg attempts failed")
     sys.exit(1)
