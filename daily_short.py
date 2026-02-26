@@ -1065,8 +1065,8 @@ def refresh_instagram_token_if_needed():
         expires_date = datetime.fromtimestamp(expires_at, pytz.timezone("Asia/Kolkata")).strftime("%d %b %Y")
         print(f"   🔑 Instagram token expires: {expires_date} ({days_left:.0f} days left)")
 
-        if days_left > 7:
-            print(f"   ✅ Token OK — no refresh needed (>{7} days remaining)")
+        if days_left > 3:
+            print(f"   ✅ Token OK — no refresh needed (>{3} days remaining)")
             return ig_token
 
         print(f"   ⚠️ Token expiring soon ({days_left:.0f} days) — refreshing...")
