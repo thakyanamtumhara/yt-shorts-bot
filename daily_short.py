@@ -4025,7 +4025,9 @@ def ensure_indexnow_key_file(s3_client):
 
 
 def ensure_robots_txt(s3_client):
-    """Upload/update robots.txt with sitemap reference under p/ prefix (idempotent)."""
+    """Upload/update robots.txt at domain root for SEO (idempotent).
+    Requires s3:PutObject on bucket root. If IAM only allows p/* prefix,
+    upload robots.txt manually via AWS Console once."""
     robots_content = f"""User-agent: *
 Allow: /
 Disallow: /track.html
@@ -4073,16 +4075,21 @@ User-agent: Bytespider
 Allow: /
 """
     try:
-        s3_client.put_object(
-            Bucket=BLOG_S3_BUCKET,
-            Key='p/robots.txt',
-            Body=robots_content.encode('utf-8'),
-            ContentType='text/plain; charset=utf-8',
-            CacheControl='public, max-age=86400'
-        )
-        print(f"   📤 Indexing: p/robots.txt uploaded with sitemap reference")
-    except Exception as e:
-        print(f"   ⚠️ Indexing: Could not upload robots.txt: {e}")
+        # Check if robots.txt already exists at root
+        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key='robots.txt')
+        # Already exists — skip (manual upload is fine)
+    except Exception:
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='robots.txt',
+                Body=robots_content.encode('utf-8'),
+                ContentType='text/plain; charset=utf-8',
+                CacheControl='public, max-age=86400'
+            )
+            print(f"   📤 Indexing: robots.txt uploaded at domain root")
+        except Exception as e:
+            print(f"   ⚠️ Indexing: robots.txt upload skipped (upload manually to S3 root via AWS Console)")
 
 
 def submit_to_search_engines(blog_url, s3_client=None):
