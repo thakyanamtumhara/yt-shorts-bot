@@ -3302,15 +3302,21 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         '</div>'
     )
 
-    # ── 4. Inject into HTML ──
-    # Add JSON-LD before </head>
+    # ── 4. Fix truncated HTML (if max_tokens cut off the output) ──
+    if '</body>' not in html_content:
+        # Close any open tags and add missing body/html end tags
+        html_content += '\n</div></body></html>'
+        print(f"   ⚠️ Blog SEO: HTML was truncated — auto-closed tags")
+    if '</head>' not in html_content and '<head' in html_content:
+        html_content = html_content.replace('<body', '</head>\n<body', 1)
+
+    # ── 5. Inject JSON-LD ──
     if '</head>' in html_content:
         html_content = html_content.replace('</head>', f'{ld_scripts}\n</head>', 1)
     else:
-        # Fallback: inject before </body>
         html_content = html_content.replace('</body>', f'{ld_scripts}\n</body>', 1)
 
-    # Add bottom bar before </body> (only if not already present)
+    # ── 6. Inject bottom bar before </body> (only if not already present) ──
     if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
         html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
 
@@ -3408,18 +3414,13 @@ REQUIREMENTS:
 
    HEADER (fixed/sticky at top of page, z-index 1000):
    - Full-width yellow/gold background (use #d4a832 or similar warm gold)
-   - "BulkPlainTshirt.com" in large bold dark text (#1a1a1a), centered
-   - Below it in smaller text: "Own Knitted Blank Wears | sale91.com"
+   - "BulkPlainTshirt.com" as a clickable <a> link to https://www.bulkplaintshirt.com — large bold dark text (#1a1a1a), centered, no underline
+   - Below it in smaller text: "Own Knitted Blank Wears | <a href='https://sale91.com'>sale91.com</a>"
    - Padding: 12px top/bottom
    - This header must always stay visible at the top when scrolling
 
-   MANDATORY STICKY BOTTOM BAR — you MUST include this EXACT HTML just before </body>:
-     <div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;box-shadow:0 -2px 8px rgba(0,0,0,0.15);">
-       <a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>
-       <a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>
-     </div>
-   Do NOT skip this bottom bar — it is REQUIRED just like the YouTube embed.
-   - Add padding-bottom: 60px to body so content is not hidden behind sticky bar
+   STICKY BOTTOM BAR: Do NOT add any bottom bar — it is injected automatically by the system.
+   - Add padding-bottom: 60px to body so content is not hidden behind the auto-injected sticky bar
    - Add padding-top: 80px to body so content is not hidden behind sticky header
 
    CONTENT AREA:
@@ -3611,7 +3612,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     try:
         resp = claude_client.messages.create(
             model="claude-sonnet-4-5-20250929",
-            max_tokens=8000,
+            max_tokens=16000,
             messages=[{"role": "user", "content": prompt}]
         )
         html_content = resp.content[0].text.strip()
