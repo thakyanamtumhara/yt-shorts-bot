@@ -4,7 +4,7 @@ Retry YouTube upload for a previously generated video.
 Reads video + metadata from /tmp/yt_shorts/ and uploads.
 Used by the retry-upload GitHub Actions workflow.
 """
-import json, os, sys, time, random
+import json, os, sys, time, random, re
 
 WORK_DIR = os.environ.get("WORK_DIR", "/tmp/yt_shorts")
 SCOPES = [
@@ -51,6 +51,28 @@ def get_youtube_service():
     return build("youtube", "v3", credentials=creds)
 
 
+def sanitize_tags(tags):
+    """Clean and validate tags for YouTube API (prevents invalidTags error)."""
+    cleaned = []
+    total_chars = 0
+    seen = set()
+    for tag in tags:
+        if not isinstance(tag, str):
+            tag = str(tag)
+        tag = tag.strip()
+        tag = re.sub(r'[<>",]', '', tag)
+        tag = re.sub(r'\s+', ' ', tag)
+        tag = tag[:100]
+        if not tag or tag.lower() in seen:
+            continue
+        if total_chars + len(tag) > 500:
+            break
+        seen.add(tag.lower())
+        cleaned.append(tag)
+        total_chars += len(tag)
+    return cleaned
+
+
 def upload_video(youtube, video_path, title, description, tags, topic=""):
     from googleapiclient.http import MediaFileUpload
 
@@ -62,7 +84,7 @@ def upload_video(youtube, video_path, title, description, tags, topic=""):
         "snippet": {
             "title": title[:100],
             "description": description[:5000],
-            "tags": tags[:30],
+            "tags": sanitize_tags(tags[:30]),
             "categoryId": "22",
             "defaultLanguage": "hi",
             "defaultAudioLanguage": "hi"
