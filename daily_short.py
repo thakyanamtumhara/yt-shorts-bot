@@ -4734,6 +4734,7 @@ def main():
 
     # ── 3. Generate Script (with quality gate) ──
     data = None
+    candidate = None  # Track last valid candidate (may be None if all JSON parses fail)
     previous_feedback = ""  # Pass rejection reasons to next attempt
     for attempt in range(1, SCRIPT_MAX_ATTEMPTS + 1):
         print(f"   ✍️ Writing script (attempt {attempt}/{SCRIPT_MAX_ATTEMPTS})...")
@@ -4799,8 +4800,11 @@ def main():
 
     # Use last attempt if none were approved (don't waste the topic)
     if data is None:
-        print(f"   ⚠️ No script scored high enough — using best last attempt")
-        data = candidate
+        if candidate is not None:
+            print(f"   ⚠️ No script scored high enough — using best last attempt")
+            data = candidate
+        else:
+            raise RuntimeError(f"All {SCRIPT_MAX_ATTEMPTS} script generation attempts failed (JSON parse errors). Topic: {fresh_topic}")
 
     script_voice = data["script_voice"]
     # Sanitize script for TTS: strip ellipsis and elongated sounds that cause distortion
