@@ -978,7 +978,7 @@ def get_instagram_best_time(ig_token, ig_business_id):
 
     try:
         resp = requests.get(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/insights",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}/insights",
             params={
                 "metric": "online_followers",
                 "period": "lifetime",
@@ -1068,7 +1068,7 @@ def refresh_instagram_token_if_needed():
     # Step 1: Check token expiry via debug_token API
     try:
         debug_resp = requests.get(
-            "https://graph.facebook.com/v21.0/debug_token",
+            "https://graph.facebook.com/v22.0/debug_token",
             params={
                 "input_token": ig_token,
                 "access_token": f"{fb_app_id}|{fb_app_secret}",
@@ -1110,7 +1110,7 @@ def refresh_instagram_token_if_needed():
     # Step 2: Exchange for new long-lived token
     try:
         refresh_resp = requests.get(
-            "https://graph.facebook.com/v21.0/oauth/access_token",
+            "https://graph.facebook.com/v22.0/oauth/access_token",
             params={
                 "grant_type": "fb_exchange_token",
                 "client_id": fb_app_id,
@@ -1191,7 +1191,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # Pre-flight: validate token with a lightweight /me call
         print(f"   🔑 Verifying Instagram token (len={len(ig_token)}, prefix={ig_token[:6]}...{ig_token[-4:]})...")
         me_resp = requests.get(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}",
             params={"fields": "id,name,username", "access_token": ig_token},
             timeout=10,
         )
@@ -1310,9 +1310,11 @@ def cross_post_to_instagram(video_path, title, description, topic):
             "media_type": "REELS",
             "video_url": public_url,
             "caption": ig_caption[:2200],  # IG caption limit
-            "share_to_feed": "true",
             "access_token": ig_token,
         }
+        # NOTE: share_to_feed removed — deprecated for Reels in v18+,
+        # causes "Carousel item cannot be published standalone" error.
+        # Reels are auto-shared to feed by default.
 
         if schedule_for_later and schedule_timestamp:
             # Schedule instead of instant publish — IG handles it
@@ -1320,7 +1322,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
             container_data["scheduled_publish_time"] = str(schedule_timestamp)
 
         container_resp = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/media",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}/media",
             data=container_data,
             timeout=30,
         )
@@ -1337,20 +1339,28 @@ def cross_post_to_instagram(video_path, title, description, topic):
         print(f"   📦 Instagram container created: {container_id}")
 
         # Step 3: Wait for processing (Instagram processes video async)
+        processing_finished = False
         for check in range(20):  # Max 10 minutes
             time.sleep(30)
             status_resp = requests.get(
-                f"https://graph.facebook.com/v21.0/{container_id}",
-                params={"fields": "status_code", "access_token": ig_token},
+                f"https://graph.facebook.com/v22.0/{container_id}",
+                params={"fields": "status_code,status", "access_token": ig_token},
                 timeout=15,
             )
-            status_code = status_resp.json().get("status_code", "")
+            status_data = status_resp.json()
+            status_code = status_data.get("status_code", "")
             if status_code == "FINISHED":
+                processing_finished = True
                 break
             elif status_code == "ERROR":
-                print(f"   ❌ Instagram processing failed")
+                err_detail = status_data.get("status", {})
+                print(f"   ❌ Instagram processing failed: {err_detail}")
                 return None
-            print(f"   ⏳ Instagram processing... ({check + 1}/20)")
+            print(f"   ⏳ Instagram processing... ({check + 1}/20, status={status_code})")
+
+        if not processing_finished:
+            print(f"   ❌ Instagram processing timed out after 10 minutes")
+            return None
 
         # Step 4: Publish (or confirm schedule)
         if schedule_for_later:
@@ -1361,7 +1371,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         else:
             # Immediate publish
             publish_resp = requests.post(
-                f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
+                f"https://graph.facebook.com/v22.0/{ig_business_id}/media_publish",
                 data={"creation_id": container_id, "access_token": ig_token},
                 timeout=30,
             )
