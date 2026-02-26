@@ -3787,48 +3787,88 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
-def repair_sitemap(s3_client):
-    """One-time repair: fix non-www URLs and add missing static pages to map.xml (idempotent)."""
-    try:
-        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
-        map_xml = resp['Body'].read().decode('utf-8')
-    except Exception:
-        return
+def build_sitemap_xml(new_post=None):
+    """Build complete sitemap XML from blog_history.json + static pages.
 
-    original = map_xml
+    Args:
+        new_post: Optional dict with keys (slug, url, date) for a post not yet in blog_history.
+    Returns:
+        Complete sitemap XML string for p/map.xml.
+    """
+    import json as _json
+
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
 
-    # Fix 1: Replace non-www URLs with www
-    map_xml = map_xml.replace('https://bulkplaintshirt.com/', 'https://www.bulkplaintshirt.com/')
-
-    # Fix 2: Add missing static pages (idempotent — skip if already present)
+    # Static pages
     static_pages = [
-        (f"{BLOG_BASE_URL}/", "daily", "1.0"),
-        (f"{BLOG_BASE_URL}/catalog/index.html", "weekly", "0.9"),
-        (f"{BLOG_BASE_URL}/contactus.html", "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/seller.html", "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/p/FQA.html", "monthly", "0.8"),
-        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", "monthly", "0.7"),
-        (f"{BLOG_BASE_URL}/returnpolicy.html", "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/refundpolicy.html", "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/", today, "daily", "1.0"),
+        (f"{BLOG_BASE_URL}/catalog/index.html", today, "weekly", "0.9"),
+        (f"{BLOG_BASE_URL}/p/index.html", today, "daily", "0.9"),
+        (f"{BLOG_BASE_URL}/p/feed.xml", today, "daily", "0.5"),
+        (f"{BLOG_BASE_URL}/contactus.html", today, "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/seller.html", today, "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/p/FQA.html", today, "monthly", "0.8"),
+        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", today, "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/returnpolicy.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/refundpolicy.html", today, "yearly", "0.3"),
     ]
 
-    for page_url, changefreq, priority in static_pages:
-        if page_url in map_xml:
-            continue
-        entry = f"""  <url>
-    <loc>{page_url}</loc>
-    <lastmod>{today}</lastmod>
+    # Blog posts from history
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = _json.load(f)
+        except Exception:
+            posts = []
+
+    if new_post and new_post.get('slug'):
+        if not any(p.get('slug') == new_post['slug'] for p in posts):
+            posts.append(new_post)
+
+    # Build URL entries
+    urls_xml = ''
+    for loc, lastmod, changefreq, priority in static_pages:
+        urls_xml += f'''  <url>
+    <loc>{loc}</loc>
+    <lastmod>{lastmod}</lastmod>
     <changefreq>{changefreq}</changefreq>
     <priority>{priority}</priority>
-  </url>"""
-        map_xml = map_xml.replace('</urlset>', f'{entry}\n</urlset>')
+  </url>
+'''
 
-    if map_xml == original:
-        print(f"   ✅ Sitemap: map.xml already up to date")
-        return
+    # Deduplicate by slug, newest first
+    seen_slugs = set()
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+    for post in posts:
+        p_slug = post.get('slug', '')
+        if not p_slug or p_slug in seen_slugs:
+            continue
+        seen_slugs.add(p_slug)
+        p_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
+        p_date = today
+        try:
+            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
+            p_date = dt.strftime('%Y-%m-%d')
+        except Exception:
+            pass
+        urls_xml += f'''  <url>
+    <loc>{p_url}</loc>
+    <lastmod>{p_date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+'''
 
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls_xml}</urlset>'''
+
+
+def repair_sitemap(s3_client):
+    """Rebuild sitemap from blog_history.json + static pages (idempotent)."""
     try:
+        map_xml = build_sitemap_xml()
         s3_client.put_object(
             Bucket=BLOG_S3_BUCKET,
             Key='p/map.xml',
@@ -3836,9 +3876,9 @@ def repair_sitemap(s3_client):
             ContentType='application/xml; charset=utf-8',
             CacheControl='no-cache'
         )
-        print(f"   🔧 Sitemap: Fixed non-www URLs + added missing static pages")
+        print(f"   \U0001f527 Sitemap: Rebuilt map.xml from blog_history")
     except Exception as e:
-        print(f"   ⚠️ Sitemap: Could not repair map.xml: {e}")
+        print(f"   \u26a0\ufe0f Sitemap: Could not rebuild map.xml: {e}")
 
 
 def build_blog_index_html(new_post=None):
@@ -4354,36 +4394,22 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not rebuild index.html: {e}")
 
-        # ── 3. Update /p/map.xml (add sitemap entry) ──
+        # ── 3. Rebuild /p/map.xml (full sitemap from blog_history) ──
         try:
-            resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
-            map_xml = resp['Body'].read().decode('utf-8')
-
-            today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
-            new_url_entry = f"""  <url>
-    <loc>{blog_url}</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>"""
-
-            # Insert before </urlset>
-            if '</urlset>' in map_xml:
-                map_xml = map_xml.replace('</urlset>', f'{new_url_entry}\n</urlset>')
-
-                s3.put_object(
-                    Bucket=BLOG_S3_BUCKET,
-                    Key='p/map.xml',
-                    Body=map_xml.encode('utf-8'),
-                    ContentType='application/xml; charset=utf-8',
-                    CacheControl='no-cache'
-                )
-                print(f"   📤 Blog S3: Updated p/map.xml with new URL")
-                invalidation_paths.append('/p/map.xml')
-            else:
-                print(f"   ⚠️ Blog S3: map.xml doesn't have </urlset> tag")
+            new_post_sitemap = {"slug": slug, "url": blog_url,
+                                "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat()}
+            map_xml = build_sitemap_xml(new_post=new_post_sitemap)
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='p/map.xml',
+                Body=map_xml.encode('utf-8'),
+                ContentType='application/xml; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml with new post")
+            invalidation_paths.append('/p/map.xml')
         except Exception as e:
-            print(f"   ⚠️ Blog S3: Could not update map.xml: {e}")
+            print(f"   \u26a0\ufe0f Blog S3: Could not rebuild map.xml: {e}")
 
         # ── 4. Update /p/llms.txt ──
         try:
