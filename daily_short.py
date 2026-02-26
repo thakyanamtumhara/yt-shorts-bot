@@ -3707,6 +3707,60 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
+def repair_sitemap(s3_client):
+    """One-time repair: fix non-www URLs and add missing static pages to map.xml (idempotent)."""
+    try:
+        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
+        map_xml = resp['Body'].read().decode('utf-8')
+    except Exception:
+        return
+
+    original = map_xml
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+
+    # Fix 1: Replace non-www URLs with www
+    map_xml = map_xml.replace('https://bulkplaintshirt.com/', 'https://www.bulkplaintshirt.com/')
+
+    # Fix 2: Add missing static pages (idempotent — skip if already present)
+    static_pages = [
+        (f"{BLOG_BASE_URL}/", "daily", "1.0"),
+        (f"{BLOG_BASE_URL}/catalog/index.html", "weekly", "0.9"),
+        (f"{BLOG_BASE_URL}/contactus.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/seller.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/p/FQA.html", "monthly", "0.8"),
+        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/returnpolicy.html", "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/refundpolicy.html", "yearly", "0.3"),
+    ]
+
+    for page_url, changefreq, priority in static_pages:
+        if page_url in map_xml:
+            continue
+        entry = f"""  <url>
+    <loc>{page_url}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>"""
+        map_xml = map_xml.replace('</urlset>', f'{entry}\n</urlset>')
+
+    if map_xml == original:
+        print(f"   ✅ Sitemap: map.xml already up to date")
+        return
+
+    try:
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='p/map.xml',
+            Body=map_xml.encode('utf-8'),
+            ContentType='application/xml; charset=utf-8',
+            CacheControl='no-cache'
+        )
+        print(f"   🔧 Sitemap: Fixed non-www URLs + added missing static pages")
+    except Exception as e:
+        print(f"   ⚠️ Sitemap: Could not repair map.xml: {e}")
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -3726,6 +3780,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
     # Repair any existing posts missing JSON-LD + bottom bar (one-time, idempotent)
     repair_existing_blog_posts(s3, cloudfront)
+
+    # Repair sitemap: fix non-www URLs + add missing static pages (one-time, idempotent)
+    repair_sitemap(s3)
 
     try:
         # ── 1. Upload blog HTML ──
