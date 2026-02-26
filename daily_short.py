@@ -4096,10 +4096,11 @@ def submit_to_search_engines(blog_url, s3_client=None):
     """Master function: submit a new blog URL to all search engines and AI crawlers."""
     print(f"   🔍 Indexing: Submitting {blog_url} to search engines & AI...")
 
-    # Ensure IndexNow key file exists in S3
+    # Ensure IndexNow key file exists in S3 (idempotent, skips if already there)
     if s3_client:
         ensure_indexnow_key_file(s3_client)
-        ensure_robots_txt(s3_client)
+        # robots.txt is a one-time setup — upload manually to S3 root via AWS Console
+        # No need to re-upload on every blog post
 
     # 1. Google Indexing API (instant indexing)
     ping_google_indexing_api(blog_url)
