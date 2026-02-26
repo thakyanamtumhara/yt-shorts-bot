@@ -978,7 +978,7 @@ def get_instagram_best_time(ig_token, ig_business_id):
 
     try:
         resp = requests.get(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/insights",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}/insights",
             params={
                 "metric": "online_followers",
                 "period": "lifetime",
@@ -1068,7 +1068,7 @@ def refresh_instagram_token_if_needed():
     # Step 1: Check token expiry via debug_token API
     try:
         debug_resp = requests.get(
-            "https://graph.facebook.com/v21.0/debug_token",
+            "https://graph.facebook.com/v22.0/debug_token",
             params={
                 "input_token": ig_token,
                 "access_token": f"{fb_app_id}|{fb_app_secret}",
@@ -1110,7 +1110,7 @@ def refresh_instagram_token_if_needed():
     # Step 2: Exchange for new long-lived token
     try:
         refresh_resp = requests.get(
-            "https://graph.facebook.com/v21.0/oauth/access_token",
+            "https://graph.facebook.com/v22.0/oauth/access_token",
             params={
                 "grant_type": "fb_exchange_token",
                 "client_id": fb_app_id,
@@ -1191,7 +1191,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # Pre-flight: validate token with a lightweight /me call
         print(f"   🔑 Verifying Instagram token (len={len(ig_token)}, prefix={ig_token[:6]}...{ig_token[-4:]})...")
         me_resp = requests.get(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}",
             params={"fields": "id,name,username", "access_token": ig_token},
             timeout=10,
         )
@@ -1310,9 +1310,11 @@ def cross_post_to_instagram(video_path, title, description, topic):
             "media_type": "REELS",
             "video_url": public_url,
             "caption": ig_caption[:2200],  # IG caption limit
-            "share_to_feed": "true",
             "access_token": ig_token,
         }
+        # NOTE: share_to_feed removed — deprecated for Reels in v18+,
+        # causes "Carousel item cannot be published standalone" error.
+        # Reels are auto-shared to feed by default.
 
         if schedule_for_later and schedule_timestamp:
             # Schedule instead of instant publish — IG handles it
@@ -1320,7 +1322,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
             container_data["scheduled_publish_time"] = str(schedule_timestamp)
 
         container_resp = requests.post(
-            f"https://graph.facebook.com/v21.0/{ig_business_id}/media",
+            f"https://graph.facebook.com/v22.0/{ig_business_id}/media",
             data=container_data,
             timeout=30,
         )
@@ -1337,20 +1339,28 @@ def cross_post_to_instagram(video_path, title, description, topic):
         print(f"   📦 Instagram container created: {container_id}")
 
         # Step 3: Wait for processing (Instagram processes video async)
+        processing_finished = False
         for check in range(20):  # Max 10 minutes
             time.sleep(30)
             status_resp = requests.get(
-                f"https://graph.facebook.com/v21.0/{container_id}",
-                params={"fields": "status_code", "access_token": ig_token},
+                f"https://graph.facebook.com/v22.0/{container_id}",
+                params={"fields": "status_code,status", "access_token": ig_token},
                 timeout=15,
             )
-            status_code = status_resp.json().get("status_code", "")
+            status_data = status_resp.json()
+            status_code = status_data.get("status_code", "")
             if status_code == "FINISHED":
+                processing_finished = True
                 break
             elif status_code == "ERROR":
-                print(f"   ❌ Instagram processing failed")
+                err_detail = status_data.get("status", {})
+                print(f"   ❌ Instagram processing failed: {err_detail}")
                 return None
-            print(f"   ⏳ Instagram processing... ({check + 1}/20)")
+            print(f"   ⏳ Instagram processing... ({check + 1}/20, status={status_code})")
+
+        if not processing_finished:
+            print(f"   ❌ Instagram processing timed out after 10 minutes")
+            return None
 
         # Step 4: Publish (or confirm schedule)
         if schedule_for_later:
@@ -1361,7 +1371,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
         else:
             # Immediate publish
             publish_resp = requests.post(
-                f"https://graph.facebook.com/v21.0/{ig_business_id}/media_publish",
+                f"https://graph.facebook.com/v22.0/{ig_business_id}/media_publish",
                 data={"creation_id": container_id, "access_token": ig_token},
                 timeout=30,
             )
@@ -3403,14 +3413,18 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
 
     related_instructions = ""
     if related_posts:
-        links_list = "\n".join(f"   - {rp['title']}: https://www.bulkplaintshirt.com/p/{rp['slug']}.html" for rp in related_posts)
+        links_list = "\n".join(f"   - {rp['title']}: https://www.bulkplaintshirt.com/p/{rp['slug']}.html (hero image: https://www.bulkplaintshirt.com/p/{rp['slug']}-hero.webp)" for rp in related_posts)
         related_instructions = f"""
-8. RELATED ARTICLES (Internal Linking — IMPORTANT for SEO):
-   Add a "Related Articles" or "You May Also Like" section AFTER the FAQ section with these links:
+8. RELATED ARTICLES (Internal Linking — Card Layout — IMPORTANT for SEO):
+   Add a "More Articles" section AFTER the FAQ section with these links as VISUAL CARDS:
 {links_list}
-   - Show as a styled list/cards with clickable titles
-   - Use proper <a> tags with full URLs
-   - Style: background #f8f9fa, padding 15px, border-radius 8px, each link on its own line
+   - Use a responsive flex/grid layout: 2-3 cards per row on desktop, 1 per row on mobile
+   - Each card should contain:
+     * The hero image (img tag, height:140px, object-fit:cover, border-radius:8px 8px 0 0, loading="lazy", add onerror="this.style.display='none'" fallback)
+     * The article title as a clickable <a> link (font-size:14px, font-weight:600, padding:12px)
+   - Card styling: background #fff, border-radius:10px, box-shadow:0 2px 6px rgba(0,0,0,0.06), border:1px solid #e8e8e0
+   - Wrap in a container with: max-width:800px, margin:30px auto
+   - Section heading: "More Articles" with H2 styling
    - This is CRITICAL for SEO internal linking — do NOT skip this section
 """
 
@@ -3773,48 +3787,88 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         print(f"   ✅ Repair: All existing posts already have JSON-LD")
 
 
-def repair_sitemap(s3_client):
-    """One-time repair: fix non-www URLs and add missing static pages to map.xml (idempotent)."""
-    try:
-        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
-        map_xml = resp['Body'].read().decode('utf-8')
-    except Exception:
-        return
+def build_sitemap_xml(new_post=None):
+    """Build complete sitemap XML from blog_history.json + static pages.
 
-    original = map_xml
+    Args:
+        new_post: Optional dict with keys (slug, url, date) for a post not yet in blog_history.
+    Returns:
+        Complete sitemap XML string for p/map.xml.
+    """
+    import json as _json
+
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
 
-    # Fix 1: Replace non-www URLs with www
-    map_xml = map_xml.replace('https://bulkplaintshirt.com/', 'https://www.bulkplaintshirt.com/')
-
-    # Fix 2: Add missing static pages (idempotent — skip if already present)
+    # Static pages
     static_pages = [
-        (f"{BLOG_BASE_URL}/", "daily", "1.0"),
-        (f"{BLOG_BASE_URL}/catalog/index.html", "weekly", "0.9"),
-        (f"{BLOG_BASE_URL}/contactus.html", "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/seller.html", "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/p/FQA.html", "monthly", "0.8"),
-        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", "monthly", "0.7"),
-        (f"{BLOG_BASE_URL}/returnpolicy.html", "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/refundpolicy.html", "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/", today, "daily", "1.0"),
+        (f"{BLOG_BASE_URL}/catalog/index.html", today, "weekly", "0.9"),
+        (f"{BLOG_BASE_URL}/p/index.html", today, "daily", "0.9"),
+        (f"{BLOG_BASE_URL}/p/feed.xml", today, "daily", "0.5"),
+        (f"{BLOG_BASE_URL}/contactus.html", today, "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/seller.html", today, "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/p/FQA.html", today, "monthly", "0.8"),
+        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", today, "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/returnpolicy.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/refundpolicy.html", today, "yearly", "0.3"),
     ]
 
-    for page_url, changefreq, priority in static_pages:
-        if page_url in map_xml:
-            continue
-        entry = f"""  <url>
-    <loc>{page_url}</loc>
-    <lastmod>{today}</lastmod>
+    # Blog posts from history
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = _json.load(f)
+        except Exception:
+            posts = []
+
+    if new_post and new_post.get('slug'):
+        if not any(p.get('slug') == new_post['slug'] for p in posts):
+            posts.append(new_post)
+
+    # Build URL entries
+    urls_xml = ''
+    for loc, lastmod, changefreq, priority in static_pages:
+        urls_xml += f'''  <url>
+    <loc>{loc}</loc>
+    <lastmod>{lastmod}</lastmod>
     <changefreq>{changefreq}</changefreq>
     <priority>{priority}</priority>
-  </url>"""
-        map_xml = map_xml.replace('</urlset>', f'{entry}\n</urlset>')
+  </url>
+'''
 
-    if map_xml == original:
-        print(f"   ✅ Sitemap: map.xml already up to date")
-        return
+    # Deduplicate by slug, newest first
+    seen_slugs = set()
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+    for post in posts:
+        p_slug = post.get('slug', '')
+        if not p_slug or p_slug in seen_slugs:
+            continue
+        seen_slugs.add(p_slug)
+        p_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
+        p_date = today
+        try:
+            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
+            p_date = dt.strftime('%Y-%m-%d')
+        except Exception:
+            pass
+        urls_xml += f'''  <url>
+    <loc>{p_url}</loc>
+    <lastmod>{p_date}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+'''
 
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls_xml}</urlset>'''
+
+
+def repair_sitemap(s3_client):
+    """Rebuild sitemap from blog_history.json + static pages (idempotent)."""
     try:
+        map_xml = build_sitemap_xml()
         s3_client.put_object(
             Bucket=BLOG_S3_BUCKET,
             Key='p/map.xml',
@@ -3822,254 +3876,310 @@ def repair_sitemap(s3_client):
             ContentType='application/xml; charset=utf-8',
             CacheControl='no-cache'
         )
-        print(f"   🔧 Sitemap: Fixed non-www URLs + added missing static pages")
+        print(f"   \U0001f527 Sitemap: Rebuilt map.xml from blog_history")
     except Exception as e:
-        print(f"   ⚠️ Sitemap: Could not repair map.xml: {e}")
+        print(f"   \u26a0\ufe0f Sitemap: Could not rebuild map.xml: {e}")
+
+
+def build_blog_index_html(new_post=None):
+    """Build complete blog index HTML from blog_history.json (card-based layout).
+
+    Args:
+        new_post: Optional dict with keys (date, topic, title, slug, url, vid_url)
+                  to include a post not yet saved to blog_history.json.
+    Returns:
+        Full HTML string for p/index.html.
+    """
+    import json as _json
+    import html as _html
+
+    # Load blog history
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = _json.load(f)
+        except Exception:
+            posts = []
+
+    # Append new post if provided (not yet in history)
+    if new_post and new_post.get('slug'):
+        if not any(p.get('slug') == new_post['slug'] for p in posts):
+            posts.append(new_post)
+
+    # Sort newest first
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+
+    # Collect unique tags for filter pills
+    all_tags = []
+    tag_set = set()
+    for post in posts:
+        for tag in post.get('tags', []):
+            t = tag.strip()
+            if t and t.lower() not in tag_set:
+                tag_set.add(t.lower())
+                all_tags.append(t)
+
+    # OG image: use latest post hero, or logo fallback
+    og_image = f"{BLOG_BASE_URL}/catalog/img/logo.png"
+    if posts:
+        og_image = f"{BLOG_BASE_URL}/p/{posts[0].get('slug', '')}-hero.webp"
+
+    # Color palette for hero fallback gradients
+    gradients = [
+        'linear-gradient(135deg, #d4a832 0%, #b8860b 100%)',
+        'linear-gradient(135deg, #1a5c2e 0%, #2d8a4e 100%)',
+        'linear-gradient(135deg, #0f3460 0%, #1a6cb4 100%)',
+        'linear-gradient(135deg, #8b1a1a 0%, #c0392b 100%)',
+        'linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)',
+        'linear-gradient(135deg, #006064 0%, #00897b 100%)',
+    ]
+
+    # Build tag filter pills HTML
+    tag_pills_html = ''
+    if all_tags:
+        pills = '<button class="tag-pill active" data-tag="all">All</button>\n'
+        for tag in all_tags[:15]:
+            safe_tag = _html.escape(tag)
+            pills += f'            <button class="tag-pill" data-tag="{safe_tag}">{safe_tag}</button>\n'
+        tag_pills_html = f'        <div class="tag-filters">\n            {pills}        </div>'
+
+    # Build post cards HTML
+    cards_html = ''
+    for idx, post in enumerate(posts):
+        p_slug = post.get('slug', '')
+        p_title = _html.escape(post.get('title', ''))
+        p_topic = _html.escape(post.get('topic', ''))
+        p_date = ''
+        try:
+            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
+            p_date = dt.strftime('%b %d, %Y')
+        except Exception:
+            pass
+        hero_url = f"/p/{p_slug}-hero.webp"
+        post_url = f"/p/{p_slug}.html"
+        vid_url = post.get('vid_url', '')
+        word_count = post.get('word_count', 2000)
+        read_min = max(1, round(word_count / 200))
+        post_tags = post.get('tags', [])
+        first_letter = (post.get('title', 'B')[0] if post.get('title') else 'B').upper()
+        gradient = gradients[idx % len(gradients)]
+        tags_attr = _html.escape(' '.join(t.strip() for t in post_tags)) if post_tags else ''
+
+        # YouTube play icon overlay (only if vid_url exists)
+        play_icon = ''
+        if vid_url:
+            safe_vid = _html.escape(vid_url)
+            play_icon = f'<a href="{safe_vid}" target="_blank" rel="noopener" class="play-btn" title="Watch on YouTube" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="white" width="28" height="28"><polygon points="5,3 19,12 5,21"/></svg></a>'
+
+        # Tag badges inside card
+        tag_badges = ''
+        if post_tags:
+            badges = ''.join(f'<span class="card-tag">{_html.escape(t.strip())}</span>' for t in post_tags[:3])
+            tag_badges = f'<div class="card-tags">{badges}</div>'
+
+        cards_html += f'''        <article class="post-card" data-tags="{tags_attr}" data-title="{p_title}" data-topic="{p_topic}">
+            <a href="{post_url}">
+                <div class="card-img" style="--fallback-bg:{gradient}">
+                    <img src="{hero_url}" alt="{p_title}" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+                    <div class="img-fallback">{first_letter}</div>
+                    {play_icon}
+                </div>
+                <div class="post-card-body">
+                    <h3>{p_title}</h3>
+                    <p class="topic">{p_topic}</p>
+                    <div class="card-meta">
+                        <span class="date">{p_date}</span>
+                        <span class="read-time">{read_min} min read</span>
+                    </div>
+                    {tag_badges}
+                </div>
+            </a>
+        </article>
+'''
+
+    # Build post URLs for JSON-LD
+    post_urls = [f"{BLOG_BASE_URL}/p/{p.get('slug', '')}.html" for p in posts]
+    collection_ld = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Plain T-Shirt Blog & Resources",
+        "description": "Expert guides on wholesale plain t-shirts, GSM fabric, printing techniques from India's leading B2B manufacturer.",
+        "url": f"{BLOG_BASE_URL}/p/index.html",
+        "publisher": {
+            "@type": "Organization",
+            "name": "BulkPlainTshirt.com",
+            "url": BLOG_BASE_URL,
+            "logo": f"{BLOG_BASE_URL}/catalog/img/logo.png"
+        },
+        "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": len(post_urls),
+            "itemListElement": [
+                {"@type": "ListItem", "position": i + 1, "url": url}
+                for i, url in enumerate(post_urls)
+            ]
+        }
+    }
+    ld_json = _json.dumps(collection_ld, ensure_ascii=False)
+
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plain T-Shirt Blog & Resources | Wholesale Blank Tees | BulkPlainTshirt.com</title>
+    <meta name="description" content="Expert guides on wholesale plain t-shirts, GSM fabric selection, printing techniques, and bulk ordering from India&#39;s leading B2B manufacturer. Tiruppur direct.">
+    <meta name="keywords" content="plain t-shirt wholesale, bulk blank tees, GSM guide, t-shirt printing, Tiruppur manufacturer, B2B t-shirts">
+    <meta property="og:title" content="Plain T-Shirt Blog &amp; Resources | BulkPlainTshirt.com">
+    <meta property="og:description" content="Expert guides on wholesale plain t-shirts, GSM fabric selection, printing techniques from India&#39;s leading B2B manufacturer.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{BLOG_BASE_URL}/p/index.html">
+    <meta property="og:image" content="{og_image}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Plain T-Shirt Blog &amp; Resources | BulkPlainTshirt.com">
+    <meta name="twitter:image" content="{og_image}">
+    <link rel="canonical" href="{BLOG_BASE_URL}/p/index.html">
+    <link rel="alternate" type="application/rss+xml" title="BulkPlainTshirt Blog RSS" href="{BLOG_BASE_URL}/p/feed.xml">
+    <script type="application/ld+json">{ld_json}</script>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: system-ui, -apple-system, sans-serif; background: #f5f5f0; color: #333; padding-top: 80px; padding-bottom: 70px; }}
+        .header {{ position: fixed; top: 0; left: 0; width: 100%; background: #d4a832; text-align: center; padding: 12px 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }}
+        .header a.brand {{ font-size: 22px; font-weight: bold; color: #1a1a1a; text-decoration: none; }}
+        .header .sub {{ font-size: 13px; color: #333; }}
+        .header .sub a {{ color: #1a1a1a; text-decoration: underline; }}
+        .hero {{ text-align: center; padding: 36px 20px 24px; background: #fff; border-bottom: 1px solid #e8e8e0; }}
+        .hero h1 {{ font-size: 26px; color: #1a1a1a; font-weight: 700; }}
+        .hero p {{ color: #666; font-size: 15px; margin-top: 8px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5; }}
+        .nav-links {{ max-width: 1100px; margin: 20px auto 0; padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }}
+        .nav-links a {{ background: #fff; padding: 8px 18px; border-radius: 20px; text-decoration: none; color: #333; font-size: 14px; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e8e8e0; transition: all 0.2s; }}
+        .nav-links a:hover {{ background: #d4a832; color: #1a1a1a; border-color: #d4a832; }}
+        .search-box {{ max-width: 500px; margin: 20px auto 0; padding: 0 20px; }}
+        .search-box input {{ width: 100%; padding: 10px 16px; border: 1px solid #ddd; border-radius: 24px; font-size: 14px; outline: none; background: #fff; transition: border-color 0.2s; }}
+        .search-box input:focus {{ border-color: #d4a832; box-shadow: 0 0 0 3px rgba(212,168,50,0.15); }}
+        .tag-filters {{ max-width: 1100px; margin: 16px auto 0; padding: 0 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }}
+        .tag-pill {{ padding: 5px 14px; border-radius: 16px; border: 1px solid #ddd; background: #fff; font-size: 13px; cursor: pointer; transition: all 0.2s; color: #555; }}
+        .tag-pill:hover {{ border-color: #d4a832; color: #1a1a1a; }}
+        .tag-pill.active {{ background: #d4a832; color: #1a1a1a; border-color: #d4a832; font-weight: 600; }}
+        .posts-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; max-width: 1100px; margin: 24px auto; padding: 0 20px; }}
+        .post-card {{ background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #e8e8e0; transition: transform 0.2s, box-shadow 0.2s; position: relative; }}
+        .post-card:hover {{ transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }}
+        .post-card a {{ text-decoration: none; color: inherit; display: block; }}
+        .post-card.hidden {{ display: none; }}
+        .card-img {{ position: relative; width: 100%; height: 200px; overflow: hidden; background: #eee; }}
+        .card-img img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .card-img .img-fallback {{ display: none; position: absolute; inset: 0; background: var(--fallback-bg); align-items: center; justify-content: center; font-size: 64px; font-weight: 700; color: rgba(255,255,255,0.7); }}
+        .card-img.no-img img {{ display: none; }}
+        .card-img.no-img .img-fallback {{ display: flex; }}
+        .play-btn {{ position: absolute; bottom: 10px; right: 10px; width: 44px; height: 44px; background: rgba(255,0,0,0.85); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; transition: transform 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }}
+        .play-btn:hover {{ transform: scale(1.1); }}
+        .play-btn svg {{ margin-left: 2px; }}
+        .post-card-body {{ padding: 16px 20px 18px; }}
+        .post-card-body h3 {{ font-size: 16px; color: #1a1a1a; line-height: 1.45; font-weight: 600; }}
+        .post-card-body .topic {{ font-size: 13px; color: #666; margin-top: 6px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }}
+        .card-meta {{ display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 12px; color: #999; }}
+        .card-meta .read-time {{ color: #b08c1a; font-weight: 500; }}
+        .card-tags {{ display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }}
+        .card-tag {{ padding: 2px 8px; border-radius: 10px; background: #f5f0e0; font-size: 11px; color: #8b6914; }}
+        .bottom-bar {{ position: fixed; bottom: 0; left: 0; width: 100%; display: flex; z-index: 1000; box-shadow: 0 -2px 8px rgba(0,0,0,0.15); }}
+        .bottom-bar a {{ flex: 1; display: flex; align-items: center; justify-content: center; min-height: 50px; font-size: 16px; font-weight: bold; text-decoration: none; }}
+        .bottom-bar .order {{ background: #1a1a1a; color: #fff; }}
+        .bottom-bar .whatsapp {{ background: #25D366; color: #fff; }}
+        .post-count {{ text-align: center; color: #999; font-size: 13px; margin-top: 16px; }}
+        .no-results {{ text-align: center; color: #999; font-size: 15px; padding: 60px 20px; display: none; }}
+        @media (max-width: 600px) {{
+            .posts-grid {{ grid-template-columns: 1fr; gap: 16px; padding: 0 12px; }}
+            .hero h1 {{ font-size: 21px; }}
+            .hero {{ padding: 24px 16px 18px; }}
+            .card-img {{ height: 180px; }}
+            .tag-filters {{ padding: 0 12px; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a class="brand" href="{BLOG_BASE_URL}">BulkPlainTshirt.com</a>
+        <br><span class="sub">Own Knitted Blank Wears | <a href="https://sale91.com">sale91.com</a></span>
+    </div>
+
+    <section class="hero">
+        <h1>Plain T-Shirt Blog</h1>
+        <p>Expert guides on wholesale blank tees, GSM fabric, printing techniques &amp; bulk ordering from Tiruppur</p>
+    </section>
+
+    <nav class="nav-links">
+        <a href="{BLOG_BASE_URL}">Home</a>
+        <a href="/catalog/index.html">Catalog</a>
+        <a href="/p/fqa.html">FAQ</a>
+        <a href="https://sale91.com">Shop</a>
+        <a href="https://whatsapp.sale91.com">WhatsApp</a>
+    </nav>
+
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Search articles..." aria-label="Search articles">
+    </div>
+
+{tag_pills_html}
+
+    <p class="post-count">{len(posts)} article{"s" if len(posts) != 1 else ""} published</p>
+
+    <section class="posts-grid" id="posts">
+{cards_html}    </section>
+
+    <p class="no-results" id="no-results">No articles match your search.</p>
+
+    <div class="bottom-bar">
+        <a class="order" href="https://sale91.com">Order Now</a>
+        <a class="whatsapp" href="https://whatsapp.sale91.com">WhatsApp Us</a>
+    </div>
+
+    <script>
+    (function() {{
+        var search = document.getElementById('search');
+        var cards = document.querySelectorAll('.post-card');
+        var noResults = document.getElementById('no-results');
+        var activeTag = 'all';
+
+        function filterCards() {{
+            var q = (search.value || '').toLowerCase();
+            var visible = 0;
+            cards.forEach(function(card) {{
+                var title = (card.getAttribute('data-title') || '').toLowerCase();
+                var topic = (card.getAttribute('data-topic') || '').toLowerCase();
+                var tags = (card.getAttribute('data-tags') || '').toLowerCase();
+                var matchSearch = !q || title.indexOf(q) !== -1 || topic.indexOf(q) !== -1 || tags.indexOf(q) !== -1;
+                var matchTag = activeTag === 'all' || tags.indexOf(activeTag.toLowerCase()) !== -1;
+                if (matchSearch && matchTag) {{
+                    card.classList.remove('hidden');
+                    visible++;
+                }} else {{
+                    card.classList.add('hidden');
+                }}
+            }});
+            noResults.style.display = visible === 0 ? 'block' : 'none';
+        }}
+
+        if (search) search.addEventListener('input', filterCards);
+
+        document.querySelectorAll('.tag-pill').forEach(function(btn) {{
+            btn.addEventListener('click', function() {{
+                document.querySelectorAll('.tag-pill').forEach(function(b) {{ b.classList.remove('active'); }});
+                btn.classList.add('active');
+                activeTag = btn.getAttribute('data-tag') || 'all';
+                filterCards();
+            }});
+        }});
+    }})();
+    </script>
+</body>
+</html>'''
 
 
 def repair_index_html(s3_client):
-    """One-time repair: fix misplaced entries + full SEO upgrade for index.html (idempotent)."""
-    import re as _re
-
+    """Rebuild index.html with card-based layout from blog_history.json (idempotent)."""
     try:
-        resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key='p/index.html')
-        index_html = resp['Body'].read().decode('utf-8')
-    except Exception:
-        return
-
-    original = index_html
-
-    # ── Fix 1 & 2: Remove blog post entries (/p/*.html) from Main Pages and Other Pages sections ──
-    # These should only be in the Posts section. Use regex for whitespace-flexible matching.
-    misplaced_slugs = [
-        'collar-fine-but-hem-twisted-check-this-rib-fabric-trick',
-        'stop-using-white-ink-on-dark-fabric-use-this-instead',
-    ]
-
-    # Find section boundaries
-    main_pages_start = index_html.find('>Main Pages<')
-    other_pages_start = index_html.find('>Other Pages<')
-    posts_start = index_html.find('>Posts<')
-
-    for slug in misplaced_slugs:
-        # Remove from Main Pages section (between Main Pages header and its </ul>)
-        if main_pages_start != -1:
-            main_ul_end = index_html.find('</ul>', main_pages_start)
-            if main_ul_end != -1:
-                section = index_html[main_pages_start:main_ul_end]
-                cleaned = _re.sub(r'\s*<li>\s*<a\s+href="/p/' + _re.escape(slug) + r'\.html">[^<]*</a>\s*</li>', '', section)
-                if cleaned != section:
-                    index_html = index_html[:main_pages_start] + cleaned + index_html[main_ul_end:]
-                    # Recalculate positions after modification
-                    main_pages_start = index_html.find('>Main Pages<')
-                    other_pages_start = index_html.find('>Other Pages<')
-                    posts_start = index_html.find('>Posts<')
-
-        # Remove from Other Pages section
-        if other_pages_start != -1:
-            other_ul_end = index_html.find('</ul>', other_pages_start)
-            if other_ul_end != -1:
-                section = index_html[other_pages_start:other_ul_end]
-                cleaned = _re.sub(r'\s*<li>\s*<a\s+href="/p/' + _re.escape(slug) + r'\.html">[^<]*</a>\s*</li>', '', section)
-                if cleaned != section:
-                    index_html = index_html[:other_pages_start] + cleaned + index_html[other_ul_end:]
-                    main_pages_start = index_html.find('>Main Pages<')
-                    other_pages_start = index_html.find('>Other Pages<')
-                    posts_start = index_html.find('>Posts<')
-
-    # ── Fix 3: Fix broken Catalog entry (has "He Ordered" link jammed inside it) ──
-    # Use regex to match any <li> containing both catalog/index.html AND he-ordered slug
-    catalog_fix = _re.sub(
-        r'<li>\s*<a\s+href="/catalog/index\.html">Catalog</a>\s*'
-        r'<a\s+href="/p/he-ordered-320-gsm[^"]*"[^>]*>[^<]*</a>\s*</li>',
-        '<li><a href="/catalog/index.html">Catalog</a></li>',
-        index_html
-    )
-    if catalog_fix != index_html:
-        index_html = catalog_fix
-        posts_start = index_html.find('>Posts<')
-
-    # ── Fix 4: Re-add misplaced entries into Posts section with correct format ──
-    posts_to_add = [
-        ('/p/he-ordered-320-gsm-for-winter-430-gsm-hoodie-blanks-demand.html',
-         'He Ordered 320 GSM for Winter | 430 GSM Hoodie Blanks Demand'),
-        ('/p/collar-fine-but-hem-twisted-check-this-rib-fabric-trick.html',
-         'Collar Fine But Hem Twisted? Check This Rib Fabric Trick'),
-        ('/p/stop-using-white-ink-on-dark-fabric-use-this-instead.html',
-         'Stop Using White Ink on Dark Fabric (Use This Instead)'),
-    ]
-
-    posts_start = index_html.find('>Posts<')
-    if posts_start != -1:
-        posts_ul_end = index_html.find('</ul>', posts_start)
-        if posts_ul_end != -1:
-            new_entries = ''
-            for href, text in posts_to_add:
-                clean_entry = f'<li><a href="{href}">{text}</a></li>'
-
-                # If clean entry already exists, skip
-                if clean_entry in index_html:
-                    continue
-
-                # Remove ANY existing malformed version of this entry from Posts section
-                # (styled links, emoji-laden text, bare <a> tags, etc.)
-                posts_section = index_html[posts_start:posts_ul_end]
-                if href in posts_section:
-                    # Remove <li><a href="...">...</a></li> variants (any attributes/text)
-                    cleaned = _re.sub(
-                        r'\s*<li>\s*<a\s+href="' + _re.escape(href) + r'"[^>]*>[^<]*</a>\s*</li>',
-                        '', posts_section
-                    )
-                    # Also remove bare styled <a> tags not wrapped in <li>
-                    cleaned = _re.sub(
-                        r'\s*<a\s+href="' + _re.escape(href) + r'"[^>]*>[^<]*</a>',
-                        '', cleaned
-                    )
-                    if cleaned != posts_section:
-                        index_html = index_html[:posts_start] + cleaned + index_html[posts_ul_end:]
-                        posts_start = index_html.find('>Posts<')
-                        posts_ul_end = index_html.find('</ul>', posts_start)
-
-                # Add clean entry
-                new_entries += f'                {clean_entry}\n'
-
-            if new_entries:
-                posts_ul_end = index_html.find('</ul>', posts_start)
-                index_html = index_html[:posts_ul_end] + new_entries + '            ' + index_html[posts_ul_end:]
-
-    # ── SEO Fix 5: Upgrade <title> and add meta description ──
-    if '<title>Website Sitemap</title>' in index_html:
-        index_html = index_html.replace(
-            '<title>Website Sitemap</title>',
-            '<title>Plain T-Shirt Blog & Resources | Wholesale Blank Tees | BulkPlainTshirt.com</title>\n'
-            '    <meta name="description" content="Expert guides on wholesale plain t-shirts, GSM fabric selection, printing techniques, and bulk ordering from India\'s leading B2B manufacturer. Tiruppur direct.">\n'
-            '    <meta name="keywords" content="plain t-shirt wholesale, bulk blank tees, GSM guide, t-shirt printing, Tiruppur manufacturer, B2B t-shirts">\n'
-            '    <meta property="og:title" content="Plain T-Shirt Blog & Resources | BulkPlainTshirt.com">\n'
-            '    <meta property="og:description" content="Expert guides on wholesale plain t-shirts, GSM fabric selection, printing techniques from India\'s leading B2B manufacturer.">\n'
-            '    <meta property="og:type" content="website">\n'
-            '    <meta property="og:url" content="https://www.bulkplaintshirt.com/p/index.html">\n'
-            '    <meta name="twitter:card" content="summary">\n'
-            '    <meta name="twitter:title" content="Plain T-Shirt Blog & Resources | BulkPlainTshirt.com">'
-        )
-        print(f"   \U0001f50d Index SEO: Upgraded title + meta tags")
-
-    # ── SEO Fix 6: Add sticky gold header ──
-    if 'bulkplaintshirt-header' not in index_html:
-        header_html = (
-            '<div id="bulkplaintshirt-header" style="position:fixed;top:0;left:0;width:100%;background:#d4a832;'
-            'text-align:center;padding:12px 0;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.15);">'
-            '<a href="https://www.bulkplaintshirt.com" style="font-size:22px;font-weight:bold;color:#1a1a1a;text-decoration:none;">BulkPlainTshirt.com</a>'
-            '<br><span style="font-size:13px;color:#333;">Own Knitted Blank Wears | '
-            '<a href="https://sale91.com" style="color:#1a1a1a;text-decoration:underline;">sale91.com</a></span>'
-            '</div>\n'
-        )
-        index_html = index_html.replace('<body>', f'<body>\n{header_html}', 1)
-        # Add padding-top so content doesn't hide behind header
-        if 'padding-top' not in index_html.split('body')[1].split('}')[0] if 'body' in index_html else '':
-            index_html = index_html.replace(
-                'margin: 20px;',
-                'margin: 20px; padding-top: 70px; padding-bottom: 60px;'
-            )
-        print(f"   \U0001f50d Index SEO: Added sticky gold header")
-
-    # ── SEO Fix 7: Add sticky bottom bar (Order Now + WhatsApp) ──
-    if 'whatsapp.sale91.com' not in index_html:
-        bottom_bar = (
-            '<div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;'
-            'box-shadow:0 -2px 8px rgba(0,0,0,0.15);">'
-            '<a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
-            'min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>'
-            '<a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
-            'min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>'
-            '</div>\n'
-        )
-        index_html = index_html.replace('</body>', f'{bottom_bar}</body>', 1)
-        print(f"   \U0001f50d Index SEO: Added sticky bottom bar")
-
-    # ── SEO Fix 8: Add JSON-LD CollectionPage schema ──
-    if 'CollectionPage' not in index_html:
-        import json as _json
-        # Collect all post URLs from the HTML
-        post_links = _re.findall(r'href="(/p/[^"]+\.html)"', index_html)
-        post_urls = [f"https://www.bulkplaintshirt.com{link}" for link in post_links
-                     if link != '/p/index.html']
-
-        collection_ld = {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            "name": "Plain T-Shirt Blog & Resources",
-            "description": "Expert guides on wholesale plain t-shirts, GSM fabric, printing techniques from India's leading B2B manufacturer.",
-            "url": "https://www.bulkplaintshirt.com/p/index.html",
-            "publisher": {
-                "@type": "Organization",
-                "name": "BulkPlainTshirt.com",
-                "url": "https://www.bulkplaintshirt.com",
-                "logo": "https://www.bulkplaintshirt.com/catalog/img/logo.png"
-            },
-            "mainEntity": {
-                "@type": "ItemList",
-                "numberOfItems": len(post_urls),
-                "itemListElement": [
-                    {"@type": "ListItem", "position": i + 1, "url": url}
-                    for i, url in enumerate(post_urls)
-                ]
-            }
-        }
-        ld_script = f'<script type="application/ld+json">{_json.dumps(collection_ld, ensure_ascii=False)}</script>'
-        if '</head>' in index_html:
-            index_html = index_html.replace('</head>', f'{ld_script}\n</head>', 1)
-        print(f"   \U0001f50d Index SEO: Added CollectionPage JSON-LD ({len(post_urls)} posts)")
-
-    # ── SEO Fix 9: Add dates to post entries (from blog_history.json) ──
-    if os.path.exists(BLOG_HISTORY_FILE) and 'post-date' not in index_html:
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                history = json.load(f)
-            slug_dates = {}
-            for entry in history:
-                slug = entry.get('slug', '')
-                date_str = entry.get('date', '')
-                if slug and date_str:
-                    # Parse ISO date and format as "Feb 25, 2026"
-                    try:
-                        dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                        slug_dates[slug] = dt.strftime('%b %d, %Y')
-                    except Exception:
-                        pass
-
-            # Add dates to post links
-            for slug_val, date_fmt in slug_dates.items():
-                pattern = f'href="/p/{slug_val}.html">{_re.escape("")}'
-                # Find the <a> tag and add a date span after it
-                old_li = f'href="/p/{slug_val}.html">'
-                if old_li in index_html:
-                    # Find the full <a>...</a> and add date after closing tag
-                    a_start = index_html.find(old_li)
-                    a_end = index_html.find('</a>', a_start)
-                    if a_end != -1 and 'post-date' not in index_html[a_start:a_end+20]:
-                        insert_pos = a_end + 4  # after </a>
-                        date_span = f' <span class="post-date" style="font-size:12px;color:#888;font-weight:normal;">— {date_fmt}</span>'
-                        index_html = index_html[:insert_pos] + date_span + index_html[insert_pos:]
-
-            if slug_dates:
-                print(f"   \U0001f50d Index SEO: Added dates to {len(slug_dates)} posts")
-        except Exception as e:
-            print(f"   \u26a0\ufe0f Index SEO: Could not add dates: {e}")
-
-    # ── SEO Fix 10: Change h1 from "Website Sitemap" to better heading ──
-    if '<h1>Website Sitemap</h1>' in index_html:
-        index_html = index_html.replace(
-            '<h1>Website Sitemap</h1>',
-            '<h1>Plain T-Shirt Blog & Resources</h1>\n'
-            '    <p style="text-align:center;color:#666;font-size:15px;margin-top:-10px;">'
-            'Expert guides on wholesale plain t-shirts, printing, fabric & bulk ordering from Tiruppur</p>'
-        )
-
-    if index_html == original:
-        print(f"   \u2705 Index: p/index.html already correct — no changes needed")
-        return
-
-    try:
+        index_html = build_blog_index_html()
         s3_client.put_object(
             Bucket=BLOG_S3_BUCKET,
             Key='p/index.html',
@@ -4077,9 +4187,137 @@ def repair_index_html(s3_client):
             ContentType='text/html; charset=utf-8',
             CacheControl='no-cache'
         )
-        print(f"   \U0001f527 Index: Full SEO upgrade applied to p/index.html")
+        print(f"   \U0001f527 Index: Rebuilt card-based blog index")
     except Exception as e:
-        print(f"   \u26a0\ufe0f Index: Could not update index.html: {e}")
+        print(f"   \u26a0\ufe0f Index: Could not rebuild index.html: {e}")
+
+
+def build_rss_feed(new_post=None):
+    """Build RSS 2.0 feed XML from blog_history.json.
+
+    Args:
+        new_post: Optional dict to include a post not yet saved to blog_history.json.
+    Returns:
+        RSS XML string for p/feed.xml.
+    """
+    import json as _json
+    import html as _html
+
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = _json.load(f)
+        except Exception:
+            posts = []
+
+    if new_post and new_post.get('slug'):
+        if not any(p.get('slug') == new_post['slug'] for p in posts):
+            posts.append(new_post)
+
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+
+    items_xml = ''
+    for post in posts[:50]:
+        p_title = _html.escape(post.get('title', ''))
+        p_slug = post.get('slug', '')
+        p_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
+        p_desc = _html.escape(post.get('description', post.get('topic', '')))
+        p_date = ''
+        try:
+            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
+            p_date = dt.strftime('%a, %d %b %Y %H:%M:%S %z')
+        except Exception:
+            pass
+        hero_url = f"{BLOG_BASE_URL}/p/{p_slug}-hero.webp"
+
+        # Build tag elements
+        tags_xml = ''
+        for tag in post.get('tags', []):
+            tags_xml += f'      <category>{_html.escape(tag.strip())}</category>\n'
+
+        items_xml += f'''    <item>
+      <title>{p_title}</title>
+      <link>{p_url}</link>
+      <guid isPermaLink="true">{p_url}</guid>
+      <description>{p_desc}</description>
+      <pubDate>{p_date}</pubDate>
+      <enclosure url="{hero_url}" type="image/webp"/>
+{tags_xml}    </item>
+'''
+
+    now_rfc = datetime.now(pytz.timezone(TIMEZONE)).strftime('%a, %d %b %Y %H:%M:%S %z')
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Plain T-Shirt Blog | BulkPlainTshirt.com</title>
+    <link>{BLOG_BASE_URL}/p/index.html</link>
+    <description>Expert guides on wholesale plain t-shirts, GSM fabric, printing techniques from India's leading B2B manufacturer.</description>
+    <language>en</language>
+    <lastBuildDate>{now_rfc}</lastBuildDate>
+    <atom:link href="{BLOG_BASE_URL}/p/feed.xml" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>{BLOG_BASE_URL}/catalog/img/logo.png</url>
+      <title>BulkPlainTshirt.com</title>
+      <link>{BLOG_BASE_URL}</link>
+    </image>
+{items_xml}  </channel>
+</rss>'''
+
+
+def build_blog_widget_html(max_posts=3):
+    """Build a small HTML snippet showing latest blog posts (for embedding in catalog/other pages).
+
+    Returns:
+        HTML string for p/blog-widget.html (embeddable snippet).
+    """
+    import json as _json
+    import html as _html
+
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = _json.load(f)
+        except Exception:
+            posts = []
+
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+    posts = posts[:max_posts]
+
+    if not posts:
+        return ''
+
+    cards = ''
+    for post in posts:
+        p_slug = post.get('slug', '')
+        p_title = _html.escape(post.get('title', ''))
+        hero_url = f"{BLOG_BASE_URL}/p/{p_slug}-hero.webp"
+        post_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
+        p_date = ''
+        try:
+            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
+            p_date = dt.strftime('%b %d, %Y')
+        except Exception:
+            pass
+        cards += f'''  <a href="{post_url}" style="display:block;text-decoration:none;color:inherit;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06);border:1px solid #e8e8e0;transition:transform 0.2s;flex:1;min-width:240px;">
+    <img src="{hero_url}" alt="{p_title}" loading="lazy" style="width:100%;height:140px;object-fit:cover;" onerror="this.style.display='none'">
+    <div style="padding:12px 14px;">
+      <div style="font-size:14px;font-weight:600;color:#1a1a1a;line-height:1.4;">{p_title}</div>
+      <div style="font-size:11px;color:#999;margin-top:6px;">{p_date}</div>
+    </div>
+  </a>
+'''
+
+    return f'''<!-- BulkPlainTshirt Blog Widget — Latest Articles -->
+<div style="max-width:900px;margin:30px auto;padding:0 16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <h3 style="font-size:18px;color:#1a1a1a;font-weight:700;margin:0;">Latest from Our Blog</h3>
+    <a href="{BLOG_BASE_URL}/p/index.html" style="font-size:13px;color:#d4a832;text-decoration:none;font-weight:500;">View All &rarr;</a>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+{cards}  </div>
+</div>'''
 
 
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
@@ -4138,32 +4376,12 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                 except Exception as e:
                     print(f"   ⚠️ Blog S3: Image upload failed for {filename}: {e}")
 
-        # ── 2. Update /p/index.html (add blog link as simple list item) ──
+        # ── 2. Rebuild /p/index.html (card-based layout from blog_history) ──
         try:
-            resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/index.html')
-            index_html = resp['Body'].read().decode('utf-8')
-
-            # Simple <li><a> entry — matches existing index.html list format
-            new_li = f'<li><a href="/p/{slug}.html">{title}</a></li>'
-
-            # Skip if this post already exists in the index
-            if f'/p/{slug}.html' in index_html:
-                print(f"   ℹ️ Blog S3: Post already in index.html, skipping")
-            else:
-                # Find the "Posts" section <ul> and insert before its </ul>
-                posts_header = index_html.find('>Posts<')
-                if posts_header != -1:
-                    posts_ul_end = index_html.find('</ul>', posts_header)
-                    if posts_ul_end != -1:
-                        index_html = index_html[:posts_ul_end] + f'  {new_li}\n            ' + index_html[posts_ul_end:]
-                    else:
-                        print(f"   ⚠️ Blog S3: Found Posts header but no </ul>, appending before </body>")
-                        index_html = index_html.replace('</body>', f'<ul>\n  {new_li}\n</ul>\n</body>')
-                else:
-                    # Posts section not found — this should not happen, log warning
-                    print(f"   ⚠️ Blog S3: Posts section not found in index.html! Adding before </body>")
-                    index_html = index_html.replace('</body>', f'<h3>Posts</h3>\n<ul>\n  {new_li}\n</ul>\n</body>')
-
+            today_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
+            new_post = {"date": today_iso, "title": title, "slug": slug,
+                        "url": blog_url, "topic": "", "vid_url": ""}
+            index_html = build_blog_index_html(new_post=new_post)
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
                 Key='p/index.html',
@@ -4171,41 +4389,27 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                 ContentType='text/html; charset=utf-8',
                 CacheControl='no-cache'
             )
-            print(f"   📤 Blog S3: Updated p/index.html with blog link")
+            print(f"   \U0001f4e4 Blog S3: Rebuilt card-based index.html with new post")
             invalidation_paths.append('/p/index.html')
         except Exception as e:
-            print(f"   ⚠️ Blog S3: Could not update index.html: {e}")
+            print(f"   \u26a0\ufe0f Blog S3: Could not rebuild index.html: {e}")
 
-        # ── 3. Update /p/map.xml (add sitemap entry) ──
+        # ── 3. Rebuild /p/map.xml (full sitemap from blog_history) ──
         try:
-            resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/map.xml')
-            map_xml = resp['Body'].read().decode('utf-8')
-
-            today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
-            new_url_entry = f"""  <url>
-    <loc>{blog_url}</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>"""
-
-            # Insert before </urlset>
-            if '</urlset>' in map_xml:
-                map_xml = map_xml.replace('</urlset>', f'{new_url_entry}\n</urlset>')
-
-                s3.put_object(
-                    Bucket=BLOG_S3_BUCKET,
-                    Key='p/map.xml',
-                    Body=map_xml.encode('utf-8'),
-                    ContentType='application/xml; charset=utf-8',
-                    CacheControl='no-cache'
-                )
-                print(f"   📤 Blog S3: Updated p/map.xml with new URL")
-                invalidation_paths.append('/p/map.xml')
-            else:
-                print(f"   ⚠️ Blog S3: map.xml doesn't have </urlset> tag")
+            new_post_sitemap = {"slug": slug, "url": blog_url,
+                                "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat()}
+            map_xml = build_sitemap_xml(new_post=new_post_sitemap)
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='p/map.xml',
+                Body=map_xml.encode('utf-8'),
+                ContentType='application/xml; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml with new post")
+            invalidation_paths.append('/p/map.xml')
         except Exception as e:
-            print(f"   ⚠️ Blog S3: Could not update map.xml: {e}")
+            print(f"   \u26a0\ufe0f Blog S3: Could not rebuild map.xml: {e}")
 
         # ── 4. Update /p/llms.txt ──
         try:
@@ -4229,7 +4433,41 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         except Exception as e:
             print(f"   ⚠️ Blog S3: Could not update llms.txt: {e}")
 
-        # ── 5. Invalidate CloudFront ──
+        # ── 5. Upload RSS feed ──
+        try:
+            today_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
+            rss_new_post = {"date": today_iso, "title": title, "slug": slug,
+                            "url": blog_url, "topic": "", "vid_url": ""}
+            rss_xml = build_rss_feed(new_post=rss_new_post)
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='p/feed.xml',
+                Body=rss_xml.encode('utf-8'),
+                ContentType='application/rss+xml; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   \U0001f4e4 Blog S3: Updated p/feed.xml (RSS)")
+            invalidation_paths.append('/p/feed.xml')
+        except Exception as e:
+            print(f"   \u26a0\ufe0f Blog S3: Could not update feed.xml: {e}")
+
+        # ── 6. Upload blog widget snippet ──
+        try:
+            widget_html = build_blog_widget_html()
+            if widget_html:
+                s3.put_object(
+                    Bucket=BLOG_S3_BUCKET,
+                    Key='p/blog-widget.html',
+                    Body=widget_html.encode('utf-8'),
+                    ContentType='text/html; charset=utf-8',
+                    CacheControl='no-cache'
+                )
+                print(f"   \U0001f4e4 Blog S3: Updated p/blog-widget.html (widget)")
+                invalidation_paths.append('/p/blog-widget.html')
+        except Exception as e:
+            print(f"   \u26a0\ufe0f Blog S3: Could not update blog-widget.html: {e}")
+
+        # ── 7. Invalidate CloudFront ──
         if invalidation_paths:
             try:
                 cloudfront.create_invalidation(
@@ -4246,7 +4484,7 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             except Exception as e:
                 print(f"   ⚠️ Blog S3: CloudFront invalidation failed: {e}")
 
-        # ── 6. Submit to search engines & AI crawlers ──
+        # ── 8. Submit to search engines & AI crawlers ──
         submit_to_search_engines(blog_url, s3_client=s3)
 
         return True
@@ -4256,7 +4494,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         return False
 
 
-def save_blog_history(topic, title, slug, blog_url, vid_url):
+def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
+                      description="", word_count=0):
     """Save blog post metadata to blog_history.json for tracking."""
     try:
         history = []
@@ -4270,7 +4509,10 @@ def save_blog_history(topic, title, slug, blog_url, vid_url):
             "title": title,
             "slug": slug,
             "url": blog_url,
-            "vid_url": vid_url or ""
+            "vid_url": vid_url or "",
+            "tags": list(tags)[:10] if tags else [],
+            "description": (description or "")[:200],
+            "word_count": word_count or 0,
         })
 
         with open(BLOG_HISTORY_FILE, "w") as f:
@@ -5684,7 +5926,9 @@ def main():
 
             if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
                 if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url, blog_images, vid_id=vid_id):
-                    save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url)
+                    save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url,
+                                      tags=yt_tags, description=yt_description,
+                                      word_count=len(blog_html.split()) if blog_html else 0)
                     print(f"   ✅ Blog published: {blog_url}")
             elif blog_html:
                 print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
