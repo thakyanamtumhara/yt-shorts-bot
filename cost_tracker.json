@@ -215,5 +215,20 @@
       "whisper": 0.0056,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-27T15:36:32.311963",
+    "topic": "Supima cotton vs regular combed cotton \u2014 touch karke pata chal jayega",
+    "title": "Rs 50 Extra for Supima Cotton? Worth It or Waste?",
+    "total_usd": 2.8312,
+    "duration_min": 25.9,
+    "breakdown": {
+      "claude_sonnet": 0.1875,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0124,
+      "veo_clips": 2.5,
+      "whisper": 0.0063,
+      "blog_images": 0.075
+    }
   }
 ]
