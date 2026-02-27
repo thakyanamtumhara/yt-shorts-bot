@@ -1217,11 +1217,33 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # Upload to a temporary public host (with fallback chain).
         print("   📸 Cross-posting to Instagram Reels...")
 
-        # Step 0: Upload video to temporary public URL
+        # Step 0: Upload video to a public URL that Instagram can fetch.
+        # S3 + CloudFront is the most reliable — Instagram always reaches it.
+        # Free hosts (0x0.st, litterbox, file.io) are unreliable:
+        #   - 0x0.st times out on large files (>30MB)
+        #   - litterbox returns URLs that Instagram can't download (error 2207077)
+        #   - file.io is single-download (Instagram retry = 404)
         public_url = None
         file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+        ig_s3_key = f"p/ig-reel-{int(time.time())}.mp4"
 
-        # Host 1: 0x0.st (up to 512MB, direct URL, no account needed)
+        # Host 1 (PRIMARY): S3 + CloudFront — Instagram always reaches this
+        try:
+            import boto3
+            print(f"   📤 Uploading to S3/CloudFront ({file_size_mb:.0f}MB)...")
+            s3 = boto3.client("s3")
+            s3.upload_file(
+                video_path,
+                BLOG_S3_BUCKET,
+                ig_s3_key,
+                ExtraArgs={"ContentType": "video/mp4", "CacheControl": "max-age=3600"},
+            )
+            public_url = f"{BLOG_BASE_URL}/{ig_s3_key}"
+            print(f"   ✅ Video hosted via CloudFront: {public_url}")
+        except Exception as e:
+            print(f"   ⚠️ S3 upload failed: {e}")
+
+        # Host 2 (fallback): 0x0.st (up to 512MB, direct URL, no account needed)
         if not public_url:
             try:
                 print(f"   📤 Uploading to 0x0.st ({file_size_mb:.0f}MB)...")
@@ -1239,7 +1261,7 @@ def cross_post_to_instagram(video_path, title, description, topic):
             except Exception as e:
                 print(f"   ⚠️ 0x0.st error: {e}")
 
-        # Host 2: litterbox.catbox.moe (up to 1GB, 72h expiry)
+        # Host 3 (fallback): litterbox.catbox.moe (up to 1GB, 72h expiry)
         if not public_url:
             try:
                 print(f"   📤 Trying litterbox.catbox.moe...")
@@ -1252,36 +1274,14 @@ def cross_post_to_instagram(video_path, title, description, topic):
                     )
                 if resp.status_code == 200 and resp.text.strip().startswith("http"):
                     public_url = resp.text.strip()
-                    print(f"   📤 Video hosted via litterbox.catbox.moe")
+                    print(f"   ⚠️ Video hosted via litterbox (Instagram may not accept this)")
                 else:
                     print(f"   ⚠️ litterbox failed ({resp.status_code}): {resp.text[:100]}")
             except Exception as e:
                 print(f"   ⚠️ litterbox error: {e}")
 
-        # Host 3: file.io (fallback, 100MB limit)
         if not public_url:
-            try:
-                print(f"   📤 Trying file.io (fallback)...")
-                with open(video_path, "rb") as vf:
-                    resp = requests.post(
-                        "https://file.io",
-                        files={"file": (os.path.basename(video_path), vf, "video/mp4")},
-                        timeout=120,
-                    )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("success"):
-                        public_url = data.get("link")
-                        print(f"   📤 Video hosted via file.io")
-                    else:
-                        print(f"   ⚠️ file.io failed: {data}")
-                else:
-                    print(f"   ⚠️ file.io failed ({resp.status_code})")
-            except Exception as e:
-                print(f"   ⚠️ file.io error: {e}")
-
-        if not public_url:
-            print(f"   ❌ Instagram: all temp hosts failed. Skipping cross-post.")
+            print(f"   ❌ Instagram: all hosts failed. Skipping cross-post.")
             return None
 
         # Step 1: Detect best posting time from audience insights
@@ -1395,6 +1395,12 @@ def cross_post_to_instagram(video_path, title, description, topic):
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
                     print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")
+                    # Cleanup: delete temp video from S3 (non-blocking)
+                    if ig_s3_key:
+                        try:
+                            boto3.client("s3").delete_object(Bucket=BLOG_S3_BUCKET, Key=ig_s3_key)
+                        except Exception:
+                            pass
                     return ig_media_id
 
                 error_text = publish_resp.text[:300]
