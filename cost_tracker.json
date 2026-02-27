@@ -200,5 +200,20 @@
       "whisper": 0.0053,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-27T13:13:07.260478",
+    "topic": "Myth: 100% cotton best hai \u2014 kuch cases mein blend better hota hai",
+    "title": "Stop Ordering 100% Cotton (Blend Better Hai for DTG Printing)",
+    "total_usd": 2.8457,
+    "duration_min": 31.7,
+    "breakdown": {
+      "claude_sonnet": 0.1879,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0271,
+      "veo_clips": 2.5,
+      "whisper": 0.0056,
+      "blog_images": 0.075
+    }
   }
 ]
