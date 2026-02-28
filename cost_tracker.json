@@ -230,5 +230,20 @@
       "whisper": 0.0063,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-02-28T13:00:47.532259",
+    "topic": "Wash test karo print ke baad \u2014 3 wash ke baad asli quality dikhti hai",
+    "title": "DTG Print Cracked in 3 Washes? Here's Why (Quality Test)",
+    "total_usd": 2.8347,
+    "duration_min": 29.1,
+    "breakdown": {
+      "claude_sonnet": 0.1879,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0146,
+      "veo_clips": 2.5,
+      "whisper": 0.0072,
+      "blog_images": 0.075
+    }
   }
 ]
