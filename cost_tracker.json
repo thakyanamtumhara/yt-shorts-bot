@@ -245,5 +245,20 @@
       "whisper": 0.0072,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-01T12:59:15.741525",
+    "topic": "Tri-blend fabric kya hota hai \u2014 cotton polyester rayon ka mix",
+    "title": "Cotton+Polyester+Rayon Mix: Why Printers Avoid Tri-blend Fabric",
+    "total_usd": 2.8561,
+    "duration_min": 25.8,
+    "breakdown": {
+      "claude_sonnet": 0.2102,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0142,
+      "veo_clips": 2.5,
+      "whisper": 0.0067,
+      "blog_images": 0.075
+    }
   }
 ]
