@@ -260,5 +260,20 @@
       "whisper": 0.0067,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-02T13:07:45.979975",
+    "topic": "Fabric weight ghar pe check karo \u2014 ek scissor aur weighing scale chahiye bas",
+    "title": "Was I Cheated? 200 GSM vs 180 GSM Home Test #printingbusiness",
+    "total_usd": 2.8572,
+    "duration_min": 26.8,
+    "breakdown": {
+      "claude_sonnet": 0.2128,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0127,
+      "veo_clips": 2.5,
+      "whisper": 0.0068,
+      "blog_images": 0.075
+    }
   }
 ]
