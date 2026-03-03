@@ -275,5 +275,20 @@
       "whisper": 0.0068,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-03T13:12:04.155236",
+    "topic": "Organic cotton aur regular cotton \u2014 printing business ke liye kya fark padta hai",
+    "title": "Stop Buying Organic Cotton for Printing (Big Mistake) #customprinting",
+    "total_usd": 2.8327,
+    "duration_min": 32.1,
+    "breakdown": {
+      "claude_sonnet": 0.1855,
+      "replicate_music": 0.05,
+      "tts_openai": 0.015,
+      "veo_clips": 2.5,
+      "whisper": 0.0072,
+      "blog_images": 0.075
+    }
   }
 ]
