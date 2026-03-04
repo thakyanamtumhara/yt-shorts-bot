@@ -290,5 +290,20 @@
       "whisper": 0.0072,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-04T13:02:11.091352",
+    "topic": "Embroidery blank ke liye 200+ GSM chahiye \u2014 patla fabric pe thread kheechta hai",
+    "title": "180 GSM for Embroidery? This Mistake Cost Him 300 T-Shirts",
+    "total_usd": 2.8469,
+    "duration_min": 23.2,
+    "breakdown": {
+      "claude_sonnet": 0.2015,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0136,
+      "veo_clips": 2.5,
+      "whisper": 0.0068,
+      "blog_images": 0.075
+    }
   }
 ]
