@@ -320,5 +320,20 @@
       "whisper": 0.0067,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-06T13:04:30.493472",
+    "topic": "Sweatshirt vs hoodie blank \u2014 margin kismein zyada hai",
+    "title": "Rs 120 Sweatshirt vs Rs 180 Hoodie: Profit Breakdown Shocks!",
+    "total_usd": 2.865,
+    "duration_min": 26.5,
+    "breakdown": {
+      "claude_sonnet": 0.2205,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0133,
+      "veo_clips": 2.5,
+      "whisper": 0.0062,
+      "blog_images": 0.075
+    }
   }
 ]
