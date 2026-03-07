@@ -87,6 +87,14 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = 'test'
 import pytz
 from datetime import datetime
 
+# Stub out repair functions that publish_blog_to_s3 calls
+def _noop(*a, **kw): pass
+def _build_blog_index_html(**kw): return '<html><body>index</body></html>'
+def _build_sitemap_xml(**kw): return '<?xml version="1.0"?><urlset></urlset>'
+def _build_rss_feed(**kw): return '<?xml version="1.0"?><rss></rss>'
+def _build_blog_widget_html(**kw): return '<div>widget</div>'
+def _submit_noop(url, **kw): pass
+
 # Build a local namespace with everything publish_blog_to_s3 needs
 local_ns = {
     'os': os, 'time': time, 'pytz': pytz, 'datetime': datetime,
@@ -95,6 +103,15 @@ local_ns = {
     'BLOG_CLOUDFRONT_DIST_ID': BLOG_CLOUDFRONT_DIST_ID,
     'TIMEZONE': 'Asia/Kolkata',
     'print': print,
+    'repair_existing_blog_posts': _noop,
+    'repair_sitemap': _noop,
+    'repair_index_html': _noop,
+    'build_blog_index_html': _build_blog_index_html,
+    'build_sitemap_xml': _build_sitemap_xml,
+    'build_rss_feed': _build_rss_feed,
+    'build_blog_widget_html': _build_blog_widget_html,
+    'submit_to_search_engines': _submit_noop,
+    'json': __import__('json'),
 }
 exec(publish_source, local_ns)
 publish_blog_to_s3 = local_ns['publish_blog_to_s3']
@@ -152,17 +169,19 @@ print()
 post_keys = [k for k in captured_keys if k.startswith("post/")]
 check(f"No S3 keys under post/ (found {len(post_keys)})", len(post_keys) == 0)
 
-# All keys under p/
+# All keys under p/ or at root (sitemap.xml is allowed at root)
 p_keys = [k for k in captured_keys if k.startswith("p/")]
-check(f"All {len(captured_keys)} S3 keys under p/", len(p_keys) == len(captured_keys))
+root_allowed = [k for k in captured_keys if k in ("sitemap.xml", "robots.txt")]
+check(f"All {len(captured_keys)} S3 keys under p/ or allowed root files", len(p_keys) + len(root_allowed) == len(captured_keys))
 
 # No /post/ in CloudFront invalidation
 post_inv = [p for p in captured_invalidations if "/post/" in p]
 check(f"No CloudFront paths with /post/ (found {len(post_inv)})", len(post_inv) == 0)
 
-# All CF paths under /p/
+# All CF paths under /p/ or allowed root paths
 p_inv = [p for p in captured_invalidations if p.startswith("/p/")]
-check(f"All CloudFront invalidation under /p/", len(p_inv) == len(captured_invalidations))
+root_inv = [p for p in captured_invalidations if p in ("/sitemap.xml", "/robots.txt")]
+check(f"All CloudFront invalidation under /p/ or allowed root", len(p_inv) + len(root_inv) == len(captured_invalidations))
 
 # Expected specific keys
 expected = [
@@ -171,6 +190,7 @@ expected = [
     f"p/{test_slug}-section1.webp",
     "p/index.html",
     "p/map.xml",
+    "sitemap.xml",
     "p/llms.txt",
 ]
 for ek in expected:

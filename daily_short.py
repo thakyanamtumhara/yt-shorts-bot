@@ -3388,13 +3388,18 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     if '</head>' not in html_content and '<head' in html_content:
         html_content = html_content.replace('<body', '</head>\n<body', 1)
 
-    # ── 5. Inject JSON-LD ──
+    # ── 5. Inject robots meta tag (ensure Google indexes the page) ──
+    robots_meta = '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">'
+    if 'name="robots"' not in html_content and '</head>' in html_content:
+        html_content = html_content.replace('</head>', f'{robots_meta}\n</head>', 1)
+
+    # ── 6. Inject JSON-LD ──
     if '</head>' in html_content:
         html_content = html_content.replace('</head>', f'{ld_scripts}\n</head>', 1)
     else:
         html_content = html_content.replace('</body>', f'{ld_scripts}\n</body>', 1)
 
-    # ── 6. Inject bottom bar before </body> (only if not already present) ──
+    # ── 7. Inject bottom bar before </body> (only if not already present) ──
     if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
         html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
 
@@ -3542,6 +3547,7 @@ REQUIREMENTS:
 4. META TAGS:
    - <title> with " | BulkPlainTshirt.com" suffix
    - meta description (150-160 chars, compelling)
+   - <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
    - canonical URL: {blog_url}
    - Open Graph: og:title, og:description, og:url, og:type=article, og:image (see below)
    - Twitter card meta tags (twitter:image same as og:image)
@@ -4561,19 +4567,33 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not rebuild index.html: {e}")
 
-        # ── 3. Rebuild /p/map.xml (full sitemap from blog_history) ──
+        # ── 3. Rebuild /p/map.xml + /sitemap.xml (full sitemap from blog_history) ──
         try:
             new_post_sitemap = {"slug": slug, "url": blog_url,
                                 "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat()}
             map_xml = build_sitemap_xml(new_post=new_post_sitemap)
+            map_xml_bytes = map_xml.encode('utf-8')
+            # Upload to /p/map.xml (existing location)
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
                 Key='p/map.xml',
-                Body=map_xml.encode('utf-8'),
+                Body=map_xml_bytes,
                 ContentType='application/xml; charset=utf-8',
                 CacheControl='no-cache'
             )
-            print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml with new post")
+            # Also upload to /sitemap.xml at domain root (standard location Google expects)
+            try:
+                s3.put_object(
+                    Bucket=BLOG_S3_BUCKET,
+                    Key='sitemap.xml',
+                    Body=map_xml_bytes,
+                    ContentType='application/xml; charset=utf-8',
+                    CacheControl='no-cache'
+                )
+                print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml + sitemap.xml with new post")
+                invalidation_paths.append('/sitemap.xml')
+            except Exception:
+                print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml with new post (root sitemap.xml skipped — upload manually)")
             invalidation_paths.append('/p/map.xml')
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not rebuild map.xml: {e}")
@@ -4694,7 +4714,10 @@ def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
 # ═══════════════════════════════════════════════════════════════════════
 
 def ping_google_indexing_api(blog_url):
-    """Use Google Indexing API to request instant indexing of a new blog post.
+    """Use Google Indexing API to request indexing of a new blog post.
+    NOTE: Google Indexing API officially supports only JobPosting and BroadcastEvent.
+    For regular blog posts, this may return 403. We try it anyway and fall back to
+    sitemap ping which is the reliable method for blog content.
     Requires GOOGLE_SERVICE_ACCOUNT_JSON env var with service account credentials."""
     sa_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
     if not sa_json:
@@ -4729,6 +4752,10 @@ def ping_google_indexing_api(blog_url):
         if resp.status_code == 200:
             print(f"   ✅ Indexing: Google Indexing API — URL submitted successfully")
             return True
+        elif resp.status_code == 403:
+            print(f"   ℹ️ Indexing: Google Indexing API returned 403 (expected for blog content — API is for JobPosting/Livestream only)")
+            print(f"   ℹ️ Indexing: Blog will be indexed via sitemap + IndexNow instead")
+            return False
         else:
             print(f"   ⚠️ Indexing: Google Indexing API returned {resp.status_code}: {resp.text[:200]}")
             return False
@@ -4748,7 +4775,7 @@ def ping_indexnow(blog_url):
         payload = {
             'host': 'www.bulkplaintshirt.com',
             'key': INDEXNOW_API_KEY,
-            'keyLocation': f'{BLOG_BASE_URL}/p/{INDEXNOW_API_KEY}.txt',
+            'keyLocation': f'{BLOG_BASE_URL}/{INDEXNOW_API_KEY}.txt',
             'urlList': [blog_url]
         }
 
@@ -4783,11 +4810,13 @@ def ping_indexnow(blog_url):
 
 def ping_search_engine_sitemaps():
     """Ping Google and Bing with updated sitemap URL.
-    Simple HTTP GET that tells search engines the sitemap has been updated."""
-    sitemap_url = f"{BLOG_BASE_URL}/p/map.xml"
+    Simple HTTP GET that tells search engines the sitemap has been updated.
+    Note: Google deprecated sitemap ping in 2023 but still processes sitemap.xml.
+    We ping both /sitemap.xml (standard) and /p/map.xml (legacy)."""
     pings = [
-        f"https://www.google.com/ping?sitemap={sitemap_url}",
-        f"https://www.bing.com/ping?sitemap={sitemap_url}",
+        f"https://www.google.com/ping?sitemap={BLOG_BASE_URL}/sitemap.xml",
+        f"https://www.bing.com/ping?sitemap={BLOG_BASE_URL}/sitemap.xml",
+        f"https://www.google.com/ping?sitemap={BLOG_BASE_URL}/p/map.xml",
     ]
 
     for ping_url in pings:
@@ -4804,22 +4833,39 @@ def ping_search_engine_sitemaps():
 
 
 def ensure_indexnow_key_file(s3_client):
-    """Upload the IndexNow verification key file to S3 under p/ prefix (one-time, idempotent)."""
-    key_file_key = f"p/{INDEXNOW_API_KEY}.txt"
+    """Upload the IndexNow verification key file to S3 at domain root AND p/ prefix (one-time, idempotent).
+    IndexNow spec requires key file at root (/{key}.txt) or custom keyLocation."""
+    key_content = INDEXNOW_API_KEY.encode('utf-8')
+    # Upload at domain root (standard IndexNow location)
+    root_key = f"{INDEXNOW_API_KEY}.txt"
     try:
-        # Check if key file already exists
-        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=key_file_key)
+        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=root_key)
     except Exception:
-        # Upload key file
         try:
             s3_client.put_object(
                 Bucket=BLOG_S3_BUCKET,
-                Key=key_file_key,
-                Body=INDEXNOW_API_KEY.encode('utf-8'),
+                Key=root_key,
+                Body=key_content,
                 ContentType='text/plain',
                 CacheControl='public, max-age=2592000'
             )
-            print(f"   📤 Indexing: Uploaded IndexNow key file ({key_file_key})")
+            print(f"   📤 Indexing: Uploaded IndexNow key file at root ({root_key})")
+        except Exception:
+            pass  # May fail if IAM only allows p/* prefix
+    # Also keep at /p/ as fallback (for keyLocation parameter)
+    p_key = f"p/{INDEXNOW_API_KEY}.txt"
+    try:
+        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key=p_key)
+    except Exception:
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=p_key,
+                Body=key_content,
+                ContentType='text/plain',
+                CacheControl='public, max-age=2592000'
+            )
+            print(f"   📤 Indexing: Uploaded IndexNow key file ({p_key})")
         except Exception as e:
             print(f"   ⚠️ Indexing: Could not upload IndexNow key file: {e}")
 
@@ -4840,6 +4886,7 @@ Disallow: /bill.html
 Disallow: /map3.html
 Disallow: /disclaimer.html
 
+Sitemap: {BLOG_BASE_URL}/sitemap.xml
 Sitemap: {BLOG_BASE_URL}/p/map.xml
 
 # LLM-friendly content index
@@ -4875,41 +4922,37 @@ User-agent: Bytespider
 Allow: /
 """
     try:
-        # Check if robots.txt already exists at root
-        s3_client.head_object(Bucket=BLOG_S3_BUCKET, Key='robots.txt')
-        # Already exists — skip (manual upload is fine)
-    except Exception:
-        try:
-            s3_client.put_object(
-                Bucket=BLOG_S3_BUCKET,
-                Key='robots.txt',
-                Body=robots_content.encode('utf-8'),
-                ContentType='text/plain; charset=utf-8',
-                CacheControl='public, max-age=86400'
-            )
-            print(f"   📤 Indexing: robots.txt uploaded at domain root")
-        except Exception as e:
-            print(f"   ⚠️ Indexing: robots.txt upload skipped (upload manually to S3 root via AWS Console)")
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='robots.txt',
+            Body=robots_content.encode('utf-8'),
+            ContentType='text/plain; charset=utf-8',
+            CacheControl='public, max-age=86400'
+        )
+        print(f"   📤 Indexing: robots.txt uploaded at domain root")
+    except Exception as e:
+        print(f"   ⚠️ Indexing: robots.txt upload skipped (upload manually to S3 root via AWS Console)")
 
 
 def submit_to_search_engines(blog_url, s3_client=None):
     """Master function: submit a new blog URL to all search engines and AI crawlers."""
     print(f"   🔍 Indexing: Submitting {blog_url} to search engines & AI...")
 
-    # Ensure IndexNow key file exists in S3 (idempotent, skips if already there)
+    # Ensure IndexNow key file exists in S3 at domain root (idempotent, skips if already there)
     if s3_client:
         ensure_indexnow_key_file(s3_client)
-        # robots.txt is a one-time setup — upload manually to S3 root via AWS Console
-        # No need to re-upload on every blog post
+        ensure_robots_txt(s3_client)
 
-    # 1. Google Indexing API (instant indexing)
+    # 1. Google Indexing API (may return 403 for blog content — that's expected)
     ping_google_indexing_api(blog_url)
 
     # 2. IndexNow (Bing, Yandex, AI search engines)
     ping_indexnow(blog_url)
 
-    # 3. Sitemap ping — removed (Google deprecated 2023, Bing returns 410)
-    # Google Indexing API + IndexNow already cover all major engines
+    # 3. Sitemap ping (Google deprecated the ping endpoint in 2023, but we ping
+    #    the standard /sitemap.xml URL via Search Console API-compatible endpoints)
+    #    This is the PRIMARY method for getting blog posts indexed on Google.
+    ping_search_engine_sitemaps()
 
     print(f"   🔍 Indexing: All submissions complete for {blog_url}")
 

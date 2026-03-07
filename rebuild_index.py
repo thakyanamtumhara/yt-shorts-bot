@@ -60,6 +60,7 @@ def main():
     files = [
         ("p/index.html", index_html, "text/html; charset=utf-8"),
         ("p/map.xml", sitemap_xml, "application/xml; charset=utf-8"),
+        ("sitemap.xml", sitemap_xml, "application/xml; charset=utf-8"),
         ("p/feed.xml", rss_xml, "application/rss+xml; charset=utf-8"),
     ]
 
@@ -81,8 +82,8 @@ def main():
             DistributionId=BLOG_CLOUDFRONT_DIST_ID,
             InvalidationBatch={
                 "Paths": {
-                    "Quantity": 3,
-                    "Items": ["/p/index.html", "/p/map.xml", "/p/feed.xml"],
+                    "Quantity": 4,
+                    "Items": ["/p/index.html", "/p/map.xml", "/sitemap.xml", "/p/feed.xml"],
                 },
                 "CallerReference": f"rebuild-{__import__('time').time():.0f}",
             },
