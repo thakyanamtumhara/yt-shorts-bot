@@ -335,5 +335,20 @@
       "whisper": 0.0062,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-07T12:58:31.035971",
+    "topic": "Single jersey aur interlock fabric \u2014 fark samjho warna galti hogi",
+    "title": "\u20b945 Fabric Mistake Cost Him 300 T-shirts #wholesale #fabric",
+    "total_usd": 2.8457,
+    "duration_min": 27.1,
+    "breakdown": {
+      "claude_sonnet": 0.2001,
+      "replicate_music": 0.05,
+      "tts_openai": 0.014,
+      "veo_clips": 2.5,
+      "whisper": 0.0066,
+      "blog_images": 0.075
+    }
   }
 ]
