@@ -3936,16 +3936,29 @@ def repair_sitemap(s3_client):
     """Rebuild sitemap from blog_history.json + static pages (idempotent)."""
     try:
         map_xml = build_sitemap_xml()
+        map_xml_bytes = map_xml.encode('utf-8')
         s3_client.put_object(
             Bucket=BLOG_S3_BUCKET,
             Key='p/map.xml',
-            Body=map_xml.encode('utf-8'),
+            Body=map_xml_bytes,
             ContentType='application/xml; charset=utf-8',
             CacheControl='no-cache'
         )
-        print(f"   \U0001f527 Sitemap: Rebuilt map.xml from blog_history")
+        print(f"   🔧 Sitemap: Rebuilt map.xml from blog_history")
+        # Also upload to /sitemap.xml at domain root (standard location)
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key='sitemap.xml',
+                Body=map_xml_bytes,
+                ContentType='application/xml; charset=utf-8',
+                CacheControl='no-cache'
+            )
+            print(f"   🔧 Sitemap: Also uploaded root /sitemap.xml")
+        except Exception as e2:
+            print(f"   ⚠️ Sitemap: Root /sitemap.xml upload failed ({e2}) — upload manually via AWS Console")
     except Exception as e:
-        print(f"   \u26a0\ufe0f Sitemap: Could not rebuild map.xml: {e}")
+        print(f"   ⚠️ Sitemap: Could not rebuild map.xml: {e}")
 
 
 def build_blog_index_html(new_post=None):
@@ -3974,7 +3987,40 @@ def build_blog_index_html(new_post=None):
         if not any(p.get('slug') == new_post['slug'] for p in posts):
             posts.append(new_post)
 
-    # Sort newest first
+    # Merge legacy posts into the posts list so they appear as visible cards
+    # (not just footer links). These are older posts NOT tracked in blog_history.json.
+    legacy_card_posts = [
+        {"slug": "240gsmtshirt", "title": "240gsm Dropshoulder Tshirts", "topic": "240 GSM heavyweight dropshoulder t-shirts wholesale", "tags": ["plain tshirts", "bulk tshirts", "GSM fabric"]},
+        {"slug": "DelhiBIGGESTPlainTShirtWarehouse", "title": "Delhi's BIGGEST Plain T Shirt Warehouse", "topic": "Biggest plain t-shirt warehouse in Delhi", "tags": ["plain tshirts", "tshirt wholesale", "bulk tshirts"]},
+        {"slug": "Biggest-Plain-Tshirt-Warehouse", "title": "Biggest Plain T shirt Warehouse", "topic": "India's biggest plain t-shirt warehouse", "tags": ["plain tshirts", "tshirt wholesale"]},
+        {"slug": "build-tshirt-brand", "title": "Build your own t-shirt brand", "topic": "How to build your own t-shirt brand from scratch", "tags": ["printing business", "tshirt manufacturer"]},
+        {"slug": "premium-plain-t-shirts-bulk-supplier-india", "title": "Premium Plain T-Shirts in Bulk", "topic": "Premium plain t-shirts bulk supplier in India", "tags": ["plain tshirts", "bulk tshirts", "tshirt manufacturer"]},
+        {"slug": "wholesale-plain-t-shirts", "title": "Wholesale Plain T-Shirts for Custom Printing", "topic": "Wholesale plain t-shirts for custom printing businesses", "tags": ["plain tshirts", "custom printing", "tshirt wholesale"]},
+        {"slug": "fast-delivery-plain-t-shirts-maharashtra", "title": "Fast 2-Day Plain T-Shirt Delivery in Maharashtra", "topic": "Fast delivery of plain t-shirts in Maharashtra", "tags": ["plain tshirts", "bulk tshirts"]},
+        {"slug": "plain-t-shirt-wholesale-near-me-delhi-india", "title": "Top T Shirt Wholesalers in Delhi", "topic": "Top plain t-shirt wholesalers in Delhi", "tags": ["plain tshirts", "tshirt wholesale"]},
+        {"slug": "dropshipping", "title": "B2B Dropshipping Plain T shirt", "topic": "B2B dropshipping guide for plain t-shirts", "tags": ["printing business", "bulk tshirts"]},
+        {"slug": "AcidWashTshirt", "title": "AcidWash Plain T shirts", "topic": "Acid wash plain t-shirts wholesale", "tags": ["plain tshirts", "fabric texture"]},
+        {"slug": "Price-Drop-240gsm-Dropshoulder-Tshirts", "title": "Price Drop 240gsm Dropshoulder T shirt", "topic": "Price drop on 240 GSM dropshoulder t-shirts", "tags": ["plain tshirts", "GSM fabric", "bulk tshirts"]},
+        {"slug": "Wholesale-Blanks", "title": "Wholesale Blanks", "topic": "Wholesale blank t-shirts and apparel", "tags": ["embroidery blanks", "bulk tshirts", "tshirt wholesale"]},
+        {"slug": "wholesale-blank-t-shirts", "title": "Wholesale Blank T-Shirts", "topic": "Wholesale blank t-shirts for printing and embroidery", "tags": ["embroidery blanks", "plain tshirts", "tshirt wholesale"]},
+        {"slug": "Shipping-Method", "title": "PAN India Fast Delivery for Wholesale Orders", "topic": "Shipping methods and delivery options", "tags": ["bulk tshirts", "tshirt wholesale"]},
+        {"slug": "acid-wash-tshirts", "title": "Acid Wash T-Shirts Wholesale India", "topic": "Acid wash t-shirts at wholesale prices", "tags": ["plain tshirts", "fabric texture"]},
+        {"slug": "Dropshoulders", "title": "Dropshoulder 240gsm", "topic": "240 GSM dropshoulder t-shirts", "tags": ["plain tshirts", "GSM fabric"]},
+        {"slug": "plainhoodie", "title": "Plain Hoodies 320gsm, 430gsm", "topic": "Plain hoodies in 320gsm and 430gsm", "tags": ["plain tshirts", "GSM fabric", "bulk tshirts"]},
+        {"slug": "430gsm-dropshoulder-hoodie", "title": "430gsm Dropshoulder Hoodie", "topic": "Heavy 430 GSM dropshoulder hoodies", "tags": ["GSM fabric", "bulk tshirts"]},
+        {"slug": "b2b-dropshipping-guide", "title": "B2B Dropshipping Guide", "topic": "Complete B2B dropshipping guide for t-shirt business", "tags": ["printing business", "bulk tshirts"]},
+        {"slug": "next-day-train-delivery", "title": "Next Day Train Delivery", "topic": "Next day delivery by train for wholesale orders", "tags": ["bulk tshirts", "tshirt wholesale"]},
+        {"slug": "how-to-order", "title": "How to Order", "topic": "How to place wholesale orders on Sale91.com", "tags": ["Sale91", "tshirt wholesale"]},
+        {"slug": "third-party-printing-service", "title": "Third Party Printing Service", "topic": "Third party printing services for custom t-shirts", "tags": ["custom printing", "printing business"]},
+        {"slug": "true-bio-rneck", "title": "True Bio RNeck T Shirts", "topic": "True bio-wash round neck plain t-shirts", "tags": ["plain tshirts", "organic cotton"]},
+        {"slug": "cloud-dancer-tshirts", "title": "Cloud Dancer T shirts", "topic": "Cloud dancer shade plain t-shirts", "tags": ["plain tshirts", "fabric texture"]},
+    ]
+    existing_slugs = {p.get('slug', '') for p in posts}
+    for lp in legacy_card_posts:
+        if lp['slug'] not in existing_slugs:
+            posts.append(lp)
+
+    # Sort newest first (posts without dates go to the end)
     posts.sort(key=lambda p: p.get('date', ''), reverse=True)
 
     # Collect unique tags for filter pills
@@ -4582,6 +4628,7 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                 CacheControl='no-cache'
             )
             # Also upload to /sitemap.xml at domain root (standard location Google expects)
+            sitemap_root_ok = False
             try:
                 s3.put_object(
                     Bucket=BLOG_S3_BUCKET,
@@ -4590,10 +4637,26 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                     ContentType='application/xml; charset=utf-8',
                     CacheControl='no-cache'
                 )
-                print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml + sitemap.xml with new post")
+                sitemap_root_ok = True
+            except Exception as e1:
+                print(f"   ⚠️ Blog S3: Root sitemap.xml upload failed ({e1}), retrying with ACL...")
+                try:
+                    s3.put_object(
+                        Bucket=BLOG_S3_BUCKET,
+                        Key='sitemap.xml',
+                        Body=map_xml_bytes,
+                        ContentType='application/xml; charset=utf-8',
+                        CacheControl='no-cache',
+                        ACL='public-read'
+                    )
+                    sitemap_root_ok = True
+                except Exception as e2:
+                    print(f"   ⚠️ Blog S3: Root sitemap.xml ACL retry also failed ({e2})")
+            if sitemap_root_ok:
+                print(f"   📤 Blog S3: Rebuilt map.xml + sitemap.xml with new post")
                 invalidation_paths.append('/sitemap.xml')
-            except Exception:
-                print(f"   \U0001f4e4 Blog S3: Rebuilt map.xml with new post (root sitemap.xml skipped — upload manually)")
+            else:
+                print(f"   📤 Blog S3: Rebuilt map.xml with new post (root sitemap.xml failed — upload via AWS Console)")
             invalidation_paths.append('/p/map.xml')
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not rebuild map.xml: {e}")
