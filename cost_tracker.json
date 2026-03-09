@@ -365,5 +365,20 @@
       "whisper": 0.0061,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-09T13:07:48.577020",
+    "topic": "Return hua kyunki color screen pe alag tha \u2014 ye common problem hai",
+    "title": "300 Pieces Returned Because of THIS Color Mistake #wholesale",
+    "total_usd": 2.8691,
+    "duration_min": 24.9,
+    "breakdown": {
+      "claude_sonnet": 0.2128,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0257,
+      "veo_clips": 2.5,
+      "whisper": 0.0056,
+      "blog_images": 0.075
+    }
   }
 ]
