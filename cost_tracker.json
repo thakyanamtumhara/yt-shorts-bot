@@ -380,5 +380,21 @@
       "whisper": 0.0056,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-10T13:09:12.141713",
+    "topic": "500 piece screen print order mein 20 piece waste hua \u2014 ye normal hai ya nahi",
+    "title": "20 Rejected Out of 500? Screen Print Waste Truth Revealed",
+    "total_usd": 2.7181,
+    "duration_min": 26.7,
+    "breakdown": {
+      "claude_sonnet": 0.2115,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0262,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0054,
+      "blog_images": 0.075
+    }
   }
 ]
