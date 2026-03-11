@@ -1,16 +1,5 @@
 [
   {
-    "topic": "30s aur 40s yarn count ka matlab — patla aur mota fabric aise banta hai",
-    "prompts": [
-      "Close-up shot of Indian man's hand holding a smartphone to his ear, other hand holding two white plain round-neck t-shirts side by side showing texture difference, indoor warehouse setting with stacked t-shirt bundles visible in soft focus background, warm overhead lighting, camera slightly tilts down to focus on the t-shirts, vertical 9:16 format, realistic business environment, no faces visible",
-      "Overhead flat lay shot of two white plain cotton t-shirts laid side by side on a wooden table surface, left one slightly thicker looking fabric, right one visibly smoother texture, Indian warehouse background slightly blurred, natural daylight from window, camera slowly pushes in to show fabric texture detail, vertical 9:16 ratio, clean product comparison aesthetic, no text or labels visible",
-      "Extreme close-up macro shot of two white cotton fabric textures side by side, left showing thicker thread weave pattern of 30s yarn, right showing finer tighter weave of 40s yarn, camera slowly panning right to left across the texture boundary, bright diffused lighting to show thread detail clearly, shallow depth of field, vertical format, textile manufacturing detail focus",
-      "Close-up of Indian person's hands stretching and feeling a smooth white combed cotton t-shirt fabric between fingers, testing the softness and thickness, warm indoor lighting in a Tiruppur textile warehouse setting, slight camera dolly forward, fabric shows premium smooth texture, hands gently rubbing fabric to demonstrate quality, vertical 9:16 format, realistic testing scenario, no face visible",
-      "Medium shot of neatly folded stack of premium white plain round-neck t-shirts on a clean warehouse table, top t-shirt showing smooth 40s combed cotton texture, soft warm lighting from above, camera slowly dollies forward while slightly tilting down, background shows organized textile warehouse with fabric rolls, satisfying organized premium product display, vertical format, professional wholesale environment aesthetic"
-    ],
-    "date": "2026-02-22T02:32:01.395557"
-  },
-  {
     "topic": "200 GSM sweet spot hai printing ke liye — na mota na patla",
     "prompts": [
       "Close-up shot of an Indian man's hand holding a smartphone showing a customer complaint message on screen, other hand tapping the phone screen in frustration, sitting at a wooden office desk with fabric samples scattered around, warm afternoon lighting through window, shallow depth of field, slight camera push-in to emphasize the phone screen, realistic textile business office setting, vertical 9:16 format.",
@@ -328,5 +317,16 @@
       "Wide angle shot of a clean wooden packing table showing neatly folded stacks of perfectly printed custom t-shirts being counted and arranged into a large cardboard shipping box, Indian worker's hands placing final pieces, barcode label visible on box, bright warehouse lighting, camera slow zoom out showing organized workspace"
     ],
     "date": "2026-03-10T12:43:12.124841"
+  },
+  {
+    "topic": "Custom packaging se brand value badhti hai — par shuruat mein zaroor nahi",
+    "prompts": [
+      "Medium angle shot of Indian businessman's hands opening a large cardboard box filled with neatly stacked custom printed packaging boxes with colorful logo designs, camera tilts down to reveal the box is completely full and untouched, bright warehouse lighting with concrete floor visible in background, slight camera zoom in showing the unused boxes clearly",
+      "Close-up overhead shot of a clean white workspace table showing a plain white cotton t-shirt being carefully placed inside a simple transparent polybag by Indian man's hands, natural daylight from window, hands sealing the polybag with tape, camera slowly pulls back to show multiple polybags ready for dispatch beside the workspace",
+      "Medium side angle shot of wooden table surface showing two packaging options side by side - left side has a plain brown cardboard mailer box with a folded white t-shirt, right side has an elaborate custom printed box with tissue paper and branded stickers, Indian man's hands pointing at both options for comparison, warm indoor lighting, camera stays static focused on the contrast",
+      "Close-up shot of Indian man's hands using a calculator on a smartphone placed next to a stack of approximately 50 plain white folded t-shirts on a warehouse table, one hand typing numbers while other hand is counting the t-shirt stack, fluorescent warehouse lighting, slight camera dolly forward emphasizing the calculation moment, brown cardboard boxes visible blurred in background",
+      "Wide angle shot of a neat warehouse dispatch area showing multiple plain brown boxes and polybag packages arranged in organized rows on a metal rack shelf, Indian worker's hands placing one more package on the shelf, bright overhead tube lights, camera slowly pans right showing the efficient simple packaging system, concrete floor and white walls visible creating a clean professional look"
+    ],
+    "date": "2026-03-11T12:42:53.766327"
   }
 ]

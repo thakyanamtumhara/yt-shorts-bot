@@ -396,5 +396,20 @@
       "whisper": 0.0054,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-11T13:05:06.477911",
+    "topic": "Custom packaging se brand value badhti hai \u2014 par shuruat mein zaroor nahi",
+    "title": "Custom Packaging in Month 1? This Printer Lost \u20b925,000",
+    "total_usd": 2.8446,
+    "duration_min": 23.0,
+    "breakdown": {
+      "claude_sonnet": 0.1885,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0261,
+      "veo_clips": 2.5,
+      "whisper": 0.005,
+      "blog_images": 0.075
+    }
   }
 ]
