@@ -1,16 +1,5 @@
 [
   {
-    "topic": "200 GSM sweet spot hai printing ke liye — na mota na patla",
-    "prompts": [
-      "Close-up shot of an Indian man's hand holding a smartphone showing a customer complaint message on screen, other hand tapping the phone screen in frustration, sitting at a wooden office desk with fabric samples scattered around, warm afternoon lighting through window, shallow depth of field, slight camera push-in to emphasize the phone screen, realistic textile business office setting, vertical 9:16 format.",
-      "Flat lay overhead shot of three white plain cotton round-neck t-shirts laid horizontally on a light gray surface, each labeled with small fabric tags showing 180, 200, and 220 GSM numbers, Indian man's hands entering frame from top to arrange them neatly in a row, soft diffused lighting from above, camera static overhead view, textile warehouse aesthetic, vertical 9:16 format.",
-      "Close-up shot of Indian man's hands holding a 180 GSM white t-shirt up against bright window light, fabric slightly transparent with light passing through showing shadow of hand behind it, then switching to hold a 200 GSM t-shirt which blocks more light, indoor natural lighting, camera angle from front showing the transparency difference, slow movement comparing both fabrics, vertical 9:16 format.",
-      "Medium shot of a white 200 GSM cotton t-shirt laid flat on a printing table with a freshly screen-printed bold black graphic design on the chest area, Indian man's hands smoothing the print gently to show the solid opaque finish, professional printing studio lighting with warm overhead lights, camera slow tilt down from collar to print area, realistic textile printing workshop environment, vertical 9:16 format.",
-      "Close-up shot of Indian man's hands holding up a completed 200 GSM white t-shirt with vibrant multicolor DTG print on front, gently stretching the fabric to show the print quality and fabric opacity, soft natural daylight from side window creating subtle shadows, camera slightly rotating around the t-shirt to show texture and finish, satisfied gesture of hands inspecting quality, vertical 9:16 format."
-    ],
-    "date": "2026-02-22T03:04:07.158926"
-  },
-  {
     "topic": "Bamboo cotton blend trending hai — par printing ke liye theek hai ya nahi",
     "prompts": [
       "Close-up shot of Indian man's hands holding a light beige bamboo cotton blend t-shirt with visible cracked DTG print on the chest area, fingers pointing to the cracks and faded portions, warm indoor lighting with soft shadows, camera slowly pushes in to show print damage details, textile warehouse background slightly blurred, vertical 9:16 format",
@@ -328,5 +317,16 @@
       "Wide angle shot of a neat warehouse dispatch area showing multiple plain brown boxes and polybag packages arranged in organized rows on a metal rack shelf, Indian worker's hands placing one more package on the shelf, bright overhead tube lights, camera slowly pans right showing the efficient simple packaging system, concrete floor and white walls visible creating a clean professional look"
     ],
     "date": "2026-03-11T12:42:53.766327"
+  },
+  {
+    "topic": "Customer bola sizing galat hai — L size chhota lag raha hai — actual problem kya thi",
+    "prompts": [
+      "Close-up shot of Indian businessman's hands holding a plain white L-size cotton round-neck t-shirt against his torso showing it looks slightly tight across the chest area, indoor warehouse lighting with stacked folded t-shirts visible blurred in background, camera slowly zooms in on the chest area of the t-shirt being held up, 9:16 vertical format, realistic textile business environment",
+      "Medium overhead shot of a wooden warehouse desk surface showing two plain white cotton t-shirts laid flat side by side with a printed size chart paper placed between them, one t-shirt is slightly wider and longer than the other showing the difference between regular fit and body fit, warm fluorescent lighting from above, camera slowly pans right across both t-shirts, 9:16 vertical format, clean organized workspace",
+      "Close-up shot of Indian man's hands holding a measuring tape across the chest width of a plain white cotton t-shirt laid flat on a bright wooden table, measuring from armpit to armpit, the measuring tape shows clear inch markings, another folded t-shirt visible beside it, soft natural daylight from window, camera moves from left shoulder area down to right shoulder area following the measuring tape, 9:16 vertical format",
+      "Medium angle shot of Indian businessman's hands picking up a plain white cotton t-shirt from a neatly arranged stack of different sized t-shirts on a warehouse table, unfolding it completely and holding it up to check the fit by stretching the chest area slightly with both hands, bright overhead warehouse lighting, other stacked inventory visible in soft focus background, camera tilts up following the unfolding motion, 9:16 vertical format",
+      "Close-up shot of Indian man's hands placing a perfectly folded plain white cotton body-fit t-shirt into a transparent plastic packaging bag on a clean wooden table surface, the t-shirt looks premium and well-fitted, size label clearly visible on the fold, warm indoor lighting creating soft shadows, camera slowly dollies back to reveal more packaged t-shirts neatly arranged beside it, 9:16 vertical format, satisfying packaging moment"
+    ],
+    "date": "2026-03-12T12:42:13.293311"
   }
 ]

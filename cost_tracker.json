@@ -411,5 +411,21 @@
       "whisper": 0.005,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-12T13:10:06.624208",
+    "topic": "Customer bola sizing galat hai \u2014 L size chhota lag raha hai \u2014 actual problem kya thi",
+    "title": "200 T-Shirts Ordered Without Sample \u2014 What Went Wrong? #blanks",
+    "total_usd": 2.7004,
+    "duration_min": 28.6,
+    "breakdown": {
+      "claude_sonnet": 0.1916,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0281,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0057,
+      "blog_images": 0.075
+    }
   }
 ]
