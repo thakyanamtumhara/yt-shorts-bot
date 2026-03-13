@@ -427,5 +427,20 @@
       "whisper": 0.0057,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-13T13:03:15.860124",
+    "topic": "Colorfastness test ghar pe karo \u2014 rubbing se pata chal jayega",
+    "title": "300 T-Shirts Wasted? Check Colorfastness Before Printing",
+    "total_usd": 2.8639,
+    "duration_min": 23.1,
+    "breakdown": {
+      "claude_sonnet": 0.2088,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0251,
+      "veo_clips": 2.5,
+      "whisper": 0.005,
+      "blog_images": 0.075
+    }
   }
 ]

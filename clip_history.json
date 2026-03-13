@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Bamboo cotton blend trending hai — par printing ke liye theek hai ya nahi",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a light beige bamboo cotton blend t-shirt with visible cracked DTG print on the chest area, fingers pointing to the cracks and faded portions, warm indoor lighting with soft shadows, camera slowly pushes in to show print damage details, textile warehouse background slightly blurred, vertical 9:16 format",
-      "Medium shot of neatly folded stack of 8-10 bamboo cotton blend t-shirts in pastel colors on a wooden table in Indian textile warehouse, hand enters frame and picks up the top t-shirt to unfold it, examining the fabric texture, bright natural window lighting from the side, slight camera tilt down following the hand movement, vertical format",
-      "Split comparison shot showing two t-shirts side by side on a plain white surface, left side is bamboo cotton blend with smooth shiny finish, right side is pure combed cotton with matte texture, Indian man's hands touch both fabrics simultaneously to show texture difference, overhead camera angle, even studio lighting, vertical 9:16 format",
-      "Close-up shot of DTG printing machine nozzle spraying pre-treatment liquid onto a stretched bamboo blend t-shirt on the platen, droplets visible on fabric surface with uneven absorption creating slight dark patches, industrial workshop lighting, camera angle from 45 degrees showing the spray pattern, slight slow motion effect, vertical format",
-      "Overhead flat lay of three perfectly printed white pure cotton t-shirts with crisp vibrant DTG prints intact, laid on clean white table, Indian man's hand enters frame placing a quality check card next to them, bright clean lighting showing the print clarity, camera slowly zooms out to show all three shirts, vertical 9:16 format"
-    ],
-    "date": "2026-02-23T15:53:39.212772"
-  },
-  {
     "topic": "DTF printing ka fayda — dark fabric pe bhi sharp colors aate hain",
     "prompts": [
       "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt with a dull, faded red DTG print on the chest area, examining it under bright workshop lighting, fingers pointing at the washed-out color, slight camera zoom in to emphasize the poor print quality, vertical 9:16 format, well-lit from frame one",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian man's hands placing a perfectly folded plain white cotton body-fit t-shirt into a transparent plastic packaging bag on a clean wooden table surface, the t-shirt looks premium and well-fitted, size label clearly visible on the fold, warm indoor lighting creating soft shadows, camera slowly dollies back to reveal more packaged t-shirts neatly arranged beside it, 9:16 vertical format, satisfying packaging moment"
     ],
     "date": "2026-03-12T12:42:13.293311"
+  },
+  {
+    "topic": "Colorfastness test ghar pe karo — rubbing se pata chal jayega",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt against a white fabric cloth, showing a slight gray stain mark on the white cloth from color transfer, warm workshop lighting, shallow depth of field focusing on the stain, static camera angle, 9:16 vertical format, realistic textile business setting",
+      "Medium overhead shot of a clean wooden workspace table showing three plain cotton t-shirts laid flat in a row, one black, one navy blue, one maroon, next to them a folded white cotton cloth and a small bowl of water, bright natural daylight from window, slight camera tilt down, 9:16 vertical format",
+      "Close-up side angle shot of Indian businessman's hands dipping a white cotton cloth into a small glass bowl of water, lifting it out with water dripping, then placing the wet cloth on a black t-shirt spread on a wooden table, warm indoor lighting, camera slowly pushing in, 9:16 vertical format",
+      "Extreme close-up shot of Indian man's hands vigorously rubbing a wet white cloth back and forth on a black cotton t-shirt surface approximately 15-20 times in rhythmic motion, fabric texture visible, slight camera shake following the rubbing movement, bright overhead workshop lighting, 9:16 vertical format",
+      "Close-up overhead shot of Indian businessman's hands lifting a white cloth away from a premium quality black t-shirt on wooden table surface, showing the white cloth remains clean with no color transfer, satisfied hand gesture, warm natural lighting, camera slowly pulling back, 9:16 vertical format, high quality cotton fabric visible"
+    ],
+    "date": "2026-03-13T12:40:55.530302"
   }
 ]
