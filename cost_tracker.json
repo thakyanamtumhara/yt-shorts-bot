@@ -442,5 +442,20 @@
       "whisper": 0.005,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-14T12:54:42.954467",
+    "topic": "Ek customer ne white aur off-white confuse kar diya \u2014 1000 piece ka order",
+    "title": "White vs Off-White Confusion \u2014 1000 T-Shirt Order Mistake Story",
+    "total_usd": 2.8596,
+    "duration_min": 20.5,
+    "breakdown": {
+      "claude_sonnet": 0.204,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0251,
+      "veo_clips": 2.5,
+      "whisper": 0.0055,
+      "blog_images": 0.075
+    }
   }
 ]

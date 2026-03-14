@@ -1,16 +1,5 @@
 [
   {
-    "topic": "DTF printing ka fayda — dark fabric pe bhi sharp colors aate hain",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt with a dull, faded red DTG print on the chest area, examining it under bright workshop lighting, fingers pointing at the washed-out color, slight camera zoom in to emphasize the poor print quality, vertical 9:16 format, well-lit from frame one",
-      "Medium shot of a printing workshop table with a black plain cotton t-shirt laid flat, DTF transfer film sheet placed beside it showing a vibrant multicolor design with visible white underbase layer, warm LED lighting overhead, camera slowly pans right to show both items side by side, vertical 9:16 format, clear visibility from first frame",
-      "Close-up overhead shot of Indian man's hands peeling off a DTF transfer film from a navy blue cotton t-shirt, revealing a bright yellow and red printed design underneath with sharp edges and vivid colors, heat press machine visible in soft focus background, natural workshop lighting, camera tilts slightly as hands lift the film, vertical 9:16 format, bright scene from start",
-      "Close-up shot of two black cotton t-shirts hanging side by side on a chrome rack, left one has a dull pink DTG print, right one has a bright pink DTF print with glossy finish, Indian man's hand enters frame and points to highlight the color difference between both prints, soft daylight from window, slight camera dolly forward, vertical 9:16 format, well-exposed from first frame",
-      "Overhead flat lay shot of three dark colored cotton t-shirts laid on a white table, one black with vibrant green DTF print, one charcoal grey with sharp orange DTF design, one navy blue with bright white DTF logo, all prints looking crisp and colorful, warm indoor lighting casting soft shadows, camera slowly zooms out to show all three, vertical 9:16 format, clear bright scene from beginning"
-    ],
-    "date": "2026-02-23T16:58:28.770947"
-  },
-  {
     "topic": "Pique fabric polo ke liye best hai — smooth fabric pe polo mat banao",
     "prompts": [
       "Close-up shot of Indian man's hands holding a light grey polo t-shirt with visible collar, fingers pointing at the collar area showing it drooping limply, warm indoor warehouse lighting, camera slowly pushing in to emphasize the problem, fabric texture visible showing smooth jersey material instead of textured pique, frustration visible in hand gesture.",
@@ -328,5 +317,16 @@
       "Close-up overhead shot of Indian businessman's hands lifting a white cloth away from a premium quality black t-shirt on wooden table surface, showing the white cloth remains clean with no color transfer, satisfied hand gesture, warm natural lighting, camera slowly pulling back, 9:16 vertical format, high quality cotton fabric visible"
     ],
     "date": "2026-03-13T12:40:55.530302"
+  },
+  {
+    "topic": "Ek customer ne white aur off-white confuse kar diya — 1000 piece ka order",
+    "prompts": [
+      "Medium angle shot of Indian businessman's hands holding a smartphone with a worried expression visible in hand gestures, phone screen showing a text message conversation about t-shirt order confusion, sitting at a wooden desk with stacked plain white t-shirts visible in soft background blur, warm indoor warehouse lighting, camera slowly pushes in on the phone screen, realistic business setting, 9:16 vertical format.",
+      "Close-up overhead shot of a wooden warehouse table surface showing two plain cotton round-neck t-shirts laid flat side by side, one pure bright white t-shirt on the left and one off-white cream-toned t-shirt on the right, natural daylight from window creating clear color contrast, Indian man's hands entering frame and placing both shirts carefully next to each other for comparison, realistic textile texture visible, 9:16 vertical format.",
+      "Close-up shot of Indian man's hands holding up a pure white cotton t-shirt against a bright window with natural sunlight streaming through, fabric glowing with bright white luminosity, then hands switching to hold an off-white t-shirt against the same sunlight showing the warm cream undertone difference, camera slightly tilts to emphasize the color contrast, realistic indoor lighting transition, 9:16 vertical format.",
+      "Medium angle shot of a clean wooden workspace table surface showing a plain white t-shirt and an off-white t-shirt laid flat next to each other under a bright LED desk lamp, Indian man's hands entering frame holding a color swatch card and placing it between both t-shirts to show color code comparison, camera slowly dollies down from above to table level, warm professional lighting, realistic printing business workspace, 9:16 vertical format.",
+      "Close-up shot of Indian businessman's hands folding a perfectly bright white cotton round-neck t-shirt on a wooden warehouse table, fabric showing clean pure white color with no undertones, soft satisfied hand movements suggesting correct choice made, neatly stacked white t-shirts visible in soft background, warm indoor lighting creating professional quality feel, camera slowly pulls back slightly, 9:16 vertical format."
+    ],
+    "date": "2026-03-14T12:34:56.175812"
   }
 ]
