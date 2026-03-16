@@ -472,5 +472,20 @@
       "whisper": 0.0055,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-16T13:15:08.077714",
+    "topic": "Client ne acid wash pe embroidery karwai \u2014 thread toota kyu? Texture issue",
+    "title": "Acid Wash Embroidery Problem \u2014 Thread Breaks Kyu Hota Hai?",
+    "total_usd": 2.8427,
+    "duration_min": 20.8,
+    "breakdown": {
+      "claude_sonnet": 0.1857,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0265,
+      "veo_clips": 2.5,
+      "whisper": 0.0055,
+      "blog_images": 0.075
+    }
   }
 ]

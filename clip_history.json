@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Polyester blend tshirt pe DTG mat karo — ink absorb nahi hoti",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a light grey polyester blend t-shirt with visible shiny synthetic texture, fingers rubbing the smooth slippery fabric surface showing its synthetic feel, indoor workshop lighting, camera slowly zooms in on the fabric texture, vertical 9:16 format, immediate bright start from frame 1",
-      "Medium shot of a printing workshop table with a white polyester blend t-shirt laid flat, a DTG printer head moving across the fabric surface applying colorful ink design, visible ink droplets sitting on top of the fabric surface instead of soaking in, warm workshop lighting, slight camera tilt down, vertical 9:16 format",
-      "Overhead flat lay shot of two t-shirts placed side by side on a wooden table, left one is shiny polyester blend with ink sitting on surface showing droplet beads, right one is matte cotton fabric with ink absorbed into fibers, hands pointing to show the difference, bright even lighting, vertical 9:16 format",
-      "Close-up shot of Indian man's hands holding a dropper applying water-based DTG ink drops onto a polyester blend fabric swatch, ink visibly beading up and rolling off the smooth surface instead of absorbing, contrasted with cotton swatch next to it where ink soaks in immediately, indoor lighting, camera locked steady, vertical 9:16 format",
-      "Medium shot of neatly folded stack of 7-8 pure white 100% cotton round-neck t-shirts on a clean table, Indian man's hand placing the top shirt down showing the soft matte cotton texture, subtle camera dolly forward, warm professional lighting, vertical 9:16 format, clear bright opening from frame 1"
-    ],
-    "date": "2026-02-24T03:09:43.601934"
-  },
-  {
     "topic": "Fabric ka shrinkage direction — length mein zyada hota hai width mein kam",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white printed cotton t-shirt that appears slightly shorter than expected, fingers pinching the hem area showing the length, indoor warehouse lighting with stacks of folded t-shirts blurred in background, camera slowly zooms in on the shortened garment, vertical 9:16 format, well-lit scene from first frame",
@@ -328,5 +317,16 @@
       "Close-up overhead shot of a wooden workspace table showing a neatly stacked pile of premium white cotton oversized t-shirts with visible thick fabric texture, one t-shirt slightly pulled to side showing the smooth bio-washed finish, warm golden hour lighting from side window, camera slow dolly right, 9:16 vertical format, satisfying quality product reveal"
     ],
     "date": "2026-03-15T12:36:58.006061"
+  },
+  {
+    "topic": "Client ne acid wash pe embroidery karwai — thread toota kyu? Texture issue",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a light grey acid wash cotton t-shirt, running fingers across the uneven textured surface showing the irregular washed pattern, indoor workshop lighting with embroidery machines visible in soft background blur, camera slowly pushes in to emphasize the rough texture, vertical 9:16 frame, realistic textile workspace environment",
+      "Medium overhead shot of a clean work table surface showing an acid wash t-shirt laid flat next to a regular plain white t-shirt for comparison, Indian worker's hands entering frame to touch both fabrics showing the texture difference, warm workshop lighting, embroidery thread spools visible at the edge of frame, camera steady, vertical 9:16 format",
+      "Close-up shot of an embroidery machine needle moving up and down through acid wash fabric mounted in an embroidery hoop, Indian operator's hands adjusting the fabric tension, indoor workshop lighting, white embroidery thread visible running through the needle mechanism, camera angle from side showing the needle penetrating the uneven fabric surface, vertical 9:16 frame",
+      "Medium shot of Indian worker's hands placing white tear-away stabilizer backing underneath an acid wash t-shirt on embroidery machine hoop, smoothing it carefully before starting work, workshop lighting, embroidery machine control panel visible in background, camera angle slightly elevated showing the preparation process, vertical 9:16 format, realistic textile work environment",
+      "Close-up shot of finished embroidered logo on acid wash t-shirt, Indian hands holding the completed garment up to show clean professional embroidery work without thread breaks, workshop lighting highlighting the successful result, camera slowly pulls back slightly to show full design, vertical 9:16 frame, satisfying quality finish visible"
+    ],
+    "date": "2026-03-16T12:55:06.133336"
   }
 ]
