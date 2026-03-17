@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Fabric ka shrinkage direction — length mein zyada hota hai width mein kam",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a white printed cotton t-shirt that appears slightly shorter than expected, fingers pinching the hem area showing the length, indoor warehouse lighting with stacks of folded t-shirts blurred in background, camera slowly zooms in on the shortened garment, vertical 9:16 format, well-lit scene from first frame",
-      "Medium shot of two identical white plain cotton round-neck t-shirts hanging side by side on black plastic hangers against a white wall, left one appears slightly longer than right one, warm indoor lighting, camera slowly pans from left to right comparing the lengths, vertical 9:16 format, clear visibility from frame one",
-      "Overhead flat lay shot of a plain white cotton t-shirt laid flat on a wooden measuring table with a yellow measuring tape placed vertically along the center showing length measurement, then another measuring tape placed horizontally across chest showing width, hands adjusting the tapes for accuracy, bright even lighting, vertical 9:16 format, action visible immediately",
-      "Close-up shot of Indian man's hands holding a white plain t-shirt over a large stainless steel washing basin filled with water, dipping the t-shirt into water for pre-wash treatment, water ripples visible, warm indoor lighting with industrial warehouse background slightly blurred, camera angle slightly tilted downward, vertical 9:16 format, clear scene from start",
-      "Medium shot of neatly folded stack of 6-7 white pre-shrunk plain cotton t-shirts on a wooden table, Indian man's hands placing one more perfectly folded t-shirt on top of the stack with confident smooth motion, warm golden hour lighting from side window, clean professional look, vertical 9:16 format, well-lit and sharp from first frame"
-    ],
-    "date": "2026-02-24T04:17:31.802974"
-  },
-  {
     "topic": "Mercerized cotton ka lustre alag hota hai — premium feel instantly",
     "prompts": [
       "Close-up shot of Indian man's hands holding two white round-neck t-shirts side by side against a neutral grey background, one with visible shiny mercerized lustre reflecting light, the other with a matte dull finish, natural daylight from the side creating clear contrast, camera slowly pushing in to emphasize the surface difference, warm indoor lighting, vertical 9:16 format",
@@ -328,5 +317,16 @@
       "Close-up shot of finished embroidered logo on acid wash t-shirt, Indian hands holding the completed garment up to show clean professional embroidery work without thread breaks, workshop lighting highlighting the successful result, camera slowly pulls back slightly to show full design, vertical 9:16 frame, satisfying quality finish visible"
     ],
     "date": "2026-03-16T12:55:06.133336"
+  },
+  {
+    "topic": "DTF film ka quality matter karta hai — saste film se print kharab hoga",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a white cotton t-shirt with a cracked and peeling DTF print design on the chest area, fingers pointing to the damaged areas, warm warehouse lighting, camera slowly zooms in to show the print damage clearly, vertical 9:16 format, realistic texture of failed print visible",
+      "Medium overhead shot of a clean wooden work table surface showing two rolls of DTF transfer film side by side, one labeled with lower price tag and one with higher price tag, Indian businessman's hands reaching into frame to touch both rolls, bright indoor lighting from above, camera static, vertical 9:16 format",
+      "Extreme close-up macro shot of DTF film surface showing the difference in coating quality, camera panning slowly across the film texture to reveal uneven coating and thin release layer, studio lighting highlighting the texture details, vertical 9:16 format, realistic film material texture visible",
+      "Medium angle shot of Indian man's hands operating a DTF heat press machine, placing a DTF transfer film with printed design onto a white cotton t-shirt, pressing down the heat press, warm orange glow from the heating element, slight steam rising, camera positioned at 45-degree angle, vertical 9:16 format",
+      "Close-up shot of Indian businessman's hands holding a perfectly printed white cotton t-shirt with vibrant, crisp DTF print design, gently stretching the fabric to show the print flexibility and quality, natural daylight from window, camera slowly pulling back to show full t-shirt, vertical 9:16 format, print looks professional and durable"
+    ],
+    "date": "2026-03-17T12:53:10.255555"
   }
 ]
