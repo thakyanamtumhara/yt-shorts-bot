@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Mercerized cotton ka lustre alag hota hai — premium feel instantly",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two white round-neck t-shirts side by side against a neutral grey background, one with visible shiny mercerized lustre reflecting light, the other with a matte dull finish, natural daylight from the side creating clear contrast, camera slowly pushing in to emphasize the surface difference, warm indoor lighting, vertical 9:16 format",
-      "Medium overhead shot of a clean wooden workshop table with a single white mercerized cotton t-shirt laid flat, light source positioned at an angle to create visible shine and reflection on the fabric surface, shadows casting on the table, hand entering frame to gently smooth the fabric, industrial workshop environment in soft focus background, vertical 9:16 format",
-      "Extreme close-up macro shot of cotton fabric surface under bright focused lighting, slowly tilting to show how light bounces differently off smooth mercerized fibers creating glossy appearance, then transitioning to show rough matte fibers of normal cotton absorbing light, camera moving smoothly across the texture, high contrast lighting to emphasize surface details, vertical 9:16 format",
-      "Medium shot of Indian man's hands holding a light grey mercerized cotton round-neck t-shirt, tilting it slowly under a warm overhead lamp to demonstrate how the lustre moves and reflects across the fabric surface like silk, other plain cotton samples visible on the table in background out of focus, clean workshop setting, natural skin tones, vertical 9:16 format",
-      "Wide shot of a neatly arranged display of premium mercerized cotton t-shirts in multiple colors hanging on a chrome clothing rack, soft diffused lighting from above creating subtle shine on each garment, camera slowly dollying right to show the collection, clean white wall background, professional retail warehouse environment, vertical 9:16 format"
-    ],
-    "date": "2026-02-24T05:13:12.995289"
-  },
-  {
     "topic": "Fabric ka GSM check karne ka tarika — round cutter aur scale se",
     "prompts": [
       "Close-up shot of Indian man's hands holding a thin white cotton round-neck t-shirt and a thicker grey t-shirt side by side, comparing the fabric thickness by touch, indoor workshop lighting with wooden table visible in background, hands squeezing both fabrics to show the visible difference in weight and density, slight camera push-in focusing on the texture contrast, realistic textile business environment.",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian businessman's hands holding a perfectly printed white cotton t-shirt with vibrant, crisp DTF print design, gently stretching the fabric to show the print flexibility and quality, natural daylight from window, camera slowly pulling back to show full t-shirt, vertical 9:16 format, print looks professional and durable"
     ],
     "date": "2026-03-17T12:53:10.255555"
+  },
+  {
+    "topic": "Ek customer aaya 500 piece cancel karwa diya — galti uski thi ya supplier ki?",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a smartphone with a distressed expression visible through hand gestures, finger hovering over a red cancel button on screen showing order details with '500 pieces' visible, indoor office lighting with warm tungsten tone, shallow depth of field focusing on the phone screen, slight camera shake suggesting tension, wooden desk surface visible in background",
+      "Medium overhead shot of a warehouse packing table showing a large cardboard box filled with neatly folded white oversized t-shirts in clear plastic packaging, around 15-20 pieces visible, a printed invoice paper lying on top showing '500 pcs' text, hands reaching in to pick up one folded t-shirt, bright warehouse LED lighting casting soft shadows, camera slowly pushing in toward the box",
+      "Side angle shot showing Indian man's hands holding two different plain white cotton t-shirts side by side against a neutral grey wall background for size comparison, left hand holding a regular fit t-shirt appearing shorter, right hand holding an oversized t-shirt noticeably longer by 2-3 inches, natural window lighting from the side creating soft contrast, camera slowly tracking right to emphasize the length difference between both garments",
+      "Close-up overhead shot of Indian businessman's hands laying out a single white oversized t-shirt flat on a clean wooden work table, pulling out a yellow measuring tape and carefully measuring the length from shoulder seam to bottom hem, the tape showing approximately 30 inches, a notepad and pen visible at the edge of frame, warm indoor lighting, camera angle directly from above showing the full measuring process, slight zoom in on the measurement numbers",
+      "Medium shot of a clean warehouse counter desk showing a small sample package box opened with 3-4 different sized plain white t-shirts neatly folded inside with size labels visible (S, M, L, XL tags), Indian man's hands picking up one t-shirt and placing it next to a satisfied customer approval checklist on clipboard, warm natural lighting from nearby window, camera slow dolly forward suggesting positive resolution and proper process being followed"
+    ],
+    "date": "2026-03-18T12:54:33.499409"
   }
 ]

@@ -503,5 +503,20 @@
       "whisper": 0.0051,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-18T13:22:55.422586",
+    "topic": "Ek customer aaya 500 piece cancel karwa diya \u2014 galti uski thi ya supplier ki?",
+    "title": "500 Piece Order Cancelled \u2014 Customer Ki Galti Ya Supplier Ki?",
+    "total_usd": 2.8504,
+    "duration_min": 29.3,
+    "breakdown": {
+      "claude_sonnet": 0.1911,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0282,
+      "veo_clips": 2.5,
+      "whisper": 0.0061,
+      "blog_images": 0.075
+    }
   }
 ]
