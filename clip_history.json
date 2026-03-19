@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Fabric ka GSM check karne ka tarika — round cutter aur scale se",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a thin white cotton round-neck t-shirt and a thicker grey t-shirt side by side, comparing the fabric thickness by touch, indoor workshop lighting with wooden table visible in background, hands squeezing both fabrics to show the visible difference in weight and density, slight camera push-in focusing on the texture contrast, realistic textile business environment.",
-      "Medium overhead shot of a clean workshop table surface with a professional round fabric cutter tool placed next to a digital weighing scale, bright even lighting from above, a folded white plain t-shirt visible on the side, the round cutter is metallic with sharp circular blade clearly visible, scale display showing zero, realistic Indian textile workshop setup with subtle fabric texture visible on table.",
-      "Close-up shot of Indian man's hands firmly pressing down a round fabric cutter onto a spread-out white cotton fabric on a flat table, applying pressure to cut through the material cleanly, warm indoor lighting, camera angle from 45 degrees showing the circular cutting motion, fabric is smooth and wrinkle-free under the cutter, realistic workshop environment with focus on the precision cutting action.",
-      "Extreme close-up shot of a small circular fabric piece being carefully placed on a digital weighing scale, the scale display clearly showing 2.0 grams in red digital numbers, Indian man's fingers gently releasing the fabric sample, bright focused lighting on the scale, white background with shallow depth of field blurring the background, realistic precision measurement scene in textile quality control setting.",
-      "Medium shot of a clean workshop table with neatly stacked premium quality plain white and grey cotton t-shirts arranged in organized piles, round cutter and digital scale placed professionally beside them, warm golden hour lighting streaming from window creating soft shadows, camera slow dolly right showing the professional setup, realistic successful textile business inventory display with quality assurance tools visible."
-    ],
-    "date": "2026-02-24T12:47:17.683120"
-  },
-  {
     "topic": "430 GSM hoodie blank — winter mein demand sabse zyada isi ki hoti hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a thick charcoal grey 430 GSM fleece hoodie blank, gripping the fabric to show its heavy weight and thickness, warm indoor warehouse lighting with soft shadows, camera slowly pushing in to emphasize the dense fabric texture, vertical 9:16 frame with hoodie filling most of the frame, hands visible but no face shown",
@@ -328,5 +317,16 @@
       "Medium shot of a clean warehouse counter desk showing a small sample package box opened with 3-4 different sized plain white t-shirts neatly folded inside with size labels visible (S, M, L, XL tags), Indian man's hands picking up one t-shirt and placing it next to a satisfied customer approval checklist on clipboard, warm natural lighting from nearby window, camera slow dolly forward suggesting positive resolution and proper process being followed"
     ],
     "date": "2026-03-18T12:54:33.499409"
+  },
+  {
+    "topic": "Myth: Screen printing dead hai — volume orders mein sabse sasta aaj bhi",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral warehouse background, one with vibrant screen printed logo, one with DTG printed logo, slight camera push-in to emphasize comparison, warm industrial lighting, shot starts with both shirts clearly visible in frame",
+      "Medium overhead shot of a busy screen printing workshop table showing a large order of 50-60 folded plain white cotton t-shirts stacked in neat rows on brown kraft paper, with a completed printed sample t-shirt placed on top of the stack, bright overhead fluorescent lighting, static camera angle capturing the scale of volume order",
+      "Close-up tracking shot following Indian man's hand holding a calculator while writing cost breakdown numbers on a white notepad, showing calculations like 500pcs, 25rs vs 15rs per piece, red pen underlining final totals, warm desk lamp lighting from right side, shot begins with calculator and notepad both visible",
+      "Medium angle shot of screen printing carousel machine in action with rotating platforms, showing automated squeegee applying ink through mesh screen onto white cotton t-shirt, metallic industrial equipment with colored ink containers visible, bright workshop lighting, camera slowly pans right following the rotation",
+      "Close-up shot of Indian man's hands holding up a completed screen printed white t-shirt with crisp bold multicolor design, gently stretching the fabric to show the quality and thickness of the print, fingers running over the smooth printed surface, natural daylight from window, camera slowly pulls back to reveal full t-shirt"
+    ],
+    "date": "2026-03-19T12:45:26.200665"
   }
 ]

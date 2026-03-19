@@ -518,5 +518,19 @@
       "whisper": 0.0061,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-19T13:07:29.460083",
+    "topic": "Myth: Screen printing dead hai \u2014 volume orders mein sabse sasta aaj bhi",
+    "title": "Screen Printing vs DTG: Which is Cheaper for Bulk Orders?",
+    "total_usd": 2.6164,
+    "duration_min": 22.9,
+    "breakdown": {
+      "claude_sonnet": 0.0312,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0288,
+      "veo_clips": 2.5,
+      "whisper": 0.0064
+    }
   }
 ]
