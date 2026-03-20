@@ -532,5 +532,20 @@
       "veo_clips": 2.5,
       "whisper": 0.0064
     }
+  },
+  {
+    "date": "2026-03-20T13:04:48.585059",
+    "topic": "Ek banda export karta hai humse plain leke \u2014 shipping mein kya dikkat aati hai",
+    "title": "Export Invoice Mistake Cost Him 12 Days #tshirtwholesaler #export",
+    "total_usd": 2.8737,
+    "duration_min": 24.2,
+    "breakdown": {
+      "claude_sonnet": 0.2139,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0284,
+      "veo_clips": 2.5,
+      "whisper": 0.0064,
+      "blog_images": 0.075
+    }
   }
 ]
