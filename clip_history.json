@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Pricing galat rakhi toh loss hoga — fabric plus print plus margin calculate karo",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a calculator device in one hand and a white plain round-neck cotton t-shirt in the other hand, indoors under warm natural window lighting, fingers pressing calculator buttons showing confusion, slight camera shake to show frustration, 9:16 vertical format, realistic business setting",
-      "Medium overhead shot of a busy printing workshop desk surface with multiple items laid out — three white blank t-shirts stacked on left side, one printed t-shirt with colorful design in center, a small open cardboard packaging box on right, and a handwritten price calculation notepad with pen, warm fluorescent workshop lighting, static camera, 9:16 vertical format",
-      "Close-up shot of Indian man's hands writing cost breakdown on white paper with blue pen — visible text showing numbers '150', '80', '15', '12%' in columns, calculator placed beside the paper, hand moving between writing and calculator, warm indoor desk lamp lighting, slight camera tilt down, 9:16 vertical format, realistic office setting",
-      "Medium shot of workspace table with hands arranging cost visualization — left side has white blank t-shirt with small paper note showing '150', middle has printed t-shirt with note '80', right side has small packaging materials and GST paper note showing '12%', hands pointing to each item sequentially, bright indoor lighting, camera slowly pans right, 9:16 vertical format",
-      "Close-up shot of Indian man's hands holding up a neatly folded premium printed t-shirt wrapped in transparent polybag with professional hang tag attached showing higher price tag, satisfied handling gesture, clean white background behind, soft diffused lighting creating professional product look, slight camera dolly forward, 9:16 vertical format, satisfying conclusion feel"
-    ],
-    "date": "2026-02-25T07:12:25.583357"
-  },
-  {
     "topic": "Rib fabric kahan use hota hai — collar cuff aur hem mein fark hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white cotton round-neck t-shirt by the collar with one hand while the other hand tugs gently at the hem area showing visible wavy distortion and twisting in the bottom fold, warm indoor workshop lighting, shallow focus on the problem area, camera slowly pushes in to emphasize the defect, realistic textile factory environment.",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian man's hands placing a properly labeled commercial invoice on top of a sealed export carton box, the invoice shows clear columns and professional formatting with barcodes visible but no readable text, a customs clearance stamp impression is visible on the document, the box is sitting on a clean warehouse table, satisfied hand movement showing completion, bright even lighting, camera slowly pulls back, successful export preparation conclusion, vertical 9:16 format"
     ],
     "date": "2026-03-20T12:41:23.285328"
+  },
+  {
+    "topic": "Myth: Biowash sirf softness ke liye hai — nahi aur bhi fayda hai",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral grey background, one t-shirt has a noticeably rough fuzzy surface with visible fiber pilling, the other has a smooth clean surface, hands gently rubbing both fabrics to show texture difference, bright studio lighting from above, camera slowly pushes in to show fabric detail, vertical 9:16 format, realistic workshop environment visible in soft background blur",
+      "Medium overhead shot of a clean wooden work table showing a non-biowash white cotton t-shirt lying flat, camera zooms in slowly to reveal tiny cotton fiber pills and loose threads on the fabric surface under bright LED work lamp, a magnifying glass enters frame from right side held by Indian man's hand to emphasize the rough texture, small fabric lint particles visible on the table surface around the shirt, warm indoor lighting, vertical 9:16 format",
+      "Close-up shot of Indian man's hands holding a screen printing squeegee applying blue ink across a white t-shirt on a printing table, the ink spreads unevenly leaving patchy areas and visible streaks on the non-biowash fabric surface, camera angle is slightly tilted top-down view, bright workshop lighting, hands pause mid-stroke showing the uneven ink distribution clearly, vertical 9:16 format, realistic printing studio environment",
+      "Medium shot of a textile quality testing table showing two printed white t-shirts side by side under bright examination light, left shirt shows patchy faded print on non-biowash fabric, right shirt shows vibrant even print on biowash fabric, Indian man's hands enter frame holding a color comparison card between both prints, camera slowly dollies forward focusing on the print quality difference, vertical 9:16 format, clean professional testing environment visible in background",
+      "Close-up shot of Indian man's hands smoothly folding a perfectly printed white biowash t-shirt with sharp vibrant DTG print design, fabric has a clean smooth surface with no pilling, hands run across the print showing excellent ink absorption and color depth, warm studio lighting highlights the premium fabric quality, camera slowly pulls back to show the neatly folded shirt on a clean table, satisfying final frame, vertical 9:16 format"
+    ],
+    "date": "2026-03-21T12:33:11.168295"
   }
 ]

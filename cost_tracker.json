@@ -547,5 +547,21 @@
       "whisper": 0.0064,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-21T12:58:09.867153",
+    "topic": "Myth: Biowash sirf softness ke liye hai \u2014 nahi aur bhi fayda hai",
+    "title": "Why Pay Extra for Biowash? Here's What They Don't Tell You",
+    "total_usd": 2.6866,
+    "duration_min": 25.8,
+    "breakdown": {
+      "claude_sonnet": 0.1828,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0238,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.005,
+      "blog_images": 0.075
+    }
   }
 ]
