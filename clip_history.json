@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Rib fabric kahan use hota hai — collar cuff aur hem mein fark hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a white cotton round-neck t-shirt by the collar with one hand while the other hand tugs gently at the hem area showing visible wavy distortion and twisting in the bottom fold, warm indoor workshop lighting, shallow focus on the problem area, camera slowly pushes in to emphasize the defect, realistic textile factory environment.",
-      "Medium shot of a clean wooden table surface with three identical white plain cotton t-shirts laid flat in a row, each one positioned to clearly show different areas: first showing collar area at top, second showing full sleeve cuff area, third showing bottom hem fold area, bright even overhead lighting, camera slowly tracks right across all three garments, no text visible, professional manufacturing setup.",
-      "Extreme close-up shot of Indian man's hands holding a small rectangular swatch of white 1x1 ribbed knit fabric in one hand and a swatch of white flat knit fabric in the other hand, gently stretching both pieces to demonstrate the elasticity difference, the ribbed fabric stretches and recovers while flat knit barely moves, warm side lighting creates texture detail, camera static focused on the fabric comparison, workshop background slightly blurred.",
-      "Close-up shot of Indian man's hands using both index fingers to press and release the collar rib of a white cotton t-shirt laid on a wooden table, demonstrating the spring-back recovery of the 1x1 rib material, then moving hands down to press the hem area showing minimal movement, camera angle from above at 45 degrees, bright natural lighting, slow deliberate hand movements to show the functional difference, realistic textile testing scenario.",
-      "Medium overhead shot of a pristine white premium cotton round-neck t-shirt hanging perfectly on a wooden hanger against a clean light grey wall, collar holding perfect shape without droop, hem lying flat and straight without any wave or twist, soft diffused lighting from the side creates gentle shadows highlighting the quality construction, camera very slowly dollies forward to reveal the clean finish, professional product display aesthetic, no hands visible, satisfying resolution visual."
-    ],
-    "date": "2026-02-25T07:41:50.965306"
-  },
-  {
     "topic": "Customer bola collar yellow ho gaya — sweat stain tha ya fabric issue?",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white cotton round-neck t-shirt with visible yellowish discoloration on the inner collar area, fingers pointing to the stained section under bright indoor fluorescent lighting, camera slowly pushing in to emphasize the stain, workshop background slightly blurred, vertical 9:16 format, realistic textile defect inspection scene.",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian man's hands smoothly folding a perfectly printed white biowash t-shirt with sharp vibrant DTG print design, fabric has a clean smooth surface with no pilling, hands run across the print showing excellent ink absorption and color depth, warm studio lighting highlights the premium fabric quality, camera slowly pulls back to show the neatly folded shirt on a clean table, satisfying final frame, vertical 9:16 format"
     ],
     "date": "2026-03-21T12:33:11.168295"
+  },
+  {
+    "topic": "Customer ne black tshirt pe white DTF kiya — peeling kyu hui?",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt with a large white DTF print on the chest showing visible peeling and cracking at the edges, fingers pointing to the damaged areas, warm indoor warehouse lighting, slight camera push-in movement to emphasize the peeling problem, realistic textile defect visible, vertical 9:16 format, starts with fully lit scene showing the damaged print immediately.",
+      "Medium overhead shot of a small DTF heat press machine on a clean wooden workshop table, black t-shirt placed flat on the lower platen with a white DTF transfer sheet positioned on top, machine lid open, digital temperature display visible showing 160 degrees in red LED, warm workshop lighting from above, camera static shot, realistic printing setup, vertical 9:16 format, scene starts with all elements clearly visible and well-lit from frame one.",
+      "Close-up shot of Indian man's hands adjusting a digital temperature controller on a heat press machine, finger pressing the up button to increase temperature from 160 to 175 degrees shown on red LED display, black fabric visible on the press bed in background, warm industrial lighting, slight camera tilt down following the hand movement, realistic workshop equipment, vertical 9:16 format, begins with bright clear view of the temperature display being adjusted.",
+      "Medium shot of hands pressing down a heat press machine onto a black t-shirt with white DTF transfer, steam rising from the sides as pressure is applied, timer showing 12 seconds counting down on the machine display, warm workshop lighting creating slight glow around the press, camera static angle capturing the full pressing process, realistic heat press operation with visible steam effect, vertical 9:16 format, starts with press already positioned and action beginning immediately.",
+      "Close-up shot of Indian man's hands peeling away the clear transfer film from a black t-shirt revealing a perfect crisp white DTF print underneath with sharp edges and smooth finish, film lifting cleanly without any adhesive residue, warm indoor lighting highlighting the quality result, slow upward camera movement following the peel, satisfying clean transfer result, vertical 9:16 format, scene opens with hands already beginning to peel the film with good lighting throughout."
+    ],
+    "date": "2026-03-22T12:35:12.174502"
   }
 ]

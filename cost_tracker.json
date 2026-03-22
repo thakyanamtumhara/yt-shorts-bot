@@ -563,5 +563,20 @@
       "whisper": 0.005,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-03-22T12:57:48.530215",
+    "topic": "Customer ne black tshirt pe white DTF kiya \u2014 peeling kyu hui?",
+    "title": "White DTF Print Peeling? This Temperature Mistake Ruins Everything",
+    "total_usd": 2.8464,
+    "duration_min": 23.5,
+    "breakdown": {
+      "claude_sonnet": 0.1876,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0276,
+      "veo_clips": 2.5,
+      "whisper": 0.0062,
+      "blog_images": 0.075
+    }
   }
 ]
