@@ -644,9 +644,10 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         font_topic = None
         font_brand = None
         font_paths = [
+            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",  # Supports Hindi/Devanagari
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
         ]
         font_file = None
         for fp in font_paths:
