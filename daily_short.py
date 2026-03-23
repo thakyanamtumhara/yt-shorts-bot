@@ -2088,6 +2088,7 @@ def fetch_source_channel_insights():
         videos_resp.raise_for_status()
         videos_data = videos_resp.json()
 
+        import re as _re
         videos = []
         for item in videos_data.get("items", []):
             snippet = item.get("snippet", {})
@@ -2095,7 +2096,6 @@ def fetch_source_channel_insights():
             # Filter for Shorts only: duration <= 60s and vertical aspect
             duration_str = item.get("contentDetails", {}).get("duration", "")
             # Parse ISO 8601 duration (e.g., PT45S, PT1M, PT1M30S)
-            import re as _re
             duration_match = _re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration_str)
             if duration_match:
                 hours = int(duration_match.group(1) or 0)
