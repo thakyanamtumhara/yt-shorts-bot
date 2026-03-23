@@ -1087,54 +1087,71 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
 
         # Try primary model (Pro), then fallback (Flash)
+        # Each model gets up to 3 retries with exponential backoff for transient errors (503/429)
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
         GEMINI_IMAGE_TIMEOUT = 180  # seconds per model attempt
+        GEMINI_IMAGE_MAX_RETRIES = 3
 
         for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
-            try:
-                print(f"   🎨 Generating thumbnail via Gemini ({model_name}) [timeout={GEMINI_IMAGE_TIMEOUT}s]...")
+            for attempt in range(1, GEMINI_IMAGE_MAX_RETRIES + 1):
+                try:
+                    retry_label = f" (attempt {attempt}/{GEMINI_IMAGE_MAX_RETRIES})" if attempt > 1 else ""
+                    print(f"   🎨 Generating thumbnail via Gemini ({model_name}){retry_label} [timeout={GEMINI_IMAGE_TIMEOUT}s]...")
 
-                def _call_gemini(m=model_name):
-                    return genai_client.models.generate_content(
-                        model=m,
-                        contents=[gemini_prompt, frame_image],
-                        config=types.GenerateContentConfig(
-                            response_modalities=["TEXT", "IMAGE"],
-                        ),
-                    )
+                    def _call_gemini(m=model_name):
+                        return genai_client.models.generate_content(
+                            model=m,
+                            contents=[gemini_prompt, frame_image],
+                            config=types.GenerateContentConfig(
+                                response_modalities=["TEXT", "IMAGE"],
+                            ),
+                        )
 
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(_call_gemini)
-                    response = future.result(timeout=GEMINI_IMAGE_TIMEOUT)
+                    with ThreadPoolExecutor(max_workers=1) as executor:
+                        future = executor.submit(_call_gemini)
+                        response = future.result(timeout=GEMINI_IMAGE_TIMEOUT)
 
-                # Extract generated image from response
-                for part in response.parts:
-                    if part.inline_data is not None:
-                        generated_img = part.as_image()
-                        # Ensure PIL Image (some Gemini models return non-PIL types)
-                        if not isinstance(generated_img, Image.Image):
-                            import io
-                            generated_img = Image.open(io.BytesIO(part.inline_data.data))
-                        # Resize to exact thumbnail dimensions
-                        generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
-                        generated_img.save(output_path, "PNG", quality=95)
-                        print(f"   ✅ AI thumbnail generated: {output_path}")
-                        if cost_tracker:
-                            cost_tracker.track_gemini_image()
-                        return output_path
+                    # Extract generated image from response
+                    for part in response.parts:
+                        if part.inline_data is not None:
+                            generated_img = part.as_image()
+                            # Ensure PIL Image (some Gemini models return non-PIL types)
+                            if not isinstance(generated_img, Image.Image):
+                                import io
+                                generated_img = Image.open(io.BytesIO(part.inline_data.data))
+                            # Resize to exact thumbnail dimensions
+                            generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+                            generated_img.save(output_path, "PNG", quality=95)
+                            print(f"   ✅ AI thumbnail generated: {output_path}")
+                            if cost_tracker:
+                                cost_tracker.track_gemini_image()
+                            return output_path
 
-                print(f"   ⚠️ Gemini ({model_name}) returned no image")
+                    print(f"   ⚠️ Gemini ({model_name}) returned no image")
+                    break  # No image in response — skip retries, try next model
 
-            except FuturesTimeout:
-                print(f"   ⚠️ Gemini ({model_name}) timed out after {GEMINI_IMAGE_TIMEOUT}s")
-                if model_name == AI_THUMBNAIL_GEMINI_MODEL:
-                    print(f"   🔄 Trying fallback model...")
-                continue
-            except Exception as e:
-                print(f"   ⚠️ Gemini ({model_name}) failed: {e}")
-                if model_name == AI_THUMBNAIL_GEMINI_MODEL:
-                    print(f"   🔄 Trying fallback model...")
-                continue
+                except FuturesTimeout:
+                    print(f"   ⚠️ Gemini ({model_name}) timed out after {GEMINI_IMAGE_TIMEOUT}s")
+                    break  # Timeout — skip retries, try next model
+
+                except Exception as e:
+                    err_str = str(e).lower()
+                    is_transient = any(k in err_str for k in ("503", "429", "unavailable", "rate limit", "too many", "overloaded", "high demand", "resource exhausted"))
+                    if is_transient and attempt < GEMINI_IMAGE_MAX_RETRIES:
+                        wait = 2 ** attempt * 5  # 10s, 20s, 40s — generous backoff for busy API
+                        print(f"   ⚠️ Gemini ({model_name}) attempt {attempt} failed: {e}")
+                        print(f"   ⏳ Retrying in {wait}s (API is busy, backing off)...")
+                        time.sleep(wait)
+                        continue
+                    print(f"   ⚠️ Gemini ({model_name}) failed: {e}")
+                    break  # Non-transient error or out of retries — try next model
+
+            else:
+                # All retries exhausted for this model
+                pass
+
+            if model_name == AI_THUMBNAIL_GEMINI_MODEL:
+                print(f"   🔄 Trying fallback model...")
 
         print("   ❌ AI thumbnail: all Gemini models failed, falling back to basic")
         return None
