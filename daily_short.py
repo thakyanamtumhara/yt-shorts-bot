@@ -847,12 +847,20 @@ def refresh_thumbnail_research(claude_client):
         return default_patterns
 
 
-def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns, cost_tracker=None):
+def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
+                             source_insights=None, audience_qs=None, cost_tracker=None):
     """Generate a high-CTR thumbnail brief using Claude Opus.
     Returns a dict with keys: text, color, position, effect, design_notes, font_style."""
     import json as _json
 
     research_context = _json.dumps(research_patterns, indent=2, ensure_ascii=False)
+
+    # Build YouTube insights context if available
+    yt_context = ""
+    if source_insights:
+        yt_context += f"\nTOP PERFORMING VIDEOS IN THIS NICHE (use these to inform thumbnail text strategy):\n{_json.dumps(source_insights, ensure_ascii=False)}\n"
+    if audience_qs:
+        yt_context += f"\nREAL AUDIENCE QUESTIONS (what viewers actually care about — use to make thumbnail text resonate):\n{audience_qs}\n"
 
     prompt = (
         "You are a YouTube thumbnail text strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com).\n\n"
@@ -862,6 +870,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "- Audience: Small business owners, retailers, bulk buyers in India\n"
         "- Content style: Informational, business opportunity, pricing reveals\n\n"
         f"RESEARCH PATTERNS (what works in this niche):\n{research_context}\n\n"
+        f"{yt_context}\n"
         "TASK:\n"
         "Given the video script and topic below, generate ONE high-CTR thumbnail text and design brief.\n\n"
         "THUMBNAIL TEXT RULES:\n"
@@ -926,8 +935,13 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         # Step 1: Get/refresh research patterns
         research = refresh_thumbnail_research(claude_client)
 
-        # Step 2: Generate thumbnail brief via Claude
-        brief = generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research, cost_tracker)
+        # Step 2: Generate thumbnail brief via Claude (with YouTube insights for smarter text)
+        source_insights = get_source_channel_top_topics(5)
+        audience_qs = get_audience_questions(5)
+        brief = generate_thumbnail_brief(
+            claude_client, script_text, hook_text, topic, research,
+            source_insights=source_insights, audience_qs=audience_qs, cost_tracker=cost_tracker
+        )
         if not brief:
             print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
             return None
@@ -3230,7 +3244,7 @@ Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
 
     try:
         resp = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=800,
+            model="claude-opus-4-6", max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -3296,7 +3310,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-opus-4-6", max_tokens=200,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -3373,7 +3387,7 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
         print("   🔄 Fallback: single topic generation...")
         try:
             resp = claude_client.messages.create(
-                model="claude-sonnet-4-5-20250929", max_tokens=200,
+                model="claude-opus-4-6", max_tokens=200,
                 messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
@@ -3484,7 +3498,7 @@ REFERENCE: These titles got the MOST views on our main channel (50K subs):
 {json.dumps(source_titles, ensure_ascii=False)}
 Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
 
-    prompt = f"""You are a YouTube Shorts title optimizer for an Indian B2B t-shirt brand.
+    prompt = f"""You are a YouTube Shorts + Instagram Reels title optimizer and JUDGE for an Indian B2B t-shirt brand.
 
 CURRENT TITLE: {original_title}
 TOPIC: {topic}
@@ -3496,20 +3510,28 @@ Generate 3 alternative titles. Each must be:
 - SEO optimized (include searchable keywords like "GSM", "DTG", "t-shirt", "printing")
 - Curiosity-driven (make viewer NEED to watch)
 - English (for broader reach + SEO, but Hinglish words OK if they add punch)
+- Work on BOTH YouTube Shorts AND Instagram Reels (same title used on both platforms)
+
+PLATFORM-SPECIFIC CTR FACTORS:
+- YouTube: Search discoverability matters — include keywords people search for
+- Instagram: Explore page + hashtag reach matters — emotional hooks, curiosity, trending phrases
+- BOTH: Mobile-first (70 char max), number/price reveals get clicks, controversy/mistakes format works
 
 TITLE STYLES TO TRY:
 1. QUESTION style — "Why Does Your DTG Print Fade After 2 Washes?"
 2. SHOCK/NUMBER style — "Rs 45 T-shirt vs Rs 90: The Print Quality Difference"
 3. MISTAKE/WARNING style — "Stop Making This GSM Mistake (Most Printers Do)"
 
-OUTPUT THIS JSON ONLY (no markdown):
-{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks"}}
+YOUR JOB AS JUDGE: Pick the ONE title that will get the MOST views across BOTH YouTube and Instagram combined.
 
-"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR."""
+OUTPUT THIS JSON ONLY (no markdown):
+{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks on both YouTube and Instagram"}}
+
+"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR across both platforms."""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -5467,10 +5489,10 @@ def main():
 
         try:
             resp = claude.messages.create(
-                model="claude-sonnet-4-5-20250929", max_tokens=1500,
+                model="claude-opus-4-6", max_tokens=1500,
                 messages=[{"role": "user", "content": prompt}]
             )
-            cost.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
+            cost.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
             raw = resp.content[0].text.strip()
         except Exception as e:
             print(f"   ⚠️ Claude API error (attempt {attempt}): {e}")
