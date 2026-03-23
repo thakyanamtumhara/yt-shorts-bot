@@ -759,6 +759,7 @@ def refresh_thumbnail_research(claude_client):
     Calls Claude Opus to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
     Caches results in THUMBNAIL_RESEARCH_FILE; refreshes only if older than THUMBNAIL_RESEARCH_MAX_AGE_DAYS."""
     import json as _json
+    from datetime import datetime as _datetime
 
     default_patterns = {
         "updated": "",
@@ -776,8 +777,7 @@ def refresh_thumbnail_research(claude_client):
                 cached = _json.load(f)
             updated = cached.get("updated", "")
             if updated:
-                from datetime import datetime
-                age = (datetime.now() - datetime.fromisoformat(updated)).days
+                age = (_datetime.now() - _datetime.fromisoformat(updated)).days
                 if age < THUMBNAIL_RESEARCH_MAX_AGE_DAYS:
                     print(f"   📋 Thumbnail research cache fresh ({age}d old, max {THUMBNAIL_RESEARCH_MAX_AGE_DAYS}d)")
                     return cached
@@ -818,7 +818,7 @@ def refresh_thumbnail_research(claude_client):
             if research_text.startswith("json"):
                 research_text = research_text[4:]
         research = _json.loads(research_text)
-        research["updated"] = datetime.now().isoformat()
+        research["updated"] = _datetime.now().isoformat()
 
         with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
             _json.dump(research, f, indent=2, ensure_ascii=False)
@@ -827,7 +827,7 @@ def refresh_thumbnail_research(claude_client):
 
     except Exception as e:
         print(f"   ⚠️ Research generation failed: {e}, using defaults")
-        default_patterns["updated"] = datetime.now().isoformat()
+        default_patterns["updated"] = _datetime.now().isoformat()
         try:
             with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
                 _json.dump(default_patterns, f, indent=2, ensure_ascii=False)
