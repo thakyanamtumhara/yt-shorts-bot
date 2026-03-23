@@ -272,8 +272,8 @@ THUMBNAIL_HEIGHT = 1920  # Vertical for Shorts
 
 # AI Thumbnail (Claude text strategy + Gemini image generation)
 AI_THUMBNAIL = True
-AI_THUMBNAIL_GEMINI_MODEL = "gemini-3.1-flash-image-preview"
-AI_THUMBNAIL_GEMINI_FALLBACK = "gemini-2.5-flash-image"
+AI_THUMBNAIL_GEMINI_MODEL = "gemini-3-pro-image-preview"
+AI_THUMBNAIL_GEMINI_FALLBACK = "gemini-3.1-flash-image-preview"
 THUMBNAIL_RESEARCH_FILE = "thumbnail_research.json"  # Weekly research cache
 THUMBNAIL_RESEARCH_MAX_AGE_DAYS = 7
 
@@ -794,20 +794,31 @@ def refresh_thumbnail_research(claude_client):
             messages=[{
                 "role": "user",
                 "content": (
-                    "You are a YouTube SHORTS/REELS thumbnail strategist for an Indian wholesale bulk plain t-shirt business. "
-                    "Analyze what makes high-CTR thumbnails work specifically for VERTICAL 9:16 Shorts/Reels on Indian YouTube channels in the business/wholesale niche.\n\n"
+                    "You are a YouTube content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
+                    "Your job is to research what's performing well on YouTube India and identify high-CTR (click-through rate) thumbnail patterns.\n\n"
+                    "BUSINESS CONTEXT:\n"
+                    "- Business: Wholesale/bulk plain t-shirts, B2B sales in India\n"
+                    "- Target audience: Small business owners, retailers, resellers, bulk buyers in India\n"
+                    "- Content style: Informational, business opportunity, pricing reveals, factory/warehouse tours\n"
+                    "- Platform: YouTube Shorts / Instagram Reels (9:16 vertical)\n\n"
+                    "RESEARCH TASK:\n"
+                    "Analyze the top-performing videos on YouTube India related to this business niche. "
+                    "Focus on videos relevant to: t-shirt business, wholesale business, bulk selling, garment industry, small business ideas India, low investment business. "
+                    "Also analyze trending videos in the broader 'business/money' niche in India for thumbnail inspiration.\n"
+                    "For each pattern you identify, consider: what text is on the thumbnail, what colors are used, what emotions/expressions appear, what layout works.\n\n"
                     "IMPORTANT CONTEXT:\n"
                     "- These are VERTICAL 9:16 Shorts thumbnails, NOT horizontal 16:9 video thumbnails\n"
                     "- Viewers see these as tiny previews on mobile phones while scrolling\n"
                     "- Top 10% and bottom 20% of thumbnail are covered by YouTube Shorts UI — text must be in the 15%-45% from top zone\n"
-                    "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n\n"
+                    "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n"
+                    "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
                     "Return a JSON object (no markdown fencing) with these fields:\n"
-                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Shorts (e.g., Secret, सच, Mistake, Free, Shocking)\n"
-                    "- best_colors: object with 'text' (array of 4-5 hex codes) and 'stroke' (hex code for outline)\n"
-                    "- text_rules: string summarizing best practices for Shorts thumbnail text — must be readable on tiny mobile preview (max 2 sentences)\n"
-                    "- layout: string summarizing layout rules for 9:16 Shorts thumbnails with safe zone constraints (max 2 sentences)\n"
-                    "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
-                    "- example_texts: array of 10 example Shorts thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics\n"
+                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Shorts (e.g., Secret, सच, Mistake, Free, Shocking, Reality, Truth, Hack)\n"
+                    "- best_colors: object with 'text' (array of 4-5 hex codes — best: Yellow #FFD700, White #FFFFFF, Red #FF0000, Orange #FF6600) and 'stroke' (hex code for outline, usually black)\n"
+                    "- text_rules: string summarizing best practices for Shorts thumbnail text — max 4-5 words, Hinglish performs best, include numbers/prices, create curiosity/urgency (max 2 sentences)\n"
+                    "- layout: string summarizing layout rules for 9:16 Shorts thumbnails — face on one side text on other, rule of thirds, safe zone 15%-45% from top (max 2 sentences)\n"
+                    "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube — what makes viewers stop scrolling (max 3 sentences)\n"
+                    "- example_texts: array of 10 example Shorts thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics. Each must be a different approach — don't give variations of the same idea.\n"
                 )
             }],
         )
@@ -837,10 +848,14 @@ def refresh_thumbnail_research(claude_client):
 
 
 def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
-                             source_insights=None, audience_qs=None, cost_tracker=None):
-    """Generate a high-CTR thumbnail brief using Claude Opus.
-    Returns a dict with keys: text, color, position, effect, design_notes, font_style."""
+                             source_insights=None, audience_qs=None, cost_tracker=None,
+                             frame_image=None):
+    """Generate a detailed thumbnail brief using Claude Opus (with vision if frame provided).
+    Claude sees the reference image and generates a full descriptive brief that Gemini can execute.
+    Returns a dict with 'brief_text' (full brief for Gemini) and structured fields for logging."""
     import json as _json
+    import base64
+    import io
 
     research_context = _json.dumps(research_patterns, indent=2, ensure_ascii=False)
 
@@ -851,56 +866,104 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     if audience_qs:
         yt_context += f"\nREAL AUDIENCE QUESTIONS (what viewers actually care about — use to make thumbnail text resonate):\n{audience_qs}\n"
 
-    prompt = (
-        "You are a YouTube thumbnail text strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com).\n\n"
-        "CONTEXT:\n"
-        "- Business: Wholesale/bulk plain t-shirts, B2B India\n"
-        "- Format: Always Reel 9:16\n"
-        "- Audience: Small business owners, retailers, bulk buyers in India\n"
-        "- Content style: Informational, business opportunity, pricing reveals\n\n"
+    prompt_text = (
+        "You are a YouTube content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
+        "Your job is to research what's performing well on YouTube India and generate high-CTR thumbnail text and design briefs.\n\n"
+        "BUSINESS CONTEXT:\n"
+        "- Business: Wholesale/bulk plain t-shirts, B2B sales in India\n"
+        "- Target audience: Small business owners, retailers, resellers, bulk buyers in India\n"
+        "- Content style: Informational, business opportunity, pricing reveals, factory/warehouse tours\n"
+        "- Format: Always Reel 9:16 (YouTube Shorts / Instagram Reels)\n\n"
         f"RESEARCH PATTERNS (what works in this niche):\n{research_context}\n\n"
         f"{yt_context}\n"
         "TASK:\n"
-        "Given the video script and topic below, generate ONE high-CTR thumbnail text and design brief.\n\n"
+        "You are given a reference image (the base frame for the thumbnail) along with the video topic, hook, and script. "
+        "Generate a DETAILED thumbnail brief that a designer (Gemini) will use to place text on this exact image.\n\n"
         "THUMBNAIL TEXT RULES:\n"
-        "- Maximum 3-4 words (MUST be readable on mobile phone)\n"
-        "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
+        "- Maximum 4-5 words (MUST be readable on mobile phone — shorter is ALWAYS better)\n"
+        "- Use Hindi-English mix (Hinglish) — this performs best in India (e.g., '₹49 में T-Shirt Business', 'Wholesale का Secret')\n"
         "- Include a number or price if relevant (numbers get clicks)\n"
         "- Create curiosity or urgency\n"
-        "- Use power words from the research patterns\n"
-        "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
-        "OUTPUT: Return ONLY a JSON object (no markdown, no explanation) with these exact fields:\n"
-        '- "text": the thumbnail text (3-4 words max, Hinglish)\n'
-        '- "color": hex color code for text (must contrast with typical video frames)\n'
-        '- "position": where to place text ("top-left", "top-center", "top-right")\n'
-        '- "effect": text effect ("stroke", "shadow", "glow", "box")\n'
-        '- "font_style": "Bold, Impact/Block style"\n'
-        '- "design_notes": 1 sentence about design direction\n\n'
+        "- Use power words: Secret, Free, Shocking, Reality, Truth, Mistake, Hack, सच, गलती\n"
+        "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n"
+        "- If the topic is broad, pick the sharpest angle that creates maximum curiosity\n\n"
+        "OUTPUT FORMAT — Return EXACTLY this format (the designer will read this directly):\n\n"
+        "=== THUMBNAIL BRIEF ===\n"
+        "Format: Reel 9:16\n"
+        "Thumbnail Text: [your chosen text — 3-5 words max, Hinglish]\n"
+        "Text Color: [hex code] ([color name])\n"
+        "Text Position: [Top-Left / Top-Center / Top-Right] ([specific placement description based on the image — e.g., 'above the person's head, on the white wall/ceiling area'])\n"
+        "Text Effect: [describe stroke/outline color + shadow details — e.g., 'White stroke (thick outline, 4-5px) + black drop shadow for maximum pop']\n"
+        "Font Style: Bold, Impact/Block style — extra thick weight\n"
+        "Additional Design Notes:\n\n"
+        "[Describe what you see in the reference image — person, setting, products, background]\n\n"
+        "[Specific placement instruction — WHERE exactly to place text relative to the person/products. e.g., 'Place the text ABOVE his head in the clean ceiling/wall zone — do NOT cover his face']\n\n"
+        "[Text sizing instruction — e.g., 'The text is only 2-3 words in Hindi — make it BIG, filling the entire top third of the frame']\n\n"
+        "[Color/contrast instruction — e.g., 'Red text (#FF0000) with thick white outline (#FFFFFF, 4-5px) and subtle black shadow so it pops against the light background']\n\n"
+        "[What NOT to add — e.g., 'Do NOT add any other design elements — the warehouse stock behind him already tells the story visually']\n\n"
+        "[Bottom half instruction — e.g., 'Keep the bottom half completely clean — just his face and the stock bags']\n\n"
+        "[Readability note — 'This is a Reel thumbnail so text must be readable even at small mobile preview size']\n\n"
+        "Video Title: [suggested Hindi/Hinglish title for context — NOT placed on thumbnail]\n"
+        "=== END BRIEF ===\n\n"
+        "IMPORTANT:\n"
+        "- Look at the reference image carefully and describe it accurately\n"
+        "- Give SPECIFIC placement instructions based on what you see (not generic)\n"
+        "- Best performing text colors for Indian YouTube: Yellow (#FFD700), White (#FFFFFF), Red (#FF0000), Orange (#FF6600)\n"
+        "- The designer will keep the base image EXACTLY as-is and only add text on top\n"
+        "- Text must be in the safe zone: between 15%-45% from the top (bottom 40% is covered by YouTube Shorts UI)\n\n"
         f"TOPIC: {topic}\n"
         f"HOOK: {hook_text}\n"
         f"SCRIPT:\n{script_text[:1500]}\n"
     )
 
+    # Build message content — with or without frame image
+    message_content = []
+    if frame_image is not None:
+        try:
+            from PIL import Image
+            # Convert PIL image to base64 for Claude vision
+            buf = io.BytesIO()
+            frame_image.save(buf, format="PNG")
+            img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+            message_content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": "image/png", "data": img_b64}
+            })
+            print("   👁️ Sending frame image to Claude for visual analysis...")
+        except Exception as e:
+            print(f"   ⚠️ Could not encode frame for Claude vision: {e}")
+    message_content.append({"type": "text", "text": prompt_text})
+
     try:
         print("   🎨 Generating thumbnail brief via Claude Opus...")
         resp = claude_client.messages.create(
             model="claude-opus-4-6",
-            max_tokens=300,
-            messages=[{"role": "user", "content": prompt}],
+            max_tokens=800,
+            messages=[{"role": "user", "content": message_content}],
         )
 
         if cost_tracker:
             cost_tracker.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
 
         brief_text = resp.content[0].text.strip()
-        if brief_text.startswith("```"):
-            brief_text = brief_text.split("```")[1]
-            if brief_text.startswith("json"):
-                brief_text = brief_text[4:]
-        brief = _json.loads(brief_text)
 
-        print(f"   ✅ Thumbnail brief: \"{brief.get('text', '?')}\" | color: {brief.get('color', '?')} | position: {brief.get('position', '?')}")
-        return brief
+        # Extract the thumbnail text from the brief for logging
+        thumb_text = "?"
+        thumb_color = "?"
+        for line in brief_text.split("\n"):
+            if line.strip().startswith("Thumbnail Text:"):
+                thumb_text = line.split(":", 1)[1].strip()
+            elif line.strip().startswith("Text Color:"):
+                thumb_color = line.split(":", 1)[1].strip()
+
+        print(f"   ✅ Thumbnail brief: \"{thumb_text}\" | color: {thumb_color}")
+
+        # Return both the full brief text (for Gemini) and parsed fields (for logging/fallback)
+        return {
+            "brief_text": brief_text,
+            "text": thumb_text,
+            "color": thumb_color,
+        }
 
     except Exception as e:
         print(f"   ⚠️ Thumbnail brief generation failed: {e}")
@@ -909,7 +972,10 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
 def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                           claude_client=None, genai_client=None, cost_tracker=None):
-    """Generate a high-quality AI thumbnail using Claude (text strategy) + Gemini (image generation).
+    """Generate a high-quality AI thumbnail using Claude (detailed brief with vision) + Gemini Pro (image).
+    1. Extract best Veo frame
+    2. Send frame to Claude Opus — Claude sees the image and generates a detailed design brief
+    3. Send frame + Claude's full brief to Gemini Pro — Gemini places text on untouched image
     Falls back to basic generate_thumbnail() on failure. Returns thumbnail file path or None."""
     if not AI_THUMBNAIL or not claude_client or not genai_client:
         return None
@@ -919,23 +985,12 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         from google.genai import types
         import numpy as np
 
-        print("   🤖 AI Thumbnail Pipeline: Claude brief → Gemini image...")
+        print("   🤖 AI Thumbnail Pipeline: Claude brief (with vision) → Gemini Pro image...")
 
         # Step 1: Get/refresh research patterns
         research = refresh_thumbnail_research(claude_client)
 
-        # Step 2: Generate thumbnail brief via Claude (with YouTube insights for smarter text)
-        source_insights = get_source_channel_top_topics(5)
-        audience_qs = get_audience_questions(5)
-        brief = generate_thumbnail_brief(
-            claude_client, script_text, hook_text, topic, research,
-            source_insights=source_insights, audience_qs=audience_qs, cost_tracker=cost_tracker
-        )
-        if not brief:
-            print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
-            return None
-
-        # Step 3: Extract best frame from Veo clip
+        # Step 2: Extract best frame from Veo clip FIRST (so Claude can see it)
         frame_image = None
         if veo_clip_path and os.path.exists(veo_clip_path):
             try:
@@ -969,57 +1024,71 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                 draw.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
             print("   🖼️ AI thumbnail: using gradient background (no clip available)")
 
-        # Step 4: Call Gemini to generate thumbnail with text overlay
-        thumbnail_text = brief.get("text", hook_text)
-        text_color = brief.get("color", "#FFD700")
-        text_position = brief.get("position", "top-center")
-        text_effect = brief.get("effect", "stroke")
-        design_notes = brief.get("design_notes", "")
+        # Step 3: Generate detailed thumbnail brief via Claude (with frame image for vision)
+        source_insights = get_source_channel_top_topics(5)
+        audience_qs = get_audience_questions(5)
+        brief = generate_thumbnail_brief(
+            claude_client, script_text, hook_text, topic, research,
+            source_insights=source_insights, audience_qs=audience_qs,
+            cost_tracker=cost_tracker, frame_image=frame_image
+        )
+        if not brief:
+            print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
+            return None
+
+        # Step 4: Send frame image + Claude's full detailed brief to Gemini Pro
+        # Claude's brief_text contains the complete design direction — Gemini just executes it
+        claude_brief = brief.get("brief_text", "")
 
         gemini_prompt = (
-            "You are a professional YouTube thumbnail designer. You receive a reference image and create a "
-            "high-CTR YouTube Reel thumbnail by adding text and design elements on top of it.\n\n"
-            "AUDIENCE: Indian viewers (Hindi/Hinglish text is common)\n\n"
-            f"=== THUMBNAIL BRIEF ===\n"
-            f"Format: Reel 9:16\n"
-            f"Thumbnail Text: {thumbnail_text}\n"
-            f"Text Color: {text_color}\n"
-            f"Text Position: {text_position}\n"
-            f"Text Effect: {text_effect}\n"
-            f"Font Style: Bold, Impact/Block style\n"
-            f"Additional Design Notes: {design_notes}\n"
-            f"=== END BRIEF ===\n\n"
+            "You are a professional YouTube thumbnail designer. You receive a reference image and a design brief, "
+            "and you create a high-CTR YouTube thumbnail by adding text and design elements ON TOP of the reference image. "
+            "You are a DESIGN EXECUTOR — you do NOT research or change the text/title. You only design.\n\n"
+            "BUSINESS CONTEXT: Indian wholesale bulk plain t-shirt brand\n"
+            "AUDIENCE: Indian viewers (Hindi/Hinglish text is common)\n"
+            "STYLE: Bold, high-contrast, attention-grabbing — typical top Indian YouTube channel style\n\n"
+            f"{claude_brief}\n\n"
             "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
-            "- This is a 9:16 Reel thumbnail. YouTube and Instagram overlay their UI on the edges.\n"
-            "- TOP 10% of image: BLOCKED by platform UI (status bar, channel name). NEVER place anything here.\n"
-            "- BOTTOM 20% of image: BLOCKED by YouTube Shorts UI (like/comment/share buttons, description). NEVER place anything here.\n"
+            "- This is a 9:16 Reel thumbnail (1080x1920). YouTube and Instagram overlay their UI on the edges.\n"
+            "- TOP 10% of image: BLOCKED by platform UI. NEVER place anything here.\n"
+            "- BOTTOM 40% of image: COVERED by YouTube Shorts UI (title, buttons, comments). NEVER place text there.\n"
             "- LEFT/RIGHT 10%: BLOCKED by edge margins. NEVER place text here.\n"
-            "- ALL text and design elements MUST be within the SAFE ZONE: 10%-80% from top, 10%-90% from left.\n"
-            "- Best text placement: between 15%-45% from the top (upper third of safe zone).\n\n"
-            "DESIGN RULES (NEVER BREAK THESE):\n"
+            "- ALL text MUST be within 15%-45% from the top ONLY.\n\n"
+            "IMAGE RULES (NEVER BREAK THESE):\n"
+            "- Output exactly 1080x1920 pixels (Reel 9:16)\n"
+            "- NEVER crop, distort, stretch, or modify the reference image — it must remain EXACTLY as given\n"
+            "- Do NOT generate a completely new image — my reference photo IS the base\n"
+            "- My image is the background/base — everything else goes ON TOP of it\n"
+            "- Keep my face and product clearly visible at all times\n\n"
+            "TEXT RULES (NEVER BREAK THESE):\n"
             "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
             "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
             "- Do NOT add 'Sale91', 'Sale91.com', 'WATCH', or any text not in the brief\n"
-            "- Maximum 3-4 words total on the entire thumbnail — the brief text ONLY\n"
-            "- NEVER crop, distort, stretch, or modify the reference image — it must remain exactly as given\n"
-            "- My image is the background/base — everything else goes ON TOP of it\n"
-            "- Text must be READABLE on a mobile phone screen\n"
-            "- Use BOLD, thick, block-style fonts — never thin or decorative fonts\n"
-            "- Every letter must have a visible stroke (outline) OR shadow for readability\n"
-            "- Text stroke/outline: minimum 3-4px, usually black or dark color\n"
-            "- NEVER place text over faces\n"
-            "- Text should fill 30-40% of the thumbnail area (big and impactful)\n"
-            "- High contrast ALWAYS — light text on dark areas, dark text on light areas\n"
-            "- Generate ONE best thumbnail — not multiple variations\n"
-            "- Add a slight vignette (darkened edges) to make center pop — but do NOT darken faces\n"
+            "- Maximum 4-5 words total on the entire thumbnail — the brief text ONLY\n"
+            "- Text must be READABLE on a mobile phone screen (imagine 4cm wide)\n"
+            "- Use BOLD, thick, block-style fonts — NEVER thin or decorative fonts\n"
+            "- Every letter must have a visible stroke (outline) AND shadow for readability\n"
+            "- NEVER place text over my face\n"
+            "- Text should fill 30-40% of the thumbnail area\n\n"
+            "DO NOT:\n"
+            "- ❌ Change the thumbnail text — use it EXACTLY as provided\n"
+            "- ❌ Add extra text beyond what's in the brief\n"
+            "- ❌ Generate a completely new image — my reference photo is the base\n"
+            "- ❌ Use thin, script, or decorative fonts\n"
+            "- ❌ Place text over my face or the main product\n\n"
+            "MUST DO:\n"
+            "- ✅ Keep my original image INTACT as the base — do NOT modify it\n"
+            "- ✅ Add bold readable text with proper stroke/shadow as specified in the brief\n"
+            "- ✅ Follow the brief EXACTLY — the brief has specific placement and color instructions\n"
+            "- ✅ Generate ONE best thumbnail\n"
+            "- ✅ Respect safe zones — no text in bottom 40% for Reels\n"
         )
 
         output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
 
-        # Try primary model, then fallback (with timeout — Gemini SDK has a known bug
-        # where timeout=None is passed to httpx, so API calls can hang indefinitely)
+        # Try primary model (Pro), then fallback (Flash)
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-        GEMINI_IMAGE_TIMEOUT = 90  # seconds per model attempt
+        GEMINI_IMAGE_TIMEOUT = 180  # seconds per model attempt
 
         for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
             try:
@@ -1042,6 +1111,10 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                 for part in response.parts:
                     if part.inline_data is not None:
                         generated_img = part.as_image()
+                        # Ensure PIL Image (some Gemini models return non-PIL types)
+                        if not isinstance(generated_img, Image.Image):
+                            import io
+                            generated_img = Image.open(io.BytesIO(part.inline_data.data))
                         # Resize to exact thumbnail dimensions
                         generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
                         generated_img.save(output_path, "PNG", quality=95)

@@ -559,12 +559,14 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 - **Step 1: Research** — `refresh_thumbnail_research()` via Claude Opus (cached 7 days)
   - Generates: power words, best colors, text rules, layout rules, patterns
   - **Note:** Uses Claude's training knowledge, NOT live YouTube data
-- **Step 2: Brief** — `generate_thumbnail_brief()` via Claude Opus
-  - Inputs: research patterns + script + hook text + **source channel top 5 Shorts** + **audience questions**
-  - Output: `{text, color, position, effect, design_notes, font_style}`
-- **Step 3: Image** — Gemini generates thumbnail with text overlay
-  - Models: `gemini-3.1-flash-image-preview` → `gemini-2.5-flash-image` (fallback)
-  - Input: Best Veo frame + text brief + safe zone rules
+- **Step 2: Frame** — Extract best Veo frame FIRST (sent to Claude for vision analysis)
+- **Step 3: Brief** — `generate_thumbnail_brief()` via Claude Opus **with vision**
+  - Claude SEES the reference image and generates a detailed descriptive brief
+  - Inputs: frame image + research patterns + script + hook text + **source channel top 5 Shorts** + **audience questions**
+  - Output: Full `=== THUMBNAIL BRIEF ===` with image description, specific placement notes, color/stroke details
+- **Step 4: Image** — Gemini Pro generates thumbnail with text overlay
+  - Models: `gemini-3-pro-image-preview` → `gemini-3.1-flash-image-preview` (fallback)
+  - Input: Best Veo frame + Claude's full detailed brief + safe zone rules
   - Cost: ~$0.045/thumbnail
 
 ### PIL Fallback: `generate_thumbnail(hook_text, topic, output_path, veo_clip_path)`
