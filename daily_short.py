@@ -642,7 +642,6 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         # Try to load a good font, fall back to default
         font_hook = None
         font_topic = None
-        font_brand = None
         font_paths = [
             "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",  # Supports Hindi/Devanagari
             "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
@@ -658,11 +657,9 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if font_file:
             font_hook = ImageFont.truetype(font_file, 72)
             font_topic = ImageFont.truetype(font_file, 36)
-            font_brand = ImageFont.truetype(font_file, 42)
         else:
             font_hook = ImageFont.load_default()
             font_topic = ImageFont.load_default()
-            font_brand = ImageFont.load_default()
 
         # SAFE ZONE for 9:16 Reels: top 10% and bottom 20% are covered by YouTube UI
         safe_top = int(THUMBNAIL_HEIGHT * 0.15)       # Start text at 15% from top
