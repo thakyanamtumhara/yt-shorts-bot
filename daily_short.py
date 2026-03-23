@@ -1088,7 +1088,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
 
         # Try primary model (Pro), then fallback (Flash)
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-        GEMINI_IMAGE_TIMEOUT = 90  # seconds per model attempt
+        GEMINI_IMAGE_TIMEOUT = 180  # seconds per model attempt
 
         for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
             try:
