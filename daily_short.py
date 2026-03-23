@@ -764,7 +764,7 @@ def refresh_thumbnail_research(claude_client):
         "updated": "",
         "power_words": ["Secret", "Free", "Shocking", "Reality", "Truth", "Mistake", "Hack", "Asli", "Sach"],
         "best_colors": {"text": ["#FFD700", "#FFFFFF", "#FF0000", "#FF6600"], "stroke": "#000000"},
-        "text_rules": "Max 4-5 words, Hinglish, include price/number if relevant, curiosity/urgency",
+        "text_rules": "Max 3-4 words, Hinglish, include price/number if relevant, curiosity/urgency",
         "layout": "Text top 15-45% for 9:16, face on one side text on other, rule of thirds",
         "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks",
     }
@@ -807,7 +807,7 @@ def refresh_thumbnail_research(claude_client):
                     "- text_rules: string summarizing best practices for Shorts thumbnail text — must be readable on tiny mobile preview (max 2 sentences)\n"
                     "- layout: string summarizing layout rules for 9:16 Shorts thumbnails with safe zone constraints (max 2 sentences)\n"
                     "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
-                    "- example_texts: array of 10 example Shorts thumbnail texts (4-5 words max each) that would work for t-shirt/wholesale business topics\n"
+                    "- example_texts: array of 10 example Shorts thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics\n"
                 )
             }],
         )
@@ -863,14 +863,14 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "TASK:\n"
         "Given the video script and topic below, generate ONE high-CTR thumbnail text and design brief.\n\n"
         "THUMBNAIL TEXT RULES:\n"
-        "- Maximum 4-5 words (MUST be readable on mobile phone)\n"
+        "- Maximum 3-4 words (MUST be readable on mobile phone)\n"
         "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
         "- Include a number or price if relevant (numbers get clicks)\n"
         "- Create curiosity or urgency\n"
         "- Use power words from the research patterns\n"
         "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
         "OUTPUT: Return ONLY a JSON object (no markdown, no explanation) with these exact fields:\n"
-        '- "text": the thumbnail text (4-5 words max, Hinglish)\n'
+        '- "text": the thumbnail text (3-4 words max, Hinglish)\n'
         '- "color": hex color code for text (must contrast with typical video frames)\n'
         '- "position": where to place text ("top-left", "top-center", "top-right")\n'
         '- "effect": text effect ("stroke", "shadow", "glow", "box")\n'
@@ -1000,7 +1000,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
             "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
             "- Do NOT add 'Sale91', 'Sale91.com', 'WATCH', or any text not in the brief\n"
-            "- Maximum 4-5 words total on the entire thumbnail — the brief text ONLY\n"
+            "- Maximum 3-4 words total on the entire thumbnail — the brief text ONLY\n"
             "- NEVER crop, distort, stretch, or modify the reference image — it must remain exactly as given\n"
             "- My image is the background/base — everything else goes ON TOP of it\n"
             "- Text must be READABLE on a mobile phone screen\n"
