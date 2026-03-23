@@ -756,7 +756,7 @@ def upload_thumbnail(youtube, video_id, thumbnail_path):
 
 def refresh_thumbnail_research(claude_client):
     """Refresh weekly thumbnail research cache. Returns cached research patterns dict.
-    Calls Claude Sonnet to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
+    Calls Claude Opus to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
     Caches results in THUMBNAIL_RESEARCH_FILE; refreshes only if older than THUMBNAIL_RESEARCH_MAX_AGE_DAYS."""
     import json as _json
     from datetime import datetime as _datetime
@@ -785,11 +785,11 @@ def refresh_thumbnail_research(claude_client):
         except Exception as e:
             print(f"   ⚠️ Failed to read research cache: {e}")
 
-    # Generate fresh research via Claude Sonnet (fast + sufficient for structured patterns)
+    # Generate fresh research via Claude Opus (best judgment for niche-specific patterns)
     try:
-        print("   🔍 Generating thumbnail research patterns via Claude Sonnet...")
+        print("   🔍 Generating thumbnail research patterns via Claude Opus...")
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-opus-4-6",
             max_tokens=800,
             messages=[{
                 "role": "user",
