@@ -6529,9 +6529,9 @@ def main():
         except: pass
 
 
-def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
+def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None, base_image_path=None):
     """Standalone test for AI thumbnail pipeline.
-    Run: python daily_short.py --test-thumbnail [--topic "..."] [--video path/to/clip.mp4] [--script "..."]
+    Run: python daily_short.py --test-thumbnail [--topic "..."] [--script "..."] [--base-image path/to/image.png]
     Generates thumbnail locally without uploading anywhere."""
     import anthropic
     from google import genai
@@ -6561,19 +6561,48 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
 
     os.makedirs(WORK_DIR, exist_ok=True)
 
+    # If base image provided, create a dummy video clip from it so the pipeline uses it as background
+    effective_video_path = video_path
+    if base_image_path and os.path.exists(base_image_path):
+        from PIL import Image
+        # Save resized copy as the frame source — the pipeline extracts frames from video,
+        # so we create a 1-second static video from the image
+        try:
+            base_img = Image.open(base_image_path).convert("RGB")
+            base_img = base_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+            # Create a 1-second video from the static image using ffmpeg
+            temp_frame = f"{WORK_DIR}/base_frame_input.png"
+            effective_video_path = f"{WORK_DIR}/base_frame_video.mp4"
+            base_img.save(temp_frame, "PNG")
+            import subprocess
+            subprocess.run([
+                "ffmpeg", "-y", "-loop", "1", "-i", temp_frame,
+                "-t", "1", "-pix_fmt", "yuv420p",
+                "-vf", f"scale={THUMBNAIL_WIDTH}:{THUMBNAIL_HEIGHT}",
+                effective_video_path,
+            ], capture_output=True, timeout=30)
+            print(f"  🖼️ Base image loaded: {base_image_path} → 1s video for frame extraction")
+        except Exception as e:
+            print(f"  ⚠️ Failed to process base image: {e}")
+            effective_video_path = video_path
+
     print(f"\n{'='*60}")
     print(f"  🧪 AI THUMBNAIL TEST MODE")
     print(f"  📌 Topic: {topic}")
     print(f"  🪝 Hook: {hook_text}")
-    if video_path:
+    if base_image_path:
+        print(f"  🖼️ Base image: {base_image_path}")
+    elif video_path:
         print(f"  🎥 Video: {video_path}")
+    else:
+        print(f"  🎨 No base image — using gradient background")
     print(f"{'='*60}\n")
 
     cost = CostTracker()
 
     thumbnail_path = generate_ai_thumbnail(
         hook_text, topic, script,
-        veo_clip_path=video_path,
+        veo_clip_path=effective_video_path,
         claude_client=claude_client,
         genai_client=genai_client,
         cost_tracker=cost,
@@ -6585,7 +6614,7 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
         print(f"  💰 Cost: ${cost.total():.4f}")
     else:
         print(f"  ❌ AI thumbnail failed — falling back to basic...")
-        thumbnail_path = generate_thumbnail(hook_text, topic, veo_clip_path=video_path)
+        thumbnail_path = generate_thumbnail(hook_text, topic, veo_clip_path=effective_video_path)
         if thumbnail_path:
             print(f"  ✅ Basic thumbnail generated: {thumbnail_path}")
         else:
@@ -6599,6 +6628,7 @@ if __name__ == "__main__":
         _topic = None
         _script = None
         _video = None
+        _base_image = None
         for i, arg in enumerate(sys.argv):
             if arg == "--topic" and i + 1 < len(sys.argv):
                 _topic = sys.argv[i + 1]
@@ -6606,6 +6636,8 @@ if __name__ == "__main__":
                 _script = sys.argv[i + 1]
             elif arg == "--video" and i + 1 < len(sys.argv):
                 _video = sys.argv[i + 1]
-        test_ai_thumbnail_standalone(topic=_topic, script=_script, video_path=_video)
+            elif arg == "--base-image" and i + 1 < len(sys.argv):
+                _base_image = sys.argv[i + 1]
+        test_ai_thumbnail_standalone(topic=_topic, script=_script, video_path=_video, base_image_path=_base_image)
     else:
         main()
