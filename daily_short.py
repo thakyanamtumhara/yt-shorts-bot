@@ -785,7 +785,7 @@ def refresh_thumbnail_research(claude_client):
         except Exception as e:
             print(f"   ⚠️ Failed to read research cache: {e}")
 
-    # Generate fresh research via Claude Opus
+    # Generate fresh research via Claude Opus (best judgment for niche-specific patterns)
     try:
         print("   🔍 Generating thumbnail research patterns via Claude Opus...")
         resp = claude_client.messages.create(
@@ -1016,17 +1016,27 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
 
         output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
 
-        # Try primary model, then fallback
+        # Try primary model, then fallback (with timeout — Gemini SDK has a known bug
+        # where timeout=None is passed to httpx, so API calls can hang indefinitely)
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+        GEMINI_IMAGE_TIMEOUT = 90  # seconds per model attempt
+
         for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
             try:
-                print(f"   🎨 Generating thumbnail via Gemini ({model_name})...")
-                response = genai_client.models.generate_content(
-                    model=model_name,
-                    contents=[gemini_prompt, frame_image],
-                    config=types.GenerateContentConfig(
-                        response_modalities=["TEXT", "IMAGE"],
-                    ),
-                )
+                print(f"   🎨 Generating thumbnail via Gemini ({model_name}) [timeout={GEMINI_IMAGE_TIMEOUT}s]...")
+
+                def _call_gemini(m=model_name):
+                    return genai_client.models.generate_content(
+                        model=m,
+                        contents=[gemini_prompt, frame_image],
+                        config=types.GenerateContentConfig(
+                            response_modalities=["TEXT", "IMAGE"],
+                        ),
+                    )
+
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(_call_gemini)
+                    response = future.result(timeout=GEMINI_IMAGE_TIMEOUT)
 
                 # Extract generated image from response
                 for part in response.parts:
@@ -1042,6 +1052,11 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
 
                 print(f"   ⚠️ Gemini ({model_name}) returned no image")
 
+            except FuturesTimeout:
+                print(f"   ⚠️ Gemini ({model_name}) timed out after {GEMINI_IMAGE_TIMEOUT}s")
+                if model_name == AI_THUMBNAIL_GEMINI_MODEL:
+                    print(f"   🔄 Trying fallback model...")
+                continue
             except Exception as e:
                 print(f"   ⚠️ Gemini ({model_name}) failed: {e}")
                 if model_name == AI_THUMBNAIL_GEMINI_MODEL:
