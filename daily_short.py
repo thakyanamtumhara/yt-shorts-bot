@@ -756,7 +756,7 @@ def upload_thumbnail(youtube, video_id, thumbnail_path):
 
 def refresh_thumbnail_research(claude_client):
     """Refresh weekly thumbnail research cache. Returns cached research patterns dict.
-    Calls Claude Opus to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
+    Calls Claude Sonnet to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
     Caches results in THUMBNAIL_RESEARCH_FILE; refreshes only if older than THUMBNAIL_RESEARCH_MAX_AGE_DAYS."""
     import json as _json
     from datetime import datetime as _datetime
@@ -785,11 +785,11 @@ def refresh_thumbnail_research(claude_client):
         except Exception as e:
             print(f"   ⚠️ Failed to read research cache: {e}")
 
-    # Generate fresh research via Claude Opus
+    # Generate fresh research via Claude Sonnet (fast + sufficient for structured patterns)
     try:
-        print("   🔍 Generating thumbnail research patterns via Claude Opus...")
+        print("   🔍 Generating thumbnail research patterns via Claude Sonnet...")
         resp = claude_client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-sonnet-4-5-20250929",
             max_tokens=800,
             messages=[{
                 "role": "user",
@@ -838,7 +838,7 @@ def refresh_thumbnail_research(claude_client):
 
 def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
                              source_insights=None, audience_qs=None, cost_tracker=None):
-    """Generate a high-CTR thumbnail brief using Claude Opus.
+    """Generate a high-CTR thumbnail brief using Claude Sonnet.
     Returns a dict with keys: text, color, position, effect, design_notes, font_style."""
     import json as _json
 
@@ -882,15 +882,15 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     )
 
     try:
-        print("   🎨 Generating thumbnail brief via Claude Opus...")
+        print("   🎨 Generating thumbnail brief via Claude Sonnet...")
         resp = claude_client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-sonnet-4-5-20250929",
             max_tokens=300,
             messages=[{"role": "user", "content": prompt}],
         )
 
         if cost_tracker:
-            cost_tracker.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
+            cost_tracker.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
 
         brief_text = resp.content[0].text.strip()
         if brief_text.startswith("```"):
