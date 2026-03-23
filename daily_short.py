@@ -3219,20 +3219,42 @@ TOPIC_MAX_CANDIDATES = 5  # Generate this many candidates, pick the best
 TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
 def search_trending_topics(anthropic_client):
-    """Use Claude to brainstorm trending topics based on current Indian textile/printing industry trends.
-    Claude uses its training knowledge of YouTube Shorts trends, Google Trends patterns,
-    and Indian B2B textile market to generate timely, high-search-volume topics."""
+    """Use Claude to brainstorm trending topics based on real channel data + AI knowledge.
+    Feeds in: source channel top Shorts with view counts, audience questions,
+    thumbnail research patterns, category performance, and seasonal context."""
+
+    # Gather all gold data
+    source_videos = fetch_source_channel_insights()
+    source_with_views = []
+    if source_videos:
+        for v in source_videos[:15]:
+            source_with_views.append(f"- {v['title']} ({v['views']:,} views, {v['likes']:,} likes)")
+
+    audience_qs = get_audience_questions(10)
+
+    # Category performance — which categories get the most views
+    cat_ranking = get_source_channel_category_ranking()
+    own_cats = get_top_performing_categories()
+
+    # Thumbnail research — power words and example texts that work
+    thumb_research = {}
+    if os.path.exists(THUMBNAIL_RESEARCH_FILE):
+        try:
+            with open(THUMBNAIL_RESEARCH_FILE, "r") as f:
+                thumb_research = json.load(f)
+        except Exception:
+            pass
 
     prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt manufacturer (Sale91.com).
 
-Your job: generate 10 FRESH topic ideas that are likely to be HIGHLY SEARCHED right now.
+Your job: generate 10 FRESH topic ideas that are likely to get MAXIMUM VIEWS.
 
-Think about:
-1. SEASONAL TRENDS — what's relevant this month? (summer coming = cotton demand, winter ending = hoodie clearance, etc.)
-2. YOUTUBE SEARCH TRENDS — what do printing business owners search for? ("DTG vs DTF 2025", "best GSM for printing", etc.)
-3. CUSTOMER PAIN POINTS — what problems are printing businesses facing right now?
-4. VIRAL FORMATS — what YouTube Shorts formats are working? (myth busting, "I tested X", comparisons, mistakes series)
-5. INDUSTRY NEWS — any new printing tech, fabric innovations, market changes?
+STRATEGY:
+1. STUDY the real data below — these are ACTUAL Shorts that got real views on our channel
+2. Identify PATTERNS — what topics, formats, and angles get the most views?
+3. Generate NEW topics that follow winning patterns but with FRESH angles
+4. Use audience questions as direct topic inspiration — viewers literally asked for these
+5. Consider seasonal trends and search intent
 
 CURRENT CONTEXT:
 - Month: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%B %Y')}
@@ -3240,17 +3262,32 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL (make MORE topics like these):
+=== GOLD DATA: REAL PERFORMANCE FROM OUR MAIN CHANNEL (50K subs) ===
+These are ACTUAL Shorts with REAL view counts — study what works:
+{chr(10).join(source_with_views) if source_with_views else "No source channel data available."}
+
+=== TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL ===
 {json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "New channel — no data yet."}
 
-PROVEN WINNERS FROM OUR MAIN CHANNEL (50K subs, 5.5L monthly views — these topics WORK with our audience):
-{json.dumps(get_source_channel_top_topics(10), ensure_ascii=False) if get_source_channel_top_topics(10) else "No source channel data available."}
+=== BEST PERFORMING CATEGORIES (by average views) ===
+Main channel: {', '.join(cat_ranking[:5]) if cat_ranking else 'No data'}
+Own channel: {', '.join(own_cats[:5]) if own_cats else 'No data yet'}
 
-AUDIENCE QUESTIONS (real comments from our viewers — these are topics they WANT explained):
-{get_audience_questions(10)}
+=== AUDIENCE QUESTIONS (real comments — viewers WANT these topics explained) ===
+{audience_qs if audience_qs else "No audience questions available."}
 
-STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
-Each topic should be 1 line, specific, and contain a hook element.
+=== THUMBNAIL/HOOK PATTERNS THAT GET CLICKS ===
+Power words: {json.dumps(thumb_research.get('power_words', []), ensure_ascii=False)}
+Example texts that work: {json.dumps(thumb_research.get('example_texts', []), ensure_ascii=False)}
+What patterns perform best: {thumb_research.get('patterns', 'No data yet')}
+
+RULES:
+- Each topic must be in Hindi conversational (Hinglish) style
+- Practical knowledge, storytelling format — no selling
+- Each topic should be specific and contain a hook element
+- Generate topics that COMPLEMENT the winners above — similar patterns, fresh angles
+- At least 2-3 topics should be inspired by real audience questions
+- At least 2-3 should follow the highest-viewed video patterns
 
 OUTPUT: Return ONLY a JSON array of 10 topic strings, nothing else.
 Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
@@ -3396,14 +3433,19 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     trending = search_trending_topics(claude_client)
 
     if not trending:
-        # Absolute fallback: single topic generation (old behavior)
-        print("   🔄 Fallback: single topic generation...")
+        # Absolute fallback: single topic using source channel inspiration
+        print("   🔄 Fallback: single topic generation with source channel data...")
+        source_titles = get_source_channel_top_topics(5)
+        aud_qs = get_audience_questions(3)
         try:
             resp = claude_client.messages.create(
                 model="claude-opus-4-6", max_tokens=200,
                 messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
+Top performing Shorts on our channel: {json.dumps(source_titles, ensure_ascii=False) if source_titles else 'No data'}
+Audience questions: {aud_qs if aud_qs else 'No data'}
+Generate a topic inspired by the winning patterns above but with a fresh angle.
 Return ONLY the topic text, nothing else."""}]
             )
             return resp.content[0].text.strip()

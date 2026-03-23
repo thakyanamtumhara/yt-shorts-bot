@@ -150,11 +150,19 @@
 ```
 
 ### Trending Topic Generation: `search_trending_topics(anthropic_client)`
-- **Lines:** 2695-2720
 - **Model:** `claude-opus-4-6`
-- **Inputs:** Current month, India season, own channel top topics, source channel top topics, audience questions
+- **Gold Data Inputs (all real):**
+  - Source channel top 15 Shorts with **actual view counts and likes** (not just titles)
+  - Own channel top performing videos
+  - Category performance ranking (which topic categories get most views)
+  - Audience questions mined from real YouTube comments
+  - Thumbnail research patterns (power words, example texts that get clicks)
+- **Context Inputs:**
+  - Current month and Indian season
+  - Seasonal business trends
 - **Output:** JSON array of 10 topic strings
-- **Note:** Uses Claude's training knowledge — NOT live YouTube search. Topics are AI-generated based on niche understanding.
+- **Strategy:** Claude studies the real performance data (what got views, what audiences asked) and generates topics that follow winning patterns with fresh angles. At least 2-3 topics inspired by audience questions, 2-3 following highest-viewed patterns.
+- **Note:** Topics are AI-generated informed by real channel data — not live YouTube search.
 
 ### Topic Review Gate: `review_topic(claude_client, topic, topic_history)`
 - **Lines:** 2762-2809
@@ -948,10 +956,10 @@ main() — Lines ~5360-6500
 | Own video performance | YouTube Data API v3 | 48h delay | Category ranking, engagement feedback |
 | Instagram audience activity | Instagram Graph API | Per-run | Best posting time |
 
-### AI-GENERATED (from Claude's training knowledge — NOT live search)
+### AI-GENERATED (Claude's intelligence + real channel data — NOT live search)
 | Source | Model | Cache | Used For |
 |--------|-------|-------|----------|
-| Trending topic ideas | Claude Opus | Per-run | When topic bank is exhausted |
+| Trending topic ideas | Claude Opus | Per-run | When topic bank is exhausted — uses source channel view counts, audience questions, category ranking, thumbnail patterns as input |
 | Thumbnail research patterns | Claude Opus | 7 days | Power words, colors, layout rules |
 | Script content | Claude Opus | Per-run | Full video script generation |
 | Title alternatives | Claude Opus | Per-run | 3 title variants, best picked |
