@@ -663,9 +663,12 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
             font_topic = ImageFont.load_default()
             font_brand = ImageFont.load_default()
 
-        # Yellow accent bars — top + left edge (brand consistency with video hook)
-        draw.rectangle([(0, 0), (THUMBNAIL_WIDTH, 8)], fill=(255, 215, 0))
-        draw.rectangle([(0, 0), (8, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
+        # SAFE ZONE for 9:16 Reels: top 10% and bottom 20% are covered by YouTube UI
+        safe_top = int(THUMBNAIL_HEIGHT * 0.15)       # Start text at 15% from top
+        safe_bottom = int(THUMBNAIL_HEIGHT * 0.80)    # Nothing below 80%
+        safe_left = int(THUMBNAIL_WIDTH * 0.10)       # 10% left margin
+        safe_right = int(THUMBNAIL_WIDTH * 0.90)      # 10% right margin
+        safe_width = safe_right - safe_left
 
         # Hook text — first word YELLOW (scroll-stop), rest WHITE
         hook_display = (hook_text or topic.split("—")[0].strip()).upper()
@@ -678,7 +681,7 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if font_file:
             font_first = ImageFont.truetype(font_file, 90)
 
-        y_start = int(THUMBNAIL_HEIGHT * 0.28)
+        y_start = safe_top
 
         def _draw_outlined(draw, x, y, text, font, fill, outline=(0, 0, 0), width=4):
             for dx in range(-width, width + 1):
@@ -692,18 +695,18 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if first_word:
             bbox = draw.textbbox((0, 0), first_word, font=font_first or font_hook)
             fw_w = bbox[2] - bbox[0]
-            fw_x = (THUMBNAIL_WIDTH - fw_w) // 2
+            fw_x = max(safe_left, (THUMBNAIL_WIDTH - fw_w) // 2)
             _draw_outlined(draw, fw_x, current_y, first_word, font_first or font_hook, (255, 215, 0))
             current_y += (bbox[3] - bbox[1]) + 15
 
-        # Draw remaining words in WHITE (wrap if needed)
+        # Draw remaining words in WHITE (wrap within safe zone)
         if rest_words:
             rest_lines = []
             current_line = ""
             for word in rest_words.split():
                 test = f"{current_line} {word}".strip()
                 bbox = draw.textbbox((0, 0), test, font=font_hook)
-                if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
+                if bbox[2] - bbox[0] > safe_width:
                     if current_line:
                         rest_lines.append(current_line)
                     current_line = word
@@ -713,39 +716,22 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
                 rest_lines.append(current_line)
 
             for line in rest_lines[:3]:
+                if current_y > safe_bottom - 50:
+                    break  # Don't overflow into bottom unsafe zone
                 bbox = draw.textbbox((0, 0), line, font=font_hook)
                 text_w = bbox[2] - bbox[0]
-                x = (THUMBNAIL_WIDTH - text_w) // 2
+                x = max(safe_left, (THUMBNAIL_WIDTH - text_w) // 2)
                 _draw_outlined(draw, x, current_y, line, font_hook, (255, 255, 255))
                 current_y += (bbox[3] - bbox[1]) + 10
 
-        # Topic summary — smaller text below hook
-        topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
-        bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
-        topic_w = bbox[2] - bbox[0]
-        topic_y = current_y + 25
-        draw.text(((THUMBNAIL_WIDTH - topic_w) // 2, topic_y), topic_short,
-                  font=font_topic, fill=(200, 200, 200))
-
-        # Brand bar at bottom
-        bar_y = THUMBNAIL_HEIGHT - 120
-        draw.rectangle([(0, bar_y), (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
-        brand_text = "Sale91.com"
-        bbox = draw.textbbox((0, 0), brand_text, font=font_brand)
-        brand_w = bbox[2] - bbox[0]
-        draw.text(((THUMBNAIL_WIDTH - brand_w) // 2, bar_y + 35), brand_text,
-                  font=font_brand, fill=(15, 15, 25))
-
-        # Red "WATCH" badge top-right corner
-        badge_text = "▶ WATCH"
-        bbox = draw.textbbox((0, 0), badge_text, font=font_topic)
-        badge_w = bbox[2] - bbox[0]
-        badge_x = THUMBNAIL_WIDTH - badge_w - 50
-        badge_y = 40
-        draw.rectangle([(badge_x - 15, badge_y - 8),
-                        (badge_x + badge_w + 15, badge_y + 44)],
-                       fill=(220, 30, 30))
-        draw.text((badge_x, badge_y), badge_text, font=font_topic, fill=(255, 255, 255))
+        # Topic summary — smaller text below hook (only if within safe zone)
+        if current_y + 60 < safe_bottom:
+            topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
+            bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
+            topic_w = bbox[2] - bbox[0]
+            topic_y = current_y + 25
+            draw.text((max(safe_left, (THUMBNAIL_WIDTH - topic_w) // 2), topic_y), topic_short,
+                      font=font_topic, fill=(200, 200, 200))
 
         img.save(output_path, "PNG", quality=95)
         print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
@@ -810,15 +796,20 @@ def refresh_thumbnail_research(claude_client):
             messages=[{
                 "role": "user",
                 "content": (
-                    "You are a YouTube thumbnail strategist for an Indian wholesale bulk plain t-shirt business. "
-                    "Analyze what makes high-CTR thumbnails work for Indian YouTube channels in the business/wholesale niche.\n\n"
+                    "You are a YouTube SHORTS/REELS thumbnail strategist for an Indian wholesale bulk plain t-shirt business. "
+                    "Analyze what makes high-CTR thumbnails work specifically for VERTICAL 9:16 Shorts/Reels on Indian YouTube channels in the business/wholesale niche.\n\n"
+                    "IMPORTANT CONTEXT:\n"
+                    "- These are VERTICAL 9:16 Shorts thumbnails, NOT horizontal 16:9 video thumbnails\n"
+                    "- Viewers see these as tiny previews on mobile phones while scrolling\n"
+                    "- Top 10% and bottom 20% of thumbnail are covered by YouTube Shorts UI — text must be in the 15%-45% from top zone\n"
+                    "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n\n"
                     "Return a JSON object (no markdown fencing) with these fields:\n"
-                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks (e.g., Secret, सच, Mistake, Free, Shocking)\n"
+                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Shorts (e.g., Secret, सच, Mistake, Free, Shocking)\n"
                     "- best_colors: object with 'text' (array of 4-5 hex codes) and 'stroke' (hex code for outline)\n"
-                    "- text_rules: string summarizing best practices for thumbnail text (max 2 sentences)\n"
-                    "- layout: string summarizing layout rules for 9:16 Reels thumbnails (max 2 sentences)\n"
-                    "- patterns: string summarizing top-performing thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
-                    "- example_texts: array of 10 example thumbnail texts that would work for t-shirt/wholesale business topics\n"
+                    "- text_rules: string summarizing best practices for Shorts thumbnail text — must be readable on tiny mobile preview (max 2 sentences)\n"
+                    "- layout: string summarizing layout rules for 9:16 Shorts thumbnails with safe zone constraints (max 2 sentences)\n"
+                    "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
+                    "- example_texts: array of 10 example Shorts thumbnail texts (4-5 words max each) that would work for t-shirt/wholesale business topics\n"
                 )
             }],
         )
@@ -2090,11 +2081,11 @@ def fetch_source_channel_insights():
             print("   ⚠️ No videos found on source channel")
             return []
 
-        # Step 2: Get video details (videos.list — 1 quota unit per 50 videos)
+        # Step 2: Get video details with duration to filter Shorts (videos.list)
         videos_resp = requests.get(f"{base_url}/videos", params={
             "key": SOURCE_CHANNEL_API_KEY,
             "id": ",".join(video_ids),
-            "part": "snippet,statistics",
+            "part": "snippet,statistics,contentDetails",
         }, timeout=15)
         videos_resp.raise_for_status()
         videos_data = videos_resp.json()
@@ -2103,6 +2094,21 @@ def fetch_source_channel_insights():
         for item in videos_data.get("items", []):
             snippet = item.get("snippet", {})
             stats = item.get("statistics", {})
+            # Filter for Shorts only: duration <= 60s and vertical aspect
+            duration_str = item.get("contentDetails", {}).get("duration", "")
+            # Parse ISO 8601 duration (e.g., PT45S, PT1M, PT1M30S)
+            import re as _re
+            duration_match = _re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration_str)
+            if duration_match:
+                hours = int(duration_match.group(1) or 0)
+                minutes = int(duration_match.group(2) or 0)
+                seconds = int(duration_match.group(3) or 0)
+                total_seconds = hours * 3600 + minutes * 60 + seconds
+            else:
+                total_seconds = 999  # Unknown duration — skip
+            # YouTube Shorts are <= 60 seconds
+            if total_seconds > 60:
+                continue
             videos.append({
                 "video_id": item.get("id", ""),
                 "title": snippet.get("title", ""),
@@ -2110,6 +2116,7 @@ def fetch_source_channel_insights():
                 "likes": int(stats.get("likeCount", 0)),
                 "comments": int(stats.get("commentCount", 0)),
                 "published": snippet.get("publishedAt", ""),
+                "duration_seconds": total_seconds,
             })
 
         # Sort by views descending
@@ -2124,7 +2131,10 @@ def fetch_source_channel_insights():
         with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
             json.dump(cache_data, f, indent=2, ensure_ascii=False)
 
-        print(f"   ✅ Fetched {len(videos)} videos from source channel (top: {videos[0]['views']:,} views)")
+        if not videos:
+            print("   ⚠️ No Shorts found on source channel (all videos were >60s)")
+            return []
+        print(f"   ✅ Fetched {len(videos)} Shorts from source channel (top: {videos[0]['views']:,} views)")
         return videos
 
     except Exception as e:
