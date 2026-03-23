@@ -270,6 +270,13 @@ GENERATE_THUMBNAIL = True
 THUMBNAIL_WIDTH = 1080
 THUMBNAIL_HEIGHT = 1920  # Vertical for Shorts
 
+# AI Thumbnail (Claude text strategy + Gemini image generation)
+AI_THUMBNAIL = True
+AI_THUMBNAIL_GEMINI_MODEL = "gemini-3.1-flash-image-preview"
+AI_THUMBNAIL_GEMINI_FALLBACK = "gemini-2.5-flash-image"
+THUMBNAIL_RESEARCH_FILE = "thumbnail_research.json"  # Weekly research cache
+THUMBNAIL_RESEARCH_MAX_AGE_DAYS = 7
+
 # Auto-Pin Comment — posts a CTA comment and pins it on every upload
 AUTO_PIN_COMMENT = True
 PIN_COMMENT_TEXT = """📦 Plain t-shirt chahiye printing ke liye?
@@ -635,11 +642,11 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         # Try to load a good font, fall back to default
         font_hook = None
         font_topic = None
-        font_brand = None
         font_paths = [
+            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",  # Supports Hindi/Devanagari
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
         ]
         font_file = None
         for fp in font_paths:
@@ -650,15 +657,16 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if font_file:
             font_hook = ImageFont.truetype(font_file, 72)
             font_topic = ImageFont.truetype(font_file, 36)
-            font_brand = ImageFont.truetype(font_file, 42)
         else:
             font_hook = ImageFont.load_default()
             font_topic = ImageFont.load_default()
-            font_brand = ImageFont.load_default()
 
-        # Yellow accent bars — top + left edge (brand consistency with video hook)
-        draw.rectangle([(0, 0), (THUMBNAIL_WIDTH, 8)], fill=(255, 215, 0))
-        draw.rectangle([(0, 0), (8, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
+        # SAFE ZONE for 9:16 Reels: top 10% and bottom 20% are covered by YouTube UI
+        safe_top = int(THUMBNAIL_HEIGHT * 0.15)       # Start text at 15% from top
+        safe_bottom = int(THUMBNAIL_HEIGHT * 0.80)    # Nothing below 80%
+        safe_left = int(THUMBNAIL_WIDTH * 0.10)       # 10% left margin
+        safe_right = int(THUMBNAIL_WIDTH * 0.90)      # 10% right margin
+        safe_width = safe_right - safe_left
 
         # Hook text — first word YELLOW (scroll-stop), rest WHITE
         hook_display = (hook_text or topic.split("—")[0].strip()).upper()
@@ -671,7 +679,7 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if font_file:
             font_first = ImageFont.truetype(font_file, 90)
 
-        y_start = int(THUMBNAIL_HEIGHT * 0.28)
+        y_start = safe_top
 
         def _draw_outlined(draw, x, y, text, font, fill, outline=(0, 0, 0), width=4):
             for dx in range(-width, width + 1):
@@ -685,18 +693,18 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
         if first_word:
             bbox = draw.textbbox((0, 0), first_word, font=font_first or font_hook)
             fw_w = bbox[2] - bbox[0]
-            fw_x = (THUMBNAIL_WIDTH - fw_w) // 2
+            fw_x = max(safe_left, (THUMBNAIL_WIDTH - fw_w) // 2)
             _draw_outlined(draw, fw_x, current_y, first_word, font_first or font_hook, (255, 215, 0))
             current_y += (bbox[3] - bbox[1]) + 15
 
-        # Draw remaining words in WHITE (wrap if needed)
+        # Draw remaining words in WHITE (wrap within safe zone)
         if rest_words:
             rest_lines = []
             current_line = ""
             for word in rest_words.split():
                 test = f"{current_line} {word}".strip()
                 bbox = draw.textbbox((0, 0), test, font=font_hook)
-                if bbox[2] - bbox[0] > THUMBNAIL_WIDTH - 120:
+                if bbox[2] - bbox[0] > safe_width:
                     if current_line:
                         rest_lines.append(current_line)
                     current_line = word
@@ -706,39 +714,22 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
                 rest_lines.append(current_line)
 
             for line in rest_lines[:3]:
+                if current_y > safe_bottom - 50:
+                    break  # Don't overflow into bottom unsafe zone
                 bbox = draw.textbbox((0, 0), line, font=font_hook)
                 text_w = bbox[2] - bbox[0]
-                x = (THUMBNAIL_WIDTH - text_w) // 2
+                x = max(safe_left, (THUMBNAIL_WIDTH - text_w) // 2)
                 _draw_outlined(draw, x, current_y, line, font_hook, (255, 255, 255))
                 current_y += (bbox[3] - bbox[1]) + 10
 
-        # Topic summary — smaller text below hook
-        topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
-        bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
-        topic_w = bbox[2] - bbox[0]
-        topic_y = current_y + 25
-        draw.text(((THUMBNAIL_WIDTH - topic_w) // 2, topic_y), topic_short,
-                  font=font_topic, fill=(200, 200, 200))
-
-        # Brand bar at bottom
-        bar_y = THUMBNAIL_HEIGHT - 120
-        draw.rectangle([(0, bar_y), (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)], fill=(255, 215, 0))
-        brand_text = "Sale91.com"
-        bbox = draw.textbbox((0, 0), brand_text, font=font_brand)
-        brand_w = bbox[2] - bbox[0]
-        draw.text(((THUMBNAIL_WIDTH - brand_w) // 2, bar_y + 35), brand_text,
-                  font=font_brand, fill=(15, 15, 25))
-
-        # Red "WATCH" badge top-right corner
-        badge_text = "▶ WATCH"
-        bbox = draw.textbbox((0, 0), badge_text, font=font_topic)
-        badge_w = bbox[2] - bbox[0]
-        badge_x = THUMBNAIL_WIDTH - badge_w - 50
-        badge_y = 40
-        draw.rectangle([(badge_x - 15, badge_y - 8),
-                        (badge_x + badge_w + 15, badge_y + 44)],
-                       fill=(220, 30, 30))
-        draw.text((badge_x, badge_y), badge_text, font=font_topic, fill=(255, 255, 255))
+        # Topic summary — smaller text below hook (only if within safe zone)
+        if current_y + 60 < safe_bottom:
+            topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
+            bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
+            topic_w = bbox[2] - bbox[0]
+            topic_y = current_y + 25
+            draw.text((max(safe_left, (THUMBNAIL_WIDTH - topic_w) // 2), topic_y), topic_short,
+                      font=font_topic, fill=(200, 200, 200))
 
         img.save(output_path, "PNG", quality=95)
         print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
@@ -761,6 +752,308 @@ def upload_thumbnail(youtube, video_id, thumbnail_path):
         print(f"   ⚠️ Thumbnail upload failed: {e}")
         print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
         return False
+
+
+def refresh_thumbnail_research(claude_client):
+    """Refresh weekly thumbnail research cache. Returns cached research patterns dict.
+    Calls Claude Opus to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
+    Caches results in THUMBNAIL_RESEARCH_FILE; refreshes only if older than THUMBNAIL_RESEARCH_MAX_AGE_DAYS."""
+    import json as _json
+
+    default_patterns = {
+        "updated": "",
+        "power_words": ["Secret", "Free", "Shocking", "Reality", "Truth", "Mistake", "Hack", "Asli", "Sach"],
+        "best_colors": {"text": ["#FFD700", "#FFFFFF", "#FF0000", "#FF6600"], "stroke": "#000000"},
+        "text_rules": "Max 4-5 words, Hinglish, include price/number if relevant, curiosity/urgency",
+        "layout": "Text top 15-45% for 9:16, face on one side text on other, rule of thirds",
+        "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks",
+    }
+
+    # Check if cache is fresh
+    if os.path.exists(THUMBNAIL_RESEARCH_FILE):
+        try:
+            with open(THUMBNAIL_RESEARCH_FILE, "r") as f:
+                cached = _json.load(f)
+            updated = cached.get("updated", "")
+            if updated:
+                from datetime import datetime
+                age = (datetime.now() - datetime.fromisoformat(updated)).days
+                if age < THUMBNAIL_RESEARCH_MAX_AGE_DAYS:
+                    print(f"   📋 Thumbnail research cache fresh ({age}d old, max {THUMBNAIL_RESEARCH_MAX_AGE_DAYS}d)")
+                    return cached
+                print(f"   🔄 Thumbnail research cache stale ({age}d old), refreshing...")
+        except Exception as e:
+            print(f"   ⚠️ Failed to read research cache: {e}")
+
+    # Generate fresh research via Claude Opus
+    try:
+        print("   🔍 Generating thumbnail research patterns via Claude Opus...")
+        resp = claude_client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=800,
+            messages=[{
+                "role": "user",
+                "content": (
+                    "You are a YouTube SHORTS/REELS thumbnail strategist for an Indian wholesale bulk plain t-shirt business. "
+                    "Analyze what makes high-CTR thumbnails work specifically for VERTICAL 9:16 Shorts/Reels on Indian YouTube channels in the business/wholesale niche.\n\n"
+                    "IMPORTANT CONTEXT:\n"
+                    "- These are VERTICAL 9:16 Shorts thumbnails, NOT horizontal 16:9 video thumbnails\n"
+                    "- Viewers see these as tiny previews on mobile phones while scrolling\n"
+                    "- Top 10% and bottom 20% of thumbnail are covered by YouTube Shorts UI — text must be in the 15%-45% from top zone\n"
+                    "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n\n"
+                    "Return a JSON object (no markdown fencing) with these fields:\n"
+                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Shorts (e.g., Secret, सच, Mistake, Free, Shocking)\n"
+                    "- best_colors: object with 'text' (array of 4-5 hex codes) and 'stroke' (hex code for outline)\n"
+                    "- text_rules: string summarizing best practices for Shorts thumbnail text — must be readable on tiny mobile preview (max 2 sentences)\n"
+                    "- layout: string summarizing layout rules for 9:16 Shorts thumbnails with safe zone constraints (max 2 sentences)\n"
+                    "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
+                    "- example_texts: array of 10 example Shorts thumbnail texts (4-5 words max each) that would work for t-shirt/wholesale business topics\n"
+                )
+            }],
+        )
+        research_text = resp.content[0].text.strip()
+        # Parse JSON from response
+        if research_text.startswith("```"):
+            research_text = research_text.split("```")[1]
+            if research_text.startswith("json"):
+                research_text = research_text[4:]
+        research = _json.loads(research_text)
+        research["updated"] = datetime.now().isoformat()
+
+        with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
+            _json.dump(research, f, indent=2, ensure_ascii=False)
+        print(f"   ✅ Thumbnail research cache refreshed")
+        return research
+
+    except Exception as e:
+        print(f"   ⚠️ Research generation failed: {e}, using defaults")
+        default_patterns["updated"] = datetime.now().isoformat()
+        try:
+            with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
+                _json.dump(default_patterns, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+        return default_patterns
+
+
+def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
+                             source_insights=None, audience_qs=None, cost_tracker=None):
+    """Generate a high-CTR thumbnail brief using Claude Opus.
+    Returns a dict with keys: text, color, position, effect, design_notes, font_style."""
+    import json as _json
+
+    research_context = _json.dumps(research_patterns, indent=2, ensure_ascii=False)
+
+    # Build YouTube insights context if available
+    yt_context = ""
+    if source_insights:
+        yt_context += f"\nTOP PERFORMING VIDEOS IN THIS NICHE (use these to inform thumbnail text strategy):\n{_json.dumps(source_insights, ensure_ascii=False)}\n"
+    if audience_qs:
+        yt_context += f"\nREAL AUDIENCE QUESTIONS (what viewers actually care about — use to make thumbnail text resonate):\n{audience_qs}\n"
+
+    prompt = (
+        "You are a YouTube thumbnail text strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com).\n\n"
+        "CONTEXT:\n"
+        "- Business: Wholesale/bulk plain t-shirts, B2B India\n"
+        "- Format: Always Reel 9:16\n"
+        "- Audience: Small business owners, retailers, bulk buyers in India\n"
+        "- Content style: Informational, business opportunity, pricing reveals\n\n"
+        f"RESEARCH PATTERNS (what works in this niche):\n{research_context}\n\n"
+        f"{yt_context}\n"
+        "TASK:\n"
+        "Given the video script and topic below, generate ONE high-CTR thumbnail text and design brief.\n\n"
+        "THUMBNAIL TEXT RULES:\n"
+        "- Maximum 4-5 words (MUST be readable on mobile phone)\n"
+        "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
+        "- Include a number or price if relevant (numbers get clicks)\n"
+        "- Create curiosity or urgency\n"
+        "- Use power words from the research patterns\n"
+        "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
+        "OUTPUT: Return ONLY a JSON object (no markdown, no explanation) with these exact fields:\n"
+        '- "text": the thumbnail text (4-5 words max, Hinglish)\n'
+        '- "color": hex color code for text (must contrast with typical video frames)\n'
+        '- "position": where to place text ("top-left", "top-center", "top-right")\n'
+        '- "effect": text effect ("stroke", "shadow", "glow", "box")\n'
+        '- "font_style": "Bold, Impact/Block style"\n'
+        '- "design_notes": 1 sentence about design direction\n\n'
+        f"TOPIC: {topic}\n"
+        f"HOOK: {hook_text}\n"
+        f"SCRIPT:\n{script_text[:1500]}\n"
+    )
+
+    try:
+        print("   🎨 Generating thumbnail brief via Claude Opus...")
+        resp = claude_client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        if cost_tracker:
+            cost_tracker.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
+
+        brief_text = resp.content[0].text.strip()
+        if brief_text.startswith("```"):
+            brief_text = brief_text.split("```")[1]
+            if brief_text.startswith("json"):
+                brief_text = brief_text[4:]
+        brief = _json.loads(brief_text)
+
+        print(f"   ✅ Thumbnail brief: \"{brief.get('text', '?')}\" | color: {brief.get('color', '?')} | position: {brief.get('position', '?')}")
+        return brief
+
+    except Exception as e:
+        print(f"   ⚠️ Thumbnail brief generation failed: {e}")
+        return None
+
+
+def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
+                          claude_client=None, genai_client=None, cost_tracker=None):
+    """Generate a high-quality AI thumbnail using Claude (text strategy) + Gemini (image generation).
+    Falls back to basic generate_thumbnail() on failure. Returns thumbnail file path or None."""
+    if not AI_THUMBNAIL or not claude_client or not genai_client:
+        return None
+
+    try:
+        from PIL import Image, ImageEnhance
+        from google.genai import types
+        import numpy as np
+
+        print("   🤖 AI Thumbnail Pipeline: Claude brief → Gemini image...")
+
+        # Step 1: Get/refresh research patterns
+        research = refresh_thumbnail_research(claude_client)
+
+        # Step 2: Generate thumbnail brief via Claude (with YouTube insights for smarter text)
+        source_insights = get_source_channel_top_topics(5)
+        audience_qs = get_audience_questions(5)
+        brief = generate_thumbnail_brief(
+            claude_client, script_text, hook_text, topic, research,
+            source_insights=source_insights, audience_qs=audience_qs, cost_tracker=cost_tracker
+        )
+        if not brief:
+            print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
+            return None
+
+        # Step 3: Extract best frame from Veo clip
+        frame_image = None
+        if veo_clip_path and os.path.exists(veo_clip_path):
+            try:
+                clip = VideoFileClip(veo_clip_path)
+                best_frame = None
+                best_score = -1
+                for t_pct in [0.25, 0.40, 0.50, 0.60]:
+                    t = min(t_pct * clip.duration, clip.duration - 0.1)
+                    frame = clip.get_frame(t)
+                    score = float(np.std(frame))
+                    if score > best_score:
+                        best_score = score
+                        best_frame = frame
+                if best_frame is not None:
+                    frame_image = Image.fromarray(best_frame)
+                    frame_image = frame_image.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+                    print(f"   🖼️ AI thumbnail: using Veo frame (contrast score: {best_score:.0f})")
+                clip.close()
+            except Exception as e:
+                print(f"   ⚠️ Frame extraction failed: {e}")
+
+        # Create gradient fallback if no frame
+        if frame_image is None:
+            frame_image = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), (15, 15, 25))
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(frame_image)
+            for y in range(THUMBNAIL_HEIGHT):
+                r = int(15 + (40 * y / THUMBNAIL_HEIGHT))
+                g = int(15 + (20 * y / THUMBNAIL_HEIGHT))
+                b = int(25 + (15 * y / THUMBNAIL_HEIGHT))
+                draw.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
+            print("   🖼️ AI thumbnail: using gradient background (no clip available)")
+
+        # Step 4: Call Gemini to generate thumbnail with text overlay
+        thumbnail_text = brief.get("text", hook_text)
+        text_color = brief.get("color", "#FFD700")
+        text_position = brief.get("position", "top-center")
+        text_effect = brief.get("effect", "stroke")
+        design_notes = brief.get("design_notes", "")
+
+        gemini_prompt = (
+            "You are a professional YouTube thumbnail designer. You receive a reference image and create a "
+            "high-CTR YouTube Reel thumbnail by adding text and design elements on top of it.\n\n"
+            "AUDIENCE: Indian viewers (Hindi/Hinglish text is common)\n\n"
+            f"=== THUMBNAIL BRIEF ===\n"
+            f"Format: Reel 9:16\n"
+            f"Thumbnail Text: {thumbnail_text}\n"
+            f"Text Color: {text_color}\n"
+            f"Text Position: {text_position}\n"
+            f"Text Effect: {text_effect}\n"
+            f"Font Style: Bold, Impact/Block style\n"
+            f"Additional Design Notes: {design_notes}\n"
+            f"=== END BRIEF ===\n\n"
+            "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
+            "- This is a 9:16 Reel thumbnail. YouTube and Instagram overlay their UI on the edges.\n"
+            "- TOP 10% of image: BLOCKED by platform UI (status bar, channel name). NEVER place anything here.\n"
+            "- BOTTOM 20% of image: BLOCKED by YouTube Shorts UI (like/comment/share buttons, description). NEVER place anything here.\n"
+            "- LEFT/RIGHT 10%: BLOCKED by edge margins. NEVER place text here.\n"
+            "- ALL text and design elements MUST be within the SAFE ZONE: 10%-80% from top, 10%-90% from left.\n"
+            "- Best text placement: between 15%-45% from the top (upper third of safe zone).\n\n"
+            "DESIGN RULES (NEVER BREAK THESE):\n"
+            "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
+            "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
+            "- Do NOT add 'Sale91', 'Sale91.com', 'WATCH', or any text not in the brief\n"
+            "- Maximum 4-5 words total on the entire thumbnail — the brief text ONLY\n"
+            "- NEVER crop, distort, stretch, or modify the reference image — it must remain exactly as given\n"
+            "- My image is the background/base — everything else goes ON TOP of it\n"
+            "- Text must be READABLE on a mobile phone screen\n"
+            "- Use BOLD, thick, block-style fonts — never thin or decorative fonts\n"
+            "- Every letter must have a visible stroke (outline) OR shadow for readability\n"
+            "- Text stroke/outline: minimum 3-4px, usually black or dark color\n"
+            "- NEVER place text over faces\n"
+            "- Text should fill 30-40% of the thumbnail area (big and impactful)\n"
+            "- High contrast ALWAYS — light text on dark areas, dark text on light areas\n"
+            "- Generate ONE best thumbnail — not multiple variations\n"
+            "- Add a slight vignette (darkened edges) to make center pop — but do NOT darken faces\n"
+        )
+
+        output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
+
+        # Try primary model, then fallback
+        for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
+            try:
+                print(f"   🎨 Generating thumbnail via Gemini ({model_name})...")
+                response = genai_client.models.generate_content(
+                    model=model_name,
+                    contents=[gemini_prompt, frame_image],
+                    config=types.GenerateContentConfig(
+                        response_modalities=["TEXT", "IMAGE"],
+                    ),
+                )
+
+                # Extract generated image from response
+                for part in response.parts:
+                    if part.inline_data is not None:
+                        generated_img = part.as_image()
+                        # Resize to exact thumbnail dimensions
+                        generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+                        generated_img.save(output_path, "PNG", quality=95)
+                        print(f"   ✅ AI thumbnail generated: {output_path}")
+                        if cost_tracker:
+                            cost_tracker.track_gemini_image()
+                        return output_path
+
+                print(f"   ⚠️ Gemini ({model_name}) returned no image")
+
+            except Exception as e:
+                print(f"   ⚠️ Gemini ({model_name}) failed: {e}")
+                if model_name == AI_THUMBNAIL_GEMINI_MODEL:
+                    print(f"   🔄 Trying fallback model...")
+                continue
+
+        print("   ❌ AI thumbnail: all Gemini models failed, falling back to basic")
+        return None
+
+    except Exception as e:
+        print(f"   ⚠️ AI thumbnail pipeline failed: {e}")
+        return None
 
 
 def pin_comment(youtube, video_id, comment_text=None):
@@ -1168,7 +1461,7 @@ def refresh_instagram_token_if_needed():
     return new_token
 
 
-def cross_post_to_instagram(video_path, title, description, topic):
+def cross_post_to_instagram(video_path, title, description, topic, thumbnail_path=None):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
     Uses a 2-step flow: create media container → publish."""
@@ -1317,6 +1610,22 @@ def cross_post_to_instagram(video_path, title, description, topic):
         # causes "Carousel item cannot be published standalone" error.
         # Reels are auto-shared to feed by default.
 
+        # Upload custom cover image (thumbnail) to S3 and set as Instagram Reel cover
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            try:
+                import boto3
+                ig_cover_key = f"p/ig-cover-{int(time.time())}.png"
+                s3_cover = boto3.client("s3")
+                s3_cover.upload_file(
+                    thumbnail_path, BLOG_S3_BUCKET, ig_cover_key,
+                    ExtraArgs={"ContentType": "image/png", "CacheControl": "max-age=3600"}
+                )
+                cover_url = f"{BLOG_BASE_URL}/{ig_cover_key}"
+                container_data["cover_url"] = cover_url
+                print(f"   🖼️ Instagram cover image set: {cover_url}")
+            except Exception as e:
+                print(f"   ⚠️ Cover image upload failed, Instagram will auto-select: {e}")
+
         if schedule_for_later and schedule_timestamp:
             # Schedule instead of instant publish — IG handles it
             container_data["published"] = "false"
@@ -1438,6 +1747,7 @@ COST_RATES = {
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
     "replicate_flux_image": 0.025,      # ~$0.025 per FLUX Dev image
     "whisper_per_minute": 0.006,        # $0.006/min
+    "gemini_image": 0.045,             # ~$0.045 per Gemini image generation
 }
 
 
@@ -1498,6 +1808,10 @@ class CostTracker:
         """Track Whisper transcription cost."""
         cost = (duration_sec / 60) * COST_RATES["whisper_per_minute"]
         self.add("whisper", cost, f"{duration_sec:.0f}s")
+
+    def track_gemini_image(self):
+        """Track Gemini image generation cost (AI thumbnail)."""
+        self.add("gemini_thumbnail", COST_RATES["gemini_image"], "1 thumbnail")
 
     def total(self):
         """Total cost in USD."""
@@ -1765,19 +2079,34 @@ def fetch_source_channel_insights():
             print("   ⚠️ No videos found on source channel")
             return []
 
-        # Step 2: Get video details (videos.list — 1 quota unit per 50 videos)
+        # Step 2: Get video details with duration to filter Shorts (videos.list)
         videos_resp = requests.get(f"{base_url}/videos", params={
             "key": SOURCE_CHANNEL_API_KEY,
             "id": ",".join(video_ids),
-            "part": "snippet,statistics",
+            "part": "snippet,statistics,contentDetails",
         }, timeout=15)
         videos_resp.raise_for_status()
         videos_data = videos_resp.json()
 
+        import re as _re
         videos = []
         for item in videos_data.get("items", []):
             snippet = item.get("snippet", {})
             stats = item.get("statistics", {})
+            # Filter for Shorts only: duration <= 60s and vertical aspect
+            duration_str = item.get("contentDetails", {}).get("duration", "")
+            # Parse ISO 8601 duration (e.g., PT45S, PT1M, PT1M30S)
+            duration_match = _re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration_str)
+            if duration_match:
+                hours = int(duration_match.group(1) or 0)
+                minutes = int(duration_match.group(2) or 0)
+                seconds = int(duration_match.group(3) or 0)
+                total_seconds = hours * 3600 + minutes * 60 + seconds
+            else:
+                total_seconds = 999  # Unknown duration — skip
+            # YouTube Shorts are <= 60 seconds
+            if total_seconds > 60:
+                continue
             videos.append({
                 "video_id": item.get("id", ""),
                 "title": snippet.get("title", ""),
@@ -1785,6 +2114,7 @@ def fetch_source_channel_insights():
                 "likes": int(stats.get("likeCount", 0)),
                 "comments": int(stats.get("commentCount", 0)),
                 "published": snippet.get("publishedAt", ""),
+                "duration_seconds": total_seconds,
             })
 
         # Sort by views descending
@@ -1799,7 +2129,10 @@ def fetch_source_channel_insights():
         with open(SOURCE_CHANNEL_CACHE_FILE, "w") as f:
             json.dump(cache_data, f, indent=2, ensure_ascii=False)
 
-        print(f"   ✅ Fetched {len(videos)} videos from source channel (top: {videos[0]['views']:,} views)")
+        if not videos:
+            print("   ⚠️ No Shorts found on source channel (all videos were >60s)")
+            return []
+        print(f"   ✅ Fetched {len(videos)} Shorts from source channel (top: {videos[0]['views']:,} views)")
         return videos
 
     except Exception as e:
@@ -2886,20 +3219,42 @@ TOPIC_MAX_CANDIDATES = 5  # Generate this many candidates, pick the best
 TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
 def search_trending_topics(anthropic_client):
-    """Use Claude to brainstorm trending topics based on current Indian textile/printing industry trends.
-    Claude uses its training knowledge of YouTube Shorts trends, Google Trends patterns,
-    and Indian B2B textile market to generate timely, high-search-volume topics."""
+    """Use Claude to brainstorm trending topics based on real channel data + AI knowledge.
+    Feeds in: source channel top Shorts with view counts, audience questions,
+    thumbnail research patterns, category performance, and seasonal context."""
+
+    # Gather all gold data
+    source_videos = fetch_source_channel_insights()
+    source_with_views = []
+    if source_videos:
+        for v in source_videos[:15]:
+            source_with_views.append(f"- {v['title']} ({v['views']:,} views, {v['likes']:,} likes)")
+
+    audience_qs = get_audience_questions(10)
+
+    # Category performance — which categories get the most views
+    cat_ranking = get_source_channel_category_ranking()
+    own_cats = get_top_performing_categories()
+
+    # Thumbnail research — power words and example texts that work
+    thumb_research = {}
+    if os.path.exists(THUMBNAIL_RESEARCH_FILE):
+        try:
+            with open(THUMBNAIL_RESEARCH_FILE, "r") as f:
+                thumb_research = json.load(f)
+        except Exception:
+            pass
 
     prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt manufacturer (Sale91.com).
 
-Your job: generate 10 FRESH topic ideas that are likely to be HIGHLY SEARCHED right now.
+Your job: generate 10 FRESH topic ideas that are likely to get MAXIMUM VIEWS.
 
-Think about:
-1. SEASONAL TRENDS — what's relevant this month? (summer coming = cotton demand, winter ending = hoodie clearance, etc.)
-2. YOUTUBE SEARCH TRENDS — what do printing business owners search for? ("DTG vs DTF 2025", "best GSM for printing", etc.)
-3. CUSTOMER PAIN POINTS — what problems are printing businesses facing right now?
-4. VIRAL FORMATS — what YouTube Shorts formats are working? (myth busting, "I tested X", comparisons, mistakes series)
-5. INDUSTRY NEWS — any new printing tech, fabric innovations, market changes?
+STRATEGY:
+1. STUDY the real data below — these are ACTUAL Shorts that got real views on our channel
+2. Identify PATTERNS — what topics, formats, and angles get the most views?
+3. Generate NEW topics that follow winning patterns but with FRESH angles
+4. Use audience questions as direct topic inspiration — viewers literally asked for these
+5. Consider seasonal trends and search intent
 
 CURRENT CONTEXT:
 - Month: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%B %Y')}
@@ -2907,24 +3262,39 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL (make MORE topics like these):
+=== GOLD DATA: REAL PERFORMANCE FROM OUR MAIN CHANNEL (50K subs) ===
+These are ACTUAL Shorts with REAL view counts — study what works:
+{chr(10).join(source_with_views) if source_with_views else "No source channel data available."}
+
+=== TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL ===
 {json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "New channel — no data yet."}
 
-PROVEN WINNERS FROM OUR MAIN CHANNEL (50K subs, 5.5L monthly views — these topics WORK with our audience):
-{json.dumps(get_source_channel_top_topics(10), ensure_ascii=False) if get_source_channel_top_topics(10) else "No source channel data available."}
+=== BEST PERFORMING CATEGORIES (by average views) ===
+Main channel: {', '.join(cat_ranking[:5]) if cat_ranking else 'No data'}
+Own channel: {', '.join(own_cats[:5]) if own_cats else 'No data yet'}
 
-AUDIENCE QUESTIONS (real comments from our viewers — these are topics they WANT explained):
-{get_audience_questions(10)}
+=== AUDIENCE QUESTIONS (real comments — viewers WANT these topics explained) ===
+{audience_qs if audience_qs else "No audience questions available."}
 
-STYLE: Hindi conversational (Hinglish), practical knowledge, storytelling format.
-Each topic should be 1 line, specific, and contain a hook element.
+=== THUMBNAIL/HOOK PATTERNS THAT GET CLICKS ===
+Power words: {json.dumps(thumb_research.get('power_words', []), ensure_ascii=False)}
+Example texts that work: {json.dumps(thumb_research.get('example_texts', []), ensure_ascii=False)}
+What patterns perform best: {thumb_research.get('patterns', 'No data yet')}
+
+RULES:
+- Each topic must be in Hindi conversational (Hinglish) style
+- Practical knowledge, storytelling format — no selling
+- Each topic should be specific and contain a hook element
+- Generate topics that COMPLEMENT the winners above — similar patterns, fresh angles
+- At least 2-3 topics should be inspired by real audience questions
+- At least 2-3 should follow the highest-viewed video patterns
 
 OUTPUT: Return ONLY a JSON array of 10 topic strings, nothing else.
 Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
 
     try:
         resp = anthropic_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=800,
+            model="claude-opus-4-6", max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -2990,7 +3360,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=200,
+            model="claude-opus-4-6", max_tokens=200,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -3063,14 +3433,19 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     trending = search_trending_topics(claude_client)
 
     if not trending:
-        # Absolute fallback: single topic generation (old behavior)
-        print("   🔄 Fallback: single topic generation...")
+        # Absolute fallback: single topic using source channel inspiration
+        print("   🔄 Fallback: single topic generation with source channel data...")
+        source_titles = get_source_channel_top_topics(5)
+        aud_qs = get_audience_questions(3)
         try:
             resp = claude_client.messages.create(
-                model="claude-sonnet-4-5-20250929", max_tokens=200,
+                model="claude-opus-4-6", max_tokens=200,
                 messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
+Top performing Shorts on our channel: {json.dumps(source_titles, ensure_ascii=False) if source_titles else 'No data'}
+Audience questions: {aud_qs if aud_qs else 'No data'}
+Generate a topic inspired by the winning patterns above but with a fresh angle.
 Return ONLY the topic text, nothing else."""}]
             )
             return resp.content[0].text.strip()
@@ -3178,7 +3553,7 @@ REFERENCE: These titles got the MOST views on our main channel (50K subs):
 {json.dumps(source_titles, ensure_ascii=False)}
 Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
 
-    prompt = f"""You are a YouTube Shorts title optimizer for an Indian B2B t-shirt brand.
+    prompt = f"""You are a YouTube Shorts + Instagram Reels title optimizer and JUDGE for an Indian B2B t-shirt brand.
 
 CURRENT TITLE: {original_title}
 TOPIC: {topic}
@@ -3190,20 +3565,28 @@ Generate 3 alternative titles. Each must be:
 - SEO optimized (include searchable keywords like "GSM", "DTG", "t-shirt", "printing")
 - Curiosity-driven (make viewer NEED to watch)
 - English (for broader reach + SEO, but Hinglish words OK if they add punch)
+- Work on BOTH YouTube Shorts AND Instagram Reels (same title used on both platforms)
+
+PLATFORM-SPECIFIC CTR FACTORS:
+- YouTube: Search discoverability matters — include keywords people search for
+- Instagram: Explore page + hashtag reach matters — emotional hooks, curiosity, trending phrases
+- BOTH: Mobile-first (70 char max), number/price reveals get clicks, controversy/mistakes format works
 
 TITLE STYLES TO TRY:
 1. QUESTION style — "Why Does Your DTG Print Fade After 2 Washes?"
 2. SHOCK/NUMBER style — "Rs 45 T-shirt vs Rs 90: The Print Quality Difference"
 3. MISTAKE/WARNING style — "Stop Making This GSM Mistake (Most Printers Do)"
 
-OUTPUT THIS JSON ONLY (no markdown):
-{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks"}}
+YOUR JOB AS JUDGE: Pick the ONE title that will get the MOST views across BOTH YouTube and Instagram combined.
 
-"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR."""
+OUTPUT THIS JSON ONLY (no markdown):
+{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks on both YouTube and Instagram"}}
+
+"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR across both platforms."""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -5161,10 +5544,10 @@ def main():
 
         try:
             resp = claude.messages.create(
-                model="claude-sonnet-4-5-20250929", max_tokens=1500,
+                model="claude-opus-4-6", max_tokens=1500,
                 messages=[{"role": "user", "content": prompt}]
             )
-            cost.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
+            cost.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
             raw = resp.content[0].text.strip()
         except Exception as e:
             print(f"   ⚠️ Claude API error (attempt {attempt}): {e}")
@@ -5976,9 +6359,17 @@ def main():
 
     print(f"   ✅ Video ready: {output_path}")
 
-    # ── 9b. Generate Thumbnail (uses first Veo clip frame if available) ──
+    # ── 9b. Generate Thumbnail (AI Pipeline: Claude brief → Gemini image, with basic fallback) ──
     first_clip = downloaded_clips[0] if downloaded_clips else None
-    thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip)
+    thumbnail_path = None
+    if AI_THUMBNAIL:
+        thumbnail_path = generate_ai_thumbnail(
+            hook_text_from_claude, fresh_topic, script_voice,
+            veo_clip_path=first_clip, claude_client=claude,
+            genai_client=veo_client, cost_tracker=cost
+        )
+    if not thumbnail_path:
+        thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip)
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
@@ -6072,7 +6463,7 @@ def main():
         if CROSS_POST_INSTAGRAM and os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
             print("\n📸 Instagram Token Check...")
             refresh_instagram_token_if_needed()
-        cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic)
+        cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not upload_failed and vid_id:
@@ -6138,5 +6529,83 @@ def main():
         except: pass
 
 
+def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
+    """Standalone test for AI thumbnail pipeline.
+    Run: python daily_short.py --test-thumbnail [--topic "..."] [--video path/to/clip.mp4] [--script "..."]
+    Generates thumbnail locally without uploading anywhere."""
+    import anthropic
+    from google import genai
+
+    anthropic_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+    google_key = (os.environ.get("GOOGLE_API_KEY") or "").strip()
+
+    if not anthropic_key or not google_key:
+        print("❌ Missing ANTHROPIC_API_KEY or GOOGLE_API_KEY environment variables")
+        return
+
+    claude_client = anthropic.Anthropic(api_key=anthropic_key)
+    genai_client = genai.Client(api_key=google_key)
+
+    # Defaults for testing
+    if not topic:
+        topic = "T-Shirt Wholesale Business Tips"
+    if not script:
+        script = (
+            "Aaj hum baat karenge wholesale t-shirt business ke baare mein. "
+            "Agar aap ₹49 mein plain t-shirts kharidna chahte ho toh Sale91.com pe jaao. "
+            "Yahan pe aapko mil jayega bulk mein t-shirts at best price. "
+            "MOQ sirf 10 pieces hai, aur pan India delivery available hai."
+        )
+
+    hook_text = script.split(".")[0].strip()
+
+    os.makedirs(WORK_DIR, exist_ok=True)
+
+    print(f"\n{'='*60}")
+    print(f"  🧪 AI THUMBNAIL TEST MODE")
+    print(f"  📌 Topic: {topic}")
+    print(f"  🪝 Hook: {hook_text}")
+    if video_path:
+        print(f"  🎥 Video: {video_path}")
+    print(f"{'='*60}\n")
+
+    cost = CostTracker()
+
+    thumbnail_path = generate_ai_thumbnail(
+        hook_text, topic, script,
+        veo_clip_path=video_path,
+        claude_client=claude_client,
+        genai_client=genai_client,
+        cost_tracker=cost,
+    )
+
+    print(f"\n{'='*60}")
+    if thumbnail_path:
+        print(f"  ✅ Thumbnail generated: {thumbnail_path}")
+        print(f"  💰 Cost: ${cost.total():.4f}")
+    else:
+        print(f"  ❌ AI thumbnail failed — falling back to basic...")
+        thumbnail_path = generate_thumbnail(hook_text, topic, veo_clip_path=video_path)
+        if thumbnail_path:
+            print(f"  ✅ Basic thumbnail generated: {thumbnail_path}")
+        else:
+            print(f"  ❌ All thumbnail generation failed")
+    print(f"{'='*60}\n")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--test-thumbnail" in sys.argv:
+        _topic = None
+        _script = None
+        _video = None
+        for i, arg in enumerate(sys.argv):
+            if arg == "--topic" and i + 1 < len(sys.argv):
+                _topic = sys.argv[i + 1]
+            elif arg == "--script" and i + 1 < len(sys.argv):
+                _script = sys.argv[i + 1]
+            elif arg == "--video" and i + 1 < len(sys.argv):
+                _video = sys.argv[i + 1]
+        test_ai_thumbnail_standalone(topic=_topic, script=_script, video_path=_video)
+    else:
+        main()

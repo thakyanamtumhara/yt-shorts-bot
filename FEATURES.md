@@ -1,6 +1,6 @@
 # Sale91.com — YouTube Shorts Bot: Complete Feature Reference
 
-> **File:** `daily_short.py` (4064 lines) | **Last updated:** Feb 2026
+> **File:** `daily_short.py` (~6500 lines) | **Last updated:** Mar 2026
 > **Brand:** Sale91.com — B2B plain t-shirt manufacturer (Tiruppur + Delhi)
 > **Channels:** New Shorts channel + Main channel (50K subs, 5.5L monthly views)
 
@@ -31,8 +31,44 @@
 21. [GitHub Actions Automation](#21-github-actions-automation)
 22. [Data Persistence (JSON Files)](#22-data-persistence-json-files)
 23. [Feature Dashboard](#23-feature-dashboard)
-24. [Dependencies](#24-dependencies)
-25. [Environment Variables](#25-environment-variables)
+24. [Blog Generation & SEO](#24-blog-generation--seo)
+25. [Dependencies](#25-dependencies)
+26. [Environment Variables](#26-environment-variables)
+27. [Knowledge Sources — What's Real vs AI-Generated](#27-knowledge-sources--whats-real-vs-ai-generated)
+
+---
+
+## 0. How the Bot Actually Works (Quick Overview)
+
+### Daily Pipeline (runs at 5:30 PM IST via GitHub Actions)
+
+| Step | What Happens | Data Source |
+|------|-------------|-------------|
+| 1. Fetch source channel data | Gets top Shorts (≤60s only) from 50K main channel | **Real YouTube API** (24h cache) |
+| 2. Pick topic | Score topics on search potential, freshness | Claude Opus brain + source channel data |
+| 3. Generate script | Hindi/Hinglish script + video prompts + title | Claude Opus brain + audience questions |
+| 4. Generate voice | Text-to-speech in Hindi | ElevenLabs / OpenAI TTS |
+| 5. Generate video clips | 5 × 8s AI video clips | Google Veo 3.1 / Kling fallback |
+| 6. Assemble video | Clips + voice + subtitles + music + overlays | Local FFmpeg processing |
+| 7. Generate thumbnail | AI brief → Gemini image (or PIL fallback) | Claude brief + Gemini generation |
+| 8. Upload to YouTube | Video + thumbnail + pinned comment + playlist | YouTube Data API |
+| 9. Generate blog post | Full HTML blog with images + SEO | Claude Sonnet + Replicate FLUX |
+| 10. Cross-post to Instagram | Same video as Instagram Reel | Instagram Graph API |
+
+### What's Real-Time vs AI Knowledge
+
+| Data | Source | Live? |
+|------|--------|:-----:|
+| Source channel top Shorts | YouTube API | Yes (24h cache) |
+| Audience questions | YouTube comments API | Yes (24h cache) |
+| Own video performance | YouTube API | Yes (48h delay) |
+| "Trending" topics | Claude's training knowledge | **No — not live search** |
+| Thumbnail strategy | Claude's training knowledge | **No — 7 day cache** |
+| Seasonal/festival context | Hardcoded Indian calendar | Semi-static |
+
+**Key limitation:** The bot does NOT search YouTube for trending videos in the niche. It relies on Claude's training knowledge for trend awareness and your own source channel's real data for performance patterns.
+
+### Cost Per Video: ~$3.25 (Daily limit: $10)
 
 ---
 
@@ -114,14 +150,23 @@
 ```
 
 ### Trending Topic Generation: `search_trending_topics(anthropic_client)`
-- **Lines:** 2695-2720
-- **Model:** `claude-sonnet-4-5-20250929`
-- **Inputs:** Current month, India season, own channel top topics, source channel top topics, audience questions
+- **Model:** `claude-opus-4-6`
+- **Gold Data Inputs (all real):**
+  - Source channel top 15 Shorts with **actual view counts and likes** (not just titles)
+  - Own channel top performing videos
+  - Category performance ranking (which topic categories get most views)
+  - Audience questions mined from real YouTube comments
+  - Thumbnail research patterns (power words, example texts that get clicks)
+- **Context Inputs:**
+  - Current month and Indian season
+  - Seasonal business trends
 - **Output:** JSON array of 10 topic strings
+- **Strategy:** Claude studies the real performance data (what got views, what audiences asked) and generates topics that follow winning patterns with fresh angles. At least 2-3 topics inspired by audience questions, 2-3 following highest-viewed patterns.
+- **Note:** Topics are AI-generated informed by real channel data — not live YouTube search.
 
 ### Topic Review Gate: `review_topic(claude_client, topic, topic_history)`
 - **Lines:** 2762-2809
-- **Model:** `claude-sonnet-4-5-20250929`
+- **Model:** `claude-opus-4-6`
 - **Scoring dimensions (40 points max):**
   1. Search potential (1-10)
   2. Freshness (1-10)
@@ -143,7 +188,8 @@
 - **API:** YouTube Data API v3 (read-only, via `SOURCE_CHANNEL_API_KEY`)
 - **Env vars:** `CHANNEL_ID_2`, `YOUTUBE_API_KEY_1`
 - **Cache:** `source_channel_insights.json` (24h TTL, line 1541-1551)
-- **Data fetched:** 50 most recent videos with snippet + statistics
+- **Data fetched:** 50 most recent videos with snippet + statistics + contentDetails (duration)
+- **Shorts filter:** Only keeps videos ≤60 seconds (parses ISO 8601 duration like `PT45S`, `PT1M`)
 - **Quota:** ~101 units (1x search.list=100 + 1x videos.list=1)
 
 ### Top Topics: `get_source_channel_top_topics(n=10)`
@@ -266,7 +312,7 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 
 ### Quality Gate: `review_script(claude_client, ...)`
 - **Lines:** 2900-2968
-- **Model:** `claude-opus-4-6` (line 2951)
+- **Model:** `claude-opus-4-6`
 - **6 scoring dimensions (60 points max):**
   1. Hook (first 2 seconds) — story/customer incident?
   2. Natural feel — sounds like real factory owner?
@@ -289,7 +335,7 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 
 ### Function: `optimize_title(claude_client, original_title, script_english, topic)`
 - **Lines:** 2971-3043
-- **Model:** `claude-sonnet-4-5-20250929`
+- **Model:** `claude-opus-4-6`
 - **Process:**
   1. Takes original title from script generation
   2. Includes source channel's top 5 titles as reference
@@ -297,8 +343,9 @@ Both **publish time** and **engagement/category** decisions use this threshold:
      - Question style: "Why Does Your DTG Print Fade?"
      - Shock/Number style: "Rs 45 vs Rs 90: The Difference"
      - Mistake/Warning style: "Stop Making This GSM Mistake"
-  4. Picks best for CTR with reason
+  4. Acts as a **JUDGE** — picks the ONE best title for highest CTR across BOTH YouTube Shorts AND Instagram Reels
   5. Max 70 chars (YouTube Shorts mobile visibility)
+  6. Optimized for both platforms: YouTube search discoverability + Instagram explore/hashtag reach
 
 ---
 
@@ -504,9 +551,25 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 
 ## 14. Thumbnail Generation
 
-### Function: `generate_thumbnail(hook_text, topic, output_path, veo_clip_path)`
-- **Lines:** 540-716
+### Two-Tier System
+1. **AI Pipeline (Primary):** Claude brief → Gemini image generation
+2. **PIL Fallback:** Basic text-on-frame if AI pipeline fails
+
+### AI Thumbnail Pipeline: `generate_ai_thumbnail()`
+- **Step 1: Research** — `refresh_thumbnail_research()` via Claude Opus (cached 7 days)
+  - Generates: power words, best colors, text rules, layout rules, patterns
+  - **Note:** Uses Claude's training knowledge, NOT live YouTube data
+- **Step 2: Brief** — `generate_thumbnail_brief()` via Claude Opus
+  - Inputs: research patterns + script + hook text + **source channel top 5 Shorts** + **audience questions**
+  - Output: `{text, color, position, effect, design_notes, font_style}`
+- **Step 3: Image** — Gemini generates thumbnail with text overlay
+  - Models: `gemini-3.1-flash-image-preview` → `gemini-2.5-flash-image` (fallback)
+  - Input: Best Veo frame + text brief + safe zone rules
+  - Cost: ~$0.045/thumbnail
+
+### PIL Fallback: `generate_thumbnail(hook_text, topic, output_path, veo_clip_path)`
 - **Dimensions:** 1080 x 1920 (vertical for Shorts)
+- **Font priority:** FreeSansBold (Hindi/Devanagari support) → NotoSansDevanagari → NotoSans → DejaVuSans
 
 ### Frame Extraction
 - Samples Veo clip at 25%, 40%, 50%, 60% timestamps
@@ -514,12 +577,15 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 - Darkens to 70% brightness, boosts contrast to 130%
 - **Fallback:** Dark gradient background if no clip available
 
-### Layout
-1. **Yellow accent bars** — top + left edge (brand consistency)
-2. **Hook text** — first word YELLOW (90px, outlined), rest WHITE (72px)
-3. **Topic summary** — smaller gray text below hook (36px)
-4. **Brand bar** — yellow bar at bottom with "Sale91.com" (42px)
-5. **Watch badge** — red "▶ WATCH" badge top-right corner
+### Safe Zone Layout (9:16 Shorts)
+- **Top 15%:** Reserved (YouTube UI covers this)
+- **Bottom 20%:** Reserved (YouTube Shorts buttons cover this)
+- **Left/Right 10%:** Reserved (edge margins)
+- **Safe zone:** Text placed between 15%-80% from top, 10%-90% from sides
+- **Layout:**
+  1. **Hook text** — first word YELLOW (90px, outlined), rest WHITE (72px), within safe zone
+  2. **Topic summary** — smaller gray text below hook (36px), only if fits in safe zone
+  3. No brand bar, no WATCH badge, no accent bars — clean Shorts-optimized design
 
 ### Upload: `upload_thumbnail(youtube, video_id, thumbnail_path)`
 - **Lines:** 719-730
@@ -633,10 +699,10 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 - Error code 190 = expired token (line 1058)
 - Subcode 463 = token needs regeneration
 
-### Video Hosting (3-host fallback chain)
-1. **0x0.st** — up to 512MB, direct URL, no account
-2. **litterbox.catbox.moe** — up to 1GB, 72h expiry
-3. **file.io** — 100MB limit, fallback
+### Video Hosting (fallback chain)
+1. **AWS S3/CloudFront** (PRIMARY) — Sale91 S3 bucket, CloudFront CDN
+2. **0x0.st** — up to 512MB, direct URL, no account
+3. **litterbox.catbox.moe** — up to 1GB, 72h expiry
 
 ### Best Time Detection: `get_instagram_best_time(ig_token, ig_business_id)`
 - **Lines:** 936-1022
@@ -736,7 +802,9 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 | `clip_history.json` | Repo root | Yes | Last 30 videos' Veo prompts | `[{topic, prompts[], date}]` |
 | `cost_tracker.json` | Repo root | Yes | Per-run API costs | `[{date, topic, title, total_usd, duration_min, breakdown{}}]` |
 | `engagement_history.json` | Repo root | Yes | 48h video performance | `[{video_id, title, views, likes, comments, publish_hour_ist}]` |
-| `source_channel_insights.json` | Repo root | Yes | Main channel data + comments (24h cache) | `{fetched_at, channel_id, videos[], top_comments[]}` |
+| `source_channel_insights.json` | Repo root | Yes | Main channel Shorts data + comments (24h cache) | `{fetched_at, channel_id, videos[], top_comments[]}` |
+| `thumbnail_research.json` | Repo root | Yes | Claude-generated thumbnail strategy (7d cache) | `{updated, power_words[], best_colors{}, text_rules, layout, patterns}` |
+| `blog_history.json` | Repo root | Yes | Published blog post metadata | `[{date, title, slug, url, tags[], word_count}]` |
 | `playlist_cache.json` | `/tmp/yt_shorts/` | No | Series → Playlist ID map | `{series_name: playlist_id}` |
 | `slot_analytics.json` | `/tmp/yt_shorts/` | No | Publish time performance | `{last_updated, slots{label: {total_views, count, avg_views}}}` |
 
@@ -752,7 +820,29 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 
 ---
 
-## 24. Dependencies
+## 24. Blog Generation & SEO
+
+### Function: `generate_blog_post()`
+- **Model:** `claude-sonnet-4-5-20250929` (intentionally cheaper — blog needs 16K tokens)
+- **Process:**
+  1. Generate 2-3 AI images via Replicate FLUX (~$0.025 each)
+  2. Load recent posts from `blog_history.json` for internal linking
+  3. Claude Sonnet writes full HTML blog post with embedded images
+  4. Inject JSON-LD schemas (Article, NewsArticle, VideoObject, Organization)
+  5. Add sticky CTA bottom bar
+
+### Publishing: `publish_blog_to_s3()`
+- Upload blog HTML + images to S3 (`bulkplaintshirt.com/p/`)
+- Rebuild: index.html, sitemap.xml, RSS feed, blog widget, llms.txt
+- CloudFront cache invalidation
+- Submit to search engines:
+  - Google Indexing API (instant index)
+  - IndexNow (Bing, Yandex, DuckDuckGo, AI search engines)
+  - Sitemap pings (Google, Bing)
+
+---
+
+## 25. Dependencies
 
 ### Python Packages (`requirements.txt`)
 ```
@@ -777,7 +867,7 @@ fal-client         — Kling video fallback
 
 ---
 
-## 25. Environment Variables
+## 26. Environment Variables
 
 ### Required
 | Variable | Purpose |
@@ -815,15 +905,15 @@ fal-client         — Kling video fallback
 ## Pipeline Flow (Main Execution)
 
 ```
-main() — Lines 3091-4064
+main() — Lines ~5360-6500
 
  1. Feature Dashboard (print status matrix)
  2. API key validation (Anthropic, OpenAI, Google)
  3. Cost circuit breaker (check daily $10 limit)
- 4. Fetch source channel insights (24h cache)
+ 4. Fetch source channel insights (24h cache, Shorts only ≤60s)
  5. Smart topic selection (bank → trending → fallback)
- 6. Script generation (up to 3 attempts with quality gate)
- 7. Title optimization (A/B variants)
+ 6. Script generation with Claude Opus (up to 3 attempts with quality gate)
+ 7. Title optimization with Claude Opus (judge picks best for YouTube + Instagram)
  8. Script post-processing (sanitize for TTS)
  9. Save Veo prompts to clip history
 10. Generate background music (ACE-Step)
@@ -842,13 +932,41 @@ main() — Lines 3091-4064
     h. CTA end card
 16. Audio mixing (voice + BG music + hook SFX + ambient)
 17. Render (H.264, 8000k bitrate)
-18. Generate thumbnail (Veo frame + brand overlay)
+18. AI Thumbnail (Claude brief + Gemini image → PIL fallback)
 19. YouTube upload (scheduled publish)
 20. Check past engagement (48h feedback loop)
 21. Upload thumbnail
 22. Pin CTA comment (unlisted → comment → restore schedule)
 23. Add to series playlist
-24. Instagram Reels cross-post (with best-time scheduling)
-25. Cost summary + save
-26. Cleanup temp files
+24. Generate blog post (Claude Sonnet + FLUX images → S3 + SEO submission)
+25. Instagram Reels cross-post (with best-time scheduling)
+26. Cost summary + save
+27. Cleanup temp files
 ```
+
+---
+
+## 27. Knowledge Sources — What's Real vs AI-Generated
+
+### REAL-TIME DATA (from APIs)
+| Source | API | Cache | Used For |
+|--------|-----|-------|----------|
+| Source channel top Shorts | YouTube Data API v3 | 24h | Topic selection, title optimization, thumbnail brief |
+| Source channel comments | YouTube Data API v3 | 24h | Audience questions → script prompts |
+| Own video performance | YouTube Data API v3 | 48h delay | Category ranking, engagement feedback |
+| Instagram audience activity | Instagram Graph API | Per-run | Best posting time |
+
+### AI-GENERATED (Claude's intelligence + real channel data — NOT live search)
+| Source | Model | Cache | Used For |
+|--------|-------|-------|----------|
+| Trending topic ideas | Claude Opus | Per-run | When topic bank is exhausted — uses source channel view counts, audience questions, category ranking, thumbnail patterns as input |
+| Thumbnail research patterns | Claude Opus | 7 days | Power words, colors, layout rules |
+| Script content | Claude Opus | Per-run | Full video script generation |
+| Title alternatives | Claude Opus | Per-run | 3 title variants, best picked |
+| Blog content | Claude Sonnet | Per-run | Full HTML blog post |
+
+### NOT CURRENTLY AVAILABLE
+- Live YouTube trending search in niche
+- Competitor channel tracking
+- Real-time keyword/hashtag trends
+- Google Trends integration
