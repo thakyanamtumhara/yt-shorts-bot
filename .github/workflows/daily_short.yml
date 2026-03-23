@@ -26,12 +26,17 @@ on:
         type: boolean
         default: false
       thumbnail_script:
-        description: 'Custom script for thumbnail test (leave empty to auto-generate)'
+        description: 'Custom script text for thumbnail (Hinglish — the voiceover script)'
         required: false
         type: string
         default: ''
       thumbnail_topic:
-        description: 'Custom topic for thumbnail test (leave empty for default)'
+        description: 'Custom topic for thumbnail (e.g. "₹49 mein plain t-shirt wholesale")'
+        required: false
+        type: string
+        default: ''
+      thumbnail_base_image:
+        description: 'Base image URL for thumbnail (paste any public image URL — used as background frame)'
         required: false
         type: string
         default: ''
@@ -105,11 +110,18 @@ jobs:
           TEST_THUMBNAIL: ${{ github.event.inputs.test_thumbnail }}
           THUMBNAIL_SCRIPT: ${{ github.event.inputs.thumbnail_script }}
           THUMBNAIL_TOPIC: ${{ github.event.inputs.thumbnail_topic }}
+          THUMBNAIL_BASE_IMAGE: ${{ github.event.inputs.thumbnail_base_image }}
         run: |
           if [ "$TEST_THUMBNAIL" = "true" ]; then
             ARGS="--test-thumbnail"
             [ -n "$THUMBNAIL_TOPIC" ] && ARGS="$ARGS --topic \"$THUMBNAIL_TOPIC\""
             [ -n "$THUMBNAIL_SCRIPT" ] && ARGS="$ARGS --script \"$THUMBNAIL_SCRIPT\""
+            # Download base image if URL provided
+            if [ -n "$THUMBNAIL_BASE_IMAGE" ]; then
+              echo "📥 Downloading base image..."
+              curl -sL "$THUMBNAIL_BASE_IMAGE" -o /tmp/yt_shorts/base_frame.png
+              ARGS="$ARGS --base-image /tmp/yt_shorts/base_frame.png"
+            fi
             eval python daily_short.py $ARGS
           else
             python daily_short.py

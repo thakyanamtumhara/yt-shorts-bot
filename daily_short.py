@@ -759,12 +759,13 @@ def refresh_thumbnail_research(claude_client):
     Calls Claude Opus to analyze top-performing thumbnail patterns for Indian wholesale t-shirt niche.
     Caches results in THUMBNAIL_RESEARCH_FILE; refreshes only if older than THUMBNAIL_RESEARCH_MAX_AGE_DAYS."""
     import json as _json
+    from datetime import datetime as _datetime
 
     default_patterns = {
         "updated": "",
         "power_words": ["Secret", "Free", "Shocking", "Reality", "Truth", "Mistake", "Hack", "Asli", "Sach"],
         "best_colors": {"text": ["#FFD700", "#FFFFFF", "#FF0000", "#FF6600"], "stroke": "#000000"},
-        "text_rules": "Max 4-5 words, Hinglish, include price/number if relevant, curiosity/urgency",
+        "text_rules": "Max 3-4 words, Hinglish, include price/number if relevant, curiosity/urgency",
         "layout": "Text top 15-45% for 9:16, face on one side text on other, rule of thirds",
         "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks",
     }
@@ -776,8 +777,7 @@ def refresh_thumbnail_research(claude_client):
                 cached = _json.load(f)
             updated = cached.get("updated", "")
             if updated:
-                from datetime import datetime
-                age = (datetime.now() - datetime.fromisoformat(updated)).days
+                age = (_datetime.now() - _datetime.fromisoformat(updated)).days
                 if age < THUMBNAIL_RESEARCH_MAX_AGE_DAYS:
                     print(f"   📋 Thumbnail research cache fresh ({age}d old, max {THUMBNAIL_RESEARCH_MAX_AGE_DAYS}d)")
                     return cached
@@ -807,7 +807,7 @@ def refresh_thumbnail_research(claude_client):
                     "- text_rules: string summarizing best practices for Shorts thumbnail text — must be readable on tiny mobile preview (max 2 sentences)\n"
                     "- layout: string summarizing layout rules for 9:16 Shorts thumbnails with safe zone constraints (max 2 sentences)\n"
                     "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube (max 3 sentences)\n"
-                    "- example_texts: array of 10 example Shorts thumbnail texts (4-5 words max each) that would work for t-shirt/wholesale business topics\n"
+                    "- example_texts: array of 10 example Shorts thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics\n"
                 )
             }],
         )
@@ -818,7 +818,7 @@ def refresh_thumbnail_research(claude_client):
             if research_text.startswith("json"):
                 research_text = research_text[4:]
         research = _json.loads(research_text)
-        research["updated"] = datetime.now().isoformat()
+        research["updated"] = _datetime.now().isoformat()
 
         with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
             _json.dump(research, f, indent=2, ensure_ascii=False)
@@ -827,7 +827,7 @@ def refresh_thumbnail_research(claude_client):
 
     except Exception as e:
         print(f"   ⚠️ Research generation failed: {e}, using defaults")
-        default_patterns["updated"] = datetime.now().isoformat()
+        default_patterns["updated"] = _datetime.now().isoformat()
         try:
             with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
                 _json.dump(default_patterns, f, indent=2, ensure_ascii=False)
@@ -863,14 +863,14 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "TASK:\n"
         "Given the video script and topic below, generate ONE high-CTR thumbnail text and design brief.\n\n"
         "THUMBNAIL TEXT RULES:\n"
-        "- Maximum 4-5 words (MUST be readable on mobile phone)\n"
+        "- Maximum 3-4 words (MUST be readable on mobile phone)\n"
         "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
         "- Include a number or price if relevant (numbers get clicks)\n"
         "- Create curiosity or urgency\n"
         "- Use power words from the research patterns\n"
         "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
         "OUTPUT: Return ONLY a JSON object (no markdown, no explanation) with these exact fields:\n"
-        '- "text": the thumbnail text (4-5 words max, Hinglish)\n'
+        '- "text": the thumbnail text (3-4 words max, Hinglish)\n'
         '- "color": hex color code for text (must contrast with typical video frames)\n'
         '- "position": where to place text ("top-left", "top-center", "top-right")\n'
         '- "effect": text effect ("stroke", "shadow", "glow", "box")\n'
@@ -1000,7 +1000,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
             "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
             "- Do NOT add 'Sale91', 'Sale91.com', 'WATCH', or any text not in the brief\n"
-            "- Maximum 4-5 words total on the entire thumbnail — the brief text ONLY\n"
+            "- Maximum 3-4 words total on the entire thumbnail — the brief text ONLY\n"
             "- NEVER crop, distort, stretch, or modify the reference image — it must remain exactly as given\n"
             "- My image is the background/base — everything else goes ON TOP of it\n"
             "- Text must be READABLE on a mobile phone screen\n"
@@ -6529,9 +6529,9 @@ def main():
         except: pass
 
 
-def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
+def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None, base_image_path=None):
     """Standalone test for AI thumbnail pipeline.
-    Run: python daily_short.py --test-thumbnail [--topic "..."] [--video path/to/clip.mp4] [--script "..."]
+    Run: python daily_short.py --test-thumbnail [--topic "..."] [--script "..."] [--base-image path/to/image.png]
     Generates thumbnail locally without uploading anywhere."""
     import anthropic
     from google import genai
@@ -6561,19 +6561,48 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
 
     os.makedirs(WORK_DIR, exist_ok=True)
 
+    # If base image provided, create a dummy video clip from it so the pipeline uses it as background
+    effective_video_path = video_path
+    if base_image_path and os.path.exists(base_image_path):
+        from PIL import Image
+        # Save resized copy as the frame source — the pipeline extracts frames from video,
+        # so we create a 1-second static video from the image
+        try:
+            base_img = Image.open(base_image_path).convert("RGB")
+            base_img = base_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+            # Create a 1-second video from the static image using ffmpeg
+            temp_frame = f"{WORK_DIR}/base_frame_input.png"
+            effective_video_path = f"{WORK_DIR}/base_frame_video.mp4"
+            base_img.save(temp_frame, "PNG")
+            import subprocess
+            subprocess.run([
+                "ffmpeg", "-y", "-loop", "1", "-i", temp_frame,
+                "-t", "1", "-pix_fmt", "yuv420p",
+                "-vf", f"scale={THUMBNAIL_WIDTH}:{THUMBNAIL_HEIGHT}",
+                effective_video_path,
+            ], capture_output=True, timeout=30)
+            print(f"  🖼️ Base image loaded: {base_image_path} → 1s video for frame extraction")
+        except Exception as e:
+            print(f"  ⚠️ Failed to process base image: {e}")
+            effective_video_path = video_path
+
     print(f"\n{'='*60}")
     print(f"  🧪 AI THUMBNAIL TEST MODE")
     print(f"  📌 Topic: {topic}")
     print(f"  🪝 Hook: {hook_text}")
-    if video_path:
+    if base_image_path:
+        print(f"  🖼️ Base image: {base_image_path}")
+    elif video_path:
         print(f"  🎥 Video: {video_path}")
+    else:
+        print(f"  🎨 No base image — using gradient background")
     print(f"{'='*60}\n")
 
     cost = CostTracker()
 
     thumbnail_path = generate_ai_thumbnail(
         hook_text, topic, script,
-        veo_clip_path=video_path,
+        veo_clip_path=effective_video_path,
         claude_client=claude_client,
         genai_client=genai_client,
         cost_tracker=cost,
@@ -6585,7 +6614,7 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None):
         print(f"  💰 Cost: ${cost.total():.4f}")
     else:
         print(f"  ❌ AI thumbnail failed — falling back to basic...")
-        thumbnail_path = generate_thumbnail(hook_text, topic, veo_clip_path=video_path)
+        thumbnail_path = generate_thumbnail(hook_text, topic, veo_clip_path=effective_video_path)
         if thumbnail_path:
             print(f"  ✅ Basic thumbnail generated: {thumbnail_path}")
         else:
@@ -6599,6 +6628,7 @@ if __name__ == "__main__":
         _topic = None
         _script = None
         _video = None
+        _base_image = None
         for i, arg in enumerate(sys.argv):
             if arg == "--topic" and i + 1 < len(sys.argv):
                 _topic = sys.argv[i + 1]
@@ -6606,6 +6636,8 @@ if __name__ == "__main__":
                 _script = sys.argv[i + 1]
             elif arg == "--video" and i + 1 < len(sys.argv):
                 _video = sys.argv[i + 1]
-        test_ai_thumbnail_standalone(topic=_topic, script=_script, video_path=_video)
+            elif arg == "--base-image" and i + 1 < len(sys.argv):
+                _base_image = sys.argv[i + 1]
+        test_ai_thumbnail_standalone(topic=_topic, script=_script, video_path=_video, base_image_path=_base_image)
     else:
         main()
