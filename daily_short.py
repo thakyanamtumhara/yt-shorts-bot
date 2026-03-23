@@ -1042,6 +1042,10 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                 for part in response.parts:
                     if part.inline_data is not None:
                         generated_img = part.as_image()
+                        # Ensure PIL Image (some Gemini models return non-PIL types)
+                        if not isinstance(generated_img, Image.Image):
+                            import io
+                            generated_img = Image.open(io.BytesIO(part.inline_data.data))
                         # Resize to exact thumbnail dimensions
                         generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
                         generated_img.save(output_path, "PNG", quality=95)
