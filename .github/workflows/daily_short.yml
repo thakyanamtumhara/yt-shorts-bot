@@ -20,6 +20,21 @@ on:
         required: false
         type: boolean
         default: false
+      test_thumbnail:
+        description: 'Test AI thumbnail only (no video/upload — just generates thumbnail and saves as artifact)'
+        required: false
+        type: boolean
+        default: false
+      thumbnail_script:
+        description: 'Custom script for thumbnail test (leave empty to auto-generate)'
+        required: false
+        type: string
+        default: ''
+      thumbnail_topic:
+        description: 'Custom topic for thumbnail test (leave empty for default)'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: daily-short-generation
@@ -87,7 +102,18 @@ jobs:
           AWS_DEFAULT_REGION: 'ap-south-1'
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           OAUTHLIB_INSECURE_TRANSPORT: '1'
-        run: python daily_short.py
+          TEST_THUMBNAIL: ${{ github.event.inputs.test_thumbnail }}
+          THUMBNAIL_SCRIPT: ${{ github.event.inputs.thumbnail_script }}
+          THUMBNAIL_TOPIC: ${{ github.event.inputs.thumbnail_topic }}
+        run: |
+          if [ "$TEST_THUMBNAIL" = "true" ]; then
+            ARGS="--test-thumbnail"
+            [ -n "$THUMBNAIL_TOPIC" ] && ARGS="$ARGS --topic \"$THUMBNAIL_TOPIC\""
+            [ -n "$THUMBNAIL_SCRIPT" ] && ARGS="$ARGS --script \"$THUMBNAIL_SCRIPT\""
+            eval python daily_short.py $ARGS
+          else
+            python daily_short.py
+          fi
 
       - name: Save updated tracking files
         if: always()
@@ -103,6 +129,17 @@ jobs:
           git commit -m "Update tracking files (topic + cost + engagement + clips + source insights + blog) [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Upload thumbnail test result
+        if: ${{ github.event.inputs.test_thumbnail == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-thumbnail
+          path: |
+            /tmp/yt_shorts/thumbnail_*.png
+            /tmp/yt_shorts/test_thumbnail_*.png
+            /tmp/yt_shorts/thumb_base_*.png
+          retention-days: 7
 
       - name: Upload test video
         if: ${{ github.event.inputs.test_mode == 'true' }}
