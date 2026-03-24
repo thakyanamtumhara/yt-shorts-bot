@@ -300,6 +300,10 @@ ENGAGEMENT_FILE = "engagement_history.json"  # In repo root for git tracking
 ENGAGEMENT_CHECK_DELAY_HOURS = 48
 NEW_CHANNEL_VIEWS_THRESHOLD = 100_000  # 1 lakh — use main channel data until new channel crosses this
 
+# Instagram Engagement Feedback Loop — check Reel performance after 48h
+IG_ENGAGEMENT_FILE = "ig_engagement_history.json"  # In repo root for git tracking
+IG_ENGAGEMENT_CHECK_DELAY_HOURS = 48
+
 # Source Channel — read engagement data from existing 50K channel to inform topic selection
 SOURCE_CHANNEL_ID = os.environ.get("CHANNEL_ID_2", "")
 SOURCE_CHANNEL_API_KEY = os.environ.get("YOUTUBE_API_KEY_1", "")
@@ -2136,6 +2140,222 @@ def get_new_channel_total_views():
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# INSTAGRAM ENGAGEMENT FEEDBACK LOOP
+# ═══════════════════════════════════════════════════════════════════════
+
+def save_ig_upload_record(ig_media_id, title, topic):
+    """Save Instagram media ID after upload for later engagement checking."""
+    try:
+        records = []
+        if os.path.exists(IG_ENGAGEMENT_FILE):
+            with open(IG_ENGAGEMENT_FILE, "r") as f:
+                records = json.load(f)
+
+        ist = pytz.timezone(TIMEZONE)
+        now = datetime.now(ist)
+
+        records.append({
+            "media_id": str(ig_media_id),
+            "title": title,
+            "topic": topic,
+            "published_at": now.isoformat(),
+            "checked": False,
+        })
+
+        with open(IG_ENGAGEMENT_FILE, "w") as f:
+            json.dump(records, f, indent=2, ensure_ascii=False)
+        print(f"   📝 Instagram media ID saved for engagement tracking")
+    except Exception as e:
+        print(f"   ⚠️ Failed to save IG upload record: {e}")
+
+
+def check_instagram_engagement():
+    """Check engagement for Instagram Reels uploaded ~48h ago.
+    Uses Instagram Graph API to fetch insights (views, likes, comments, shares, reach).
+    Saves performance data to ig_engagement_history.json for future topic optimization."""
+    ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
+    if not ig_token:
+        return
+
+    if not os.path.exists(IG_ENGAGEMENT_FILE):
+        return
+
+    try:
+        with open(IG_ENGAGEMENT_FILE, "r") as f:
+            records = json.load(f)
+
+        if not records:
+            return
+
+        ist = pytz.timezone(TIMEZONE)
+        now = datetime.now(ist)
+        updated = False
+
+        for record in records:
+            if record.get("checked"):
+                continue
+
+            # Check if enough time has passed since upload
+            pub_str = record.get("published_at", "")
+            if not pub_str:
+                continue
+            try:
+                pub_time = datetime.fromisoformat(pub_str)
+                if pub_time.tzinfo is None:
+                    pub_time = ist.localize(pub_time)
+            except Exception:
+                continue
+
+            hours_since = (now - pub_time).total_seconds() / 3600
+            if hours_since < IG_ENGAGEMENT_CHECK_DELAY_HOURS:
+                continue  # Too early
+
+            media_id = record.get("media_id", "")
+            if not media_id:
+                continue
+
+            # Fetch media insights from Instagram Graph API
+            try:
+                # Get basic media metrics
+                media_resp = requests.get(
+                    f"https://graph.facebook.com/{IG_API_VERSION}/{media_id}",
+                    params={
+                        "fields": "like_count,comments_count,timestamp,media_type,media_product_type",
+                        "access_token": ig_token,
+                    },
+                    timeout=15,
+                )
+                media_data = media_resp.json()
+
+                if "error" in media_data:
+                    print(f"   ⚠️ IG insights failed for {media_id}: {media_data['error'].get('message', '')}")
+                    continue
+
+                # Fetch Reels-specific insights (views, reach, shares, saves)
+                insights_resp = requests.get(
+                    f"https://graph.facebook.com/{IG_API_VERSION}/{media_id}/insights",
+                    params={
+                        "metric": "plays,reach,saved,shares",
+                        "access_token": ig_token,
+                    },
+                    timeout=15,
+                )
+                insights_data = insights_resp.json()
+
+                # Parse insights
+                ig_views = 0
+                ig_reach = 0
+                ig_saves = 0
+                ig_shares = 0
+
+                for metric in insights_data.get("data", []):
+                    name = metric.get("name", "")
+                    values = metric.get("values", [{}])
+                    val = values[0].get("value", 0) if values else 0
+                    if name == "plays":
+                        ig_views = val
+                    elif name == "reach":
+                        ig_reach = val
+                    elif name == "saved":
+                        ig_saves = val
+                    elif name == "shares":
+                        ig_shares = val
+
+                ig_likes = media_data.get("like_count", 0)
+                ig_comments = media_data.get("comments_count", 0)
+
+                # Update record with engagement data
+                record["checked"] = True
+                record["checked_at"] = now.isoformat()
+                record["hours_since_publish"] = round(hours_since, 1)
+                record["views"] = ig_views
+                record["reach"] = ig_reach
+                record["likes"] = ig_likes
+                record["comments"] = ig_comments
+                record["shares"] = ig_shares
+                record["saves"] = ig_saves
+                updated = True
+
+                title_short = record.get("title", "")[:40]
+                print(f"   📸 IG engagement: {title_short}... → {ig_views} views, {ig_likes} likes, {ig_shares} shares, {ig_reach} reach ({hours_since:.0f}h)")
+
+            except Exception as e:
+                print(f"   ⚠️ IG insights fetch failed for {media_id}: {e}")
+
+        if updated:
+            with open(IG_ENGAGEMENT_FILE, "w") as f:
+                json.dump(records, f, indent=2, ensure_ascii=False)
+
+    except Exception as e:
+        print(f"   ⚠️ Instagram engagement check failed: {e}")
+
+
+def get_top_performing_ig_topics(n=5):
+    """Return top N performing topics on Instagram based on engagement data.
+    Used to understand what content resonates differently on Instagram vs YouTube."""
+    if not os.path.exists(IG_ENGAGEMENT_FILE):
+        return []
+
+    try:
+        with open(IG_ENGAGEMENT_FILE, "r") as f:
+            records = json.load(f)
+
+        checked = [r for r in records if r.get("checked")]
+        if not checked:
+            return []
+
+        # Sort by views (primary) and likes (secondary)
+        sorted_entries = sorted(
+            checked,
+            key=lambda e: (e.get("views", 0), e.get("likes", 0)),
+            reverse=True,
+        )
+
+        return [e["title"] for e in sorted_entries[:n]]
+
+    except Exception:
+        return []
+
+
+def get_top_performing_ig_categories():
+    """Analyze Instagram engagement data and return category names ranked by avg views.
+    Instagram audience may prefer different categories than YouTube."""
+    if not os.path.exists(IG_ENGAGEMENT_FILE):
+        return []
+
+    try:
+        with open(IG_ENGAGEMENT_FILE, "r") as f:
+            records = json.load(f)
+
+        checked = [r for r in records if r.get("checked")]
+        if not checked:
+            return []
+
+        # Aggregate views per category
+        cat_stats = {}
+        for entry in checked:
+            title_lower = entry.get("title", "").lower()
+            views = entry.get("views", 0)
+            for cat_name, cat_data in TOPIC_SERIES_TAGS.items():
+                if any(kw in title_lower for kw in cat_data["keywords"]):
+                    cat_stats.setdefault(cat_name, []).append(views)
+                    break
+
+        if not cat_stats:
+            return []
+
+        ranked = sorted(
+            cat_stats.items(),
+            key=lambda x: sum(x[1]) / len(x[1]),
+            reverse=True,
+        )
+        return [cat for cat, _ in ranked]
+
+    except Exception:
+        return []
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # SOURCE CHANNEL INSIGHTS (read-only from existing 50K channel)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -2492,6 +2712,10 @@ TOPIC: {topic}
 These are PROVEN top-performing video titles from our existing audience — use this to understand
 what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
 {json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
+
+━━━ INSTAGRAM INSIGHTS (what works on Reels) ━━━
+{("Top performing Reels titles (by views): " + json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False)) if get_top_performing_ig_topics(5) else "No Instagram data yet — will learn from Reel performance over time."}
+Note: Instagram audience may prefer different styles/hooks than YouTube. Consider what works on both platforms.
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -3377,6 +3601,10 @@ These are ACTUAL Shorts with REAL view counts — study what works:
 === BEST PERFORMING CATEGORIES (by average views) ===
 Main channel: {', '.join(cat_ranking[:5]) if cat_ranking else 'No data'}
 Own channel: {', '.join(own_cats[:5]) if own_cats else 'No data yet'}
+Instagram: {', '.join(get_top_performing_ig_categories()[:5]) if get_top_performing_ig_categories() else 'No IG data yet'}
+
+=== TOP PERFORMING INSTAGRAM REELS ===
+{json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False) if get_top_performing_ig_topics(5) else "No Instagram engagement data yet."}
 
 === AUDIENCE QUESTIONS (real comments — viewers WANT these topics explained) ===
 {audience_qs if audience_qs else "No audience questions available."}
@@ -3501,6 +3729,25 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
             if not top_cats:
                 top_cats = get_top_performing_categories()
                 cat_source = "own channel (fallback)"
+
+        # Blend Instagram insights — boost categories that perform on IG too
+        ig_cats = get_top_performing_ig_categories()
+        if ig_cats:
+            # Categories that perform well on BOTH platforms get priority
+            combined_cats = []
+            for cat in top_cats:
+                if cat in ig_cats:
+                    combined_cats.insert(0, cat)  # Boost cross-platform winners
+                else:
+                    combined_cats.append(cat)
+            # Add IG-only winners that YouTube data missed
+            for cat in ig_cats:
+                if cat not in combined_cats:
+                    combined_cats.append(cat)
+            top_cats = combined_cats
+            cat_source += " + Instagram"
+            print(f"   📸 IG top categories: {', '.join(ig_cats[:3])}")
+
         if top_cats:
             # Sort unused topics: ones matching top categories come first
             def _cat_priority(topic):
@@ -3549,8 +3796,9 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
 Style: practical knowledge, no selling. Hindi conversational.
 Already used: {json.dumps(topic_history[-10:])}
 Top performing Shorts on our channel: {json.dumps(source_titles, ensure_ascii=False) if source_titles else 'No data'}
+Top performing Instagram Reels: {json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False) if get_top_performing_ig_topics(5) else 'No IG data'}
 Audience questions: {aud_qs if aud_qs else 'No data'}
-Generate a topic inspired by the winning patterns above but with a fresh angle.
+Generate a topic inspired by the winning patterns above but with a fresh angle. Consider what works on BOTH YouTube and Instagram.
 Return ONLY the topic text, nothing else."""}]
             )
             return resp.content[0].text.strip()
@@ -6497,6 +6745,10 @@ def main():
             print("   📊 Checking past video engagement...")
             check_past_engagement(youtube)
 
+            # ── 10a-ii. Check Instagram Reel engagement (feedback loop) ──
+            print("   📸 Checking Instagram Reel engagement...")
+            check_instagram_engagement()
+
             try:
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 
@@ -6568,7 +6820,9 @@ def main():
         if CROSS_POST_INSTAGRAM and os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
             print("\n📸 Instagram Token Check...")
             refresh_instagram_token_if_needed()
-        cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
+        ig_media_id = cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
+        if ig_media_id:
+            save_ig_upload_record(ig_media_id, yt_title, fresh_topic)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not upload_failed and vid_id:
