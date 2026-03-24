@@ -1093,8 +1093,8 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         # Try primary model (Pro), then fallback (Flash)
         # Each model gets up to 3 retries with exponential backoff for transient errors (503/429)
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-        GEMINI_IMAGE_TIMEOUT = 180  # seconds per model attempt
-        GEMINI_IMAGE_MAX_RETRIES = 3
+        GEMINI_IMAGE_TIMEOUT = 120  # seconds per model attempt (2 min — keep CI fast)
+        GEMINI_IMAGE_MAX_RETRIES = 2
 
         for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
             for attempt in range(1, GEMINI_IMAGE_MAX_RETRIES + 1):
@@ -1142,7 +1142,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                     err_str = str(e).lower()
                     is_transient = any(k in err_str for k in ("503", "429", "unavailable", "rate limit", "too many", "overloaded", "high demand", "resource exhausted"))
                     if is_transient and attempt < GEMINI_IMAGE_MAX_RETRIES:
-                        wait = 2 ** attempt * 5  # 10s, 20s, 40s — generous backoff for busy API
+                        wait = 2 ** attempt * 3  # 6s, 12s — balanced backoff for CI
                         print(f"   ⚠️ Gemini ({model_name}) attempt {attempt} failed: {e}")
                         print(f"   ⏳ Retrying in {wait}s (API is busy, backing off)...")
                         time.sleep(wait)
