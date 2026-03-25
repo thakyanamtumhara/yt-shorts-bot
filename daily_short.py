@@ -524,7 +524,7 @@ def sanitize_tags(tags):
     - No angle brackets < >, no commas (used as internal separator)
     - Individual tag max ~100 chars, total of all tags max 500 chars
     - No leading/trailing whitespace
-    - Only allows: letters (any script), digits, spaces, hyphens, ampersands
+    - ASCII letters, digits, spaces, and hyphens only (safest for YouTube)
     """
     import re as _re
     cleaned = []
@@ -533,10 +533,9 @@ def sanitize_tags(tags):
     for tag in tags:
         if not isinstance(tag, str):
             tag = str(tag)
-        # Strip whitespace and remove ALL problematic characters
+        # Strip whitespace and keep only ASCII-safe chars: letters, digits, spaces, hyphens
         tag = tag.strip()
-        # Keep only: word chars (letters/digits/underscore in any script), spaces, hyphens, ampersands, apostrophes
-        tag = _re.sub(r'[^\w\s\-&\']', '', tag)
+        tag = _re.sub(r'[^a-zA-Z0-9\s\-]', '', tag)
         tag = _re.sub(r'\s+', ' ', tag)             # Collapse multiple spaces
         tag = tag.strip()
         tag = tag[:100]                              # Individual tag limit
