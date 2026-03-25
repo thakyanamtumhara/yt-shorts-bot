@@ -6792,8 +6792,6 @@ def main():
                     # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
                     # Scheduled videos are private — YouTube blocks comments on private videos.
                     # Temporarily switch to unlisted, post comment, then restore scheduled state.
-                    # Also upload thumbnail AFTER switching to unlisted — YouTube Shorts
-                    # may ignore custom thumbnails set on private/scheduled videos.
                     original_publish_at = None
                     switched_to_unlisted = False
                     if SCHEDULE_PUBLISH:
@@ -6810,10 +6808,6 @@ def main():
                             print("   🔓 Temporarily set to unlisted for commenting...")
                         except Exception as e:
                             print(f"   ⚠️ Could not switch to unlisted: {e}")
-
-                    # Upload custom thumbnail (after switching to unlisted if scheduled)
-                    if thumbnail_path:
-                        upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                     time.sleep(30)
@@ -6836,6 +6830,14 @@ def main():
                         except Exception as e:
                             print(f"   ⚠️ Could not restore private status: {e}")
                             print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
+
+                    # Upload custom thumbnail AFTER all status changes are done.
+                    # Uploading before restore causes YouTube to reset the thumbnail
+                    # when switching back to private/scheduled.
+                    if thumbnail_path:
+                        print("   ⏳ Waiting 10s before thumbnail upload...")
+                        time.sleep(10)
+                        upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     # ── 10c. Add to series playlist ──
                     add_to_playlist(youtube, vid_id, fresh_topic)
