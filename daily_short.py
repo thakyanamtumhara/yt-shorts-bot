@@ -736,6 +736,9 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
                       font=font_topic, fill=(200, 200, 200))
 
         img.save(output_path, "PNG", quality=95)
+        if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
+            print(f"   ⚠️ Thumbnail file not created or too small")
+            return None
         print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
         return output_path
 
@@ -746,6 +749,13 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
 
 def upload_thumbnail(youtube, video_id, thumbnail_path):
     """Upload custom thumbnail to a YouTube video."""
+    if not os.path.exists(thumbnail_path):
+        print(f"   ❌ Thumbnail file not found: {thumbnail_path}")
+        return False
+    file_size = os.path.getsize(thumbnail_path)
+    if file_size < 1000:
+        print(f"   ❌ Thumbnail file too small ({file_size} bytes), skipping upload")
+        return False
     from googleapiclient.http import MediaFileUpload
     try:
         media = MediaFileUpload(thumbnail_path, mimetype="image/png")
@@ -1126,6 +1136,9 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                             # Resize to exact thumbnail dimensions
                             generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
                             generated_img.save(output_path, "PNG", quality=95)
+                            if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
+                                print(f"   ⚠️ AI thumbnail file not created or too small")
+                                break
                             print(f"   ✅ AI thumbnail generated: {output_path}")
                             if cost_tracker:
                                 cost_tracker.track_gemini_image()
@@ -1798,9 +1811,10 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
         # Step 4: Publish (or confirm schedule)
         if schedule_for_later:
             # Scheduled posts are auto-published by Instagram at the set time
+            # Return prefixed ID so engagement tracker knows this is a scheduled post
             print(f"   \u2705 Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
             print(f"      Container ID: {container_id} \u2014 Instagram will auto-publish")
-            return container_id
+            return f"scheduled:{container_id}"
         else:
             # Immediate publish — try current version, then fallback
             for api_ver in [IG_API_VERSION, "v20.0"]:
@@ -2213,6 +2227,9 @@ def check_instagram_engagement():
             media_id = record.get("media_id", "")
             if not media_id:
                 continue
+            # Scheduled posts have "scheduled:" prefix — strip it for API call
+            if media_id.startswith("scheduled:"):
+                media_id = media_id.replace("scheduled:", "", 1)
 
             # Fetch media insights from Instagram Graph API
             try:
