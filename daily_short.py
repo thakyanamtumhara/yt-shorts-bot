@@ -6790,13 +6790,11 @@ def main():
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 
                 if vid_id and vid_id != "?":
-                    # Upload custom thumbnail
-                    if thumbnail_path:
-                        upload_thumbnail(youtube, vid_id, thumbnail_path)
-
                     # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
                     # Scheduled videos are private — YouTube blocks comments on private videos.
                     # Temporarily switch to unlisted, post comment, then restore scheduled state.
+                    # Also upload thumbnail AFTER switching to unlisted — YouTube Shorts
+                    # may ignore custom thumbnails set on private/scheduled videos.
                     original_publish_at = None
                     switched_to_unlisted = False
                     if SCHEDULE_PUBLISH:
@@ -6813,6 +6811,10 @@ def main():
                             print("   🔓 Temporarily set to unlisted for commenting...")
                         except Exception as e:
                             print(f"   ⚠️ Could not switch to unlisted: {e}")
+
+                    # Upload custom thumbnail (after switching to unlisted if scheduled)
+                    if thumbnail_path:
+                        upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                     time.sleep(30)
