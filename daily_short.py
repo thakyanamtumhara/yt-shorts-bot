@@ -762,16 +762,26 @@ def upload_thumbnail(youtube, video_id, thumbnail_path):
     if file_size < 1000:
         print(f"   ❌ Thumbnail file too small ({file_size} bytes), skipping upload")
         return False
+    print(f"   🖼️ Uploading thumbnail: {thumbnail_path} ({file_size:,} bytes) for video {video_id}")
     from googleapiclient.http import MediaFileUpload
-    try:
-        media = MediaFileUpload(thumbnail_path, mimetype="image/png")
-        youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
-        print(f"   🖼️ Custom thumbnail uploaded for {video_id}")
-        return True
-    except Exception as e:
-        print(f"   ⚠️ Thumbnail upload failed: {e}")
-        print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
-        return False
+    import time as _time
+    # Retry up to 3 times with delay — YouTube may need time to process the video
+    for attempt in range(1, 4):
+        try:
+            media = MediaFileUpload(thumbnail_path, mimetype="image/png", resumable=True)
+            response = youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
+            print(f"   🖼️ Custom thumbnail uploaded for {video_id} (attempt {attempt})")
+            print(f"   📋 Thumbnail API response: {response}")
+            return True
+        except Exception as e:
+            print(f"   ⚠️ Thumbnail upload attempt {attempt}/3 failed: {e}")
+            if attempt < 3:
+                wait = attempt * 10  # 10s, 20s
+                print(f"   ⏳ Waiting {wait}s before retry (YouTube may need time to process video)...")
+                _time.sleep(wait)
+    print(f"   ❌ Thumbnail upload failed after 3 attempts")
+    print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
+    return False
 
 
 def refresh_thumbnail_research(claude_client):
