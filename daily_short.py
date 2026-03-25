@@ -909,8 +909,10 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "You are given a reference image (the base frame for the thumbnail) along with the video topic, hook, and script. "
         "Generate a DETAILED thumbnail brief that a designer (Gemini) will use to place text on this exact image.\n\n"
         "THUMBNAIL TEXT RULES:\n"
-        "- Maximum 4-5 words (MUST be readable on mobile phone — shorter is ALWAYS better)\n"
-        "- Use Hindi-English mix (Hinglish) — this performs best in India (e.g., '₹49 में T-Shirt Business', 'Wholesale का Secret')\n"
+        "- CRITICAL: MAXIMUM 3-4 WORDS ONLY. Count your words — if more than 4 words, you MUST shorten it. Shorter = better CTR.\n"
+        "  Good examples (3-4 words): '₹49 T-Shirt Secret', 'Fabric गलती!', 'GSM का Truth', 'Print Crack क्यों?', '300 Piece RETURN?'\n"
+        "  BAD examples (too long): '₹49 में T-Shirt Business कैसे करें' (7 words — WAY too long!)\n"
+        "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
         "- Include a number or price if relevant (numbers get clicks)\n"
         "- Create curiosity or urgency\n"
         "- Use power words: Secret, Free, Shocking, Reality, Truth, Mistake, Hack, सच, गलती\n"
@@ -919,7 +921,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "OUTPUT FORMAT — Return EXACTLY this format (the designer will read this directly):\n\n"
         "=== THUMBNAIL BRIEF ===\n"
         "Format: Reel 9:16\n"
-        "Thumbnail Text: [your chosen text — 3-5 words max, Hinglish]\n"
+        "Thumbnail Text: [your chosen text — 3-4 words MAXIMUM, Hinglish]\n"
         "Text Color: [hex code] ([color name])\n"
         "Text Position: [Top-Left / Top-Center / Top-Right] ([specific placement description based on the image — e.g., 'above the person's head, on the white wall/ceiling area'])\n"
         "Text Effect: [describe stroke/outline color + shadow details — e.g., 'White stroke (thick outline, 4-5px) + black drop shadow for maximum pop']\n"
@@ -984,6 +986,16 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
                 thumb_text = line.split(":", 1)[1].strip()
             elif line.strip().startswith("Text Color:"):
                 thumb_color = line.split(":", 1)[1].strip()
+
+        # Enforce strict 3-4 word limit — truncate if Claude exceeded it
+        words = thumb_text.split()
+        if len(words) > 4:
+            print(f"   ⚠️ Thumbnail text too long ({len(words)} words): \"{thumb_text}\"")
+            thumb_text_short = " ".join(words[:4])
+            print(f"   ✂️ Truncated to 4 words: \"{thumb_text_short}\"")
+            # Update the brief text too so Gemini gets the truncated version
+            brief_text = brief_text.replace(thumb_text, thumb_text_short)
+            thumb_text = thumb_text_short
 
         print(f"   ✅ Thumbnail brief: \"{thumb_text}\" | color: {thumb_color}")
 
@@ -6792,8 +6804,6 @@ def main():
                     # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
                     # Scheduled videos are private — YouTube blocks comments on private videos.
                     # Temporarily switch to unlisted, post comment, then restore scheduled state.
-                    # Also upload thumbnail AFTER switching to unlisted — YouTube Shorts
-                    # may ignore custom thumbnails set on private/scheduled videos.
                     original_publish_at = None
                     switched_to_unlisted = False
                     if SCHEDULE_PUBLISH:
@@ -6810,10 +6820,6 @@ def main():
                             print("   🔓 Temporarily set to unlisted for commenting...")
                         except Exception as e:
                             print(f"   ⚠️ Could not switch to unlisted: {e}")
-
-                    # Upload custom thumbnail (after switching to unlisted if scheduled)
-                    if thumbnail_path:
-                        upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                     time.sleep(30)
@@ -6836,6 +6842,14 @@ def main():
                         except Exception as e:
                             print(f"   ⚠️ Could not restore private status: {e}")
                             print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
+
+                    # NOTE: YouTube Shorts do NOT support custom thumbnails via the Data API.
+                    # The thumbnails.set endpoint returns success but silently ignores it for Shorts.
+                    # Custom Shorts thumbnails can only be set via YouTube Studio UI or mobile app.
+                    # See: https://issuetracker.google.com/issues/381127084
+                    if thumbnail_path:
+                        print("   ℹ️ YouTube Shorts: custom thumbnails not supported via API (use YouTube Studio)")
+                        print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
 
                     # ── 10c. Add to series playlist ──
                     add_to_playlist(youtube, vid_id, fresh_topic)
