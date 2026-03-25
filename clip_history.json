@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Puff print trending hai — 3D effect ke liye kaunsa fabric best hai",
-    "prompts": [
-      "Close-up shot of a white cotton t-shirt laid flat on a wooden table surface with visible cracked and peeling puff print design on the chest area, the print shows obvious damage with lifted edges and broken texture, harsh natural daylight coming from window on left side, camera slowly pushes in to reveal the damaged print details, realistic textile workshop environment",
-      "Medium shot of a clean workspace desk with two white plain cotton round-neck t-shirts placed side by side, left t-shirt is noticeably thinner and lighter weight, right t-shirt appears thicker and heavier fabric, both are folded identically to show thickness comparison, warm overhead LED lighting, slight camera tilt down from 45 degree angle",
-      "Extreme close-up shot of thick glossy puff printing ink being applied on white cotton fabric surface using a screen printing squeegee tool, the raised 3D texture of the puff ink is clearly visible with light reflecting off the wet surface, hand wearing black nitrile glove holding squeegee moves from left to right, bright workshop lighting from above",
-      "Medium overhead shot of Indian man's hands holding a thick 220 GSM white cotton t-shirt and stretching it gently to demonstrate the fabric weight and stability, the fabric shows resistance and firmness, hands rotate the t-shirt to show different angles, natural indoor lighting with soft shadows, clean white background surface below",
-      "Close-up shot of a premium white cotton t-shirt with perfect glossy puff print logo on chest area, the 3D raised texture is intact and smooth with no cracks, Indian man's hands gently touch and press the puff print to show its durability and quality finish, warm studio lighting highlighting the dimensional effect, camera slowly dollies back to reveal full garment"
-    ],
-    "date": "2026-02-26T17:18:44.686630"
-  },
-  {
     "topic": "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a crumpled, slightly shrunken white cotton t-shirt with visible DTG print that appears faded and cracked, examining it with disappointment, placed on a clean wooden table surface, warm natural daylight from window, shallow depth of field focusing on the damaged fabric texture, camera slowly pushes in to show print damage detail",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian man's hands holding a yellow measuring tape against the chest area of a freshly washed and dried white cotton round-neck t-shirt on a clean table, the tape shows measurement markings clearly, the man gives a subtle thumbs-up gesture near the tape, bright natural lighting, vertical 9:16 format, gentle slow zoom in on the tape reading."
     ],
     "date": "2026-03-25T09:40:52.477181"
+  },
+  {
+    "topic": "Customer bola print crack ho gaya — maine pucha kaunsa ink use kiya?",
+    "prompts": [
+      "Close-up shot of a black cotton round-neck t-shirt laid flat on a grey concrete surface, showing a badly cracked and peeling white printed graphic design with visible flakes lifting off the fabric, harsh overhead fluorescent lighting, camera slowly zooms in on the worst cracking area, vertical 9:16 format, realistic indoor workshop setting.",
+      "Medium shot of Indian man's hands holding a phone to his ear while the other hand picks up and examines a folded plain white t-shirt from a stack on a metal shelf in a textile warehouse, warm ambient lighting from tube lights above, slight camera pan from the phone hand to the t-shirt, vertical 9:16 format, no face visible.",
+      "Top-down overhead shot of a clean grey workshop table with two small plastic ink containers placed side by side — one labeled-style thick white paste-like plastisol ink and one thin liquid water-based ink in a transparent bottle, an Indian man's hand points between the two containers comparing them, bright even lighting, camera stays static, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands operating a heat press machine, pressing down the top plate onto a dark navy cotton t-shirt with a freshly printed white design, steam rising slightly from the edges, a small digital temperature display showing numbers visible on the machine panel, warm workshop lighting, camera angle slightly from the side, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands stretching a freshly washed black cotton t-shirt with a crisp intact white print design, pulling the fabric gently to show the print flexing without any cracking, bright natural daylight from a nearby window, camera slowly dollies forward toward the print, vertical 9:16 format, satisfying clean result."
+    ],
+    "date": "2026-03-25T11:04:50.541395"
   }
 ]

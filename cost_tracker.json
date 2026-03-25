@@ -610,5 +610,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.157
     }
+  },
+  {
+    "date": "2026-03-25T11:17:47.942884",
+    "topic": "Customer bola print crack ho gaya \u2014 maine pucha kaunsa ink use kiya?",
+    "title": "Print Crack After 3 Washes? You Used the Wrong Ink!",
+    "total_usd": 0.6473,
+    "duration_min": 14.2,
+    "breakdown": {
+      "claude_opus": 0.2669,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0272,
+      "whisper": 0.0059,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1773
+    }
   }
 ]
