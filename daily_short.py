@@ -521,6 +521,7 @@ def sanitize_tags(tags):
     - No angle brackets < >, no commas (used as internal separator)
     - Individual tag max ~100 chars, total of all tags max 500 chars
     - No leading/trailing whitespace
+    - Only allows: letters (any script), digits, spaces, hyphens, ampersands
     """
     import re as _re
     cleaned = []
@@ -529,10 +530,12 @@ def sanitize_tags(tags):
     for tag in tags:
         if not isinstance(tag, str):
             tag = str(tag)
-        # Strip whitespace and remove problematic characters
+        # Strip whitespace and remove ALL problematic characters
         tag = tag.strip()
-        tag = _re.sub(r'[<>",]', '', tag)          # Remove < > " ,
+        # Keep only: word chars (letters/digits/underscore in any script), spaces, hyphens, ampersands, apostrophes
+        tag = _re.sub(r'[^\w\s\-&\']', '', tag)
         tag = _re.sub(r'\s+', ' ', tag)             # Collapse multiple spaces
+        tag = tag.strip()
         tag = tag[:100]                              # Individual tag limit
         if not tag or tag.lower() in seen:
             continue
@@ -3211,6 +3214,7 @@ Custom printing businesses | Merch brands | Corporate orders
         if t not in [x.lower() for x in all_tags]:
             all_tags.append(t)
     all_tags = sanitize_tags(all_tags[:30])
+    print(f"   🏷️  Tags ({len(all_tags)}): {all_tags[:5]}{'...' if len(all_tags) > 5 else ''}")
 
     body = {
         "snippet": {
