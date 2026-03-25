@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a crumpled, slightly shrunken white cotton t-shirt with visible DTG print that appears faded and cracked, examining it with disappointment, placed on a clean wooden table surface, warm natural daylight from window, shallow depth of field focusing on the damaged fabric texture, camera slowly pushes in to show print damage detail",
-      "Medium overhead shot of a cardboard return shipping box opened on a warehouse desk, containing multiple folded white and colored plain cotton t-shirts with printed care labels visible on the collar area, invoice papers scattered beside the box, industrial warehouse lighting from above, camera tilts down slightly to reveal the box contents clearly from the first frame",
-      "Close-up shot of Indian man's hands holding a small white fabric care label tag between fingers, bringing it closer to camera to show washing instruction symbols printed on it — water temperature icon, detergent icon, no bleach symbol, tumble dry low icon — bright indoor lighting, neutral grey background, camera focus pulls from background to the label text in sharp detail",
-      "Medium shot of a clean white cotton round-neck t-shirt with colorful DTG print design laid flat on a stainless steel washing sink counter, Indian man's hands demonstrating turning the t-shirt inside out to protect the print, cold water tap running gently in background, bright bathroom lighting, camera angle from slight side view showing the inside-out motion clearly",
-      "Close-up shot of a perfectly maintained white cotton t-shirt with vibrant intact DTG print hanging on a wooden clothes hanger against a clean white wall, fabric looks fresh and undamaged with smooth texture, natural window light creating soft shadows, camera slowly dollies right showcasing the print quality and fabric condition, no wrinkles or shrinkage visible from first frame"
-    ],
-    "date": "2026-02-26T18:43:24.019273"
-  },
-  {
     "topic": "Myth: 100% cotton best hai — kuch cases mein blend better hota hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding two white round-neck t-shirts side by side against a neutral gray background, one slightly stretched out of shape on the left and one perfectly shaped on the right, bright even studio lighting, camera slowly pushes in to show the difference in fabric drape and shape retention, vertical 9:16 format, realistic textile texture visible",
@@ -328,5 +317,16 @@
       "Medium shot of a neatly folded stack of 5 printed henley collar t-shirts in assorted colors (black, white, olive, maroon, beige) arranged on a clean wooden shelf, each showing the button placket detail, warm golden hour lighting from a nearby window, slow camera tilt upward revealing all five shirts, vertical 9:16 format, no faces, satisfying display arrangement."
     ],
     "date": "2026-03-25T02:53:15.895751"
+  },
+  {
+    "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
+    "prompts": [
+      "Close-up shot of Indian man's hands frantically tapping on a basic calculator placed on a messy desk covered with crumpled invoices, scattered plain t-shirts in various colors, and a worn-out notebook with handwritten price calculations, warm yellowish indoor bulb lighting, camera slowly pushing in, vertical 9:16 format, 8 seconds.",
+      "Medium shot of a small Indian printing workshop showing a screen printing setup with squeegees and ink containers on the left, and a stack of about 30 neatly folded plain white t-shirts on the right side of a steel table, fluorescent tube lighting from above casting even light, camera slowly panning from the printing setup to the t-shirt stack, vertical 9:16 format, 8 seconds.",
+      "Top-down overhead shot of a clean wooden table split into two distinct sides — left side shows a single premium plain black t-shirt with a small retail price tag next to it and a few coins, right side shows a large bundle of about 50 plain black t-shirts wrapped in polythene with a printed wholesale invoice on top, bright natural daylight from a window, camera static with slight zoom out to reveal both sides, vertical 9:16 format, 8 seconds.",
+      "Close-up shot of Indian man's hands writing on a white notebook page with a blue pen, creating two columns labeled with numbers — one column showing smaller numbers like 1, 5, 10 with higher prices next to them, another column showing larger numbers like 100, 500, 1000 with lower prices, a plain grey t-shirt visible in the background on the desk, soft warm desk lamp lighting, camera slowly dollying forward, vertical 9:16 format, 8 seconds.",
+      "Medium shot of a well-organized Indian textile storage shelf showing neatly stacked bundles of plain t-shirts in multiple colors sorted in rows — white, black, navy, maroon, olive — each bundle wrapped cleanly in transparent polythene, a clipboard with a printed price list hanging on the shelf edge, bright even warehouse LED lighting, camera slowly tracking sideways along the shelf revealing more colors, vertical 9:16 format, 8 seconds."
+    ],
+    "date": "2026-03-25T14:23:12.276885"
   }
 ]

@@ -608,5 +608,20 @@
       "whisper": 0.0067,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-03-25T14:43:08.878540",
+    "topic": "B2B aur B2C pricing alag hoti hai \u2014 dono mat mix karo",
+    "title": "Rs 50 Rate Dono Ko? This T-Shirt Printing Mistake Kills Margin",
+    "total_usd": 0.6426,
+    "duration_min": 21.0,
+    "breakdown": {
+      "claude_opus": 0.2806,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0303,
+      "whisper": 0.0064,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2003
+    }
   }
 ]
