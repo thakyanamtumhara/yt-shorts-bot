@@ -817,37 +817,53 @@ def refresh_thumbnail_research(claude_client):
     # Generate fresh research via Claude Opus (best judgment for niche-specific patterns)
     try:
         print("   🔍 Generating thumbnail research patterns via Claude Opus...")
+        # Include Instagram performance data (primary channel)
+        ig_research_context = ""
+        _ig = get_ig_engagement_summary()
+        if _ig.get("total_reels_analyzed", 0) > 0:
+            ig_research_context = (
+                "\n\nINSTAGRAM REELS PERFORMANCE DATA (PRIMARY CHANNEL — optimize for this):\n"
+                f"Reels analyzed: {_ig['total_reels_analyzed']}\n"
+                f"Top Reels by views: {_json.dumps(_ig.get('top_reels', [])[:5], ensure_ascii=False)}\n"
+                f"Highest save-rate Reels (= high quality content viewers bookmark): {_json.dumps(_ig.get('top_by_saves', [])[:3], ensure_ascii=False)}\n"
+                f"Highest share-rate Reels (= viral content viewers spread): {_json.dumps(_ig.get('top_by_shares', [])[:3], ensure_ascii=False)}\n"
+                "CRITICAL: Instagram is our primary channel. Optimize thumbnail patterns for INSTAGRAM FIRST, YouTube second.\n"
+                "High save-rate = thumbnails that promise lasting value. High share-rate = thumbnails that trigger 'my friend needs to see this'.\n"
+            )
         resp = claude_client.messages.create(
             model="claude-opus-4-6",
             max_tokens=800,
             messages=[{
                 "role": "user",
                 "content": (
-                    "You are a YouTube content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
-                    "Your job is to research what's performing well on YouTube India and identify high-CTR (click-through rate) thumbnail patterns.\n\n"
+                    "You are a content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
+                    "Your job is to research what's performing well on Instagram Reels AND YouTube Shorts and identify high-CTR thumbnail patterns.\n\n"
                     "BUSINESS CONTEXT:\n"
                     "- Business: Wholesale/bulk plain t-shirts, B2B sales in India\n"
                     "- Target audience: Small business owners, retailers, resellers, bulk buyers in India\n"
                     "- Content style: Informational, business opportunity, pricing reveals, factory/warehouse tours\n"
-                    "- Platform: YouTube Shorts / Instagram Reels (9:16 vertical)\n\n"
+                    "- Platform: Instagram Reels (PRIMARY) + YouTube Shorts (9:16 vertical)\n\n"
+                    f"{ig_research_context}\n"
                     "RESEARCH TASK:\n"
-                    "Analyze the top-performing videos on YouTube India related to this business niche. "
-                    "Focus on videos relevant to: t-shirt business, wholesale business, bulk selling, garment industry, small business ideas India, low investment business. "
-                    "Also analyze trending videos in the broader 'business/money' niche in India for thumbnail inspiration.\n"
+                    "Analyze top-performing Reels and Shorts in the Indian business niche. "
+                    "Focus on: t-shirt business, wholesale business, bulk selling, garment industry, small business ideas India, low investment business. "
+                    "Also analyze trending Reels in the broader 'business/money' niche in India for thumbnail inspiration.\n"
                     "For each pattern you identify, consider: what text is on the thumbnail, what colors are used, what emotions/expressions appear, what layout works.\n\n"
                     "IMPORTANT CONTEXT:\n"
-                    "- These are VERTICAL 9:16 Shorts thumbnails, NOT horizontal 16:9 video thumbnails\n"
+                    "- These are VERTICAL 9:16 Reel/Shorts thumbnails\n"
                     "- Viewers see these as tiny previews on mobile phones while scrolling\n"
-                    "- Top 10% and bottom 20% of thumbnail are covered by YouTube Shorts UI — text must be in the 15%-45% from top zone\n"
+                    "- On Instagram: thumbnail appears as Reel cover on profile grid and Explore page\n"
+                    "- Top 10% and bottom 20% may be covered by UI — text must be in the 15%-45% from top zone\n"
                     "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n"
                     "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
                     "Return a JSON object (no markdown fencing) with these fields:\n"
-                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Shorts (e.g., Secret, सच, Mistake, Free, Shocking, Reality, Truth, Hack)\n"
+                    "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Reels/Shorts (e.g., Secret, सच, Mistake, Free, Shocking, Reality, Truth, Hack)\n"
                     "- best_colors: object with 'text' (array of 4-5 hex codes — best: Yellow #FFD700, White #FFFFFF, Red #FF0000, Orange #FF6600) and 'stroke' (hex code for outline, usually black)\n"
-                    "- text_rules: string summarizing best practices for Shorts thumbnail text — max 4-5 words, Hinglish performs best, include numbers/prices, create curiosity/urgency (max 2 sentences)\n"
-                    "- layout: string summarizing layout rules for 9:16 Shorts thumbnails — face on one side text on other, rule of thirds, safe zone 15%-45% from top (max 2 sentences)\n"
-                    "- patterns: string summarizing top-performing Shorts thumbnail patterns in Indian business YouTube — what makes viewers stop scrolling (max 3 sentences)\n"
-                    "- example_texts: array of 10 example Shorts thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics. Each must be a different approach — don't give variations of the same idea.\n"
+                    "- text_rules: string summarizing best practices for Reels thumbnail text — max 3-4 words, Hinglish performs best, include numbers/prices, create curiosity/urgency (max 2 sentences)\n"
+                    "- layout: string summarizing layout rules for 9:16 Reels thumbnails — face on one side text on other, rule of thirds, safe zone 15%-45% from top (max 2 sentences)\n"
+                    "- patterns: string summarizing top-performing thumbnail patterns in Indian business Instagram/YouTube — what makes viewers stop scrolling (max 3 sentences)\n"
+                    "- example_texts: array of 10 example thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics. Each must be a different approach — don't give variations of the same idea.\n"
+                    "- ig_patterns: string summarizing what thumbnail text/design patterns correlate with high saves and shares on Instagram specifically (max 3 sentences)\n"
                 )
             }],
         )
@@ -878,7 +894,7 @@ def refresh_thumbnail_research(claude_client):
 
 def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
                              source_insights=None, audience_qs=None, cost_tracker=None,
-                             frame_image=None):
+                             frame_image=None, ig_summary=None):
     """Generate a detailed thumbnail brief using Claude Opus (with vision if frame provided).
     Claude sees the reference image and generates a full descriptive brief that Gemini can execute.
     Returns a dict with 'brief_text' (full brief for Gemini) and structured fields for logging."""
@@ -895,9 +911,25 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     if audience_qs:
         yt_context += f"\nREAL AUDIENCE QUESTIONS (what viewers actually care about — use to make thumbnail text resonate):\n{audience_qs}\n"
 
+    # Build Instagram context (PRIMARY channel)
+    ig_context = ""
+    if ig_summary and ig_summary.get("total_reels_analyzed", 0) > 0:
+        ig_context = (
+            "\nINSTAGRAM PERFORMANCE DATA (PRIMARY CHANNEL — optimize thumbnail for this):\n"
+            f"Top Reels by views: {_json.dumps(ig_summary.get('top_reels', [])[:5], ensure_ascii=False)}\n"
+            f"Highest save-rate Reels (viewers SAVED these = high quality): {_json.dumps(ig_summary.get('top_by_saves', [])[:3], ensure_ascii=False)}\n"
+            f"Highest share-rate Reels (viewers SHARED these = viral): {_json.dumps(ig_summary.get('top_by_shares', [])[:3], ensure_ascii=False)}\n"
+            f"Avg save rate: {ig_summary.get('avg_metrics', {}).get('avg_save_rate', 'N/A')} | Avg share rate: {ig_summary.get('avg_metrics', {}).get('avg_share_rate', 'N/A')}\n"
+            "\nINSTAGRAM-FIRST THUMBNAIL STRATEGY:\n"
+            "- Thumbnails appear as Reel covers on Instagram profile grid and Explore page\n"
+            "- High save-rate content = thumbnails promising LASTING VALUE (tips, secrets, methods)\n"
+            "- High share-rate content = thumbnails triggering SOCIAL SHARING ('my friend needs this')\n"
+            "- Design the thumbnail text to maximize saves + shares on Instagram\n"
+        )
+
     prompt_text = (
-        "You are a YouTube content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
-        "Your job is to research what's performing well on YouTube India and generate high-CTR thumbnail text and design briefs.\n\n"
+        "You are a content strategist for an Indian wholesale bulk plain t-shirt business (Sale91.com). "
+        "Your job is to generate high-CTR thumbnail text and design briefs optimized for Instagram Reels (primary) and YouTube Shorts.\n\n"
         "BUSINESS CONTEXT:\n"
         "- Business: Wholesale/bulk plain t-shirts, B2B sales in India\n"
         "- Target audience: Small business owners, retailers, resellers, bulk buyers in India\n"
@@ -905,6 +937,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "- Format: Always Reel 9:16 (YouTube Shorts / Instagram Reels)\n\n"
         f"RESEARCH PATTERNS (what works in this niche):\n{research_context}\n\n"
         f"{yt_context}\n"
+        f"{ig_context}\n"
         "TASK:\n"
         "You are given a reference image (the base frame for the thumbnail) along with the video topic, hook, and script. "
         "Generate a DETAILED thumbnail brief that a designer (Gemini) will use to place text on this exact image.\n\n"
@@ -1068,10 +1101,12 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         # Step 3: Generate detailed thumbnail brief via Claude (with frame image for vision)
         source_insights = get_source_channel_top_topics(5)
         audience_qs = get_audience_questions(5)
+        _ig_brief = get_ig_engagement_summary()
         brief = generate_thumbnail_brief(
             claude_client, script_text, hook_text, topic, research,
             source_insights=source_insights, audience_qs=audience_qs,
-            cost_tracker=cost_tracker, frame_image=frame_image
+            cost_tracker=cost_tracker, frame_image=frame_image,
+            ig_summary=_ig_brief
         )
         if not brief:
             print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
@@ -2399,6 +2434,81 @@ def get_top_performing_ig_categories():
         return []
 
 
+def get_ig_engagement_summary():
+    """Rich Instagram engagement analytics — the PRIMARY feedback signal for content decisions.
+    Returns a dict with top Reels, save/share rates, averages, and quality/viral title lists.
+    All downstream functions (thumbnail, title, script, topic) consume this single summary."""
+    empty = {"total_reels_analyzed": 0, "top_reels": [], "top_by_saves": [],
+             "top_by_shares": [], "avg_metrics": {}, "high_quality_titles": [], "viral_titles": []}
+    if not os.path.exists(IG_ENGAGEMENT_FILE):
+        return empty
+    try:
+        with open(IG_ENGAGEMENT_FILE, "r") as f:
+            records = json.load(f)
+        checked = [r for r in records if r.get("checked")]
+        if not checked:
+            return empty
+
+        # Compute derived rates for each record
+        for r in checked:
+            views = max(r.get("views", 0), 1)  # avoid div by zero
+            r["save_rate"] = round(r.get("saves", 0) / views, 4)
+            r["share_rate"] = round(r.get("shares", 0) / views, 4)
+            r["engagement_rate"] = round(
+                (r.get("likes", 0) + r.get("comments", 0) + r.get("shares", 0) + r.get("saves", 0)) / views, 4
+            )
+
+        # Top 5 by views
+        by_views = sorted(checked, key=lambda r: r.get("views", 0), reverse=True)
+        top_reels = [{
+            "title": r.get("title", ""), "views": r.get("views", 0),
+            "saves": r.get("saves", 0), "shares": r.get("shares", 0),
+            "save_rate": r.get("save_rate", 0), "share_rate": r.get("share_rate", 0),
+        } for r in by_views[:5]]
+
+        # Top by save rate (min 100 views to avoid noise)
+        qualified = [r for r in checked if r.get("views", 0) >= 100]
+        top_by_saves = sorted(qualified, key=lambda r: r.get("save_rate", 0), reverse=True)[:5]
+        top_by_saves = [{"title": r.get("title", ""), "save_rate": r["save_rate"],
+                         "views": r.get("views", 0), "saves": r.get("saves", 0)} for r in top_by_saves]
+
+        # Top by share rate (min 100 views)
+        top_by_shares = sorted(qualified, key=lambda r: r.get("share_rate", 0), reverse=True)[:5]
+        top_by_shares = [{"title": r.get("title", ""), "share_rate": r["share_rate"],
+                          "views": r.get("views", 0), "shares": r.get("shares", 0)} for r in top_by_shares]
+
+        # Averages
+        n = len(checked)
+        avg_metrics = {
+            "avg_views": round(sum(r.get("views", 0) for r in checked) / n),
+            "avg_likes": round(sum(r.get("likes", 0) for r in checked) / n, 1),
+            "avg_saves": round(sum(r.get("saves", 0) for r in checked) / n, 1),
+            "avg_shares": round(sum(r.get("shares", 0) for r in checked) / n, 1),
+            "avg_save_rate": round(sum(r.get("save_rate", 0) for r in checked) / n, 4),
+            "avg_share_rate": round(sum(r.get("share_rate", 0) for r in checked) / n, 4),
+        }
+
+        # High quality titles (save_rate above average)
+        avg_sr = avg_metrics["avg_save_rate"]
+        high_quality_titles = [r.get("title", "") for r in checked if r.get("save_rate", 0) > avg_sr]
+
+        # Viral titles (share_rate above average)
+        avg_shr = avg_metrics["avg_share_rate"]
+        viral_titles = [r.get("title", "") for r in checked if r.get("share_rate", 0) > avg_shr]
+
+        return {
+            "total_reels_analyzed": n,
+            "top_reels": top_reels,
+            "top_by_saves": top_by_saves,
+            "top_by_shares": top_by_shares,
+            "avg_metrics": avg_metrics,
+            "high_quality_titles": high_quality_titles,
+            "viral_titles": viral_titles,
+        }
+    except Exception:
+        return empty
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # SOURCE CHANNEL INSIGHTS (read-only from existing 50K channel)
 # ═══════════════════════════════════════════════════════════════════════
@@ -2741,6 +2851,22 @@ def _get_recent_clip_prompts():
         return "No history yet."
 
 
+def _get_ig_deep_context():
+    """Build rich Instagram context string for prompts. Used by script, title, thumbnail."""
+    ig = get_ig_engagement_summary()
+    if ig.get("total_reels_analyzed", 0) == 0:
+        return ""
+    avg = ig.get("avg_metrics", {})
+    lines = [
+        f"Reels analyzed: {ig['total_reels_analyzed']} | Avg views: {avg.get('avg_views', 'N/A')} | Avg saves: {avg.get('avg_saves', 'N/A')} | Avg shares: {avg.get('avg_shares', 'N/A')}",
+    ]
+    if ig.get("high_quality_titles"):
+        lines.append(f"High-quality Reels (viewers SAVED these = lasting value): {json.dumps(ig['high_quality_titles'][:5], ensure_ascii=False)}")
+    if ig.get("viral_titles"):
+        lines.append(f"Viral Reels (viewers SHARED these = social spread): {json.dumps(ig['viral_titles'][:5], ensure_ascii=False)}")
+    return "\n".join(lines)
+
+
 def get_script_prompt(topic):
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
@@ -2757,9 +2883,11 @@ These are PROVEN top-performing video titles from our existing audience — use 
 what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
 {json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
 
-━━━ INSTAGRAM INSIGHTS (what works on Reels) ━━━
+━━━ INSTAGRAM INSIGHTS — PRIMARY CHANNEL (optimize for this) ━━━
 {("Top performing Reels titles (by views): " + json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False)) if get_top_performing_ig_topics(5) else "No Instagram data yet — will learn from Reel performance over time."}
-Note: Instagram audience may prefer different styles/hooks than YouTube. Consider what works on both platforms.
+{_get_ig_deep_context()}
+Instagram is our PRIMARY distribution channel with higher reach than YouTube.
+Optimize script to maximize SAVES (= lasting value) and SHARES (= "my friend needs this") on Instagram.
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -2953,7 +3081,7 @@ The 5 clips should follow the story arc:
 OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
-    "description": "YouTube description in English with 6-8 hashtags. Include Sale91.com link.",
+    "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
     "script_voice": "The ROMAN HINGLISH script. 8-12 sentences for 45-55 seconds. NO website. NO selling. Pure knowledge with storytelling.",
     "script_english": "Clean English translation for on-screen subtitles",
     "hook_text": "Max 4 words, UPPERCASE, punchy curiosity-driven text for on-screen hook overlay",
@@ -3775,23 +3903,25 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
                 top_cats = get_top_performing_categories()
                 cat_source = "own channel (fallback)"
 
-        # Blend Instagram insights — boost categories that perform on IG too
+        # Instagram is PRIMARY channel — use IG categories as base ranking
         ig_cats = get_top_performing_ig_categories()
         if ig_cats:
-            # Categories that perform well on BOTH platforms get priority
+            yt_cats = list(top_cats)  # save YouTube ranking
+            top_cats = list(ig_cats)  # IG is the base ranking
+            # Boost categories that perform on BOTH platforms to the top
             combined_cats = []
             for cat in top_cats:
-                if cat in ig_cats:
-                    combined_cats.insert(0, cat)  # Boost cross-platform winners
+                if cat in yt_cats:
+                    combined_cats.insert(0, cat)  # Cross-platform winners first
                 else:
                     combined_cats.append(cat)
-            # Add IG-only winners that YouTube data missed
-            for cat in ig_cats:
+            # Add YouTube-only categories at the end
+            for cat in yt_cats:
                 if cat not in combined_cats:
                     combined_cats.append(cat)
             top_cats = combined_cats
-            cat_source += " + Instagram"
-            print(f"   📸 IG top categories: {', '.join(ig_cats[:3])}")
+            cat_source = f"Instagram (primary) + {cat_source}"
+            print(f"   📸 IG top categories (primary): {', '.join(ig_cats[:3])}")
 
         if top_cats:
             # Sort unused topics: ones matching top categories come first
@@ -3867,7 +3997,7 @@ Return ONLY the topic text, nothing else."""}]
     return best_topic
 
 
-def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
+def review_script(claude_client, script_voice, script_english, topic, video_prompts=None, ig_summary=None):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, score: int, weakest: str, feedback: str)."""
 
@@ -3876,11 +4006,16 @@ def review_script(claude_client, script_voice, script_english, topic, video_prom
         prompts_list = "\n".join(f"  Clip {i+1}: {p}" for i, p in enumerate(video_prompts) if p.strip())
         prompts_section = f"\nVEO VIDEO PROMPTS:\n{prompts_list}\n"
 
-    review_prompt = f"""You are a YouTube Shorts content reviewer for an Indian B2B t-shirt brand.
+    ig_quality_context = ""
+    if ig_summary and ig_summary.get("high_quality_titles"):
+        ig_quality_context = f"\n   Reference: These Reels had the highest save rates on our Instagram: {json.dumps(ig_summary['high_quality_titles'][:3], ensure_ascii=False)}"
+
+    review_prompt = f"""You are a YouTube Shorts + Instagram Reels content reviewer for an Indian B2B t-shirt brand.
 Review this script and decide: is this GOOD ENOUGH to publish?
 
 Remember: this is B2B educational content for printing businesses, NOT entertainment/clickbait.
 A factory owner explaining something practical IS valuable — don't expect Bollywood drama.
+Instagram is our PRIMARY channel — optimize for saves and shares there.
 
 TOPIC: {topic}
 HINDI SCRIPT: {script_voice}
@@ -3903,16 +4038,19 @@ Score each (1-10):
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
-6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
+6. INSTAGRAM SAVE/SHARE POTENTIAL — Would an Indian printing business owner SAVE this Reel to watch again, or SHARE it with a friend?
+   Bad: generic info available everywhere. Good: specific actionable tip they'll need to reference later, or a mistake so common they'll want to warn others.{ig_quality_context}
+
+7. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
    Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
    Good: prompts that show the EXACT scenario being discussed — the specific fabric, the specific test, the specific machine, the specific problem from the script.
    If no video prompts provided, score 6 (neutral).
 
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "total_score": sum_of_7_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve if total_score >= 36 (out of 60)
+- Approve if total_score >= 42 (out of 70)
 - REJECT only if ANY single score is below 4
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
@@ -3938,18 +4076,30 @@ RULES:
         return True, 0, "", "review error"
 
 
-def optimize_title(claude_client, original_title, script_english, topic):
+def optimize_title(claude_client, original_title, script_english, topic, ig_summary=None):
     """Generate 3 title variants and pick the best one for CTR.
-    Uses source channel's top titles as reference for what works."""
+    Uses source channel's top titles + Instagram engagement data as reference."""
     print(f"   🏷️ Title optimization: generating A/B variants...")
 
     source_titles = get_source_channel_top_topics(5)
     source_context = ""
     if source_titles:
         source_context = f"""
-REFERENCE: These titles got the MOST views on our main channel (50K subs):
+REFERENCE (YouTube): These titles got the MOST views on our main channel (50K subs):
 {json.dumps(source_titles, ensure_ascii=False)}
 Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
+
+    ig_context = ""
+    if ig_summary and ig_summary.get("total_reels_analyzed", 0) > 0:
+        ig_top = ig_summary.get("top_reels", [])
+        ig_viral = ig_summary.get("viral_titles", [])
+        ig_quality = ig_summary.get("high_quality_titles", [])
+        ig_context = f"""
+REFERENCE (Instagram — PRIMARY CHANNEL):
+Top Reels by views: {json.dumps([r.get('title','') for r in ig_top[:5]], ensure_ascii=False)}
+Most SHARED Reels (viral — viewers spread these): {json.dumps(ig_viral[:5], ensure_ascii=False)}
+Most SAVED Reels (high quality — viewers bookmark these): {json.dumps(ig_quality[:5], ensure_ascii=False)}
+Study these Instagram title patterns — what language, emotion, and structure drives saves and shares."""
 
     prompt = f"""You are a YouTube Shorts + Instagram Reels title optimizer and JUDGE for an Indian B2B t-shirt brand.
 
@@ -3957,6 +4107,7 @@ CURRENT TITLE: {original_title}
 TOPIC: {topic}
 SCRIPT SUMMARY: {script_english[:200]}
 {source_context}
+{ig_context}
 
 Generate 3 alternative titles. Each must be:
 - Max 70 characters (YouTube Shorts limit for mobile visibility)
@@ -3965,9 +4116,9 @@ Generate 3 alternative titles. Each must be:
 - English (for broader reach + SEO, but Hinglish words OK if they add punch)
 - Work on BOTH YouTube Shorts AND Instagram Reels (same title used on both platforms)
 
-PLATFORM-SPECIFIC CTR FACTORS:
-- YouTube: Search discoverability matters — include keywords people search for
-- Instagram: Explore page + hashtag reach matters — emotional hooks, curiosity, trending phrases
+PLATFORM PRIORITY (Instagram is PRIMARY):
+- Instagram: Explore page + hashtag reach matters — emotional hooks, curiosity, trending phrases. THIS IS OUR MAIN CHANNEL.
+- YouTube: Search discoverability matters — include keywords people search for. SECONDARY.
 - BOTH: Mobile-first (70 char max), number/price reveals get clicks, controversy/mistakes format works
 
 TITLE STYLES TO TRY:
@@ -5932,6 +6083,7 @@ def main():
     print(f"   📌 Topic: {fresh_topic}")
 
     # ── 3. Generate Script (with quality gate) ──
+    ig_summary = get_ig_engagement_summary()  # Load once, reuse for review_script + optimize_title
     data = None
     candidate = None  # Track last valid candidate (may be None if all JSON parses fail)
     previous_feedback = ""  # Pass rejection reasons to next attempt
@@ -5990,7 +6142,7 @@ def main():
 
         # Quality gate: Claude reviews its own script + video prompts alignment
         candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
-        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts)
+        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts, ig_summary=ig_summary)
 
         if approved:
             print(f"   ✅ Script APPROVED (score: {score}/60) — {feedback}")
@@ -6019,7 +6171,7 @@ def main():
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
 
     script_english = data["script_english"]
-    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic)
+    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic, ig_summary=ig_summary)
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
