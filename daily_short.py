@@ -104,6 +104,9 @@ SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 # Single Veo test: generate only 1 real Veo clip (clip #1), remaining 4 use blank placeholders.
 # Full pipeline runs (upload, Instagram etc.) — saves ~80% Veo cost while testing end-to-end.
 SINGLE_VEO_TEST = os.environ.get("SINGLE_VEO_TEST", "").strip() in ("1", "true", "yes")
+# New Test Mode: skip Veo clips (placeholders) but run full pipeline (upload, Instagram, blog, etc.)
+# Same as main production flow minus the expensive video generation.
+NEW_TEST_MODE = os.environ.get("NEW_TEST_MODE", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -521,6 +524,7 @@ def sanitize_tags(tags):
     - No angle brackets < >, no commas (used as internal separator)
     - Individual tag max ~100 chars, total of all tags max 500 chars
     - No leading/trailing whitespace
+    - Only allows: letters (any script), digits, spaces, hyphens, ampersands
     """
     import re as _re
     cleaned = []
@@ -529,10 +533,12 @@ def sanitize_tags(tags):
     for tag in tags:
         if not isinstance(tag, str):
             tag = str(tag)
-        # Strip whitespace and remove problematic characters
+        # Strip whitespace and remove ALL problematic characters
         tag = tag.strip()
-        tag = _re.sub(r'[<>",]', '', tag)          # Remove < > " ,
+        # Keep only: word chars (letters/digits/underscore in any script), spaces, hyphens, ampersands, apostrophes
+        tag = _re.sub(r'[^\w\s\-&\']', '', tag)
         tag = _re.sub(r'\s+', ' ', tag)             # Collapse multiple spaces
+        tag = tag.strip()
         tag = tag[:100]                              # Individual tag limit
         if not tag or tag.lower() in seen:
             continue
@@ -756,16 +762,26 @@ def upload_thumbnail(youtube, video_id, thumbnail_path):
     if file_size < 1000:
         print(f"   ❌ Thumbnail file too small ({file_size} bytes), skipping upload")
         return False
+    print(f"   🖼️ Uploading thumbnail: {thumbnail_path} ({file_size:,} bytes) for video {video_id}")
     from googleapiclient.http import MediaFileUpload
-    try:
-        media = MediaFileUpload(thumbnail_path, mimetype="image/png")
-        youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
-        print(f"   🖼️ Custom thumbnail uploaded for {video_id}")
-        return True
-    except Exception as e:
-        print(f"   ⚠️ Thumbnail upload failed: {e}")
-        print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
-        return False
+    import time as _time
+    # Retry up to 3 times with delay — YouTube may need time to process the video
+    for attempt in range(1, 4):
+        try:
+            media = MediaFileUpload(thumbnail_path, mimetype="image/png", resumable=True)
+            response = youtube.thumbnails().set(videoId=video_id, media_body=media).execute()
+            print(f"   🖼️ Custom thumbnail uploaded for {video_id} (attempt {attempt})")
+            print(f"   📋 Thumbnail API response: {response}")
+            return True
+        except Exception as e:
+            print(f"   ⚠️ Thumbnail upload attempt {attempt}/3 failed: {e}")
+            if attempt < 3:
+                wait = attempt * 10  # 10s, 20s
+                print(f"   ⏳ Waiting {wait}s before retry (YouTube may need time to process video)...")
+                _time.sleep(wait)
+    print(f"   ❌ Thumbnail upload failed after 3 attempts")
+    print(f"   ℹ️ Note: Thumbnail upload requires YouTube channel verification")
+    return False
 
 
 def refresh_thumbnail_research(claude_client):
@@ -3211,6 +3227,7 @@ Custom printing businesses | Merch brands | Corporate orders
         if t not in [x.lower() for x in all_tags]:
             all_tags.append(t)
     all_tags = sanitize_tags(all_tags[:30])
+    print(f"   🏷️  Tags ({len(all_tags)}): {all_tags[:5]}{'...' if len(all_tags) > 5 else ''}")
 
     body = {
         "snippet": {
@@ -5777,6 +5794,8 @@ def main():
         print("   🧪 SINGLE VEO TEST — 1 real clip + 4 blank, full upload pipeline")
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
+    elif NEW_TEST_MODE:
+        print("   🧪 NEW TEST MODE — placeholder clips, full pipeline (upload + Instagram + blog)")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
 
     # ── Feature Dashboard ──
@@ -5791,6 +5810,7 @@ def main():
     print(f"   ║ Test Mode             : {'ON (free run)' if TEST_MODE else 'OFF (production)':>25} ║")
     print(f"   ║ Skip Clips            : {'ON (placeholders)' if SKIP_CLIPS else 'OFF (Veo clips)':>25} ║")
     print(f"   ║ Single Veo Test       : {'ON (1 real + 4 blank)' if SINGLE_VEO_TEST else 'OFF':>25} ║")
+    print(f"   ║ New Test Mode         : {'ON (no Veo, full upload)' if NEW_TEST_MODE else 'OFF':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── CONTENT INTELLIGENCE ──                        ║")
     print(f"   ║ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>25} ║")
@@ -6090,9 +6110,9 @@ def main():
     kling_clips = 0  # Track Kling fallback clips across all modes
     veo_clips_count = 0
 
-    if TEST_MODE or SKIP_CLIPS:
+    if TEST_MODE or SKIP_CLIPS or NEW_TEST_MODE:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
-        label = "TEST MODE" if TEST_MODE else "SKIP CLIPS"
+        label = "TEST MODE" if TEST_MODE else ("NEW TEST MODE" if NEW_TEST_MODE else "SKIP CLIPS")
         print(f"   🧪 {label}: Skipping Veo clips, using placeholder video...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
@@ -6336,7 +6356,7 @@ def main():
         print("❌ No clips generated. Stopping.")
         return
 
-    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST:
+    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
         veo_count = got - kling_clips
@@ -6770,13 +6790,11 @@ def main():
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 
                 if vid_id and vid_id != "?":
-                    # Upload custom thumbnail
-                    if thumbnail_path:
-                        upload_thumbnail(youtube, vid_id, thumbnail_path)
-
                     # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
                     # Scheduled videos are private — YouTube blocks comments on private videos.
                     # Temporarily switch to unlisted, post comment, then restore scheduled state.
+                    # Also upload thumbnail AFTER switching to unlisted — YouTube Shorts
+                    # may ignore custom thumbnails set on private/scheduled videos.
                     original_publish_at = None
                     switched_to_unlisted = False
                     if SCHEDULE_PUBLISH:
@@ -6793,6 +6811,10 @@ def main():
                             print("   🔓 Temporarily set to unlisted for commenting...")
                         except Exception as e:
                             print(f"   ⚠️ Could not switch to unlisted: {e}")
+
+                    # Upload custom thumbnail (after switching to unlisted if scheduled)
+                    if thumbnail_path:
+                        upload_thumbnail(youtube, vid_id, thumbnail_path)
 
                     print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                     time.sleep(30)

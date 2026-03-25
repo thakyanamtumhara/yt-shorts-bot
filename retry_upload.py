@@ -60,8 +60,10 @@ def sanitize_tags(tags):
         if not isinstance(tag, str):
             tag = str(tag)
         tag = tag.strip()
-        tag = re.sub(r'[<>",]', '', tag)
+        # Keep only: word chars (letters/digits/underscore in any script), spaces, hyphens, ampersands, apostrophes
+        tag = re.sub(r'[^\w\s\-&\']', '', tag)
         tag = re.sub(r'\s+', ' ', tag)
+        tag = tag.strip()
         tag = tag[:100]
         if not tag or tag.lower() in seen:
             continue
