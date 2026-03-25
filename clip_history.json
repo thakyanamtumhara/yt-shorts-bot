@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Puff print trending hai — 3D effect ke liye kaunsa fabric best hai",
-    "prompts": [
-      "Close-up shot of a white cotton t-shirt laid flat on a wooden table surface with visible cracked and peeling puff print design on the chest area, the print shows obvious damage with lifted edges and broken texture, harsh natural daylight coming from window on left side, camera slowly pushes in to reveal the damaged print details, realistic textile workshop environment",
-      "Medium shot of a clean workspace desk with two white plain cotton round-neck t-shirts placed side by side, left t-shirt is noticeably thinner and lighter weight, right t-shirt appears thicker and heavier fabric, both are folded identically to show thickness comparison, warm overhead LED lighting, slight camera tilt down from 45 degree angle",
-      "Extreme close-up shot of thick glossy puff printing ink being applied on white cotton fabric surface using a screen printing squeegee tool, the raised 3D texture of the puff ink is clearly visible with light reflecting off the wet surface, hand wearing black nitrile glove holding squeegee moves from left to right, bright workshop lighting from above",
-      "Medium overhead shot of Indian man's hands holding a thick 220 GSM white cotton t-shirt and stretching it gently to demonstrate the fabric weight and stability, the fabric shows resistance and firmness, hands rotate the t-shirt to show different angles, natural indoor lighting with soft shadows, clean white background surface below",
-      "Close-up shot of a premium white cotton t-shirt with perfect glossy puff print logo on chest area, the 3D raised texture is intact and smooth with no cracks, Indian man's hands gently touch and press the puff print to show its durability and quality finish, warm studio lighting highlighting the dimensional effect, camera slowly dollies back to reveal full garment"
-    ],
-    "date": "2026-02-26T17:18:44.686630"
-  },
-  {
     "topic": "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a crumpled, slightly shrunken white cotton t-shirt with visible DTG print that appears faded and cracked, examining it with disappointment, placed on a clean wooden table surface, warm natural daylight from window, shallow depth of field focusing on the damaged fabric texture, camera slowly pushes in to show print damage detail",
@@ -328,5 +317,16 @@
       "Close-up shot of a DTG printer head moving across a pre-treated white cotton t-shirt, laying down vibrant multicolor ink in real time. The fabric shows a slight uniform sheen from pre-treatment. Camera positioned at a low angle looking across the print bed, warm workshop lighting with the printer mechanism in sharp focus. Vertical 9:16, action visible from first frame."
     ],
     "date": "2026-03-24T12:54:02.021891"
+  },
+  {
+    "topic": "Henley collar tshirt — ye niche product hai par premium customer milta hai",
+    "prompts": [
+      "Close-up shot of a plain white round-neck t-shirt lying flat on a dark wooden table next to a rupee price tag showing 300, warm overhead lighting, camera slowly zooms in on the price tag suggesting low margins, vertical 9:16 format, well-lit from the start, no text on screen, no faces visible.",
+      "Close-up shot of Indian man's hands holding a plain olive green henley collar t-shirt, fingers pointing at the 3 small wooden buttons on the front placket, soft natural window lighting from the left, camera slowly pans down from the collar to the button line, vertical 9:16 format, clean background, no face visible.",
+      "Medium overhead shot of a clean white marble table showing two plain cotton t-shirts side by side — a navy blue round neck on the left and a navy blue henley collar on the right, a small handwritten cardboard sign between them showing price numbers, warm studio lighting, slight camera dolly forward, vertical 9:16 format, no faces, no text overlays.",
+      "Close-up shot of Indian man's hands operating a small DTG printing machine pressing a colorful design onto a plain beige henley collar t-shirt, steam rising slightly from the press, bright workshop fluorescent lighting, camera angle slightly from the side showing the machine pressing down, vertical 9:16 format, no face visible, realistic Indian workshop setting.",
+      "Medium shot of a neatly folded stack of 5 printed henley collar t-shirts in assorted colors (black, white, olive, maroon, beige) arranged on a clean wooden shelf, each showing the button placket detail, warm golden hour lighting from a nearby window, slow camera tilt upward revealing all five shirts, vertical 9:16 format, no faces, satisfying display arrangement."
+    ],
+    "date": "2026-03-25T02:53:15.895751"
   }
 ]
