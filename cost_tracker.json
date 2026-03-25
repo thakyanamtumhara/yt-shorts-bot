@@ -622,5 +622,22 @@
       "whisper": 0.0073,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-03-25T13:15:57.563210",
+    "topic": "Naya printing business start karna hai? 3 galtiyan mat kariyega",
+    "title": "He Bought 1000 T-Shirts & Shut Down in 2 Months",
+    "total_usd": 3.1908,
+    "duration_min": 27.3,
+    "breakdown": {
+      "claude_opus": 0.2867,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0307,
+      "veo_clips": 2.5,
+      "whisper": 0.0073,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.196
+    }
   }
 ]
