@@ -104,6 +104,9 @@ SKIP_CLIPS = os.environ.get("SKIP_CLIPS", "").strip() in ("1", "true", "yes")
 # Single Veo test: generate only 1 real Veo clip (clip #1), remaining 4 use blank placeholders.
 # Full pipeline runs (upload, Instagram etc.) — saves ~80% Veo cost while testing end-to-end.
 SINGLE_VEO_TEST = os.environ.get("SINGLE_VEO_TEST", "").strip() in ("1", "true", "yes")
+# New Test Mode: skip Veo clips (placeholders) but run full pipeline (upload, Instagram, blog, etc.)
+# Same as main production flow minus the expensive video generation.
+NEW_TEST_MODE = os.environ.get("NEW_TEST_MODE", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 3
@@ -5781,6 +5784,8 @@ def main():
         print("   🧪 SINGLE VEO TEST — 1 real clip + 4 blank, full upload pipeline")
     elif SKIP_CLIPS:
         print("   🧪 SKIP CLIPS — placeholder clips, but will upload to YouTube")
+    elif NEW_TEST_MODE:
+        print("   🧪 NEW TEST MODE — placeholder clips, full pipeline (upload + Instagram + blog)")
     print(f"   Time: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%d %b %Y, %I:%M %p IST')}")
 
     # ── Feature Dashboard ──
@@ -5795,6 +5800,7 @@ def main():
     print(f"   ║ Test Mode             : {'ON (free run)' if TEST_MODE else 'OFF (production)':>25} ║")
     print(f"   ║ Skip Clips            : {'ON (placeholders)' if SKIP_CLIPS else 'OFF (Veo clips)':>25} ║")
     print(f"   ║ Single Veo Test       : {'ON (1 real + 4 blank)' if SINGLE_VEO_TEST else 'OFF':>25} ║")
+    print(f"   ║ New Test Mode         : {'ON (no Veo, full upload)' if NEW_TEST_MODE else 'OFF':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── CONTENT INTELLIGENCE ──                        ║")
     print(f"   ║ Source Channel Data    : {'ON' if SOURCE_CHANNEL_ID else 'OFF (no CHANNEL_ID_2)':>25} ║")
@@ -6094,9 +6100,9 @@ def main():
     kling_clips = 0  # Track Kling fallback clips across all modes
     veo_clips_count = 0
 
-    if TEST_MODE or SKIP_CLIPS:
+    if TEST_MODE or SKIP_CLIPS or NEW_TEST_MODE:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
-        label = "TEST MODE" if TEST_MODE else "SKIP CLIPS"
+        label = "TEST MODE" if TEST_MODE else ("NEW TEST MODE" if NEW_TEST_MODE else "SKIP CLIPS")
         print(f"   🧪 {label}: Skipping Veo clips, using placeholder video...")
         for i in range(VEO_CLIPS_PER_VIDEO):
             placeholder_path = f"{WORK_DIR}/test_clip_{i}.mp4"
@@ -6340,7 +6346,7 @@ def main():
         print("❌ No clips generated. Stopping.")
         return
 
-    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST:
+    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
         veo_count = got - kling_clips

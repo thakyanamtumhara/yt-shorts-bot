@@ -20,6 +20,11 @@ on:
         required: false
         type: boolean
         default: false
+      new_test_mode:
+        description: 'New Test Mode (skip Veo clips, but run full pipeline — upload + Instagram + blog)'
+        required: false
+        type: boolean
+        default: false
       test_thumbnail:
         description: 'Test AI thumbnail only (no video/upload — just generates thumbnail and saves as artifact)'
         required: false
@@ -100,6 +105,7 @@ jobs:
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
+          NEW_TEST_MODE: ${{ github.event.inputs.new_test_mode }}
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
