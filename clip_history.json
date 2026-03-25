@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: 100% cotton best hai — kuch cases mein blend better hota hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two white round-neck t-shirts side by side against a neutral gray background, one slightly stretched out of shape on the left and one perfectly shaped on the right, bright even studio lighting, camera slowly pushes in to show the difference in fabric drape and shape retention, vertical 9:16 format, realistic textile texture visible",
-      "Medium overhead shot of a clean wooden workspace table with a stretched-out white cotton t-shirt laid flat showing visible deformation around the neckline and shoulder area, a measuring tape placed across the chest showing increased width measurement, warm indoor lighting casting soft shadows, camera tilts slightly to reveal the distortion clearly, vertical 9:16 composition",
-      "Close-up shot of Indian man's hands stretching two different t-shirt fabric samples horizontally with both hands pulling opposite ends, the left sample is pure white cotton showing less recovery, the right sample is light gray cotton-polyester blend bouncing back to shape, bright diffused lighting highlighting the fabric behavior, camera angle from above at 45 degrees, vertical format",
-      "Medium shot of a fabric testing setup on a white surface with two t-shirt collars placed side by side, left collar is 100% cotton tag visible showing slight looseness, right collar is blend fabric tag visible maintaining tight ribbing structure, Indian man's hands gently pulling each collar to demonstrate stretch recovery, clean workshop lighting, camera steady focus on the collar comparison, vertical 9:16",
-      "Close-up shot of Indian man's hands folding a perfectly shaped light gray cotton-polyester blend t-shirt on a clean white surface, the fabric showing excellent drape and no visible stretching or deformation, soft natural window lighting from the side creating subtle highlights on the smooth fabric texture, camera slowly dollies back to reveal the neatly folded finished product, vertical composition, satisfying and clean visual"
-    ],
-    "date": "2026-02-27T12:42:09.647247"
-  },
-  {
     "topic": "Supima cotton vs regular combed cotton — touch karke pata chal jayega",
     "prompts": [
       "Close-up shot of two plain white cotton round-neck t-shirts laid side by side on a clean wooden table surface, left one labeled with small paper tag 'Supima', right one labeled 'Regular Combed', natural daylight from window, slight camera push-in movement, vertical 9:16 format, sharp focus on fabric texture difference, no faces visible, Indian manufacturing setting background slightly blurred",
@@ -319,14 +308,25 @@
     "date": "2026-03-25T02:53:15.895751"
   },
   {
-    "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
+    "topic": "Vinyl cut vs DTF — small orders ke liye kaunsa sasta padega",
     "prompts": [
-      "Close-up shot of Indian man's hands frantically tapping on a basic calculator placed on a messy desk covered with crumpled invoices, scattered plain t-shirts in various colors, and a worn-out notebook with handwritten price calculations, warm yellowish indoor bulb lighting, camera slowly pushing in, vertical 9:16 format, 8 seconds.",
-      "Medium shot of a small Indian printing workshop showing a screen printing setup with squeegees and ink containers on the left, and a stack of about 30 neatly folded plain white t-shirts on the right side of a steel table, fluorescent tube lighting from above casting even light, camera slowly panning from the printing setup to the t-shirt stack, vertical 9:16 format, 8 seconds.",
-      "Top-down overhead shot of a clean wooden table split into two distinct sides — left side shows a single premium plain black t-shirt with a small retail price tag next to it and a few coins, right side shows a large bundle of about 50 plain black t-shirts wrapped in polythene with a printed wholesale invoice on top, bright natural daylight from a window, camera static with slight zoom out to reveal both sides, vertical 9:16 format, 8 seconds.",
-      "Close-up shot of Indian man's hands writing on a white notebook page with a blue pen, creating two columns labeled with numbers — one column showing smaller numbers like 1, 5, 10 with higher prices next to them, another column showing larger numbers like 100, 500, 1000 with lower prices, a plain grey t-shirt visible in the background on the desk, soft warm desk lamp lighting, camera slowly dollying forward, vertical 9:16 format, 8 seconds.",
-      "Medium shot of a well-organized Indian textile storage shelf showing neatly stacked bundles of plain t-shirts in multiple colors sorted in rows — white, black, navy, maroon, olive — each bundle wrapped cleanly in transparent polythene, a clipboard with a printed price list hanging on the shelf edge, bright even warehouse LED lighting, camera slowly tracking sideways along the shelf revealing more colors, vertical 9:16 format, 8 seconds."
+      "Close-up shot of Indian man's hands holding a calculator and a small invoice paper on a cluttered workshop desk, the calculator display shows a high number, a few printed t-shirts stacked beside the calculator, warm yellow indoor lighting, slight camera zoom in towards the calculator screen, vertical 9:16 format, scene starts fully lit and visible from frame one.",
+      "Medium close-up shot of a vinyl cutting plotter machine in action, the blade carriage moving left and right cutting a simple one-color logo design on a sheet of bright red heat transfer vinyl, the machine sits on a clean grey metal table in a small Indian print shop, fluorescent overhead lighting, camera slowly pans along the plotter from left to right, vertical 9:16 format, no faces visible.",
+      "Split-perspective overhead shot of a clean wooden work table divided into two halves — left side shows a small stack of cut vinyl pieces with a weeding tool and tweezers beside them, right side shows a DTF pet film sheet with a colorful multi-color design printed on it with white powder visible on the surface, bright even daylight from a nearby window, camera slowly dollies downward for a top-down view, vertical 9:16 format, fully lit from the first frame.",
+      "Close-up shot of Indian man's hands using a flat heat press machine, pressing down the handle firmly onto a plain white cotton round-neck t-shirt with a small vinyl-cut single-color chest logo positioned on it, steam rising slightly from the edges of the press, warm workshop lighting with slight orange tint, camera angle slightly from the side showing the press closing, vertical 9:16 format, action begins immediately.",
+      "Close-up shot of Indian man's hands holding up two plain white cotton round-neck t-shirts side by side against a clean light grey background — left shirt has a simple single-color vinyl-cut text print on the chest looking clean and sharp, right shirt has a detailed multi-color DTF print with vibrant colors, both prints clearly visible, soft diffused studio lighting, camera slowly dollies forward to show print detail, vertical 9:16 format, bright and visible from first frame."
     ],
-    "date": "2026-03-25T14:23:12.276885"
+    "date": "2026-03-25T11:39:28.062198"
+  },
+  {
+    "topic": "Naya printing business start karna hai? 3 galtiyan mat kariyega",
+    "prompts": [
+      "Medium shot of a small empty workshop room in India with a single DTG printing machine covered in a dusty cloth, a few scattered plain white t-shirts on the floor, dim natural light from a window, camera slowly panning across the abandoned space, showing a closed shutter in background, realistic and slightly gloomy atmosphere, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands pulling plain white t-shirts one by one from a large open cardboard box on a concrete floor, camera angle from above looking down, warm fluorescent tube light, the hands inspecting fabric by stretching it slightly, a stack of about 50 folded t-shirts visible beside the box, vertical 9:16 format.",
+      "Top-down overhead shot of three plain cotton round-neck t-shirts laid flat side by side on a dark grey table, each slightly different in thickness - thin on left, medium in center, thick on right, with small white paper cards placed on each showing handwritten numbers 180, 200, 220, bright even studio lighting, camera slowly dollying forward, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands using a basic calculator on a wooden desk, beside the calculator there is a small notebook with handwritten numbers and columns, a few ink cartridges, a plain black t-shirt folded nearby, and a pen, warm yellow desk lamp lighting, camera slightly tilting down to show the full desk setup, vertical 9:16 format.",
+      "Medium shot of a small but organized printing workshop corner showing a neat stack of 30-40 colorful plain t-shirts in multiple colors arranged on metal shelving, a DTG printer visible in background with a fresh white t-shirt loaded on platen, bright LED panel lighting, clean workspace, camera slowly pushing in toward the organized shelves, optimistic and professional feel, vertical 9:16 format."
+    ],
+    "date": "2026-03-25T12:49:53.636328"
   }
 ]

@@ -610,18 +610,34 @@
     }
   },
   {
-    "date": "2026-03-25T14:43:08.878540",
-    "topic": "B2B aur B2C pricing alag hoti hai \u2014 dono mat mix karo",
-    "title": "Rs 50 Rate Dono Ko? This T-Shirt Printing Mistake Kills Margin",
-    "total_usd": 0.6426,
-    "duration_min": 21.0,
+    "date": "2026-03-25T11:55:26.171010",
+    "topic": "Vinyl cut vs DTF \u2014 small orders ke liye kaunsa sasta padega",
+    "title": "DTF Print \u20b940/pc Too Expensive? Try Vinyl Cut Instead!",
+    "total_usd": 0.4222,
+    "duration_min": 16.9,
     "breakdown": {
-      "claude_opus": 0.2806,
+      "claude_opus": 0.2858,
       "replicate_music": 0.05,
-      "tts_elevenlabs": 0.0303,
-      "whisper": 0.0064,
+      "tts_elevenlabs": 0.0342,
+      "whisper": 0.0073,
+      "gemini_thumbnail": 0.045
+    }
+  },
+  {
+    "date": "2026-03-25T13:15:57.563210",
+    "topic": "Naya printing business start karna hai? 3 galtiyan mat kariyega",
+    "title": "He Bought 1000 T-Shirts & Shut Down in 2 Months",
+    "total_usd": 3.1908,
+    "duration_min": 27.3,
+    "breakdown": {
+      "claude_opus": 0.2867,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0307,
+      "veo_clips": 2.5,
+      "whisper": 0.0073,
+      "gemini_thumbnail": 0.045,
       "blog_images": 0.075,
-      "claude_sonnet": 0.2003
+      "claude_sonnet": 0.196
     }
   }
 ]
