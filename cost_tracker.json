@@ -596,35 +596,17 @@
     }
   },
   {
-    "date": "2026-03-25T09:53:53.953143",
-    "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
-    "title": "Client Returned Full Batch! This T-Shirt Washing Mistake Cost Lakhs",
-    "total_usd": 0.6284,
-    "duration_min": 13.9,
+    "date": "2026-03-25T03:04:12.339593",
+    "topic": "Henley collar tshirt \u2014 ye niche product hai par premium customer milta hai",
+    "title": "Stop Selling Round Neck T-Shirts \u2014 Try This Premium Niche",
+    "total_usd": 0.4121,
+    "duration_min": 11.8,
     "breakdown": {
-      "claude_opus": 0.2687,
+      "claude_opus": 0.2794,
       "replicate_music": 0.05,
-      "tts_elevenlabs": 0.0271,
-      "whisper": 0.0056,
-      "gemini_thumbnail": 0.045,
-      "blog_images": 0.075,
-      "claude_sonnet": 0.157
-    }
-  },
-  {
-    "date": "2026-03-25T11:17:47.942884",
-    "topic": "Customer bola print crack ho gaya \u2014 maine pucha kaunsa ink use kiya?",
-    "title": "Print Crack After 3 Washes? You Used the Wrong Ink!",
-    "total_usd": 0.6473,
-    "duration_min": 14.2,
-    "breakdown": {
-      "claude_opus": 0.2669,
-      "replicate_music": 0.05,
-      "tts_elevenlabs": 0.0272,
-      "whisper": 0.0059,
-      "gemini_thumbnail": 0.045,
-      "blog_images": 0.075,
-      "claude_sonnet": 0.1773
+      "tts_elevenlabs": 0.031,
+      "whisper": 0.0067,
+      "gemini_thumbnail": 0.045
     }
   }
 ]
