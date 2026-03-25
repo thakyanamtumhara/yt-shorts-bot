@@ -608,5 +608,19 @@
       "whisper": 0.0067,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-03-25T11:55:26.171010",
+    "topic": "Vinyl cut vs DTF \u2014 small orders ke liye kaunsa sasta padega",
+    "title": "DTF Print \u20b940/pc Too Expensive? Try Vinyl Cut Instead!",
+    "total_usd": 0.4222,
+    "duration_min": 16.9,
+    "breakdown": {
+      "claude_opus": 0.2858,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0342,
+      "whisper": 0.0073,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]

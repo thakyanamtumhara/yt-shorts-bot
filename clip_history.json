@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: Washing instructions koi nahi padhta — par return isi se hota hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a crumpled, slightly shrunken white cotton t-shirt with visible DTG print that appears faded and cracked, examining it with disappointment, placed on a clean wooden table surface, warm natural daylight from window, shallow depth of field focusing on the damaged fabric texture, camera slowly pushes in to show print damage detail",
-      "Medium overhead shot of a cardboard return shipping box opened on a warehouse desk, containing multiple folded white and colored plain cotton t-shirts with printed care labels visible on the collar area, invoice papers scattered beside the box, industrial warehouse lighting from above, camera tilts down slightly to reveal the box contents clearly from the first frame",
-      "Close-up shot of Indian man's hands holding a small white fabric care label tag between fingers, bringing it closer to camera to show washing instruction symbols printed on it — water temperature icon, detergent icon, no bleach symbol, tumble dry low icon — bright indoor lighting, neutral grey background, camera focus pulls from background to the label text in sharp detail",
-      "Medium shot of a clean white cotton round-neck t-shirt with colorful DTG print design laid flat on a stainless steel washing sink counter, Indian man's hands demonstrating turning the t-shirt inside out to protect the print, cold water tap running gently in background, bright bathroom lighting, camera angle from slight side view showing the inside-out motion clearly",
-      "Close-up shot of a perfectly maintained white cotton t-shirt with vibrant intact DTG print hanging on a wooden clothes hanger against a clean white wall, fabric looks fresh and undamaged with smooth texture, natural window light creating soft shadows, camera slowly dollies right showcasing the print quality and fabric condition, no wrinkles or shrinkage visible from first frame"
-    ],
-    "date": "2026-02-26T18:43:24.019273"
-  },
-  {
     "topic": "Myth: 100% cotton best hai — kuch cases mein blend better hota hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding two white round-neck t-shirts side by side against a neutral gray background, one slightly stretched out of shape on the left and one perfectly shaped on the right, bright even studio lighting, camera slowly pushes in to show the difference in fabric drape and shape retention, vertical 9:16 format, realistic textile texture visible",
@@ -328,5 +317,16 @@
       "Medium shot of a neatly folded stack of 5 printed henley collar t-shirts in assorted colors (black, white, olive, maroon, beige) arranged on a clean wooden shelf, each showing the button placket detail, warm golden hour lighting from a nearby window, slow camera tilt upward revealing all five shirts, vertical 9:16 format, no faces, satisfying display arrangement."
     ],
     "date": "2026-03-25T02:53:15.895751"
+  },
+  {
+    "topic": "Vinyl cut vs DTF — small orders ke liye kaunsa sasta padega",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a calculator and a small invoice paper on a cluttered workshop desk, the calculator display shows a high number, a few printed t-shirts stacked beside the calculator, warm yellow indoor lighting, slight camera zoom in towards the calculator screen, vertical 9:16 format, scene starts fully lit and visible from frame one.",
+      "Medium close-up shot of a vinyl cutting plotter machine in action, the blade carriage moving left and right cutting a simple one-color logo design on a sheet of bright red heat transfer vinyl, the machine sits on a clean grey metal table in a small Indian print shop, fluorescent overhead lighting, camera slowly pans along the plotter from left to right, vertical 9:16 format, no faces visible.",
+      "Split-perspective overhead shot of a clean wooden work table divided into two halves — left side shows a small stack of cut vinyl pieces with a weeding tool and tweezers beside them, right side shows a DTF pet film sheet with a colorful multi-color design printed on it with white powder visible on the surface, bright even daylight from a nearby window, camera slowly dollies downward for a top-down view, vertical 9:16 format, fully lit from the first frame.",
+      "Close-up shot of Indian man's hands using a flat heat press machine, pressing down the handle firmly onto a plain white cotton round-neck t-shirt with a small vinyl-cut single-color chest logo positioned on it, steam rising slightly from the edges of the press, warm workshop lighting with slight orange tint, camera angle slightly from the side showing the press closing, vertical 9:16 format, action begins immediately.",
+      "Close-up shot of Indian man's hands holding up two plain white cotton round-neck t-shirts side by side against a clean light grey background — left shirt has a simple single-color vinyl-cut text print on the chest looking clean and sharp, right shirt has a detailed multi-color DTF print with vibrant colors, both prints clearly visible, soft diffused studio lighting, camera slowly dollies forward to show print detail, vertical 9:16 format, bright and visible from first frame."
+    ],
+    "date": "2026-03-25T11:39:28.062198"
   }
 ]
