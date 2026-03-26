@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Wash test karo print ke baad — 3 wash ke baad asli quality dikhti hai",
-    "prompts": [
-      "Close-up shot of an Indian man's hands holding a smartphone displaying a photo of a white t-shirt with cracked and faded printed design, fingers pointing at the damaged areas on the screen, frustrated gesture, warm indoor lighting, slight camera push-in to emphasize the problem, vertical 9:16 format, clear visibility from first frame.",
-      "Medium overhead shot of a stack of approximately ten white plain cotton round-neck t-shirts neatly folded on a clean wooden table, Indian man's hands entering frame to pick up the top t-shirt and unfold it gently, bright natural daylight from window, stable camera angle, vertical 9:16 format, well-lit scene from beginning.",
-      "Close-up shot of a white cotton t-shirt with a colorful printed graphic design being submerged into a bucket filled with soapy water, Indian man's hands gently agitating the fabric in the water, soap bubbles visible, indoor setting with soft lighting, slight camera tilt downward, vertical 9:16 format, action visible immediately.",
-      "Medium shot of three white printed t-shirts hanging side by side on a metal drying rack against a plain white wall, each showing different wash stages — first one bright and fresh, second slightly faded, third visibly cracked print, Indian man's hand entering frame to touch and compare the prints, good indoor lighting, vertical 9:16 format, clear scene from start.",
-      "Close-up shot of Indian man's hands holding a white cotton t-shirt with a vibrant, intact printed design after multiple washes, fingers running over the smooth print surface to demonstrate quality, the fabric looks clean and colors remain bright, warm indoor lighting with slight camera dolly forward, vertical 9:16 format, satisfying visual from first frame."
-    ],
-    "date": "2026-02-28T12:32:31.484728"
-  },
-  {
     "topic": "Tri-blend fabric kya hota hai — cotton polyester rayon ka mix",
     "prompts": [
       "Medium shot of Indian man's hands holding a smartphone displaying an incoming phone call screen with 'Customer' caller ID visible, with a grey tri-blend t-shirt laid on a wooden table in the background, warm indoor warehouse lighting, camera slightly tilted down capturing both phone and fabric, professional business setting with blurred shelves in background",
@@ -328,5 +317,16 @@
       "Medium shot of a neatly organized stack of premium plain t-shirts in assorted colors folded on a polished dark shelf in a well-lit textile showroom, camera slowly pans upward across the colorful stack showing crisp folds and smooth fabric surfaces, warm ambient retail lighting, vertical 9:16 format, no faces or text on screen."
     ],
     "date": "2026-03-26T12:57:20.140374"
+  },
+  {
+    "topic": "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
+    "prompts": [
+      "Close-up shot of Indian man's hands opening a large brown corrugated shipping box on a concrete warehouse floor, pulling out stacks of folded plain t-shirts in very similar dark shades - navy blue and black side by side, warm overhead fluorescent tube lighting casting slight yellow tint, camera slowly pushing in toward the nearly identical dark fabrics, 9:16 vertical format.",
+      "Medium shot of a busy Indian textile warehouse shelf stacked with dozens of poly-packed plain t-shirts in various dark colors - navy, black, charcoal, dark grey - all looking nearly identical under harsh white tube lights, camera slowly panning across the shelf showing how similar the colors appear, slight dust particles visible in the light, 9:16 vertical format.",
+      "Close-up top-down shot of two folded plain round-neck cotton t-shirts placed side by side on a clean white surface - one navy blue and one black - with a small printed invoice paper between them showing color codes like NB-01 and BK-01, Indian man's finger pointing at the code on the paper, natural daylight from a nearby window, camera static with slight zoom, 9:16 vertical format.",
+      "Close-up shot of Indian man's hands using a black marker pen to write a color code on a small white adhesive label, then sticking it onto a folded charcoal grey plain t-shirt placed on a metal rack shelf, a few more labeled t-shirts of different colors visible in the background, bright indoor LED lighting, camera at slight angle capturing the writing action clearly, 9:16 vertical format.",
+      "Medium close-up shot of a neatly organized metal storage rack with plain t-shirts sorted by color, each section having a clear handwritten label with color name and code taped to the shelf edge, colors ranging from white to pastels to darks, well-lit Indian small business stockroom with clean concrete walls, camera slowly dollying sideways revealing the organized system, satisfying and orderly visual, 9:16 vertical format."
+    ],
+    "date": "2026-03-26T16:00:00.097706"
   }
 ]
