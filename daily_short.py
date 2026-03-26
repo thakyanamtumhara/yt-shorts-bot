@@ -1871,7 +1871,20 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             pass
 
         # Step 4: Publish (or confirm schedule)
-        if schedule_for_later:
+        if NEW_TEST_MODE:
+            # In New Test Mode, skip publishing — container was created and processed successfully
+            # This tests the full pipeline (S3 upload, container creation, processing) without going public
+            print(f"   🧪 NEW TEST MODE — Instagram container created & processed but NOT published")
+            print(f"      Container ID: {container_id}")
+            print(f"      ℹ️ Instagram API does not support private/draft Reels — skipping publish for test")
+            # Cleanup: delete temp video from S3
+            if ig_s3_key:
+                try:
+                    boto3.client("s3").delete_object(Bucket=BLOG_S3_BUCKET, Key=ig_s3_key)
+                except Exception:
+                    pass
+            return f"test:{container_id}"
+        elif schedule_for_later:
             # Scheduled posts are auto-published by Instagram at the set time
             # Return prefixed ID so engagement tracker knows this is a scheduled post
             print(f"   \u2705 Instagram Reel SCHEDULED for {best_time.strftime('%d %b %I:%M %p IST')}!")
@@ -3383,7 +3396,10 @@ Custom printing businesses | Merch brands | Corporate orders
         }
     }
 
-    if SCHEDULE_PUBLISH:
+    if NEW_TEST_MODE:
+        body["status"]["privacyStatus"] = "unlisted"
+        print(f"   🧪 NEW TEST MODE — uploading as UNLISTED (not visible to public)")
+    elif SCHEDULE_PUBLISH:
         publish_ist, publish_utc = get_publish_time(youtube=youtube)
         body["status"]["privacyStatus"] = "private"
         body["status"]["publishAt"] = publish_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -6953,58 +6969,64 @@ def main():
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 
                 if vid_id and vid_id != "?":
-                    # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
-                    # Scheduled videos are private — YouTube blocks comments on private videos.
-                    # Temporarily switch to unlisted, post comment, then restore scheduled state.
-                    original_publish_at = None
-                    switched_to_unlisted = False
-                    if SCHEDULE_PUBLISH:
-                        try:
-                            # Save original publishAt before switching
-                            vid_status = youtube.videos().list(part="status", id=vid_id).execute()
-                            if vid_status.get("items"):
-                                original_publish_at = vid_status["items"][0]["status"].get("publishAt")
-                            youtube.videos().update(
-                                part="status",
-                                body={"id": vid_id, "status": {"privacyStatus": "unlisted"}}
-                            ).execute()
-                            switched_to_unlisted = True
-                            print("   🔓 Temporarily set to unlisted for commenting...")
-                        except Exception as e:
-                            print(f"   ⚠️ Could not switch to unlisted: {e}")
+                    if NEW_TEST_MODE:
+                        # In New Test Mode, skip comment/playlist — video is unlisted for testing only
+                        print(f"   🧪 NEW TEST MODE — skipping comment pin & playlist (unlisted test upload)")
+                        if thumbnail_path:
+                            print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
+                    else:
+                        # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
+                        # Scheduled videos are private — YouTube blocks comments on private videos.
+                        # Temporarily switch to unlisted, post comment, then restore scheduled state.
+                        original_publish_at = None
+                        switched_to_unlisted = False
+                        if SCHEDULE_PUBLISH:
+                            try:
+                                # Save original publishAt before switching
+                                vid_status = youtube.videos().list(part="status", id=vid_id).execute()
+                                if vid_status.get("items"):
+                                    original_publish_at = vid_status["items"][0]["status"].get("publishAt")
+                                youtube.videos().update(
+                                    part="status",
+                                    body={"id": vid_id, "status": {"privacyStatus": "unlisted"}}
+                                ).execute()
+                                switched_to_unlisted = True
+                                print("   🔓 Temporarily set to unlisted for commenting...")
+                            except Exception as e:
+                                print(f"   ⚠️ Could not switch to unlisted: {e}")
 
-                    print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
-                    time.sleep(30)
-                    pin_comment(youtube, vid_id)
+                        print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
+                        time.sleep(30)
+                        pin_comment(youtube, vid_id)
 
-                    # Restore scheduled/private status
-                    if switched_to_unlisted and original_publish_at:
-                        try:
-                            youtube.videos().update(
-                                part="status",
-                                body={
-                                    "id": vid_id,
-                                    "status": {
-                                        "privacyStatus": "private",
-                                        "publishAt": original_publish_at,
+                        # Restore scheduled/private status
+                        if switched_to_unlisted and original_publish_at:
+                            try:
+                                youtube.videos().update(
+                                    part="status",
+                                    body={
+                                        "id": vid_id,
+                                        "status": {
+                                            "privacyStatus": "private",
+                                            "publishAt": original_publish_at,
+                                        }
                                     }
-                                }
-                            ).execute()
-                            print(f"   🔒 Restored scheduled/private status")
-                        except Exception as e:
-                            print(f"   ⚠️ Could not restore private status: {e}")
-                            print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
+                                ).execute()
+                                print(f"   🔒 Restored scheduled/private status")
+                            except Exception as e:
+                                print(f"   ⚠️ Could not restore private status: {e}")
+                                print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
 
-                    # NOTE: YouTube Shorts do NOT support custom thumbnails via the Data API.
-                    # The thumbnails.set endpoint returns success but silently ignores it for Shorts.
-                    # Custom Shorts thumbnails can only be set via YouTube Studio UI or mobile app.
-                    # See: https://issuetracker.google.com/issues/381127084
-                    if thumbnail_path:
-                        print("   ℹ️ YouTube Shorts: custom thumbnails not supported via API (use YouTube Studio)")
-                        print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
+                        # NOTE: YouTube Shorts do NOT support custom thumbnails via the Data API.
+                        # The thumbnails.set endpoint returns success but silently ignores it for Shorts.
+                        # Custom Shorts thumbnails can only be set via YouTube Studio UI or mobile app.
+                        # See: https://issuetracker.google.com/issues/381127084
+                        if thumbnail_path:
+                            print("   ℹ️ YouTube Shorts: custom thumbnails not supported via API (use YouTube Studio)")
+                            print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
 
-                    # ── 10c. Add to series playlist ──
-                    add_to_playlist(youtube, vid_id, fresh_topic)
+                        # ── 10c. Add to series playlist ──
+                        add_to_playlist(youtube, vid_id, fresh_topic)
 
                 print(f"\n{'='*60}")
                 print(f"  ✅ DAILY SHORT COMPLETE!")
@@ -7025,11 +7047,11 @@ def main():
             print("\n📸 Instagram Token Check...")
             refresh_instagram_token_if_needed()
         ig_media_id = cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
-        if ig_media_id:
+        if ig_media_id and not str(ig_media_id).startswith("test:"):
             save_ig_upload_record(ig_media_id, yt_title, fresh_topic)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
-    if not TEST_MODE and not upload_failed and vid_id:
+    if not TEST_MODE and not NEW_TEST_MODE and not upload_failed and vid_id:
         try:
             blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
                 claude_client=claude,
