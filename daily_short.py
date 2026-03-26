@@ -7018,8 +7018,8 @@ def main():
             print("   ❌ YouTube auth failed. Video saved locally.")
             upload_failed = True
 
-    # ── 10d. Cross-post to Instagram Reels ──
-    if not TEST_MODE and not upload_failed:
+    # ── 10d. Cross-post to Instagram Reels (independent of YouTube success) ──
+    if not TEST_MODE:
         # Auto-refresh Instagram token if expiring within 7 days
         if CROSS_POST_INSTAGRAM and os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
             print("\n📸 Instagram Token Check...")
