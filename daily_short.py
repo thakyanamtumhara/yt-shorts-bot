@@ -2868,21 +2868,6 @@ def _get_recent_clip_prompts():
         return "No history yet."
 
 
-def _get_ig_deep_context():
-    """Build rich Instagram context string for prompts. Used by script, title, thumbnail."""
-    ig = get_ig_engagement_summary()
-    if ig.get("total_reels_analyzed", 0) == 0:
-        return ""
-    avg = ig.get("avg_metrics", {})
-    lines = [
-        f"Reels analyzed: {ig['total_reels_analyzed']} | Avg views: {avg.get('avg_views', 'N/A')} | Avg saves: {avg.get('avg_saves', 'N/A')} | Avg shares: {avg.get('avg_shares', 'N/A')}",
-    ]
-    if ig.get("high_quality_titles"):
-        lines.append(f"High-quality Reels (viewers SAVED these = lasting value): {json.dumps(ig['high_quality_titles'][:5], ensure_ascii=False)}")
-    if ig.get("viral_titles"):
-        lines.append(f"Viral Reels (viewers SHARED these = social spread): {json.dumps(ig['viral_titles'][:5], ensure_ascii=False)}")
-    return "\n".join(lines)
-
 
 def get_script_prompt(topic):
     return f"""
@@ -2899,12 +2884,6 @@ TOPIC: {topic}
 These are PROVEN top-performing video titles from our existing audience — use this to understand
 what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
 {json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
-
-━━━ INSTAGRAM INSIGHTS — PRIMARY CHANNEL (optimize for this) ━━━
-{("Top performing Reels titles (by views): " + json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False)) if get_top_performing_ig_topics(5) else "No Instagram data yet — will learn from Reel performance over time."}
-{_get_ig_deep_context()}
-Instagram is our PRIMARY distribution channel with higher reach than YouTube.
-Optimize script to maximize SAVES (= lasting value) and SHARES (= "my friend needs this") on Instagram.
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -3908,40 +3887,12 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
 
     if unused:
         # Prefer topics from high-performing categories (engagement-based)
-        # Main channel PRIMARY until new channel crosses 1L total views
-        total_views = get_new_channel_total_views()
-        if total_views >= NEW_CHANNEL_VIEWS_THRESHOLD:
+        # Source channel (50K subs) is ALWAYS primary for topic ranking
+        top_cats = get_source_channel_category_ranking()
+        cat_source = "source channel (primary)"
+        if not top_cats:
             top_cats = get_top_performing_categories()
-            cat_source = "own channel"
-            if not top_cats:
-                top_cats = get_source_channel_category_ranking()
-                cat_source = "main channel (fallback)"
-        else:
-            top_cats = get_source_channel_category_ranking()
-            cat_source = f"main channel (new ch: {total_views:,} views <1L)"
-            if not top_cats:
-                top_cats = get_top_performing_categories()
-                cat_source = "own channel (fallback)"
-
-        # Instagram is PRIMARY channel — use IG categories as base ranking
-        ig_cats = get_top_performing_ig_categories()
-        if ig_cats:
-            yt_cats = list(top_cats)  # save YouTube ranking
-            top_cats = list(ig_cats)  # IG is the base ranking
-            # Boost categories that perform on BOTH platforms to the top
-            combined_cats = []
-            for cat in top_cats:
-                if cat in yt_cats:
-                    combined_cats.insert(0, cat)  # Cross-platform winners first
-                else:
-                    combined_cats.append(cat)
-            # Add YouTube-only categories at the end
-            for cat in yt_cats:
-                if cat not in combined_cats:
-                    combined_cats.append(cat)
-            top_cats = combined_cats
-            cat_source = f"Instagram (primary) + {cat_source}"
-            print(f"   📸 IG top categories (primary): {', '.join(ig_cats[:3])}")
+            cat_source = "own channel (fallback)"
 
         if top_cats:
             # Sort unused topics: ones matching top categories come first
@@ -4017,7 +3968,7 @@ Return ONLY the topic text, nothing else."""}]
     return best_topic
 
 
-def review_script(claude_client, script_voice, script_english, topic, video_prompts=None, ig_summary=None):
+def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, score: int, weakest: str, feedback: str)."""
 
@@ -4026,16 +3977,11 @@ def review_script(claude_client, script_voice, script_english, topic, video_prom
         prompts_list = "\n".join(f"  Clip {i+1}: {p}" for i, p in enumerate(video_prompts) if p.strip())
         prompts_section = f"\nVEO VIDEO PROMPTS:\n{prompts_list}\n"
 
-    ig_quality_context = ""
-    if ig_summary and ig_summary.get("high_quality_titles"):
-        ig_quality_context = f"\n   Reference: These Reels had the highest save rates on our Instagram: {json.dumps(ig_summary['high_quality_titles'][:3], ensure_ascii=False)}"
-
     review_prompt = f"""You are a YouTube Shorts + Instagram Reels content reviewer for an Indian B2B t-shirt brand.
 Review this script and decide: is this GOOD ENOUGH to publish?
 
 Remember: this is B2B educational content for printing businesses, NOT entertainment/clickbait.
 A factory owner explaining something practical IS valuable — don't expect Bollywood drama.
-Instagram is our PRIMARY channel — optimize for saves and shares there.
 
 TOPIC: {topic}
 HINDI SCRIPT: {script_voice}
@@ -4058,19 +4004,16 @@ Score each (1-10):
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
-6. INSTAGRAM SAVE/SHARE POTENTIAL — Would an Indian printing business owner SAVE this Reel to watch again, or SHARE it with a friend?
-   Bad: generic info available everywhere. Good: specific actionable tip they'll need to reference later, or a mistake so common they'll want to warn others.{ig_quality_context}
-
-7. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
+6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
    Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
    Good: prompts that show the EXACT scenario being discussed — the specific fabric, the specific test, the specific machine, the specific problem from the script.
    If no video prompts provided, score 6 (neutral).
 
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "total_score": sum_of_7_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve if total_score >= 42 (out of 70)
+- Approve if total_score >= 36 (out of 60)
 - REJECT only if ANY single score is below 4
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
@@ -4096,30 +4039,18 @@ RULES:
         return True, 0, "", "review error"
 
 
-def optimize_title(claude_client, original_title, script_english, topic, ig_summary=None):
+def optimize_title(claude_client, original_title, script_english, topic):
     """Generate 3 title variants and pick the best one for CTR.
-    Uses source channel's top titles + Instagram engagement data as reference."""
+    Uses source channel's top titles as reference."""
     print(f"   🏷️ Title optimization: generating A/B variants...")
 
     source_titles = get_source_channel_top_topics(5)
     source_context = ""
     if source_titles:
         source_context = f"""
-REFERENCE (YouTube): These titles got the MOST views on our main channel (50K subs):
+REFERENCE: These titles got the MOST views on our main channel (50K subs):
 {json.dumps(source_titles, ensure_ascii=False)}
 Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
-
-    ig_context = ""
-    if ig_summary and ig_summary.get("total_reels_analyzed", 0) > 0:
-        ig_top = ig_summary.get("top_reels", [])
-        ig_viral = ig_summary.get("viral_titles", [])
-        ig_quality = ig_summary.get("high_quality_titles", [])
-        ig_context = f"""
-REFERENCE (Instagram — PRIMARY CHANNEL):
-Top Reels by views: {json.dumps([r.get('title','') for r in ig_top[:5]], ensure_ascii=False)}
-Most SHARED Reels (viral — viewers spread these): {json.dumps(ig_viral[:5], ensure_ascii=False)}
-Most SAVED Reels (high quality — viewers bookmark these): {json.dumps(ig_quality[:5], ensure_ascii=False)}
-Study these Instagram title patterns — what language, emotion, and structure drives saves and shares."""
 
     prompt = f"""You are a YouTube Shorts + Instagram Reels title optimizer and JUDGE for an Indian B2B t-shirt brand.
 
@@ -4127,7 +4058,6 @@ CURRENT TITLE: {original_title}
 TOPIC: {topic}
 SCRIPT SUMMARY: {script_english[:200]}
 {source_context}
-{ig_context}
 
 Generate 3 alternative titles. Each must be:
 - Max 70 characters (YouTube Shorts limit for mobile visibility)
@@ -4136,9 +4066,9 @@ Generate 3 alternative titles. Each must be:
 - English (for broader reach + SEO, but Hinglish words OK if they add punch)
 - Work on BOTH YouTube Shorts AND Instagram Reels (same title used on both platforms)
 
-PLATFORM PRIORITY (Instagram is PRIMARY):
-- Instagram: Explore page + hashtag reach matters — emotional hooks, curiosity, trending phrases. THIS IS OUR MAIN CHANNEL.
-- YouTube: Search discoverability matters — include keywords people search for. SECONDARY.
+PLATFORM TIPS:
+- YouTube: Search discoverability matters — include keywords people search for
+- Instagram: Explore page + hashtag reach — emotional hooks, curiosity, trending phrases
 - BOTH: Mobile-first (70 char max), number/price reveals get clicks, controversy/mistakes format works
 
 TITLE STYLES TO TRY:
@@ -6103,7 +6033,6 @@ def main():
     print(f"   📌 Topic: {fresh_topic}")
 
     # ── 3. Generate Script (with quality gate) ──
-    ig_summary = get_ig_engagement_summary()  # Load once, reuse for review_script + optimize_title
     data = None
     candidate = None  # Track last valid candidate (may be None if all JSON parses fail)
     previous_feedback = ""  # Pass rejection reasons to next attempt
@@ -6162,7 +6091,7 @@ def main():
 
         # Quality gate: Claude reviews its own script + video prompts alignment
         candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
-        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts, ig_summary=ig_summary)
+        approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts)
 
         if approved:
             print(f"   ✅ Script APPROVED (score: {score}/60) — {feedback}")
@@ -6191,7 +6120,7 @@ def main():
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
 
     script_english = data["script_english"]
-    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic, ig_summary=ig_summary)
+    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic)
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
