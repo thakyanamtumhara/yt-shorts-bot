@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Supima cotton vs regular combed cotton — touch karke pata chal jayega",
-    "prompts": [
-      "Close-up shot of two plain white cotton round-neck t-shirts laid side by side on a clean wooden table surface, left one labeled with small paper tag 'Supima', right one labeled 'Regular Combed', natural daylight from window, slight camera push-in movement, vertical 9:16 format, sharp focus on fabric texture difference, no faces visible, Indian manufacturing setting background slightly blurred",
-      "Medium shot of Indian man's hands holding a smartphone showing a customer call screen with 'Customer Call' text visible, other hand holding a white premium cotton t-shirt, sitting at a desk with fabric swatches scattered around, warm indoor office lighting, vertical 9:16, camera static, realistic business environment, hands and phone in focus",
-      "Extreme close-up macro shot of two white cotton fabric surfaces side by side, left side showing Supima cotton with visibly longer, smoother fiber structure catching light with subtle sheen, right side showing regular combed cotton with slightly shorter fibers, slow camera pan from left to right, bright even lighting highlighting texture difference, vertical 9:16, ultra-detailed fabric weave visible",
-      "Close-up shot of Indian man's hands performing a touch test, gently rubbing and stretching two white t-shirt fabric pieces between fingers, left hand testing Supima showing smooth glide, right hand testing regular combed, hands moving slowly to show tactile comparison, clean white background, soft natural lighting, vertical 9:16 format, camera slightly moving closer, no face visible",
-      "Medium overhead shot of a product display setup showing a neatly folded premium white Supima cotton t-shirt on left side with a small wooden price tag showing '₹850', and a regular combed cotton t-shirt on right with tag showing '₹450', placed on clean marble surface, natural daylight, vertical 9:16, slight camera tilt down, professional retail presentation style, Indian business context"
-    ],
-    "date": "2026-02-27T15:11:21.369579"
-  },
-  {
     "topic": "Wash test karo print ke baad — 3 wash ke baad asli quality dikhti hai",
     "prompts": [
       "Close-up shot of an Indian man's hands holding a smartphone displaying a photo of a white t-shirt with cracked and faded printed design, fingers pointing at the damaged areas on the screen, frustrated gesture, warm indoor lighting, slight camera push-in to emphasize the problem, vertical 9:16 format, clear visibility from first frame.",
@@ -328,5 +317,16 @@
       "Medium shot of a small but organized printing workshop corner showing a neat stack of 30-40 colorful plain t-shirts in multiple colors arranged on metal shelving, a DTG printer visible in background with a fresh white t-shirt loaded on platen, bright LED panel lighting, clean workspace, camera slowly pushing in toward the organized shelves, optimistic and professional feel, vertical 9:16 format."
     ],
     "date": "2026-03-25T12:49:53.636328"
+  },
+  {
+    "topic": "GSM zyada matlab better quality? Galat hai — suno kyu",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding two plain round-neck t-shirts side by side on a wooden table, left hand holding a thicker dark navy t-shirt looking rough and stiff, right hand holding a thinner light grey t-shirt that drapes softly, warm indoor workshop lighting, camera slowly dollies in to show the fabric texture difference, vertical 9:16 format, no text on screen.",
+      "Medium close-up of a small portable digital weighing scale on a clean white surface, Indian man's hands placing a neatly cut square piece of white cotton fabric onto the scale, the digital display showing numbers, soft overhead fluorescent lighting typical of an Indian textile shop, slight camera tilt down, vertical 9:16 format, no faces visible.",
+      "Extreme close-up macro shot comparing two cotton fabric swatches held between Indian man's fingers, one swatch on the left showing visibly coarser uneven fiber texture representing carded cotton, the other on the right showing smoother tighter weave representing combed cotton, natural daylight from a nearby window, camera rack focuses from left swatch to right swatch, vertical 9:16 format.",
+      "Close-up shot of Indian man's hand gently rubbing and stretching a plain white bio-washed cotton t-shirt fabric between thumb and fingers, showing the smooth soft drape of the material, the fabric catching warm golden light revealing its fine texture, slight slow-motion effect, shot on a dark grey fabric backdrop, vertical 9:16 format, no text.",
+      "Medium shot of a neatly organized stack of premium plain t-shirts in assorted colors folded on a polished dark shelf in a well-lit textile showroom, camera slowly pans upward across the colorful stack showing crisp folds and smooth fabric surfaces, warm ambient retail lighting, vertical 9:16 format, no faces or text on screen."
+    ],
+    "date": "2026-03-26T12:57:20.140374"
   }
 ]

@@ -639,5 +639,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.196
     }
+  },
+  {
+    "date": "2026-03-26T13:21:27.995145",
+    "topic": "GSM zyada matlab better quality? Galat hai \u2014 suno kyu",
+    "title": "Higher GSM = Better T-Shirt? Customer Was Shocked",
+    "total_usd": 2.782,
+    "duration_min": 25.0,
+    "breakdown": {
+      "claude_opus": 0.2961,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0334,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
