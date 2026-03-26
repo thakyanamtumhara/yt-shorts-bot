@@ -2302,6 +2302,10 @@ def check_instagram_engagement():
             media_id = record.get("media_id", "")
             if not media_id:
                 continue
+            # Test containers (test:xxx) are not published — skip engagement check
+            if media_id.startswith("test:"):
+                record["checked"] = True
+                continue
             # Scheduled posts have "scheduled:" prefix — strip it for API call
             if media_id.startswith("scheduled:"):
                 media_id = media_id.replace("scheduled:", "", 1)

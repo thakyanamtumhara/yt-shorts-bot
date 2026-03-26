@@ -21,7 +21,7 @@ on:
         type: boolean
         default: false
       new_test_mode:
-        description: 'New Test Mode (skip Veo clips, but run full pipeline — upload + Instagram + blog)'
+        description: 'New Test Mode (skip Veo clips, YouTube=unlisted, Instagram=no publish, no blog)'
         required: false
         type: boolean
         default: false
