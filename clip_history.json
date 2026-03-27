@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Tri-blend fabric kya hota hai — cotton polyester rayon ka mix",
-    "prompts": [
-      "Medium shot of Indian man's hands holding a smartphone displaying an incoming phone call screen with 'Customer' caller ID visible, with a grey tri-blend t-shirt laid on a wooden table in the background, warm indoor warehouse lighting, camera slightly tilted down capturing both phone and fabric, professional business setting with blurred shelves in background",
-      "Close-up shot of Indian man's hands stretching and feeling the texture of a heather grey tri-blend fabric t-shirt, fingers rubbing the soft material to show its silky smooth drape, bright natural lighting from the side highlighting the fabric's unique texture, camera slowly zooms in on the hand movements, clean workspace background",
-      "Overhead shot of three folded t-shirts arranged in a triangle pattern on a bright white surface - one white 100% cotton t-shirt, one grey polyester performance tee, and one beige rayon blend shirt, each with a small fabric swatch placed beside it, even studio lighting from above, camera static capturing all three fabrics clearly for comparison",
-      "Close-up shot of Indian man's hands holding a white DTG pre-treatment spray bottle, spraying fine mist onto a stretched heather grey tri-blend t-shirt held taut on a flat printing board, droplets visible in the air catching light, focused task lighting from above, camera angle from the side showing the application process, slight slow-motion effect on spray",
-      "Medium shot of two neatly folded t-shirts placed side by side on a clean wooden workspace table - one vibrant printed tri-blend shirt on the left and one equally vibrant printed 100% cotton shirt on the right, both showing clear colorful DTG prints, warm diffused lighting highlighting print quality, camera slowly dollies forward to show fabric details, professional product photography setup"
-    ],
-    "date": "2026-03-01T12:34:14.764239"
-  },
-  {
     "topic": "Fabric weight ghar pe check karo — ek scissor aur weighing scale chahiye bas",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white plain cotton round-neck t-shirt with confused expression visible through body language, comparing it against another slightly thinner white t-shirt laid on a wooden table, warm indoor lighting from window on left side, camera slowly pushes in to emphasize comparison, shallow depth of field blurring background warehouse shelves stacked with folded t-shirts",
@@ -328,5 +317,16 @@
       "Medium close-up shot of a neatly organized metal storage rack with plain t-shirts sorted by color, each section having a clear handwritten label with color name and code taped to the shelf edge, colors ranging from white to pastels to darks, well-lit Indian small business stockroom with clean concrete walls, camera slowly dollying sideways revealing the organized system, satisfying and orderly visual, 9:16 vertical format."
     ],
     "date": "2026-03-26T16:00:00.097706"
+  },
+  {
+    "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
+    "prompts": [
+      "Close-up shot of Indian man's hands pulling a crumpled plain black round-neck t-shirt out of a front-loading washing machine drum, warm fluorescent indoor lighting, the fabric looks visibly wrinkled and slightly misshapen, camera slowly zooms in on the t-shirt as it emerges from the machine, vertical 9:16 format, realistic Indian laundry room setting.",
+      "Medium close-up shot of a brown cardboard box on a concrete warehouse floor being pushed back across a counter by Indian man's hands, several neatly folded plain navy blue t-shirts visible inside the open box, a printed invoice paper resting on top, overhead warm warehouse lighting, slight camera pan across the returned goods, vertical 9:16 format.",
+      "Close-up overhead shot of two identical plain white round-neck t-shirts laid flat side by side on a grey cutting table, one noticeably smaller than the other, a yellow measuring tape stretched across both showing the size difference, bright daylight from a nearby window, camera slowly tilts downward to emphasize the contrast, vertical 9:16 format, Indian textile workshop setting.",
+      "Close-up shot of Indian man's hands using a yellow fabric measuring tape to measure the chest width of a plain maroon t-shirt laid flat on a clean steel table, a notebook with handwritten measurements and a pen visible beside the shirt, warm indoor tubelight lighting, camera slightly dollies forward as the tape is pulled taut, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands gently stretching and feeling the smooth fabric of a fresh plain white pre-shrunk cotton t-shirt, the fabric bouncing back to shape, a stack of neatly folded multicolor plain t-shirts in poly bags visible in the soft-focus background on a warehouse shelf, bright warm lighting, camera slowly racks focus from hands to the stacked inventory, vertical 9:16 format."
+    ],
+    "date": "2026-03-27T17:51:09.784560"
   }
 ]

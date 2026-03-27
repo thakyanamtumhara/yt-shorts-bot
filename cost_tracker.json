@@ -672,5 +672,19 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1602
     }
+  },
+  {
+    "date": "2026-03-27T18:12:48.252055",
+    "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
+    "title": "Client Returned 300 Pcs After Washing \u2013 This Fabric Mistake!",
+    "total_usd": 2.8777,
+    "duration_min": 22.5,
+    "breakdown": {
+      "claude_opus": 0.2881,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0327,
+      "veo_clips": 2.5,
+      "whisper": 0.0069
+    }
   }
 ]
