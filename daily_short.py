@@ -109,7 +109,7 @@ SINGLE_VEO_TEST = os.environ.get("SINGLE_VEO_TEST", "").strip() in ("1", "true",
 NEW_TEST_MODE = os.environ.get("NEW_TEST_MODE", "").strip() in ("1", "true", "yes")
 
 # Script quality gate: Claude reviews its own script before proceeding
-SCRIPT_MAX_ATTEMPTS = 3
+SCRIPT_MAX_ATTEMPTS = 5
 
 # ── ElevenLabs TTS (Primary) ──
 ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
@@ -6052,7 +6052,14 @@ def main():
             cost.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
             raw = resp.content[0].text.strip()
         except Exception as e:
-            print(f"   ⚠️ Claude API error (attempt {attempt}): {e}")
+            err_str = str(e).lower()
+            is_transient = any(k in err_str for k in ("529", "overloaded", "503", "429", "unavailable", "rate limit", "too many"))
+            if is_transient and attempt < SCRIPT_MAX_ATTEMPTS:
+                wait = 30 * attempt  # 30s, 60s backoff
+                print(f"   ⚠️ Claude API overloaded (attempt {attempt}), retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                print(f"   ⚠️ Claude API error (attempt {attempt}): {e}")
             previous_feedback = "API call failed, please try again."
             continue
         if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
