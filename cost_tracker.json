@@ -686,5 +686,22 @@
       "veo_clips": 2.5,
       "whisper": 0.0069
     }
+  },
+  {
+    "date": "2026-03-28T13:03:39.348593",
+    "topic": "Screen printing mein mesh count matter karta hai \u2014 detail ka game hai",
+    "title": "Wrong Mesh Count Ruined His Print | Screen Printing Mistake",
+    "total_usd": 3.1714,
+    "duration_min": 26.7,
+    "breakdown": {
+      "claude_opus": 0.2844,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0269,
+      "veo_clips": 2.5,
+      "whisper": 0.0059,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1841
+    }
   }
 ]
