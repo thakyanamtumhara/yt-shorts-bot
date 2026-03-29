@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Organic cotton aur regular cotton — printing business ke liye kya fark padta hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a plain beige colored cotton round-neck t-shirt with a small green leaf-shaped tag attached to the collar indicating organic cotton, inspecting it carefully under bright natural daylight coming from a window, camera slowly pushes in, vertical 9:16 format, clean professional lighting.",
-      "Medium overhead shot of a clean white workspace table surface showing two identical plain white round-neck t-shirts laid flat side by side, one with a small organic cotton certification tag visible, one without any tag, natural bright overhead lighting, camera steady shot, vertical 9:16 format, textile business setting.",
-      "Close-up shot of Indian man's hands holding a professional digital fabric microscope device examining the weave structure of a white cotton t-shirt fabric, screen showing magnified fiber texture, warm indoor workshop lighting, slight camera tilt down, vertical 9:16 format, technical comparison scene.",
-      "Medium shot of Indian man's hands placing a printed custom graphic t-shirt next to a plain white t-shirt on a wooden table, both showing identical DTG print quality and color vibrancy, hands pointing at the print area comparing texture, bright indoor lighting, camera dolly right, vertical 9:16 format.",
-      "Close-up shot of a neatly folded stack of five plain white Bio-washed combed cotton round-neck t-shirts sitting on a clean wooden table surface with soft natural window light creating gentle shadows, camera slow zoom out revealing the professional quality finish, vertical 9:16 format, satisfying conclusion shot."
-    ],
-    "date": "2026-03-03T12:40:50.854427"
-  },
-  {
     "topic": "Embroidery blank ke liye 200+ GSM chahiye — patla fabric pe thread kheechta hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a thin white 180 GSM cotton round-neck t-shirt with visible embroidered logo on chest area, the fabric around the embroidery is visibly puckered and stretched showing distortion, warm indoor lighting, hands gently pulling the fabric to show the stretch damage, camera slowly zooms in on the distorted embroidery area, industrial textile background slightly blurred.",
@@ -328,5 +317,16 @@
       "Close-up shot of Indian man's hands lifting a freshly screen-printed white cotton round-neck t-shirt off the press platen, revealing a crisp sharp detailed print with clean fine lines and smooth halftone gradients, the print looking professional and flawless, warm satisfying indoor lighting, camera slowly tilting up to show the full design area, vertical 9:16 format."
     ],
     "date": "2026-03-28T12:37:43.196052"
+  },
+  {
+    "topic": "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
+    "prompts": [
+      "Close-up shot of an Indian man's hands scrolling through a phone screen showing multiple WhatsApp complaint messages with angry emojis and text, phone resting on a cluttered desk with fabric swatches and printed t-shirts scattered around, warm overhead fluorescent lighting, slight camera push-in, vertical 9:16 format, realistic Indian small business office setting.",
+      "Medium shot of a row of neatly folded white plain round-neck t-shirts arranged on a long wooden table in an Indian textile warehouse, two separate stacks side by side from different batches, warm yellow tube light overhead, camera slowly dollying right to reveal both stacks, vertical 9:16, no faces visible, realistic warehouse environment with poly bags in background.",
+      "Close-up of Indian man's hands placing two white plain cotton t-shirts flat on a dark surface, rubbing the fabric between thumb and fingers on each shirt alternately to compare texture and feel, one shirt slightly smoother than the other, natural indoor lighting from a nearby window, slow deliberate hand movements, vertical 9:16 format, no face visible.",
+      "Close-up shot of Indian man's hands holding a freshly DTF-printed white t-shirt under running tap water in a steel wash basin, gently rubbing the printed area to test wash fastness, water droplets visible, bright bathroom tubelight overhead, camera angled from above looking down at the washing action, vertical 9:16 format, realistic Indian setting.",
+      "Medium close-up of Indian man's hands confidently stacking a large quantity of white plain round-neck t-shirts into a neat pile on a clean warehouse table, poly-packed bundles visible in the background on metal shelving racks, warm overhead lighting, camera slowly pulling back to reveal the satisfying large organized stack, vertical 9:16 format, no face visible."
+    ],
+    "date": "2026-03-29T12:38:29.996665"
   }
 ]

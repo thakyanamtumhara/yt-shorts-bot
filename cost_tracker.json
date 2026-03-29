@@ -703,5 +703,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1841
     }
+  },
+  {
+    "date": "2026-03-29T13:02:54.432627",
+    "topic": "Bulk mein order karo toh rate kam milta hai \u2014 par pehle sample lo",
+    "title": "500 Pieces Without Sample? This GSM Mistake Cost Him Lakhs",
+    "total_usd": 3.1935,
+    "duration_min": 25.3,
+    "breakdown": {
+      "claude_opus": 0.3021,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0338,
+      "veo_clips": 2.5,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1801
+    }
   }
 ]
