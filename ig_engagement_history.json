@@ -56,20 +56,43 @@
     "title": "Client Returned 300 Pcs After Washing – This Fabric Mistake!",
     "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
     "published_at": "2026-03-27T23:42:48.251750+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-03-30T18:51:00.974416+05:30",
+    "hours_since_publish": 67.1,
+    "views": 0,
+    "reach": 0,
+    "likes": 30,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18002096282912797",
     "title": "Wrong Mesh Count Ruined His Print | Screen Printing Mistake",
     "topic": "Screen printing mein mesh count matter karta hai — detail ka game hai",
     "published_at": "2026-03-28T18:30:09.354578+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-03-30T18:51:00.974416+05:30",
+    "hours_since_publish": 48.3,
+    "views": 0,
+    "reach": 0,
+    "likes": 38,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18021488828644391",
     "title": "500 Pieces Without Sample? This GSM Mistake Cost Him Lakhs",
     "topic": "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
     "published_at": "2026-03-29T18:29:28.862603+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18063195446348594",
+    "title": "Spot Color vs CMYK – Ye Galti Margin Kha Gayi!",
+    "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
+    "published_at": "2026-03-30T18:53:15.964417+05:30",
     "checked": false
   }
 ]

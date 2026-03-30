@@ -720,5 +720,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1801
     }
+  },
+  {
+    "date": "2026-03-30T13:26:28.392743",
+    "topic": "Screen print mein spot colors aur CMYK \u2014 kab kaunsa use karo",
+    "title": "Spot Color vs CMYK \u2013 Ye Galti Margin Kha Gayi!",
+    "total_usd": 3.1716,
+    "duration_min": 26.5,
+    "breakdown": {
+      "claude_opus": 0.2831,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.03,
+      "veo_clips": 2.5,
+      "whisper": 0.0067,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1819
+    }
   }
 ]

@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Embroidery blank ke liye 200+ GSM chahiye — patla fabric pe thread kheechta hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a thin white 180 GSM cotton round-neck t-shirt with visible embroidered logo on chest area, the fabric around the embroidery is visibly puckered and stretched showing distortion, warm indoor lighting, hands gently pulling the fabric to show the stretch damage, camera slowly zooms in on the distorted embroidery area, industrial textile background slightly blurred.",
-      "Medium overhead shot of a clean wooden workspace table showing two plain white cotton round-neck t-shirts laid flat side by side, left t-shirt labeled with small paper tag reading 180, right t-shirt labeled 200, both shirts appear identical in color but different thickness visible at folded collar area, bright natural lighting from above, slight shadow creating depth, camera static overhead angle.",
-      "Extreme close-up shot of industrial embroidery machine needle rapidly stitching red thread into white cotton fabric stretched in embroidery hoop, the needle moving up and down in rhythmic motion, fabric tension visible as the hoop holds it tight, metallic needle catching light with each movement, side angle camera showing the penetration depth, slight vibration of machine visible, professional workshop lighting focused on stitching point.",
-      "Close-up shot of Indian man's hands holding a thick white 220 GSM cotton round-neck t-shirt with crisp professional embroidered company logo on left chest, hands spreading the fabric around the embroidery to show zero puckering or distortion, the embroidery sits perfectly flat against the sturdy fabric, warm indoor lighting, camera slowly pans from embroidery detail to the overall fabric thickness, textile manufacturing background softly blurred.",
-      "Medium shot of neatly folded stack of approximately eight premium white plain cotton round-neck t-shirts with visible embroidered logos on top shirt, all shirts showing perfect embroidery work with no fabric distortion, stack placed on clean industrial table surface, soft overhead lighting creating professional product presentation look, camera slowly pushes in toward the stack showing the quality thickness of fabric edges, slightly blurred warehouse background with fabric rolls visible."
-    ],
-    "date": "2026-03-04T12:39:50.821321"
-  },
-  {
     "topic": "Slub cotton tshirt ka texture — ye defect nahi hai design hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a light beige slub cotton round-neck t-shirt against a plain white background, fingers gently pressing and stretching the fabric to reveal the distinctive uneven textured surface with visible thick and thin yarn variations creating a natural organic pattern, bright indoor lighting from above highlighting the textural irregularities, camera slowly pushing in to emphasize the slub texture details, vertical 9:16 format",
@@ -328,5 +317,16 @@
       "Medium close-up of Indian man's hands confidently stacking a large quantity of white plain round-neck t-shirts into a neat pile on a clean warehouse table, poly-packed bundles visible in the background on metal shelving racks, warm overhead lighting, camera slowly pulling back to reveal the satisfying large organized stack, vertical 9:16 format, no face visible."
     ],
     "date": "2026-03-29T12:38:29.996665"
+  },
+  {
+    "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
+    "prompts": [
+      "Close-up of a frustrated Indian man's hands holding a freshly screen-printed white round-neck t-shirt with a multi-color logo that looks slightly dull and oversaturated, laid flat on a messy workshop table with ink jars and squeegees visible in the background, warm overhead fluorescent lighting, camera slowly pushes in, vertical 9:16 format.",
+      "Medium close-up of a wooden screen printing carousel with multiple screens mounted, each screen frame labeled with different ink colors, a stack of plain white cotton t-shirts sits on a metal table beside it, an Indian textile workshop environment with concrete floor and tube lights, camera slowly pans left to right revealing the full setup, vertical 9:16.",
+      "Top-down overhead shot of two printed t-shirt samples placed side by side on a clean white surface — left shirt shows a bold 2-color logo print with crisp vibrant edges (spot color), right shirt shows a photographic full-color landscape image print (CMYK), natural daylight from a window, camera holds steady then slowly zooms out, vertical 9:16.",
+      "Close-up of Indian man's hands using a squeegee to pull bright magenta ink across a fine mesh screen onto white cotton fabric stretched on a flatbed screen printing press, ink spreading evenly with visible halftone dot pattern on the mesh, workshop background slightly blurred, warm yellow overhead light, camera angle slightly tilted, vertical 9:16.",
+      "Close-up of Indian man's hands holding up a freshly printed white plain round-neck t-shirt showing a vibrant full-color photographic print with smooth gradients and sharp detail, rotating it slightly to catch the light, clean organized printing workshop background with neatly stacked blank t-shirts on shelves, bright even lighting, camera slowly dollies forward, vertical 9:16."
+    ],
+    "date": "2026-03-30T13:00:47.682740"
   }
 ]
