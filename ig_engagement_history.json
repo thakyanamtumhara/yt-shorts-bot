@@ -86,13 +86,28 @@
     "title": "500 Pieces Without Sample? This GSM Mistake Cost Him Lakhs",
     "topic": "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
     "published_at": "2026-03-29T18:29:28.862603+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-03-31T18:51:08.596225+05:30",
+    "hours_since_publish": 48.4,
+    "views": 0,
+    "reach": 0,
+    "likes": 27,
+    "comments": 1,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18063195446348594",
     "title": "Spot Color vs CMYK – Ye Galti Margin Kha Gayi!",
     "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
     "published_at": "2026-03-30T18:53:15.964417+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18086390324588928",
+    "title": "White Ink DTG Cost Trap: Why Printers Shut Down",
+    "topic": "White ink DTG pe costly hai — dark tshirt pe margin kam hoga",
+    "published_at": "2026-03-31T18:52:53.269058+05:30",
     "checked": false
   }
 ]
