@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Sweatshirt vs hoodie blank — margin kismein zyada hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two price tags side by side on a clean white table surface, one tag showing 450 rupees and another showing 550 rupees, warm indoor lighting with soft shadows, shallow depth of field focusing on the price tags, slight camera push-in movement to emphasize the price difference, vertical 9:16 frame, realistic Indian small business office setting visible in blurred background.",
-      "Medium overhead shot of a clean wooden workspace table showing a plain black cotton sweatshirt laid flat on the left side and a plain black hoodie with drawstrings laid flat on the right side, both garments neatly arranged, bright even lighting from above, camera slowly tilts down to reveal both products, vertical 9:16 frame, realistic textile quality visible in fabric texture, no text or labels visible.",
-      "Close-up shot of Indian man's hands holding up the hood portion of a black hoodie, showing the double-layer fabric construction and inner stitching details, fingers pointing to the seam lines where extra fabric is attached, warm indoor workshop lighting, camera slowly pans along the hood edge to show the construction complexity, vertical 9:16 frame, realistic cotton fabric texture visible.",
-      "Medium shot of Indian man's hands using a fabric measuring tape to measure and compare the total fabric length of a sweatshirt versus a hoodie laid side by side on a white cutting table, hands pulling the tape across both garments, bright overhead lighting, camera remains steady with slight zoom-in to show the measurement difference, vertical 9:16 frame, realistic garment manufacturing workspace visible.",
-      "Close-up shot of Indian man's hands arranging a neat stack of five plain sweatshirts in different colors on a wooden table surface, hands smoothing down the top garment to show the clean finish, warm natural lighting from window creating soft highlights on the fabric, camera slowly dollies back to reveal the satisfying stacked pile, vertical 9:16 frame, realistic premium cotton texture visible on each piece."
-    ],
-    "date": "2026-03-06T12:38:41.482642"
-  },
-  {
     "topic": "Single jersey aur interlock fabric — fark samjho warna galti hogi",
     "prompts": [
       "Close-up shot of Indian man's hands holding a plain white cotton round-neck t-shirt that is visibly twisted with the side seam shifted towards the front center, bright indoor warehouse lighting, hands rotating the twisted garment slowly to show the distortion, camera static medium close angle, clean background, vertical 9:16 format, realistic textile defect visible from first frame.",
@@ -328,5 +317,16 @@
       "Close-up shot of a perfectly DTG-printed black round-neck t-shirt with a vibrant multicolor design being carefully folded by Indian man's hands on a clean white surface, the print colors are vivid and sharp against the dark fabric, soft warm lighting, camera slowly pulls back to reveal the neat finished product, vertical 9:16, no text, no face."
     ],
     "date": "2026-03-31T12:59:26.297178"
+  },
+  {
+    "topic": "Myth: Black tshirt pe print nahi tikta — technique galat hai tumhari",
+    "prompts": [
+      "Close-up shot of Indian man's hands holding a washed black round-neck cotton t-shirt with a visibly cracked and faded white DTG print design on the chest area, fabric slightly wrinkled from washing, bright daylight from a nearby window illuminating the damaged print clearly, camera slowly zooming in on the cracked print lines, vertical 9:16 format, realistic textile workshop setting.",
+      "Medium close-up of a row of plain black cotton t-shirts hanging neatly on a steel clothing rack in an Indian warehouse, warm overhead fluorescent lighting, camera dollying slowly right past the shirts showing the deep black fabric color and smooth bio-washed texture, no faces visible, industrial shelving with stacked fabric rolls blurred in the background, vertical 9:16 format.",
+      "Close-up shot of two black t-shirts laid flat side by side on a clean white table under bright studio lighting, left shirt shows a vibrant crisp white logo print, right shirt shows the same design faded and patchy, Indian man's hand pointing at the faded print then moving to the crisp one for comparison, camera static with slight focus pull between the two, vertical 9:16 format.",
+      "Close-up shot of a pre-treatment spray machine nozzle spraying a fine even mist onto a plain black t-shirt stretched flat on a heat press platen, mist visible catching the overhead workshop light, slight steam rising from the damp fabric, camera angle from above at 45 degrees slowly pushing in, small Indian printing workshop background with equipment visible but blurred, vertical 9:16 format.",
+      "Close-up shot of Indian man's hands peeling a DTF transfer film off a black round-neck t-shirt on a heat press, revealing a sharp vibrant full-color print underneath, slight steam wisps rising from the hot fabric, warm workshop lighting, camera slowly tilting up from the peel point to show the complete clean print, satisfying reveal moment, vertical 9:16 format."
+    ],
+    "date": "2026-04-01T13:01:07.550985"
   }
 ]
