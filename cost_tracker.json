@@ -769,5 +769,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.176
     }
+  },
+  {
+    "date": "2026-04-02T13:20:57.635280",
+    "topic": "Heat transfer vinyl aur DTF mein fark \u2014 kaunsa business ke liye better",
+    "title": "300 T-Shirts Ruined by Vinyl! DTF vs HTV Printing Truth",
+    "total_usd": 3.1334,
+    "duration_min": 26.4,
+    "breakdown": {
+      "claude_opus": 0.2784,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0155,
+      "veo_clips": 2.5,
+      "whisper": 0.0076,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1619
+    }
   }
 ]

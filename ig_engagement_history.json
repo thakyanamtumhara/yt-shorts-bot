@@ -101,7 +101,15 @@
     "title": "Spot Color vs CMYK – Ye Galti Margin Kha Gayi!",
     "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
     "published_at": "2026-03-30T18:53:15.964417+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-02T18:45:20.578832+05:30",
+    "hours_since_publish": 71.9,
+    "views": 0,
+    "reach": 0,
+    "likes": 52,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18086390324588928",
@@ -115,6 +123,13 @@
     "title": "DTG Print Cracked in 3 Washes? Your Technique Is Wrong!",
     "topic": "Myth: Black tshirt pe print nahi tikta — technique galat hai tumhari",
     "published_at": "2026-04-01T18:54:02.341730+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17890176705329594",
+    "title": "300 T-Shirts Ruined by Vinyl! DTF vs HTV Printing Truth",
+    "topic": "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
+    "published_at": "2026-04-02T18:48:04.632145+05:30",
     "checked": false
   }
 ]
