@@ -786,5 +786,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1619
     }
+  },
+  {
+    "date": "2026-04-03T13:13:13.895748",
+    "topic": "Ek startup ne 10 piece se shuru kiya \u2014 ab apna brand hai 50K monthly",
+    "title": "He Started With 10 T-Shirts Now Prints 50K Monthly",
+    "total_usd": 2.8987,
+    "duration_min": 29.7,
+    "breakdown": {
+      "claude_opus": 0.2826,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0141,
+      "veo_clips": 2.5,
+      "whisper": 0.007,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]

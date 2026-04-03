@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Ek customer ne bina sample liye 2000 piece order kiya — kya hua phir?",
-    "prompts": [
-      "Close-up shot of Indian businessman's hand holding a smartphone showing an incoming call on screen with finger hovering over the answer button, warm office lighting with a blurred background of stacked plain t-shirt bundles visible, slight shallow depth of field, vertical 9:16 frame, professional indoor setting with natural concern in the composition.",
-      "Wide angle shot of a large cardboard delivery box being opened on a wooden workspace table, revealing neatly folded stacks of plain white cotton t-shirts packed tightly inside, bright overhead lighting, hands pulling back the box flaps from top view, industrial warehouse atmosphere with concrete floor visible in background, realistic packaging scene.",
-      "Extreme close-up shot of Indian man's hands holding a digital weighing scale displaying 195 grams, with a single folded white cotton t-shirt placed on the scale platform, clean white table surface, focused lighting on the scale's digital display showing the weight clearly, slight zoom-in camera movement toward the numbers, professional product testing environment.",
-      "Medium shot from above showing Indian man's hands laying out three different plain white t-shirts side by side on a wooden table surface for comparison, each slightly different in fabric thickness, hands smoothing the fabrics to show texture differences, warm indoor lighting casting soft shadows, realistic textile inspection scene with subtle fabric variations visible.",
-      "Close-up shot of Indian man's hands holding a small bundle of 10-12 neatly folded sample plain t-shirts in various colors - white, black, navy blue, grey - stacked perfectly with visible fabric edges showing quality, warm studio lighting, slight camera pull-back to reveal the organized sample stack, clean professional presentation on neutral background, satisfying product display."
-    ],
-    "date": "2026-03-08T12:33:23.979738"
-  },
-  {
     "topic": "Return hua kyunki color screen pe alag tha — ye common problem hai",
     "prompts": [
       "Close-up shot of Indian businessman's hands holding a smartphone displaying a product catalog page with royal blue t-shirt images on screen, while his other hand holds an actual light blue cotton t-shirt beside it showing clear color difference, indoor office lighting, camera slowly pushes in to emphasize the mismatch, realistic vertical 9:16 framing, professional product photography style",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands holding up a finished plain black cotton round-neck t-shirt with a vibrant smooth multi-color DTF print on the chest area, gently flexing the fabric to show the print's flexibility and soft feel without cracking, natural daylight streaming from the left side, camera slowly dollies forward, vertical 9:16 format."
     ],
     "date": "2026-04-02T12:55:25.552190"
+  },
+  {
+    "topic": "Ek startup ne 10 piece se shuru kiya — ab apna brand hai 50K monthly",
+    "prompts": [
+      "Close-up of Indian man's hands carefully counting a very small stack of plain white round-neck cotton t-shirts on a wooden table, only about 10 pieces visible, warm yellow indoor lighting from a small room setup, camera slowly dollying in to emphasize how few pieces there are, slight shadow on the table surface, 9:16 vertical format.",
+      "Medium shot of Indian man's hands holding a phone showing an Instagram profile with t-shirt product photos on screen, the phone is angled toward camera, behind the phone a single folded navy blue plain t-shirt sits on a desk, bright natural daylight from a window, shallow depth of field, camera static with slight handheld movement, 9:16 vertical format.",
+      "Wide overhead bird's eye shot of a growing arrangement of neatly folded plain cotton t-shirts in multiple colors — black, white, navy, maroon, olive — being arranged in rows on a large grey table by Indian hands, starting from a small group on the left expanding to a large group on the right showing scale progression, bright even studio lighting, 9:16 vertical format.",
+      "Close-up of Indian man's hands stretching and feeling the fabric of a thick 200 GSM plain white cotton t-shirt, fingers pressing into the dense weave to show the weight and premium feel, then flipping it to reveal smooth bio-washed interior surface, warm workshop lighting with fabric rolls blurred in background, slow deliberate movements, camera at 45 degree angle, 9:16 vertical format.",
+      "Medium wide shot of a busy small Indian warehouse with tall shelving stacked floor to ceiling with hundreds of poly-packed plain t-shirts in various colors, Indian worker's hands placing a fresh bundle onto a shelf, cardboard shipping boxes stacked near the foreground ready for dispatch, bright overhead fluorescent warehouse lighting, camera slowly panning upward to reveal the full scale of inventory, 9:16 vertical format."
+    ],
+    "date": "2026-04-03T12:44:30.002156"
   }
 ]

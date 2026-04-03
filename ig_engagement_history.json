@@ -116,7 +116,15 @@
     "title": "White Ink DTG Cost Trap: Why Printers Shut Down",
     "topic": "White ink DTG pe costly hai — dark tshirt pe margin kam hoga",
     "published_at": "2026-03-31T18:52:53.269058+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-03T18:40:36.560672+05:30",
+    "hours_since_publish": 71.8,
+    "views": 0,
+    "reach": 0,
+    "likes": 56,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18094173149149170",
@@ -130,6 +138,13 @@
     "title": "300 T-Shirts Ruined by Vinyl! DTF vs HTV Printing Truth",
     "topic": "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
     "published_at": "2026-04-02T18:48:04.632145+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18450484450102619",
+    "title": "He Started With 10 T-Shirts Now Prints 50K Monthly",
+    "topic": "Ek startup ne 10 piece se shuru kiya — ab apna brand hai 50K monthly",
+    "published_at": "2026-04-03T18:43:13.895323+05:30",
     "checked": false
   }
 ]
