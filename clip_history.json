@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Return hua kyunki color screen pe alag tha — ye common problem hai",
-    "prompts": [
-      "Close-up shot of Indian businessman's hands holding a smartphone displaying a product catalog page with royal blue t-shirt images on screen, while his other hand holds an actual light blue cotton t-shirt beside it showing clear color difference, indoor office lighting, camera slowly pushes in to emphasize the mismatch, realistic vertical 9:16 framing, professional product photography style",
-      "Medium side angle shot of a cardboard package being opened on a warehouse table, Indian man's hands pulling out folded navy blue cotton t-shirts from tissue paper packaging, disappointed gesture as he unfolds one piece and holds it up to inspect, warm yellow warehouse tube lights overhead, camera static focus on the unboxing moment, vertical 9:16 composition",
-      "Split composition shot showing left half with a smartphone screen displaying a dark blue t-shirt product photo in bright white backlight, right half showing the same person's hand holding an actual light blue cotton t-shirt under natural window daylight, clear visual comparison of color variation, camera holds steady on this comparison, clean white background, vertical 9:16 format",
-      "Close-up overhead shot of a clean white workspace surface with three identical style cotton round-neck t-shirts laid flat side by side in different lighting conditions - one under warm yellow LED bulb creating orange tone, one under cool white fluorescent creating blue tone, one under natural sunlight through window creating true color, Indian man's hand pointing between them showing differences, camera slowly tracks across, vertical 9:16 product photography",
-      "Medium shot of Indian man's hands on a wooden office desk carefully examining a single sample piece navy blue cotton t-shirt under desk lamp light, turning it, checking color accuracy, then nodding in approval and placing it next to an open laptop showing bulk order confirmation screen, satisfied gesture, warm professional office lighting, camera dollies back slightly, vertical 9:16 business setting"
-    ],
-    "date": "2026-03-09T12:43:42.871157"
-  },
-  {
     "topic": "500 piece screen print order mein 20 piece waste hua — ye normal hai ya nahi",
     "prompts": [
       "Close-up shot of Indian man's hands counting a stack of rejected white cotton t-shirts on a wooden table, some with visible screen print smudges and misalignment marks, sorting them into a separate pile, warm workshop lighting, camera slowly pushing in to show the defects clearly, realistic printing studio environment",
@@ -328,5 +317,16 @@
       "Medium wide shot of a busy small Indian warehouse with tall shelving stacked floor to ceiling with hundreds of poly-packed plain t-shirts in various colors, Indian worker's hands placing a fresh bundle onto a shelf, cardboard shipping boxes stacked near the foreground ready for dispatch, bright overhead fluorescent warehouse lighting, camera slowly panning upward to reveal the full scale of inventory, 9:16 vertical format."
     ],
     "date": "2026-04-03T12:44:30.002156"
+  },
+  {
+    "topic": "180 GSM aur 220 GSM mein kya farq hai — printing ke baad dikta hai",
+    "prompts": [
+      "Close-up of Indian man's hands holding a light-colored round-neck cotton t-shirt up against warm workshop lighting, tilting it at an angle to reveal a dark printed design where the fabric texture is visibly showing through the ink, slight camera push-in, shallow depth of field, realistic small Indian printing workshop background with rolls of fabric blurred behind.",
+      "Medium close-up of two plain white round-neck cotton t-shirts laid flat side by side on a clean wooden table, one visibly thinner and one noticeably thicker, Indian man's hands pressing down on each one to show the thickness difference, overhead camera angle, bright natural daylight from a window, 9:16 vertical format.",
+      "Close-up shot of a DTF transfer being heat-pressed onto a thin white cotton t-shirt on a flat heat press machine, steam rising gently, camera at 45 degrees showing the press closing down, warm amber workshop lighting, various plain t-shirts stacked in the blurred background, realistic Indian garment workshop setting.",
+      "Extreme close-up of Indian man's hands holding two printed round-neck t-shirts after washing, one thin fabric where the print looks rough and textured, one thicker fabric where the print looks smooth and vibrant, hands turning them slowly to compare, soft diffused indoor lighting, camera slowly dollying right to reveal both samples clearly, no faces visible.",
+      "Close-up of Indian man's hands neatly folding a thick premium white cotton round-neck t-shirt with a clean vibrant print on it, placing it on a stack of similar quality printed t-shirts on a wooden shelf, satisfying and organized, warm golden hour lighting from the side, slight camera pull-back revealing a tidy garment storage area, 9:16 vertical."
+    ],
+    "date": "2026-04-04T12:38:18.146919"
   }
 ]

@@ -801,5 +801,22 @@
       "whisper": 0.007,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-04-04T13:03:34.736699",
+    "topic": "180 GSM aur 220 GSM mein kya farq hai \u2014 printing ke baad dikta hai",
+    "title": "Stop Using 180 GSM for Printing \u2014 Here's Proof",
+    "total_usd": 3.1327,
+    "duration_min": 26.1,
+    "breakdown": {
+      "claude_opus": 0.2878,
+      "replicate_music": 0.05,
+      "tts_openai": 0.017,
+      "veo_clips": 2.5,
+      "whisper": 0.0087,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1493
+    }
   }
 ]
