@@ -818,5 +818,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1493
     }
+  },
+  {
+    "date": "2026-04-05T13:07:52.396393",
+    "topic": "Drop shoulder vs regular shoulder \u2014 fit mein fark dikhta hai",
+    "title": "He Ordered 300 Oversized Tees But Got This Instead",
+    "total_usd": 3.155,
+    "duration_min": 28.4,
+    "breakdown": {
+      "claude_opus": 0.2959,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0172,
+      "veo_clips": 2.5,
+      "whisper": 0.0085,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1635
+    }
   }
 ]

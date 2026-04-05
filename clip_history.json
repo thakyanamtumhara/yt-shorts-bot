@@ -1,16 +1,5 @@
 [
   {
-    "topic": "500 piece screen print order mein 20 piece waste hua — ye normal hai ya nahi",
-    "prompts": [
-      "Close-up shot of Indian man's hands counting a stack of rejected white cotton t-shirts on a wooden table, some with visible screen print smudges and misalignment marks, sorting them into a separate pile, warm workshop lighting, camera slowly pushing in to show the defects clearly, realistic printing studio environment",
-      "Medium overhead shot of a bright wooden workspace showing a smartphone displaying a text message conversation about order quantity, with a calculator and notepad beside it showing '500 pieces' written, Indian businessman's hand pointing at the numbers, natural daylight from window, static camera angle",
-      "Close-up shot of Indian man's hands holding two identical black cotton round-neck t-shirts side by side on a clean white surface, one with perfect screen print registration and one with slight color shift misalignment, fingers pointing to show the difference, bright studio lighting, slight camera tilt down",
-      "Medium angle shot of a screen printing carousel machine in action inside an Indian printing workshop, mesh screens visible, squeegee pulling ink across white t-shirt fabric, overhead fluorescent lighting, camera slow pan right showing multiple stations, no faces visible, realistic industrial setting with fabric stacks in background",
-      "Wide angle shot of a clean wooden packing table showing neatly folded stacks of perfectly printed custom t-shirts being counted and arranged into a large cardboard shipping box, Indian worker's hands placing final pieces, barcode label visible on box, bright warehouse lighting, camera slow zoom out showing organized workspace"
-    ],
-    "date": "2026-03-10T12:43:12.124841"
-  },
-  {
     "topic": "Custom packaging se brand value badhti hai — par shuruat mein zaroor nahi",
     "prompts": [
       "Medium angle shot of Indian businessman's hands opening a large cardboard box filled with neatly stacked custom printed packaging boxes with colorful logo designs, camera tilts down to reveal the box is completely full and untouched, bright warehouse lighting with concrete floor visible in background, slight camera zoom in showing the unused boxes clearly",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands neatly folding a thick premium white cotton round-neck t-shirt with a clean vibrant print on it, placing it on a stack of similar quality printed t-shirts on a wooden shelf, satisfying and organized, warm golden hour lighting from the side, slight camera pull-back revealing a tidy garment storage area, 9:16 vertical."
     ],
     "date": "2026-04-04T12:38:18.146919"
+  },
+  {
+    "topic": "Drop shoulder vs regular shoulder — fit mein fark dikhta hai",
+    "prompts": [
+      "Close-up of Indian man's hands pulling a plain white oversized t-shirt out of a brown shipping box on a wooden table, the hands hold it up by the shoulders looking slightly disappointed, warm natural daylight from a window, camera static at chest level, 9:16 vertical format, no text or faces visible.",
+      "Medium shot of two plain olive green cotton round-neck t-shirts laid flat on a clean white cutting table in an Indian garment workshop — one regular fit and one oversized drop shoulder, both placed side by side showing clearly different shoulder widths and overall shapes, bright overhead fluorescent lighting, camera slowly dollies in from above, 9:16 vertical, no faces.",
+      "Close-up of Indian man's hand pointing with index finger at the shoulder seam area of a plain grey cotton t-shirt draped over a dress form mannequin torso, the finger traces along the seam from the neck to the shoulder edge, warm workshop lighting with fabric rolls blurred in background, slight camera pan following the hand movement, 9:16 vertical, no face visible.",
+      "Top-down overhead shot of Indian man's hands placing a plain black drop shoulder t-shirt flat on a steel cutting table next to a measuring tape, one hand stretches the sleeve outward to show the wide boxy shape while the other hand holds the body flat, bright white workshop lighting, camera static directly above, 9:16 vertical format, no text or faces.",
+      "Medium close-up of a plain mustard yellow drop shoulder oversized t-shirt on a headless mannequin torso in a clean well-lit showroom setting, camera slowly orbits around the mannequin showing the relaxed boxy silhouette and dropped shoulder seam placement, soft diffused lighting, neat stacks of colorful folded plain t-shirts visible on shelves in blurred background, 9:16 vertical, no faces."
+    ],
+    "date": "2026-04-05T12:40:31.980452"
   }
 ]

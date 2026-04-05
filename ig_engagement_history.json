@@ -146,7 +146,15 @@
     "title": "300 T-Shirts Ruined by Vinyl! DTF vs HTV Printing Truth",
     "topic": "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
     "published_at": "2026-04-02T18:48:04.632145+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-05T18:31:42.739416+05:30",
+    "hours_since_publish": 71.7,
+    "views": 0,
+    "reach": 0,
+    "likes": 34,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18450484450102619",
@@ -160,6 +168,13 @@
     "title": "Stop Using 180 GSM for Printing — Here's Proof",
     "topic": "180 GSM aur 220 GSM mein kya farq hai — printing ke baad dikta hai",
     "published_at": "2026-04-04T18:30:38.259353+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18370814275167694",
+    "title": "He Ordered 300 Oversized Tees But Got This Instead",
+    "topic": "Drop shoulder vs regular shoulder — fit mein fark dikhta hai",
+    "published_at": "2026-04-05T18:34:47.146831+05:30",
     "checked": false
   }
 ]
