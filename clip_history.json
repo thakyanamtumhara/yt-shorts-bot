@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Custom packaging se brand value badhti hai — par shuruat mein zaroor nahi",
-    "prompts": [
-      "Medium angle shot of Indian businessman's hands opening a large cardboard box filled with neatly stacked custom printed packaging boxes with colorful logo designs, camera tilts down to reveal the box is completely full and untouched, bright warehouse lighting with concrete floor visible in background, slight camera zoom in showing the unused boxes clearly",
-      "Close-up overhead shot of a clean white workspace table showing a plain white cotton t-shirt being carefully placed inside a simple transparent polybag by Indian man's hands, natural daylight from window, hands sealing the polybag with tape, camera slowly pulls back to show multiple polybags ready for dispatch beside the workspace",
-      "Medium side angle shot of wooden table surface showing two packaging options side by side - left side has a plain brown cardboard mailer box with a folded white t-shirt, right side has an elaborate custom printed box with tissue paper and branded stickers, Indian man's hands pointing at both options for comparison, warm indoor lighting, camera stays static focused on the contrast",
-      "Close-up shot of Indian man's hands using a calculator on a smartphone placed next to a stack of approximately 50 plain white folded t-shirts on a warehouse table, one hand typing numbers while other hand is counting the t-shirt stack, fluorescent warehouse lighting, slight camera dolly forward emphasizing the calculation moment, brown cardboard boxes visible blurred in background",
-      "Wide angle shot of a neat warehouse dispatch area showing multiple plain brown boxes and polybag packages arranged in organized rows on a metal rack shelf, Indian worker's hands placing one more package on the shelf, bright overhead tube lights, camera slowly pans right showing the efficient simple packaging system, concrete floor and white walls visible creating a clean professional look"
-    ],
-    "date": "2026-03-11T12:42:53.766327"
-  },
-  {
     "topic": "Customer bola sizing galat hai — L size chhota lag raha hai — actual problem kya thi",
     "prompts": [
       "Close-up shot of Indian businessman's hands holding a plain white L-size cotton round-neck t-shirt against his torso showing it looks slightly tight across the chest area, indoor warehouse lighting with stacked folded t-shirts visible blurred in background, camera slowly zooms in on the chest area of the t-shirt being held up, 9:16 vertical format, realistic textile business environment",
@@ -328,5 +317,16 @@
       "Medium close-up of a plain mustard yellow drop shoulder oversized t-shirt on a headless mannequin torso in a clean well-lit showroom setting, camera slowly orbits around the mannequin showing the relaxed boxy silhouette and dropped shoulder seam placement, soft diffused lighting, neat stacks of colorful folded plain t-shirts visible on shelves in blurred background, 9:16 vertical, no faces."
     ],
     "date": "2026-04-05T12:40:31.980452"
+  },
+  {
+    "topic": "Freight cost calculate karo — door delivery mein margin khata hai",
+    "prompts": [
+      "Close-up of Indian man's hands holding a printed courier shipping bill with highlighted total amount, the bill resting on a cluttered office desk with a calculator, pen, and a few folded plain white t-shirts visible beside it, warm yellow indoor lighting, slight camera push-in, vertical 9:16 format, realistic Indian small business office setting.",
+      "Medium close-up of a stack of neatly folded plain navy blue round-neck cotton t-shirts being placed into a brown corrugated cardboard shipping box on a warehouse packing table, bubble wrap and tape dispenser visible nearby, bright fluorescent overhead lighting, camera slowly panning right across the packing area, vertical 9:16 format.",
+      "Close-up of Indian man's hands placing a single plain white cotton round-neck t-shirt onto a small silver digital weighing scale on a wooden table, the scale display showing numbers clearly, soft natural daylight from a nearby window, camera angle slightly overhead looking down at the scale, vertical 9:16 format, realistic Indian workspace.",
+      "Close-up of Indian man's hands using a calculator on a desk, writing numbers with a pen on a lined notebook page that shows a simple cost breakdown with rows of figures, a few plain t-shirts in different colors stacked beside the notebook, warm indoor tungsten lighting, slow camera dolly forward, vertical 9:16 format.",
+      "Medium shot of sealed brown cardboard boxes neatly stacked and labeled with shipping stickers on a warehouse shelf, an Indian man's hand placing a final box on top confidently, clean organized warehouse background with more boxes and garment racks visible, bright even warehouse lighting, slight upward camera tilt, vertical 9:16 format."
+    ],
+    "date": "2026-04-06T12:54:15.494962"
   }
 ]
