@@ -713,5 +713,16 @@
     "likes": 0,
     "comments": 1,
     "publish_hour_ist": 19
+  },
+  {
+    "video_id": "Fz3MDNKopcA",
+    "title": "Stop Using 180 GSM for Printing — Here's Proof #Shorts",
+    "published_at": "2026-04-04T16:00:22Z",
+    "checked_at": "2026-04-07T18:57:19.381289+05:30",
+    "hours_since_publish": 69.4,
+    "views": 227,
+    "likes": 0,
+    "comments": 1,
+    "publish_hour_ist": 21
   }
 ]

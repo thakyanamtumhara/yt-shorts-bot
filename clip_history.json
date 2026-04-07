@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Customer bola sizing galat hai — L size chhota lag raha hai — actual problem kya thi",
-    "prompts": [
-      "Close-up shot of Indian businessman's hands holding a plain white L-size cotton round-neck t-shirt against his torso showing it looks slightly tight across the chest area, indoor warehouse lighting with stacked folded t-shirts visible blurred in background, camera slowly zooms in on the chest area of the t-shirt being held up, 9:16 vertical format, realistic textile business environment",
-      "Medium overhead shot of a wooden warehouse desk surface showing two plain white cotton t-shirts laid flat side by side with a printed size chart paper placed between them, one t-shirt is slightly wider and longer than the other showing the difference between regular fit and body fit, warm fluorescent lighting from above, camera slowly pans right across both t-shirts, 9:16 vertical format, clean organized workspace",
-      "Close-up shot of Indian man's hands holding a measuring tape across the chest width of a plain white cotton t-shirt laid flat on a bright wooden table, measuring from armpit to armpit, the measuring tape shows clear inch markings, another folded t-shirt visible beside it, soft natural daylight from window, camera moves from left shoulder area down to right shoulder area following the measuring tape, 9:16 vertical format",
-      "Medium angle shot of Indian businessman's hands picking up a plain white cotton t-shirt from a neatly arranged stack of different sized t-shirts on a warehouse table, unfolding it completely and holding it up to check the fit by stretching the chest area slightly with both hands, bright overhead warehouse lighting, other stacked inventory visible in soft focus background, camera tilts up following the unfolding motion, 9:16 vertical format",
-      "Close-up shot of Indian man's hands placing a perfectly folded plain white cotton body-fit t-shirt into a transparent plastic packaging bag on a clean wooden table surface, the t-shirt looks premium and well-fitted, size label clearly visible on the fold, warm indoor lighting creating soft shadows, camera slowly dollies back to reveal more packaged t-shirts neatly arranged beside it, 9:16 vertical format, satisfying packaging moment"
-    ],
-    "date": "2026-03-12T12:42:13.293311"
-  },
-  {
     "topic": "Colorfastness test ghar pe karo — rubbing se pata chal jayega",
     "prompts": [
       "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt against a white fabric cloth, showing a slight gray stain mark on the white cloth from color transfer, warm workshop lighting, shallow depth of field focusing on the stain, static camera angle, 9:16 vertical format, realistic textile business setting",
@@ -328,5 +317,16 @@
       "Medium shot of sealed brown cardboard boxes neatly stacked and labeled with shipping stickers on a warehouse shelf, an Indian man's hand placing a final box on top confidently, clean organized warehouse background with more boxes and garment racks visible, bright even warehouse lighting, slight upward camera tilt, vertical 9:16 format."
     ],
     "date": "2026-04-06T12:54:15.494962"
+  },
+  {
+    "topic": "Seam strength kaise check karo — haath se kheench ke dekho",
+    "prompts": [
+      "Close-up of a plain white cotton round-neck t-shirt lying on a wooden table with a visible ripped side seam, fabric clearly separated along the stitch line, warm overhead lighting, slight camera zoom-in toward the torn seam area, vertical 9:16 format, realistic textile workshop background with blurred fabric rolls behind.",
+      "Medium close-up of Indian man's hands holding a plain black cotton t-shirt turned inside out, fingers pointing at the side seam stitching line, showing the thread pattern clearly under bright warm workshop lighting, camera slowly panning along the seam from bottom hem upward, clean cutting table surface visible, vertical 9:16 format.",
+      "Close-up comparison shot of two seam sections of plain cotton t-shirt fabric laid side by side on a light grey surface — left side showing loose wide stitching with visible gaps between threads, right side showing tight dense stitching with no gaps, bright even top-down lighting, camera slowly dollying forward, vertical 9:16 format.",
+      "Close-up of Indian man's hands gripping a plain maroon cotton t-shirt on both sides of the side seam, pulling the fabric firmly in opposite directions to test seam strength, knuckles visible with effort, seam holding tight without opening, bright natural daylight from a nearby window, slight camera shake for realism, vertical 9:16 format.",
+      "Close-up of Indian man's hands holding a plain navy blue cotton round-neck t-shirt turned inside out, fingers running smoothly along a perfectly stitched shoulder seam showing dense even stitches, warm golden workshop lighting, camera slowly tracking the finger movement along the seam, neat stack of folded colorful plain t-shirts softly blurred in background, vertical 9:16 format."
+    ],
+    "date": "2026-04-07T13:03:17.080986"
   }
 ]

@@ -852,5 +852,23 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1588
     }
+  },
+  {
+    "date": "2026-04-07T13:33:07.563121",
+    "topic": "Seam strength kaise check karo \u2014 haath se kheench ke dekho",
+    "title": "T-Shirt Seam Ripped After 1 Wash? Check This Before You Buy",
+    "total_usd": 2.9904,
+    "duration_min": 30.9,
+    "breakdown": {
+      "claude_opus": 0.276,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0156,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1713
+    }
   }
 ]
