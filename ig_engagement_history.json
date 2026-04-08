@@ -206,13 +206,28 @@
     "title": "300 T-Shirt Order But Zero Profit? Freight Trap!",
     "topic": "Freight cost calculate karo — door delivery mein margin khata hai",
     "published_at": "2026-04-06T18:44:35.190910+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-08T18:55:10.834699+05:30",
+    "hours_since_publish": 48.2,
+    "views": 0,
+    "reach": 0,
+    "likes": 4,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18073649354314719",
     "title": "T-Shirt Seam Ripped After 1 Wash? Check This Before You Buy",
     "topic": "Seam strength kaise check karo — haath se kheench ke dekho",
     "published_at": "2026-04-07T18:59:55.228129+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18572737261011297",
+    "title": "All Over Print Mistake 90% T-Shirt Printers Make",
+    "topic": "All over print kaise hota hai — sublimation ya screen dono se ho sakta hai",
+    "published_at": "2026-04-08T18:57:18.828224+05:30",
     "checked": false
   }
 ]

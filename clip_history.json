@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Colorfastness test ghar pe karo — rubbing se pata chal jayega",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt against a white fabric cloth, showing a slight gray stain mark on the white cloth from color transfer, warm workshop lighting, shallow depth of field focusing on the stain, static camera angle, 9:16 vertical format, realistic textile business setting",
-      "Medium overhead shot of a clean wooden workspace table showing three plain cotton t-shirts laid flat in a row, one black, one navy blue, one maroon, next to them a folded white cotton cloth and a small bowl of water, bright natural daylight from window, slight camera tilt down, 9:16 vertical format",
-      "Close-up side angle shot of Indian businessman's hands dipping a white cotton cloth into a small glass bowl of water, lifting it out with water dripping, then placing the wet cloth on a black t-shirt spread on a wooden table, warm indoor lighting, camera slowly pushing in, 9:16 vertical format",
-      "Extreme close-up shot of Indian man's hands vigorously rubbing a wet white cloth back and forth on a black cotton t-shirt surface approximately 15-20 times in rhythmic motion, fabric texture visible, slight camera shake following the rubbing movement, bright overhead workshop lighting, 9:16 vertical format",
-      "Close-up overhead shot of Indian businessman's hands lifting a white cloth away from a premium quality black t-shirt on wooden table surface, showing the white cloth remains clean with no color transfer, satisfied hand gesture, warm natural lighting, camera slowly pulling back, 9:16 vertical format, high quality cotton fabric visible"
-    ],
-    "date": "2026-03-13T12:40:55.530302"
-  },
-  {
     "topic": "Ek customer ne white aur off-white confuse kar diya — 1000 piece ka order",
     "prompts": [
       "Medium angle shot of Indian businessman's hands holding a smartphone with a worried expression visible in hand gestures, phone screen showing a text message conversation about t-shirt order confusion, sitting at a wooden desk with stacked plain white t-shirts visible in soft background blur, warm indoor warehouse lighting, camera slowly pushes in on the phone screen, realistic business setting, 9:16 vertical format.",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands holding a plain navy blue cotton round-neck t-shirt turned inside out, fingers running smoothly along a perfectly stitched shoulder seam showing dense even stitches, warm golden workshop lighting, camera slowly tracking the finger movement along the seam, neat stack of folded colorful plain t-shirts softly blurred in background, vertical 9:16 format."
     ],
     "date": "2026-04-07T13:03:17.080986"
+  },
+  {
+    "topic": "All over print kaise hota hai — sublimation ya screen dono se ho sakta hai",
+    "prompts": [
+      "Close-up of a fully all-over printed t-shirt with a vibrant tropical pattern spread flat on a dark cutting table, camera slowly panning across the seam-to-seam print coverage, warm overhead fluorescent factory lighting, Indian textile workshop setting, scissors and measuring tape visible at the edge, vertical 9:16 format, 8 seconds.",
+      "Medium shot of Indian man's hands holding up two plain unprinted t-shirts side by side — one white polyester with a slight sheen and one white cotton with a matte texture — against a fabric roll storage background in a Tiruppur textile unit, natural daylight from a window, camera slowly dollying in, vertical 9:16 format, 8 seconds.",
+      "Close-up of a large sublimation heat press machine opening with steam rising, revealing a polyester fabric sheet with a colorful all-over geometric pattern transferring from paper to fabric, bright industrial lighting, hands in work gloves pulling the fabric sheet, camera angle slightly from above looking down, vertical 9:16 format, 8 seconds.",
+      "Medium close-up of a rotary screen printing machine roller pressing ink onto a long continuous roll of white cotton fabric creating an all-over floral pattern, ink spreading evenly across the width, factory machinery humming in background, overhead industrial lights, camera tracking sideways following the fabric movement, vertical 9:16 format, 8 seconds.",
+      "Close-up of Indian man's hands holding a finished all-over printed cotton round-neck t-shirt with rich deep colors, gently rubbing the fabric surface to show the print quality and texture, then flipping it to show clean inside stitching, warm studio-style lighting on a clean wooden table, camera slowly pulling back, vertical 9:16 format, 8 seconds."
+    ],
+    "date": "2026-04-08T13:04:56.805601"
   }
 ]
