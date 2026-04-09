@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Ek customer ne white aur off-white confuse kar diya — 1000 piece ka order",
-    "prompts": [
-      "Medium angle shot of Indian businessman's hands holding a smartphone with a worried expression visible in hand gestures, phone screen showing a text message conversation about t-shirt order confusion, sitting at a wooden desk with stacked plain white t-shirts visible in soft background blur, warm indoor warehouse lighting, camera slowly pushes in on the phone screen, realistic business setting, 9:16 vertical format.",
-      "Close-up overhead shot of a wooden warehouse table surface showing two plain cotton round-neck t-shirts laid flat side by side, one pure bright white t-shirt on the left and one off-white cream-toned t-shirt on the right, natural daylight from window creating clear color contrast, Indian man's hands entering frame and placing both shirts carefully next to each other for comparison, realistic textile texture visible, 9:16 vertical format.",
-      "Close-up shot of Indian man's hands holding up a pure white cotton t-shirt against a bright window with natural sunlight streaming through, fabric glowing with bright white luminosity, then hands switching to hold an off-white t-shirt against the same sunlight showing the warm cream undertone difference, camera slightly tilts to emphasize the color contrast, realistic indoor lighting transition, 9:16 vertical format.",
-      "Medium angle shot of a clean wooden workspace table surface showing a plain white t-shirt and an off-white t-shirt laid flat next to each other under a bright LED desk lamp, Indian man's hands entering frame holding a color swatch card and placing it between both t-shirts to show color code comparison, camera slowly dollies down from above to table level, warm professional lighting, realistic printing business workspace, 9:16 vertical format.",
-      "Close-up shot of Indian businessman's hands folding a perfectly bright white cotton round-neck t-shirt on a wooden warehouse table, fabric showing clean pure white color with no undertones, soft satisfied hand movements suggesting correct choice made, neatly stacked white t-shirts visible in soft background, warm indoor lighting creating professional quality feel, camera slowly pulls back slightly, 9:16 vertical format."
-    ],
-    "date": "2026-03-14T12:34:56.175812"
-  },
-  {
     "topic": "Client bola tshirt ka weight kam lag raha hai — GSM aur weight mein fark hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a smartphone to his ear with a concerned expression suggested by hand gestures, other hand holding a plain white oversized cotton t-shirt on a wooden warehouse desk, warm overhead lighting, camera slowly pushes in, 9:16 vertical format, realistic textile business environment",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands holding a finished all-over printed cotton round-neck t-shirt with rich deep colors, gently rubbing the fabric surface to show the print quality and texture, then flipping it to show clean inside stitching, warm studio-style lighting on a clean wooden table, camera slowly pulling back, vertical 9:16 format, 8 seconds."
     ],
     "date": "2026-04-08T13:04:56.805601"
+  },
+  {
+    "topic": "Supplier change karne se pehle soch lo — consistency matter karti hai",
+    "prompts": [
+      "Close-up of Indian man's hands placing a rejection stamp or red X mark sticker on a stack of freshly DTG-printed white cotton t-shirts spread on a worktable, some prints visibly darker and some faded on identical white shirts, warm fluorescent workshop lighting, camera slowly dollying in, vertical 9:16 format, scene begins fully lit and in action.",
+      "Medium shot of a busy Indian textile wholesale warehouse shelf stacked with hundreds of poly-packed plain white round-neck t-shirts in neat rows, a hand reaches in and pulls out one packet, soft overhead warehouse tube lighting, slight camera pan right revealing the depth of inventory, vertical 9:16 format, scene opens with a bright well-lit frame.",
+      "Top-down close-up of two plain white cotton t-shirts laid on a dark wooden surface, one slightly creamier and one brighter white, Indian man's hands pressing down on both fabrics simultaneously to show different thickness and texture, natural daylight from a nearby window, camera static with subtle zoom, vertical 9:16, immediately visible scene.",
+      "Close-up of Indian man's hands running a freshly DTG-printed multicolor design t-shirt under tap water in a steel sink, water running over the fabric showing ink holding vs slightly bleeding in patches, realistic Indian workshop sink with tiled wall background, overhead warm lighting, camera angle slightly above looking down, vertical 9:16, opens bright.",
+      "Medium close-up of Indian man's hands neatly stacking 5-6 perfectly printed plain round-neck cotton t-shirts in different colors (black, white, navy, maroon) into a corrugated shipping box, each shirt showing clean consistent vibrant prints, warm indoor packaging area lighting, gentle camera tilt down into the box, vertical 9:16 format, scene starts fully visible."
+    ],
+    "date": "2026-04-09T13:05:48.898731"
   }
 ]

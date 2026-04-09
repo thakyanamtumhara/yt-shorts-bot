@@ -887,5 +887,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1731
     }
+  },
+  {
+    "date": "2026-04-09T13:33:00.026321",
+    "topic": "Supplier change karne se pehle soch lo \u2014 consistency matter karti hai",
+    "title": "\u20b98 Savings Destroyed His Print Business #tshirt #bulk",
+    "total_usd": 3.1727,
+    "duration_min": 28.1,
+    "breakdown": {
+      "claude_opus": 0.2945,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0327,
+      "veo_clips": 2.5,
+      "whisper": 0.0072,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1683
+    }
   }
 ]
