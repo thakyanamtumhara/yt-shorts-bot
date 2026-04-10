@@ -221,7 +221,15 @@
     "title": "T-Shirt Seam Ripped After 1 Wash? Check This Before You Buy",
     "topic": "Seam strength kaise check karo — haath se kheench ke dekho",
     "published_at": "2026-04-07T18:59:55.228129+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-10T18:50:13.394503+05:30",
+    "hours_since_publish": 71.8,
+    "views": 0,
+    "reach": 0,
+    "likes": 9,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18572737261011297",
@@ -235,6 +243,13 @@
     "title": "₹8 Savings Destroyed His Print Business #tshirt #bulk",
     "topic": "Supplier change karne se pehle soch lo — consistency matter karti hai",
     "published_at": "2026-04-09T18:59:43.432220+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18075578108641957",
+    "title": "First Time Printing T-Shirts? This Waste % Will Shock You",
+    "topic": "Printing business mein waste percentage rakho — 3 to 5% normal hai",
+    "published_at": "2026-04-10T18:53:26.246013+05:30",
     "checked": false
   }
 ]

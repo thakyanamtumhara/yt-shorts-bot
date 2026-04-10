@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Client bola tshirt ka weight kam lag raha hai — GSM aur weight mein fark hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a smartphone to his ear with a concerned expression suggested by hand gestures, other hand holding a plain white oversized cotton t-shirt on a wooden warehouse desk, warm overhead lighting, camera slowly pushes in, 9:16 vertical format, realistic textile business environment",
-      "Medium overhead shot of a clean wooden table surface showing two plain white cotton round-neck t-shirts laid flat side by side, one regular fit M-size and one oversized XL-size, both clearly visible with different dimensions, bright natural daylight from window, camera static, 9:16 vertical format, crisp product comparison setup",
-      "Close-up shot of Indian businessman's hands holding a small digital weighing scale displaying numbers, placing a neatly folded plain white oversized cotton t-shirt onto the scale platform, warm indoor warehouse lighting, camera slightly tilted downward, 9:16 vertical format, realistic measurement demonstration scene",
-      "Medium angle shot of Indian man's hands stretching out a plain white oversized cotton t-shirt horizontally to show the loose fit and fabric spread, holding it against a neutral grey wall background, fingers gripping the shoulder seams, soft even lighting, camera slowly zooms in, 9:16 vertical format, demonstrating fabric area difference",
-      "Close-up overhead shot of a wooden workspace table showing a neatly stacked pile of premium white cotton oversized t-shirts with visible thick fabric texture, one t-shirt slightly pulled to side showing the smooth bio-washed finish, warm golden hour lighting from side window, camera slow dolly right, 9:16 vertical format, satisfying quality product reveal"
-    ],
-    "date": "2026-03-15T12:36:58.006061"
-  },
-  {
     "topic": "Client ne acid wash pe embroidery karwai — thread toota kyu? Texture issue",
     "prompts": [
       "Close-up shot of Indian man's hands holding a light grey acid wash cotton t-shirt, running fingers across the uneven textured surface showing the irregular washed pattern, indoor workshop lighting with embroidery machines visible in soft background blur, camera slowly pushes in to emphasize the rough texture, vertical 9:16 frame, realistic textile workspace environment",
@@ -328,5 +317,16 @@
       "Medium close-up of Indian man's hands neatly stacking 5-6 perfectly printed plain round-neck cotton t-shirts in different colors (black, white, navy, maroon) into a corrugated shipping box, each shirt showing clean consistent vibrant prints, warm indoor packaging area lighting, gentle camera tilt down into the box, vertical 9:16 format, scene starts fully visible."
     ],
     "date": "2026-04-09T13:05:48.898731"
+  },
+  {
+    "topic": "Printing business mein waste percentage rakho — 3 to 5% normal hai",
+    "prompts": [
+      "Close-up of Indian man's hands sorting through a small pile of freshly printed cotton t-shirts on a work table, pulling out one with a visibly smudged or misaligned print, setting it aside separately, warm fluorescent workshop lighting, camera slowly zooms in on the defective print area, vertical 9:16 format, 8 seconds.",
+      "Medium shot of a DTG printing machine mid-operation pressing ink onto a plain white cotton t-shirt stretched on a platen, slight steam rising, colorful ink visible on the print head, industrial Indian workshop setting with tools and fabric rolls in soft background blur, overhead angle slightly tilted, bright even lighting, vertical 9:16.",
+      "Close-up top-down shot of a clean wooden table with two groups of printed t-shirts separated clearly — a larger neat stack of 10-12 good printed tees on the left and 2-3 defective printed tees with visible misprints on the right, a small handwritten note card showing '3-5%' placed between them, natural daylight from a nearby window, camera holds steady then slowly dollies forward, vertical 9:16.",
+      "Close-up of Indian man's hands using a calculator placed next to a small counting tally sheet on a cluttered workshop desk, fingers pressing buttons, a few plain blank cotton t-shirts stacked nearby with a pen resting on the sheet, realistic Indian small business office environment with warm indoor lighting, slight camera pan from calculator to the blank tee stack, vertical 9:16.",
+      "Medium close-up of Indian man's hands neatly packing a full stack of perfectly printed cotton t-shirts into a brown corrugated shipping box on a packing table, placing the last folded tee on top completing the order, tape dispenser and poly bags visible beside the box, bright warehouse lighting, camera slowly pulls back to reveal the organized packing station, vertical 9:16."
+    ],
+    "date": "2026-04-10T12:52:55.577614"
   }
 ]
