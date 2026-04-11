@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Client ne acid wash pe embroidery karwai — thread toota kyu? Texture issue",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a light grey acid wash cotton t-shirt, running fingers across the uneven textured surface showing the irregular washed pattern, indoor workshop lighting with embroidery machines visible in soft background blur, camera slowly pushes in to emphasize the rough texture, vertical 9:16 frame, realistic textile workspace environment",
-      "Medium overhead shot of a clean work table surface showing an acid wash t-shirt laid flat next to a regular plain white t-shirt for comparison, Indian worker's hands entering frame to touch both fabrics showing the texture difference, warm workshop lighting, embroidery thread spools visible at the edge of frame, camera steady, vertical 9:16 format",
-      "Close-up shot of an embroidery machine needle moving up and down through acid wash fabric mounted in an embroidery hoop, Indian operator's hands adjusting the fabric tension, indoor workshop lighting, white embroidery thread visible running through the needle mechanism, camera angle from side showing the needle penetrating the uneven fabric surface, vertical 9:16 frame",
-      "Medium shot of Indian worker's hands placing white tear-away stabilizer backing underneath an acid wash t-shirt on embroidery machine hoop, smoothing it carefully before starting work, workshop lighting, embroidery machine control panel visible in background, camera angle slightly elevated showing the preparation process, vertical 9:16 format, realistic textile work environment",
-      "Close-up shot of finished embroidered logo on acid wash t-shirt, Indian hands holding the completed garment up to show clean professional embroidery work without thread breaks, workshop lighting highlighting the successful result, camera slowly pulls back slightly to show full design, vertical 9:16 frame, satisfying quality finish visible"
-    ],
-    "date": "2026-03-16T12:55:06.133336"
-  },
-  {
     "topic": "DTF film ka quality matter karta hai — saste film se print kharab hoga",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white cotton t-shirt with a cracked and peeling DTF print design on the chest area, fingers pointing to the damaged areas, warm warehouse lighting, camera slowly zooms in to show the print damage clearly, vertical 9:16 format, realistic texture of failed print visible",
@@ -328,5 +317,16 @@
       "Medium close-up of Indian man's hands neatly packing a full stack of perfectly printed cotton t-shirts into a brown corrugated shipping box on a packing table, placing the last folded tee on top completing the order, tape dispenser and poly bags visible beside the box, bright warehouse lighting, camera slowly pulls back to reveal the organized packing station, vertical 9:16."
     ],
     "date": "2026-04-10T12:52:55.577614"
+  },
+  {
+    "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
+    "prompts": [
+      "Close-up of Indian man's hands lifting a dark green plain cotton round-neck t-shirt from a poly bag, bringing it close to nose level (face not visible, only chin and hands), slight recoil reaction suggesting bad smell, warm indoor warehouse lighting, vertical 9:16 format, camera static with slight zoom in, stack of folded dark-colored t-shirts visible in soft background.",
+      "Medium close-up of a large industrial fabric dyeing drum rotating slowly inside a textile dyeing unit in Tiruppur, dark navy blue liquid visible swirling inside the machine, steam rising from the top, overhead fluorescent factory lighting, pipes and valves visible in background, vertical 9:16 format, slight camera pan left to right revealing the scale of the machine.",
+      "Close-up top-down shot of Indian man's hands holding two identical plain cotton t-shirts side by side on a clean white surface — one dark maroon (properly washed, crisp looking) and one dark maroon with slight whitish residue patches visible on inner collar and seam areas, natural daylight from a nearby window, vertical 9:16 format, camera slowly dollies forward to reveal the residue detail.",
+      "Close-up of Indian man's hands submerging a dark navy blue plain cotton t-shirt into a transparent glass bowl filled with clean water on a wooden table, water slowly turning slightly bluish with tiny foam bubbles forming on the surface, warm indoor lighting, vertical 9:16 format, camera angle slightly above looking down at 45 degrees, hands pressing the fabric gently underwater.",
+      "Close-up of Indian man's hands squeezing out a freshly washed dark green plain cotton t-shirt over a steel bucket, water running clear and clean, then hands spreading the t-shirt flat on a clean white cotton cloth showing the smooth bio-washed texture with no residue, bright natural daylight, vertical 9:16 format, slow camera dolly forward ending on the clean fabric surface."
+    ],
+    "date": "2026-04-11T12:40:02.561474"
   }
 ]

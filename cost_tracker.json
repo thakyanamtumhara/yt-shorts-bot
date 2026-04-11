@@ -921,5 +921,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1571
     }
+  },
+  {
+    "date": "2026-04-11T13:05:48.447302",
+    "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
+    "title": "T-shirt Smells After Dyeing? This Washing Mistake Ruins It",
+    "total_usd": 3.1779,
+    "duration_min": 26.6,
+    "breakdown": {
+      "claude_opus": 0.2874,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0328,
+      "veo_clips": 2.5,
+      "whisper": 0.0072,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1805
+    }
   }
 ]
