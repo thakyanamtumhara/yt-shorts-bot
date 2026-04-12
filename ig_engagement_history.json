@@ -251,7 +251,15 @@
     "title": "₹8 Savings Destroyed His Print Business #tshirt #bulk",
     "topic": "Supplier change karne se pehle soch lo — consistency matter karti hai",
     "published_at": "2026-04-09T18:59:43.432220+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-12T18:43:40.324243+05:30",
+    "hours_since_publish": 71.7,
+    "views": 0,
+    "reach": 0,
+    "likes": 49,
+    "comments": 1,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18075578108641957",
@@ -265,6 +273,13 @@
     "title": "T-shirt Smells After Dyeing? This Washing Mistake Ruins It",
     "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
     "published_at": "2026-04-11T18:31:59.317814+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17936686122206641",
+    "title": "15K Followers But Zero Repeat Orders? T-Shirt Quality Truth",
+    "topic": "Instagram se customer aayega — par product quality se rukega",
+    "published_at": "2026-04-12T18:45:27.499421+05:30",
     "checked": false
   }
 ]

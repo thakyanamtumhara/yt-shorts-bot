@@ -938,5 +938,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1805
     }
+  },
+  {
+    "date": "2026-04-12T13:15:27.499970",
+    "topic": "Instagram se customer aayega \u2014 par product quality se rukega",
+    "title": "15K Followers But Zero Repeat Orders? T-Shirt Quality Truth",
+    "total_usd": 2.9232,
+    "duration_min": 32.8,
+    "breakdown": {
+      "claude_opus": 0.2913,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0305,
+      "veo_clips": 2.5,
+      "whisper": 0.0065,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]

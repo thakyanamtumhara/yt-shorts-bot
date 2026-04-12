@@ -1,16 +1,5 @@
 [
   {
-    "topic": "DTF film ka quality matter karta hai — saste film se print kharab hoga",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a white cotton t-shirt with a cracked and peeling DTF print design on the chest area, fingers pointing to the damaged areas, warm warehouse lighting, camera slowly zooms in to show the print damage clearly, vertical 9:16 format, realistic texture of failed print visible",
-      "Medium overhead shot of a clean wooden work table surface showing two rolls of DTF transfer film side by side, one labeled with lower price tag and one with higher price tag, Indian businessman's hands reaching into frame to touch both rolls, bright indoor lighting from above, camera static, vertical 9:16 format",
-      "Extreme close-up macro shot of DTF film surface showing the difference in coating quality, camera panning slowly across the film texture to reveal uneven coating and thin release layer, studio lighting highlighting the texture details, vertical 9:16 format, realistic film material texture visible",
-      "Medium angle shot of Indian man's hands operating a DTF heat press machine, placing a DTF transfer film with printed design onto a white cotton t-shirt, pressing down the heat press, warm orange glow from the heating element, slight steam rising, camera positioned at 45-degree angle, vertical 9:16 format",
-      "Close-up shot of Indian businessman's hands holding a perfectly printed white cotton t-shirt with vibrant, crisp DTF print design, gently stretching the fabric to show the print flexibility and quality, natural daylight from window, camera slowly pulling back to show full t-shirt, vertical 9:16 format, print looks professional and durable"
-    ],
-    "date": "2026-03-17T12:53:10.255555"
-  },
-  {
     "topic": "Ek customer aaya 500 piece cancel karwa diya — galti uski thi ya supplier ki?",
     "prompts": [
       "Close-up shot of Indian man's hands holding a smartphone with a distressed expression visible through hand gestures, finger hovering over a red cancel button on screen showing order details with '500 pieces' visible, indoor office lighting with warm tungsten tone, shallow depth of field focusing on the phone screen, slight camera shake suggesting tension, wooden desk surface visible in background",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands squeezing out a freshly washed dark green plain cotton t-shirt over a steel bucket, water running clear and clean, then hands spreading the t-shirt flat on a clean white cotton cloth showing the smooth bio-washed texture with no residue, bright natural daylight, vertical 9:16 format, slow camera dolly forward ending on the clean fabric surface."
     ],
     "date": "2026-04-11T12:40:02.561474"
+  },
+  {
+    "topic": "Instagram se customer aayega — par product quality se rukega",
+    "prompts": [
+      "Close-up of a smartphone screen showing an Instagram business profile with many followers and likes, the phone resting on a messy desk cluttered with crumpled plain t-shirts and packaging materials, warm overhead lighting, shallow depth of field, camera slowly pulling back to reveal the chaos around the phone, vertical 9:16 format, 8 seconds.",
+      "Medium close-up of Indian man's hands stretching a thin light-colored plain cotton t-shirt between both hands, the fabric visibly see-through under bright daylight near a window, showing the thinness and looseness of the material, camera steady with slight zoom in on the stretched fabric, vertical 9:16 format, 8 seconds.",
+      "Split-view style shot of two plain white round-neck t-shirts laid flat side by side on a clean grey surface — one visibly thinner and rougher textured on the left, one thicker and smoother on the right, a hand enters frame and presses down on each one alternately to show the thickness difference, bright even studio lighting, top-down camera angle, vertical 9:16 format, 8 seconds.",
+      "Close-up of Indian man's hands washing a printed cotton t-shirt under running tap water in a steel sink, gently rubbing the print area, water running clear showing the print holding strong, camera angle slightly above looking down into the sink, natural indoor lighting with water reflections, vertical 9:16 format, 8 seconds.",
+      "Medium shot of a neatly organized stack of thick premium plain cotton t-shirts in multiple colors — navy, white, black, maroon — arranged on a clean wooden shelf in a well-lit warehouse setting, a hand enters frame and confidently picks up the top t-shirt revealing the soft biowashed texture, camera dolly slowly forward, warm ambient lighting, vertical 9:16 format, 8 seconds."
+    ],
+    "date": "2026-04-12T12:43:36.279942"
   }
 ]
