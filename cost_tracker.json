@@ -953,5 +953,22 @@
       "whisper": 0.0065,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-04-13T13:35:53.744095",
+    "topic": "B2B aur B2C pricing alag hoti hai \u2014 dono mat mix karo",
+    "title": "Stop Quoting MRP for Bulk T-Shirt Orders (Big Mistake!)",
+    "total_usd": 3.1894,
+    "duration_min": 29.6,
+    "breakdown": {
+      "claude_opus": 0.2959,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0335,
+      "veo_clips": 2.5,
+      "whisper": 0.0071,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1829
+    }
   }
 ]

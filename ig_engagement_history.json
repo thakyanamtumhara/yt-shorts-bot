@@ -266,20 +266,43 @@
     "title": "First Time Printing T-Shirts? This Waste % Will Shock You",
     "topic": "Printing business mein waste percentage rakho — 3 to 5% normal hai",
     "published_at": "2026-04-10T18:53:26.246013+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-13T18:59:36.431559+05:30",
+    "hours_since_publish": 72.1,
+    "views": 0,
+    "reach": 0,
+    "likes": 37,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18021553478650664",
     "title": "T-shirt Smells After Dyeing? This Washing Mistake Ruins It",
     "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
     "published_at": "2026-04-11T18:31:59.317814+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-13T18:59:36.431559+05:30",
+    "hours_since_publish": 48.5,
+    "views": 0,
+    "reach": 0,
+    "likes": 12,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "17936686122206641",
     "title": "15K Followers But Zero Repeat Orders? T-Shirt Quality Truth",
     "topic": "Instagram se customer aayega — par product quality se rukega",
     "published_at": "2026-04-12T18:45:27.499421+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18572230180021983",
+    "title": "Stop Quoting MRP for Bulk T-Shirt Orders (Big Mistake!)",
+    "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
+    "published_at": "2026-04-13T19:02:26.071418+05:30",
     "checked": false
   }
 ]

@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Ek customer aaya 500 piece cancel karwa diya — galti uski thi ya supplier ki?",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a smartphone with a distressed expression visible through hand gestures, finger hovering over a red cancel button on screen showing order details with '500 pieces' visible, indoor office lighting with warm tungsten tone, shallow depth of field focusing on the phone screen, slight camera shake suggesting tension, wooden desk surface visible in background",
-      "Medium overhead shot of a warehouse packing table showing a large cardboard box filled with neatly folded white oversized t-shirts in clear plastic packaging, around 15-20 pieces visible, a printed invoice paper lying on top showing '500 pcs' text, hands reaching in to pick up one folded t-shirt, bright warehouse LED lighting casting soft shadows, camera slowly pushing in toward the box",
-      "Side angle shot showing Indian man's hands holding two different plain white cotton t-shirts side by side against a neutral grey wall background for size comparison, left hand holding a regular fit t-shirt appearing shorter, right hand holding an oversized t-shirt noticeably longer by 2-3 inches, natural window lighting from the side creating soft contrast, camera slowly tracking right to emphasize the length difference between both garments",
-      "Close-up overhead shot of Indian businessman's hands laying out a single white oversized t-shirt flat on a clean wooden work table, pulling out a yellow measuring tape and carefully measuring the length from shoulder seam to bottom hem, the tape showing approximately 30 inches, a notepad and pen visible at the edge of frame, warm indoor lighting, camera angle directly from above showing the full measuring process, slight zoom in on the measurement numbers",
-      "Medium shot of a clean warehouse counter desk showing a small sample package box opened with 3-4 different sized plain white t-shirts neatly folded inside with size labels visible (S, M, L, XL tags), Indian man's hands picking up one t-shirt and placing it next to a satisfied customer approval checklist on clipboard, warm natural lighting from nearby window, camera slow dolly forward suggesting positive resolution and proper process being followed"
-    ],
-    "date": "2026-03-18T12:54:33.499409"
-  },
-  {
     "topic": "Myth: Screen printing dead hai — volume orders mein sabse sasta aaj bhi",
     "prompts": [
       "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral warehouse background, one with vibrant screen printed logo, one with DTG printed logo, slight camera push-in to emphasize comparison, warm industrial lighting, shot starts with both shirts clearly visible in frame",
@@ -328,5 +317,16 @@
       "Medium shot of a neatly organized stack of thick premium plain cotton t-shirts in multiple colors — navy, white, black, maroon — arranged on a clean wooden shelf in a well-lit warehouse setting, a hand enters frame and confidently picks up the top t-shirt revealing the soft biowashed texture, camera dolly slowly forward, warm ambient lighting, vertical 9:16 format, 8 seconds."
     ],
     "date": "2026-04-12T12:43:36.279942"
+  },
+  {
+    "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
+    "prompts": [
+      "Close-up of Indian man's hands holding a basic calculator showing a low number, with a small stack of about 10 folded plain white t-shirts on one side and a large pile of 50+ folded plain t-shirts on the other side, both on a wooden desk. Warm indoor warehouse lighting, camera slowly zooms in on the calculator screen, slight head shake motion of the hands suggesting frustration. Vertical 9:16 format, bright from frame one.",
+      "Medium shot of Indian man's hands writing two columns on a ruled notebook page with a blue pen — one column header circled showing a single t-shirt icon sketch and the other showing multiple t-shirt icon sketches stacked. Plain white cotton t-shirts scattered around the notebook on a clean desk surface. Overhead camera angle looking down, natural daylight from a nearby window, camera slowly dollies forward. Vertical 9:16.",
+      "Close-up of two printed price tags placed side by side on a plain black cotton t-shirt laid flat — one tag showing a higher number and one showing a lower number. Indian man's fingers tap between the two tags alternately, comparing them. Soft warm studio lighting, shallow depth of field with fabric texture visible in background, slight camera pan left to right. Vertical 9:16, well-lit from first frame.",
+      "Medium close-up of Indian man's hands using a pen to circle and underline items on a printed spreadsheet or invoice paper showing two separate sections with different line items and totals. A stack of neatly folded colorful plain round-neck t-shirts in navy, white, and maroon sit beside the paper. Top-down camera angle, natural office lighting, slow subtle zoom into the circled numbers. Vertical 9:16 format, bright opening.",
+      "Medium shot of two neat separate stacks of plain cotton t-shirts on a warehouse packing table — a small stack of 5-6 individually poly-packed t-shirts on the left and a large bulk bundle of 50+ t-shirts wrapped in brown craft paper on the right. Indian man's hands place a final t-shirt on the bulk stack with a satisfied pat. Clean warehouse background with metal shelving, bright tube lighting, camera slowly pulls back to reveal both stacks. Vertical 9:16."
+    ],
+    "date": "2026-04-13T13:07:15.165886"
   }
 ]
