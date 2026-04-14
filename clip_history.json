@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: Screen printing dead hai — volume orders mein sabse sasta aaj bhi",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral warehouse background, one with vibrant screen printed logo, one with DTG printed logo, slight camera push-in to emphasize comparison, warm industrial lighting, shot starts with both shirts clearly visible in frame",
-      "Medium overhead shot of a busy screen printing workshop table showing a large order of 50-60 folded plain white cotton t-shirts stacked in neat rows on brown kraft paper, with a completed printed sample t-shirt placed on top of the stack, bright overhead fluorescent lighting, static camera angle capturing the scale of volume order",
-      "Close-up tracking shot following Indian man's hand holding a calculator while writing cost breakdown numbers on a white notepad, showing calculations like 500pcs, 25rs vs 15rs per piece, red pen underlining final totals, warm desk lamp lighting from right side, shot begins with calculator and notepad both visible",
-      "Medium angle shot of screen printing carousel machine in action with rotating platforms, showing automated squeegee applying ink through mesh screen onto white cotton t-shirt, metallic industrial equipment with colored ink containers visible, bright workshop lighting, camera slowly pans right following the rotation",
-      "Close-up shot of Indian man's hands holding up a completed screen printed white t-shirt with crisp bold multicolor design, gently stretching the fabric to show the quality and thickness of the print, fingers running over the smooth printed surface, natural daylight from window, camera slowly pulls back to reveal full t-shirt"
-    ],
-    "date": "2026-03-19T12:45:26.200665"
-  },
-  {
     "topic": "Ek banda export karta hai humse plain leke — shipping mein kya dikkat aati hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a large shipping invoice document with frustrated expression visible in hand gestures, the paper shows columns and text but no readable words, placed on a wooden office desk next to a sealed cardboard export box with shipping tape, warm overhead lighting, camera slowly pushes in on the document, serious mood showing export documentation problem, vertical 9:16 format, realistic business setting",
@@ -328,5 +317,16 @@
       "Medium shot of two neat separate stacks of plain cotton t-shirts on a warehouse packing table — a small stack of 5-6 individually poly-packed t-shirts on the left and a large bulk bundle of 50+ t-shirts wrapped in brown craft paper on the right. Indian man's hands place a final t-shirt on the bulk stack with a satisfied pat. Clean warehouse background with metal shelving, bright tube lighting, camera slowly pulls back to reveal both stacks. Vertical 9:16."
     ],
     "date": "2026-04-13T13:07:15.165886"
+  },
+  {
+    "topic": "Tshirt ka hand feel kaise judge karo — 3 cheezein check karo",
+    "prompts": [
+      "Close-up of two plain white cotton round-neck t-shirts laid side by side on a dark wooden table, one visibly smoother and one slightly rougher in texture, warm overhead lighting, camera slowly dollying in to highlight the surface difference, vertical 9:16 format, Indian textile workspace background slightly blurred.",
+      "Close-up of Indian man's hands picking up a plain navy blue cotton t-shirt from a neatly stacked pile of folded blank t-shirts in multiple colors on a metal warehouse shelf, natural warehouse lighting with tube lights above, camera at chest level focusing on the hands and fabric, vertical 9:16 format.",
+      "Extreme close-up of Indian man's thumb and index finger slowly rubbing a piece of premium white cotton fabric, camera macro lens showing the fine yarn texture and smooth surface, soft warm directional lighting from the left creating slight shadow on fabric weave, slow gentle rubbing motion, vertical 9:16 format.",
+      "Close-up of Indian man's hands bunching a plain grey cotton t-shirt into a tight ball and then releasing it onto a clean white surface, camera positioned directly above looking down, bright even lighting, the fabric slowly unfurling and flattening out showing minimal wrinkles, vertical 9:16 format.",
+      "Close-up of Indian man's hands gently stretching a plain black cotton t-shirt fabric sideways and releasing it, the fabric snapping back smoothly to its original shape, warm indoor lighting, camera at table level with slight dolly forward, satisfied slow motion feel, clean background, vertical 9:16 format."
+    ],
+    "date": "2026-04-14T13:08:09.765351"
   }
 ]

@@ -970,5 +970,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1829
     }
+  },
+  {
+    "date": "2026-04-14T13:33:20.363125",
+    "topic": "Tshirt ka hand feel kaise judge karo \u2014 3 cheezein check karo",
+    "title": "200 GSM But Feels Cheap? Check These 3 Things",
+    "total_usd": 3.1542,
+    "duration_min": 26.2,
+    "breakdown": {
+      "claude_opus": 0.2935,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0313,
+      "veo_clips": 2.5,
+      "whisper": 0.0063,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1532
+    }
   }
 ]

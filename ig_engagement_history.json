@@ -296,13 +296,28 @@
     "title": "15K Followers But Zero Repeat Orders? T-Shirt Quality Truth",
     "topic": "Instagram se customer aayega — par product quality se rukega",
     "published_at": "2026-04-12T18:45:27.499421+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-14T18:57:46.293504+05:30",
+    "hours_since_publish": 48.2,
+    "views": 0,
+    "reach": 0,
+    "likes": 7,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18572230180021983",
     "title": "Stop Quoting MRP for Bulk T-Shirt Orders (Big Mistake!)",
     "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
     "published_at": "2026-04-13T19:02:26.071418+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18066989483423793",
+    "title": "200 GSM But Feels Cheap? Check These 3 Things",
+    "topic": "Tshirt ka hand feel kaise judge karo — 3 cheezein check karo",
+    "published_at": "2026-04-14T18:59:55.895030+05:30",
     "checked": false
   }
 ]
