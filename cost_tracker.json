@@ -987,5 +987,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1532
     }
+  },
+  {
+    "date": "2026-04-15T13:34:06.339167",
+    "topic": "DTF Printer Kaunsa Lein? \u20b92 Lakh vs \u20b98 Lakh \u2014 Real Difference Dikhata Hoon #dtfprinting #shorts",
+    "title": "\u20b92L vs \u20b98L DTF Printer \u2014 One Died in 90 Days",
+    "total_usd": 3.1793,
+    "duration_min": 28.5,
+    "breakdown": {
+      "claude_opus": 0.2972,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0346,
+      "veo_clips": 2.5,
+      "whisper": 0.0076,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.17
+    }
   }
 ]

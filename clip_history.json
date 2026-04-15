@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Ek banda export karta hai humse plain leke — shipping mein kya dikkat aati hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a large shipping invoice document with frustrated expression visible in hand gestures, the paper shows columns and text but no readable words, placed on a wooden office desk next to a sealed cardboard export box with shipping tape, warm overhead lighting, camera slowly pushes in on the document, serious mood showing export documentation problem, vertical 9:16 format, realistic business setting",
-      "Medium shot of a clean warehouse shipping counter showing multiple stacks of folded white and colored plain cotton t-shirts neatly arranged in separate piles of approximately 50 pieces each, export quality products ready for packing, an open large corrugated cardboard box in the foreground, bright warehouse fluorescent lighting, camera slowly pans right across the stacks, professional B2B textile export environment, vertical 9:16 format",
-      "Close-up shot of Indian man's hands typing on a laptop keyboard, the screen shows a commercial invoice template with columns for item description, HSN code, and specifications but no readable text, a plain white cotton t-shirt lies folded next to the laptop on a wooden desk, warm indoor office lighting, camera angle from slightly above showing hands and screen, documentation process for export, vertical 9:16 format, realistic business scenario",
-      "Medium overhead shot of a warehouse packing station showing two different packaging methods side by side — left side has a small courier box with approximately 100 folded plain t-shirts and a DHL/FedEx style label, right side shows a large sea freight carton box with approximately 500 t-shirts and industrial packing tape, bright warehouse lighting, camera tilts down slowly to show the size comparison, export shipping decision visualization, vertical 9:16 format",
-      "Close-up shot of Indian man's hands placing a properly labeled commercial invoice on top of a sealed export carton box, the invoice shows clear columns and professional formatting with barcodes visible but no readable text, a customs clearance stamp impression is visible on the document, the box is sitting on a clean warehouse table, satisfied hand movement showing completion, bright even lighting, camera slowly pulls back, successful export preparation conclusion, vertical 9:16 format"
-    ],
-    "date": "2026-03-20T12:41:23.285328"
-  },
-  {
     "topic": "Myth: Biowash sirf softness ke liye hai — nahi aur bhi fayda hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral grey background, one t-shirt has a noticeably rough fuzzy surface with visible fiber pilling, the other has a smooth clean surface, hands gently rubbing both fabrics to show texture difference, bright studio lighting from above, camera slowly pushes in to show fabric detail, vertical 9:16 format, realistic workshop environment visible in soft background blur",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands gently stretching a plain black cotton t-shirt fabric sideways and releasing it, the fabric snapping back smoothly to its original shape, warm indoor lighting, camera at table level with slight dolly forward, satisfied slow motion feel, clean background, vertical 9:16 format."
     ],
     "date": "2026-04-14T13:08:09.765351"
+  },
+  {
+    "topic": "DTF Printer Kaunsa Lein? ₹2 Lakh vs ₹8 Lakh — Real Difference Dikhata Hoon #dtfprinting #shorts",
+    "prompts": [
+      "Close-up of a small desktop DTF printer sitting idle on a cluttered workshop table, red warning light blinking on the control panel, print head area visible with dried ink smudges, a frustrated hand placing a failed test print sheet next to the machine, warm fluorescent workshop lighting, vertical 9:16 format, slight camera push-in toward the print head.",
+      "Medium shot from above of Indian man's hands unboxing a compact DTF printer from a cardboard box on a concrete floor, packing foam and cables visible around it, a small printed invoice paper with ₹2,00,000 visible tucked inside, natural daylight from a nearby window, vertical 9:16, slow deliberate unboxing motion.",
+      "Side-by-side comparison shot of two DTF printers on separate tables in a printing workshop — a smaller single-head unit on the left and a larger dual-head industrial unit on the right, both powered on with green indicator lights, hands pointing from one to the other, bright overhead LED panel lighting, vertical 9:16, slow camera pan from left printer to right printer.",
+      "Close-up of Indian man's hands holding two white cotton t-shirts with DTF prints under running tap water, gently rubbing the printed area with thumbs to test wash durability, water splashing over the colorful graphic prints, one print visibly holding strong while the other shows slight fading at edges, bright bathroom-style lighting, vertical 9:16 format, steady handheld camera feel.",
+      "Close-up of a large industrial DTF printer running smoothly, the dual print heads gliding across a long PET film with vibrant multi-color designs being printed in real-time, powder shaking unit vibrating underneath, finished printed film rolling out cleanly, warm workshop ambient lighting with slight steam from the dryer section, vertical 9:16, slow dolly along the length of the machine."
+    ],
+    "date": "2026-04-15T13:07:09.491278"
   }
 ]
