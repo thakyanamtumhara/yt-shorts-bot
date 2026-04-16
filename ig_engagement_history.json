@@ -311,20 +311,43 @@
     "title": "Stop Quoting MRP for Bulk T-Shirt Orders (Big Mistake!)",
     "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
     "published_at": "2026-04-13T19:02:26.071418+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-16T19:03:32.411872+05:30",
+    "hours_since_publish": 72.0,
+    "views": 0,
+    "reach": 0,
+    "likes": 22,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18066989483423793",
     "title": "200 GSM But Feels Cheap? Check These 3 Things",
     "topic": "Tshirt ka hand feel kaise judge karo — 3 cheezein check karo",
     "published_at": "2026-04-14T18:59:55.895030+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-04-16T19:03:32.411872+05:30",
+    "hours_since_publish": 48.1,
+    "views": 0,
+    "reach": 0,
+    "likes": 40,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18100610347953123",
     "title": "₹2L vs ₹8L DTF Printer — One Died in 90 Days",
     "topic": "DTF Printer Kaunsa Lein? ₹2 Lakh vs ₹8 Lakh — Real Difference Dikhata Hoon #dtfprinting #shorts",
     "published_at": "2026-04-15T19:00:43.712554+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18051592559786930",
+    "title": "Stop! T-Shirt Business Mein Ye Galti Mat Karo",
+    "topic": "Myth: Tshirt business easy hai — margins tight hain competition zyada hai",
+    "published_at": "2026-04-16T19:05:53.294823+05:30",
     "checked": false
   }
 ]

@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: Biowash sirf softness ke liye hai — nahi aur bhi fayda hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two identical white cotton round-neck t-shirts side by side against a neutral grey background, one t-shirt has a noticeably rough fuzzy surface with visible fiber pilling, the other has a smooth clean surface, hands gently rubbing both fabrics to show texture difference, bright studio lighting from above, camera slowly pushes in to show fabric detail, vertical 9:16 format, realistic workshop environment visible in soft background blur",
-      "Medium overhead shot of a clean wooden work table showing a non-biowash white cotton t-shirt lying flat, camera zooms in slowly to reveal tiny cotton fiber pills and loose threads on the fabric surface under bright LED work lamp, a magnifying glass enters frame from right side held by Indian man's hand to emphasize the rough texture, small fabric lint particles visible on the table surface around the shirt, warm indoor lighting, vertical 9:16 format",
-      "Close-up shot of Indian man's hands holding a screen printing squeegee applying blue ink across a white t-shirt on a printing table, the ink spreads unevenly leaving patchy areas and visible streaks on the non-biowash fabric surface, camera angle is slightly tilted top-down view, bright workshop lighting, hands pause mid-stroke showing the uneven ink distribution clearly, vertical 9:16 format, realistic printing studio environment",
-      "Medium shot of a textile quality testing table showing two printed white t-shirts side by side under bright examination light, left shirt shows patchy faded print on non-biowash fabric, right shirt shows vibrant even print on biowash fabric, Indian man's hands enter frame holding a color comparison card between both prints, camera slowly dollies forward focusing on the print quality difference, vertical 9:16 format, clean professional testing environment visible in background",
-      "Close-up shot of Indian man's hands smoothly folding a perfectly printed white biowash t-shirt with sharp vibrant DTG print design, fabric has a clean smooth surface with no pilling, hands run across the print showing excellent ink absorption and color depth, warm studio lighting highlights the premium fabric quality, camera slowly pulls back to show the neatly folded shirt on a clean table, satisfying final frame, vertical 9:16 format"
-    ],
-    "date": "2026-03-21T12:33:11.168295"
-  },
-  {
     "topic": "Customer ne black tshirt pe white DTF kiya — peeling kyu hui?",
     "prompts": [
       "Close-up shot of Indian man's hands holding a black cotton round-neck t-shirt with a large white DTF print on the chest showing visible peeling and cracking at the edges, fingers pointing to the damaged areas, warm indoor warehouse lighting, slight camera push-in movement to emphasize the peeling problem, realistic textile defect visible, vertical 9:16 format, starts with fully lit scene showing the damaged print immediately.",
@@ -328,5 +317,16 @@
       "Close-up of a large industrial DTF printer running smoothly, the dual print heads gliding across a long PET film with vibrant multi-color designs being printed in real-time, powder shaking unit vibrating underneath, finished printed film rolling out cleanly, warm workshop ambient lighting with slight steam from the dryer section, vertical 9:16, slow dolly along the length of the machine."
     ],
     "date": "2026-04-15T13:07:09.491278"
+  },
+  {
+    "topic": "Myth: Tshirt business easy hai — margins tight hain competition zyada hai",
+    "prompts": [
+      "Close-up of Indian man's hands scrolling through Instagram Reels on a smartphone, the screen showing multiple colorful custom printed t-shirt business posts and ads, warm ambient indoor lighting, slight camera push-in toward the phone screen, vertical 9:16 format, well-lit from the start.",
+      "Medium close-up of a cluttered small workspace table showing scattered items: a stack of plain white cotton t-shirts, a roll of packaging tape, some courier shipping labels, a heat press visible in the background slightly out of focus, warm tungsten workshop lighting, slow camera pan from left to right, vertical 9:16 format.",
+      "Close-up of Indian man's hands writing expense items line by line on a white notebook page with a black pen — visible words like numbers 300, 100, 40, 30 being written in a column, a basic calculator placed beside the notebook, overhead angle looking down at the desk, bright daylight from a nearby window, vertical 9:16 format.",
+      "Medium shot of Indian man's hands carefully packing a printed t-shirt into a poly mailer bag on a wooden table, then placing a shipping label sticker on it, a small stack of similar packed orders visible beside him, warm indoor lighting with natural light mix, slow camera dolly forward, vertical 9:16 format.",
+      "Close-up of Indian man's hands holding a neatly organized spiral notebook open to a page showing a clean two-column costing breakdown with numbers and a circled final profit figure at the bottom, a pen resting on the page, bright warm desk lamp lighting from the side, camera slowly pulling back to reveal stacks of neatly folded colorful plain t-shirts in the background, vertical 9:16 format."
+    ],
+    "date": "2026-04-16T13:13:01.134467"
   }
 ]

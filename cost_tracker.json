@@ -1004,5 +1004,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.17
     }
+  },
+  {
+    "date": "2026-04-16T13:39:28.004034",
+    "topic": "Myth: Tshirt business easy hai \u2014 margins tight hain competition zyada hai",
+    "title": "Stop! T-Shirt Business Mein Ye Galti Mat Karo",
+    "total_usd": 3.1391,
+    "duration_min": 27.4,
+    "breakdown": {
+      "claude_opus": 0.2956,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0338,
+      "veo_clips": 2.5,
+      "whisper": 0.0073,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1775
+    }
   }
 ]
