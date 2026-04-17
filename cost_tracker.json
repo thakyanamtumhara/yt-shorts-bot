@@ -1020,5 +1020,19 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1775
     }
+  },
+  {
+    "date": "2026-04-17T13:30:17.940402",
+    "topic": "240 GSM Oversized Royal Blue T-Shirt \u2014 Ye GSM Summer Mein Chalega Ya Nahi? Real Talk \ud83d\udd25",
+    "title": "240 GSM in Summer? This Brand Lost 300 Pieces!",
+    "total_usd": 2.1235,
+    "duration_min": 29.6,
+    "breakdown": {
+      "claude_opus": 0.2852,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0315,
+      "kling_clips": 1.75,
+      "whisper": 0.0068
+    }
   }
 ]
