@@ -1034,5 +1034,21 @@
       "kling_clips": 1.75,
       "whisper": 0.0068
     }
+  },
+  {
+    "date": "2026-04-18T13:15:50.201598",
+    "topic": "DTF vs Screen Print vs DTG \u2014 \u20b910,000 Budget Mein Kaun Jeetega? Printing Method Showdown \ud83d\udd25",
+    "title": "\u20b9100/Pc Budget: DTF vs Screen vs DTG \u2014 Which Wins?",
+    "total_usd": 2.3908,
+    "duration_min": 33.2,
+    "breakdown": {
+      "claude_opus": 0.2931,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0326,
+      "kling_clips": 1.75,
+      "whisper": 0.0074,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1826
+    }
   }
 ]
