@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Festival season mein 2x order aata hai — stock kaise manage karein",
-    "prompts": [
-      "Close-up shot of Indian man's hands scrolling through a phone screen showing multiple WhatsApp order messages with urgent text visible, warm indoor lighting, slight camera push-in, a messy desk with scattered plain t-shirts and empty poly bags in the soft background, vertical 9:16 format, scene starts bright and well-lit from frame one.",
-      "Medium wide shot of a large textile warehouse aisle in Tiruppur India showing tall metal shelving racks heavily stocked with neatly folded colorful plain cotton t-shirts in poly packs organized by color — black white navy maroon — warm overhead fluorescent lighting, slow camera dolly forward through the aisle, vertical 9:16 format, bright from first frame.",
-      "Overhead top-down shot of a clean white table showing two groups of folded plain t-shirts side by side — left group is a small stack of about 10 pieces with a handwritten label saying 'September', right group is a much larger stack of about 30 pieces with label saying 'October', Indian man's hands placing more shirts on the larger pile, warm natural daylight, vertical 9:16 format, well-lit from first frame.",
-      "Close-up shot of Indian man's hands sorting through stacks of folded plain round-neck cotton t-shirts by size on a clean workshop table, picking up L and XL size shirts and placing them in a separate larger pile, size sticker labels visible on poly packaging, warm indoor workshop lighting with slight camera pan right, vertical 9:16 format, bright scene from first frame.",
-      "Medium shot of a well-organized warehouse packing station showing neatly arranged stacks of black white and navy plain cotton t-shirts in poly bags ready for dispatch, multiple sealed brown carton boxes stacked beside them, a clipboard with a checklist on top, warm golden hour light streaming through a window, slow gentle camera dolly back revealing the full organized setup, vertical 9:16 format, well-lit from first frame."
-    ],
-    "date": "2026-03-23T14:31:40.990388"
-  },
-  {
     "topic": "DTG printing ke liye pre-treatment zaroori hai — bina kiye print dhul jayega",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white cotton round-neck t-shirt under bright indoor lighting, showing a large faded and patchy DTG print design that is visibly washed out and cracking. The hands stretch the fabric slightly to reveal how the ink is peeling off the surface. Camera slowly dollies in. Vertical 9:16 format, well-lit from frame one.",
@@ -328,5 +317,16 @@
       "Close-up of three plain cotton t-shirts laid flat on a clean white surface — one with a screen-printed single-color logo, one with a DTG photo-quality print, one with a vibrant DTF multi-color transfer — Indian man's hands gently arranging them side by side for comparison, soft natural daylight from a nearby window, camera slowly pulls back to reveal all three, vertical 9:16, fully lit from first frame."
     ],
     "date": "2026-04-18T12:44:12.351169"
+  },
+  {
+    "topic": "Usne ₹3 Ka Cotton Save Kiya — 500 Returns Aa Gaye 😰 | Fabric Quality Mistake Real Story",
+    "prompts": [
+      "Close-up of Indian man's hands sorting through a large pile of returned plain white cotton t-shirts dumped on a warehouse table, some shirts are crumpled with visible crack lines on faded prints, warm overhead fluorescent lighting, camera slowly dollies in revealing the scale of the pile, vertical 9:16 format, realistic Indian small business warehouse setting.",
+      "Medium shot of Indian man's hands placing a plain white cotton t-shirt flat on a dark wooden table next to a small calculator showing the number 1500, a few ₹500 Indian currency notes scattered beside it, warm indoor lighting from a desk lamp, camera slowly pans from the money to the t-shirt, vertical 9:16 format, realistic setting.",
+      "Extreme close-up of two cotton fabric swatches held side by side in Indian man's hands — one smooth and soft-looking combed cotton on the left, one visibly rougher carded cotton with slight pilling on the right, natural daylight from a nearby window illuminating the texture difference, camera holds steady then slowly racks focus between the two, vertical 9:16 format.",
+      "Close-up of Indian man's hands submerging a plain black cotton t-shirt into a steel bucket filled with soapy water on a concrete floor, then pulling it out and stretching the wet fabric gently to check for shrinkage, water dripping, natural outdoor daylight, slight camera tilt following the hands pulling the shirt up, vertical 9:16 format, realistic Indian textile testing scene.",
+      "Close-up of Indian man's hands holding up a perfectly smooth premium white plain cotton round-neck t-shirt against bright natural light, slowly turning it to show the clean stitching and soft biowashed finish, fabric catching the light showing its quality texture, slight camera dolly forward creating a satisfying reveal, vertical 9:16 format, clean minimal background."
+    ],
+    "date": "2026-04-19T12:43:48.351099"
   }
 ]

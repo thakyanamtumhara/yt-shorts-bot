@@ -1050,5 +1050,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1826
     }
+  },
+  {
+    "date": "2026-04-19T13:06:38.587287",
+    "topic": "Usne \u20b93 Ka Cotton Save Kiya \u2014 500 Returns Aa Gaye \ud83d\ude30 | Fabric Quality Mistake Real Story",
+    "title": "\u20b93 Saved Per T-Shirt = 500 Returns \ud83d\ude30 Cotton Mistake!",
+    "total_usd": 2.9397,
+    "duration_min": 24.5,
+    "breakdown": {
+      "claude_opus": 0.3003,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0365,
+      "veo_clips": 2.5,
+      "whisper": 0.0079,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
