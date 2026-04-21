@@ -1065,5 +1065,23 @@
       "whisper": 0.0079,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-04-21T13:38:04.974600",
+    "topic": "Embroidery + DTF Combo Business Model \u2014 Ek Machine Se Dono Kaam Kaise Chalayein? \ud83d\udd25",
+    "title": "Stop Buying 2 Machines \u2014 Run Embroidery + DTF Together",
+    "total_usd": 3.0368,
+    "duration_min": 32.5,
+    "breakdown": {
+      "claude_opus": 0.2982,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0336,
+      "veo_clips": 2.0,
+      "kling_clips": 0.35,
+      "whisper": 0.0074,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1777
+    }
   }
 ]
