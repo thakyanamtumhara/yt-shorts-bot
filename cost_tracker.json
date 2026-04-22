@@ -1083,5 +1083,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1777
     }
+  },
+  {
+    "date": "2026-04-22T13:30:08.863699",
+    "topic": "Usne 500 T-Shirts Pe Embroidery Karwai Aur \u20b92 Lakh Kama Liye \u2014 Small Setup Se Bada Business \ud83d\ude4f",
+    "title": "Stop Selling Plain T-Shirts \u2014 Embroidery Earns \u20b9400/Piece Profit",
+    "total_usd": 2.9452,
+    "duration_min": 22.7,
+    "breakdown": {
+      "claude_opus": 0.3075,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0346,
+      "veo_clips": 2.5,
+      "whisper": 0.0081,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
