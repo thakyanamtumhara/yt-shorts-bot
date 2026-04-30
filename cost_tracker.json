@@ -1098,5 +1098,20 @@
       "whisper": 0.0081,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-04-30T13:49:14.265931",
+    "topic": "DTF Printer Liya \u20b94 Lakh Ka \u2014 6 Mahine Mein Band \ud83d\udeab | Printing Business Ki Sachai",
+    "title": "He Bought a \u20b94 Lakh DTF Printer With ZERO Orders \u2014 What Happened Next",
+    "total_usd": 2.9092,
+    "duration_min": 23.4,
+    "breakdown": {
+      "claude_opus": 0.2799,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.028,
+      "veo_clips": 2.5,
+      "whisper": 0.0063,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
