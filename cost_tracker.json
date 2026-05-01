@@ -1113,5 +1113,20 @@
       "whisper": 0.0063,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-05-01T13:19:28.219763",
+    "topic": "Cotton Combed vs Cotton Biowashed \u2014 Summer Mein Kya Bechna Chahiye? \u2600\ufe0f | T-Shirt Seller Must Know",
+    "title": "Biowashed T-Shirt Print Fading? This Summer Mistake Costs You!",
+    "total_usd": 2.9227,
+    "duration_min": 19.2,
+    "breakdown": {
+      "claude_opus": 0.2911,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0304,
+      "veo_clips": 2.5,
+      "whisper": 0.0063,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
