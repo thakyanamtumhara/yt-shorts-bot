@@ -1,16 +1,5 @@
 [
   {
-    "topic": "GSM zyada matlab better quality? Galat hai — suno kyu",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding two plain round-neck t-shirts side by side on a wooden table, left hand holding a thicker dark navy t-shirt looking rough and stiff, right hand holding a thinner light grey t-shirt that drapes softly, warm indoor workshop lighting, camera slowly dollies in to show the fabric texture difference, vertical 9:16 format, no text on screen.",
-      "Medium close-up of a small portable digital weighing scale on a clean white surface, Indian man's hands placing a neatly cut square piece of white cotton fabric onto the scale, the digital display showing numbers, soft overhead fluorescent lighting typical of an Indian textile shop, slight camera tilt down, vertical 9:16 format, no faces visible.",
-      "Extreme close-up macro shot comparing two cotton fabric swatches held between Indian man's fingers, one swatch on the left showing visibly coarser uneven fiber texture representing carded cotton, the other on the right showing smoother tighter weave representing combed cotton, natural daylight from a nearby window, camera rack focuses from left swatch to right swatch, vertical 9:16 format.",
-      "Close-up shot of Indian man's hand gently rubbing and stretching a plain white bio-washed cotton t-shirt fabric between thumb and fingers, showing the smooth soft drape of the material, the fabric catching warm golden light revealing its fine texture, slight slow-motion effect, shot on a dark grey fabric backdrop, vertical 9:16 format, no text.",
-      "Medium shot of a neatly organized stack of premium plain t-shirts in assorted colors folded on a polished dark shelf in a well-lit textile showroom, camera slowly pans upward across the colorful stack showing crisp folds and smooth fabric surfaces, warm ambient retail lighting, vertical 9:16 format, no faces or text on screen."
-    ],
-    "date": "2026-03-26T12:57:20.140374"
-  },
-  {
     "topic": "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
     "prompts": [
       "Close-up shot of Indian man's hands opening a large brown corrugated shipping box on a concrete warehouse floor, pulling out stacks of folded plain t-shirts in very similar dark shades - navy blue and black side by side, warm overhead fluorescent tube lighting casting slight yellow tint, camera slowly pushing in toward the nearly identical dark fabrics, 9:16 vertical format.",
@@ -328,5 +317,16 @@
       "Close-up of Indian man's hands neatly folding a premium thick plain black cotton t-shirt on a packing table, the fabric looks visibly smooth and lustrous with a soft sheen from biowash finish, hands press down showing the dense quality, background shows brown kraft packaging paper and poly bags ready for dispatch, bright warm lighting, camera slowly pulls back revealing the organized workspace, vertical 9:16 format."
     ],
     "date": "2026-05-01T13:01:40.406305"
+  },
+  {
+    "topic": "₹12 Ka Fabric Difference — Aur Client Ne Poora Order Cancel Kar Diya 😱 | GSM Mistake in Bulk T-Shirts",
+    "prompts": [
+      "Close-up of Indian man's hands holding a printed invoice or order sheet showing 1000 pieces written on it, the paper trembles slightly as fingers grip it tightly, warm fluorescent lighting in a small textile office, stacks of folded plain t-shirts visible blurred in the background, camera slowly pushes in on the paper, vertical 9:16 format, realistic Indian business setting.",
+      "Medium shot of Indian man's hands placing two plain white cotton round-neck t-shirts side by side on a dark wooden table, one visibly thinner than the other, natural indoor lighting from a window, the hands smooth out both shirts to show the fabric density difference, camera positioned directly overhead looking down, vertical 9:16, clean textile workshop environment.",
+      "Close-up of Indian man's hands lifting a thin plain white t-shirt up against bright backlight from a tube light, the light clearly passes through the thinner 180 GSM fabric showing semi-transparency, then the hand places it down and picks up a thicker opaque white t-shirt where no light passes through, slow deliberate movements, vertical 9:16 format, realistic Indian warehouse setting.",
+      "Close-up of Indian man's hands placing a plain white cotton t-shirt on a small digital weighing scale on a cluttered textile office desk, the scale display shows a number, then the hands swap it with another similar looking white t-shirt and the scale shows a different lower number, warm indoor lighting, slight camera dolly forward toward the scale display, vertical 9:16 format.",
+      "Medium shot of Indian man's hands confidently holding up a thick premium plain white cotton round-neck t-shirt, squeezing the fabric between thumb and fingers to show the dense substantial feel, the fabric has a smooth bio-washed texture visible in warm studio-style lighting, neat stacks of colorful folded plain t-shirts arranged on shelves behind, camera slowly pulls back to reveal the organized stock, vertical 9:16 format."
+    ],
+    "date": "2026-05-02T12:53:11.765692"
   }
 ]

@@ -1128,5 +1128,20 @@
       "whisper": 0.0063,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-05-02T13:14:41.512093",
+    "topic": "\u20b912 Ka Fabric Difference \u2014 Aur Client Ne Poora Order Cancel Kar Diya \ud83d\ude31 | GSM Mistake in Bulk T-Shirts",
+    "title": "180 vs 200 GSM: \u20b912 Saved, Full Order Cancelled \ud83d\ude31",
+    "total_usd": 2.918,
+    "duration_min": 22.9,
+    "breakdown": {
+      "claude_opus": 0.2891,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0278,
+      "veo_clips": 2.5,
+      "whisper": 0.0061,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
