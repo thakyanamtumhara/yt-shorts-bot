@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands opening a large brown corrugated shipping box on a concrete warehouse floor, pulling out stacks of folded plain t-shirts in very similar dark shades - navy blue and black side by side, warm overhead fluorescent tube lighting casting slight yellow tint, camera slowly pushing in toward the nearly identical dark fabrics, 9:16 vertical format.",
-      "Medium shot of a busy Indian textile warehouse shelf stacked with dozens of poly-packed plain t-shirts in various dark colors - navy, black, charcoal, dark grey - all looking nearly identical under harsh white tube lights, camera slowly panning across the shelf showing how similar the colors appear, slight dust particles visible in the light, 9:16 vertical format.",
-      "Close-up top-down shot of two folded plain round-neck cotton t-shirts placed side by side on a clean white surface - one navy blue and one black - with a small printed invoice paper between them showing color codes like NB-01 and BK-01, Indian man's finger pointing at the code on the paper, natural daylight from a nearby window, camera static with slight zoom, 9:16 vertical format.",
-      "Close-up shot of Indian man's hands using a black marker pen to write a color code on a small white adhesive label, then sticking it onto a folded charcoal grey plain t-shirt placed on a metal rack shelf, a few more labeled t-shirts of different colors visible in the background, bright indoor LED lighting, camera at slight angle capturing the writing action clearly, 9:16 vertical format.",
-      "Medium close-up shot of a neatly organized metal storage rack with plain t-shirts sorted by color, each section having a clear handwritten label with color name and code taped to the shelf edge, colors ranging from white to pastels to darks, well-lit Indian small business stockroom with clean concrete walls, camera slowly dollying sideways revealing the organized system, satisfying and orderly visual, 9:16 vertical format."
-    ],
-    "date": "2026-03-26T16:00:00.097706"
-  },
-  {
     "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
     "prompts": [
       "Close-up shot of Indian man's hands pulling a crumpled plain black round-neck t-shirt out of a front-loading washing machine drum, warm fluorescent indoor lighting, the fabric looks visibly wrinkled and slightly misshapen, camera slowly zooms in on the t-shirt as it emerges from the machine, vertical 9:16 format, realistic Indian laundry room setting.",
@@ -328,5 +317,16 @@
       "Medium shot of Indian man's hands confidently holding up a thick premium plain white cotton round-neck t-shirt, squeezing the fabric between thumb and fingers to show the dense substantial feel, the fabric has a smooth bio-washed texture visible in warm studio-style lighting, neat stacks of colorful folded plain t-shirts arranged on shelves behind, camera slowly pulls back to reveal the organized stock, vertical 9:16 format."
     ],
     "date": "2026-05-02T12:53:11.765692"
+  },
+  {
+    "topic": "DTF vs DTG vs Screen Print — ₹10,000 Order Pe Kitna Profit? Real Calculation with Proof",
+    "prompts": [
+      "Close-up of an Indian man's hands pressing buttons on a basic calculator placed on a cluttered desk with scattered printed t-shirts, receipts, and ink bottles around it. The calculator screen shows numbers. Warm yellow indoor lighting in a small Indian print shop. Camera slowly pushes in toward the calculator. Vertical 9:16 format, 8 seconds.",
+      "Medium shot of three plain white cotton round-neck t-shirts laid flat side by side on a wooden table, each with a small handwritten paper label in front reading different prices. Soft overhead studio lighting, clean background. Camera slowly pans left to right across all three shirts. Vertical 9:16 format, 8 seconds.",
+      "Close-up of a DTF transfer film being peeled off a freshly pressed black t-shirt on a heat press machine, revealing a vibrant multi-color design underneath. Steam rising slightly from the press. Bright workshop lighting, hands wearing no gloves carefully peeling the film at an angle. Camera at 45 degrees, slight dolly forward. Vertical 9:16 format, 8 seconds.",
+      "Medium shot of an Indian screen printing setup showing hands pulling a squeegee across a silk screen frame stretched over a light grey t-shirt on a manual carousel press. Bright fluorescent workshop lighting, ink visible on the screen mesh, other color screens visible in background. Camera static with slight zoom in. Vertical 9:16 format, 8 seconds.",
+      "Close-up overhead shot of three neatly folded printed t-shirts arranged in a row on a clean white surface, each with a small stack of Indian currency notes (₹500 and ₹100 denominations) placed next to them, with varying stack heights showing profit differences. Bright natural daylight from a nearby window. Camera slowly tilts down revealing all three from top. Vertical 9:16 format, 8 seconds."
+    ],
+    "date": "2026-05-04T13:27:45.597216"
   }
 ]
