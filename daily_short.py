@@ -6538,19 +6538,29 @@ def main():
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     voice_ok = False
     sarvam_key = os.environ.get("SARVAM_API_KEY", "").strip()
+    sarvam_attempted = False
+    sarvam_fired = False
 
     tts_input = normalize_for_tts(script_voice)
 
     # Try Sarvam first (Indian-native Hinglish — handles ₹, digits, code-switching)
     if sarvam_key and not voice_ok:
+        sarvam_attempted = True
         print("   🎙️ Generating voice (Sarvam Bulbul v3 — Hinglish native)...")
         try:
             audio_path = sarvam_tts_to_mp3(tts_input, sarvam_key, audio_path)
             print(f"   ✅ Voice: Sarvam {SARVAM_MODEL} ({SARVAM_SPEAKER})")
             cost.track_tts("sarvam", len(tts_input))
             voice_ok = True
+            sarvam_fired = True
         except Exception as e:
             print(f"   ⚠️ Sarvam TTS failed: {e}")
+            # Cost-protection: in test modes, abort BEFORE Veo so we don't waste
+            # $3.20 on a Veo clip that we'd have to re-generate when re-testing Sarvam.
+            if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
+                print("   🛑 Test mode + Sarvam failed → ABORTING before Veo to save cost.")
+                print("   🛑 Fix Sarvam first, then re-run the test. (No Veo charge incurred.)")
+                return
             print("   🔄 Falling back to ElevenLabs...")
 
     # Fallback 1: ElevenLabs Hindi
