@@ -111,7 +111,19 @@ NEW_TEST_MODE = os.environ.get("NEW_TEST_MODE", "").strip() in ("1", "true", "ye
 # Script quality gate: Claude reviews its own script before proceeding
 SCRIPT_MAX_ATTEMPTS = 5
 
-# ── ElevenLabs TTS (Primary) ──
+# ── Sarvam TTS (Primary — Indian-native Hinglish) ──
+# Bulbul v3 — 30+ voices, native ₹/digit pronunciation, code-switches naturally.
+# Compatible v3 voices: rahul, amit, vijay, advait, aditya, ashutosh, rohan, dev,
+#   varun, kabir, shubh, anand, tarun, mohit, soham (males)
+#   ritu, priya, neha, pooja, simran, kavya, ishita, shreya, tanya, suhani (females)
+SARVAM_MODEL = "bulbul:v3"
+SARVAM_SPEAKER = os.environ.get("SARVAM_VOICE", "amit").strip() or "amit"
+SARVAM_PACE = float(os.environ.get("SARVAM_PACE", "1.0"))     # 0.5-2.0
+SARVAM_TEMPERATURE = float(os.environ.get("SARVAM_TEMP", "0.7"))
+SARVAM_TARGET_LANG = "hi-IN"
+SARVAM_SAMPLE_RATE = 22050
+
+# ── ElevenLabs TTS (Fallback 1) ──
 ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
 ELEVENLABS_VOICE_SETTINGS = {
@@ -148,7 +160,20 @@ SPEAKING STYLE:
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 5
-VEO_MODEL = "veo-3.1-fast-generate-preview"
+# Default: Fast (cheap, ~$1/clip 1080p). Set VEO_FULL=1 for cinematic full-quality (~$3.20/clip).
+# Best-bang-for-buck middle path: VEO_HERO_FULL=1 → first clip uses full quality (the hook),
+# remaining clips use Fast. Adds ~$2 per video for the only clip that matters for swipe rate.
+VEO_MODEL = (
+    "veo-3.1-generate-preview"
+    if os.environ.get("VEO_FULL", "").strip() in ("1", "true", "yes")
+    else "veo-3.1-fast-generate-preview"
+)
+_VEO_HERO_DEFAULT = "1"  # Default ON: hero clip uses full-quality Veo (~$2 extra/video)
+VEO_HERO_FULL = (
+    os.environ.get("VEO_HERO_FULL", _VEO_HERO_DEFAULT).strip().lower()
+    not in ("0", "false", "no", "off")
+)
+VEO_HERO_MODEL = "veo-3.1-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
 VEO_MAX_RETRIES = 3
@@ -176,7 +201,8 @@ SUBTITLE_STROKE_W = 2
 SUBTITLE_BG_COLOR = (0, 0, 0)
 SUBTITLE_BG_OPACITY = 0.7
 SUBTITLE_BG_PADDING = 16
-WORDS_PER_SUBTITLE = 5
+WORDS_PER_SUBTITLE = 3        # Punchy 3-word phrases (top-quartile Shorts pace)
+MAX_SUBTITLE_DURATION = 1.8   # Force caption swap at least every 1.8s
 # Keywords that get highlighted in yellow for visual emphasis
 SUBTITLE_HIGHLIGHT_COLOR = "yellow"
 SUBTITLE_HIGHLIGHT_WORDS = {
@@ -974,7 +1000,12 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "- Give SPECIFIC placement instructions based on what you see (not generic)\n"
         "- Best performing text colors for Indian YouTube: Yellow (#FFD700), White (#FFFFFF), Red (#FF0000), Orange (#FF6600)\n"
         "- The designer will keep the base image EXACTLY as-is and only add text on top\n"
-        "- Text must be in the safe zone: between 15%-45% from the top (bottom 40% is covered by YouTube Shorts UI)\n\n"
+        "- Text + face must live in the 25%-65% vertical band — that band survives BOTH YT Shorts UI AND\n"
+        "  the Instagram profile-grid 4:5 crop. Top 12% and bottom 25% will be cropped/covered.\n"
+        "- FACE-FIRST RULE: The thumbnail MUST have a clear human face making eye contact (shocked or\n"
+        "  pointing-at-text expression). If the reference image lacks a face, instruct the designer to\n"
+        "  ADD a realistic Indian factory-owner face (man 30-45y, simple shirt, warm lighting) in the\n"
+        "  upper-center band. Faces drive 2-3× higher CTR than object-only thumbnails on Instagram.\n\n"
         f"TOPIC: {topic}\n"
         f"HOOK: {hook_text}\n"
         f"SCRIPT:\n{script_text[:1500]}\n"
@@ -1125,17 +1156,26 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "STYLE: Bold, high-contrast, attention-grabbing — typical top Indian YouTube channel style\n\n"
             f"{claude_brief}\n\n"
             "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
-            "- This is a 9:16 Reel thumbnail (1080x1920). YouTube and Instagram overlay their UI on the edges.\n"
-            "- TOP 10% of image: BLOCKED by platform UI. NEVER place anything here.\n"
-            "- BOTTOM 40% of image: COVERED by YouTube Shorts UI (title, buttons, comments). NEVER place text there.\n"
-            "- LEFT/RIGHT 10%: BLOCKED by edge margins. NEVER place text here.\n"
-            "- ALL text MUST be within 15%-45% from the top ONLY.\n\n"
+            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid will crop this to 4:5 (~1080x1350)\n"
+            "  showing only the MIDDLE portion. YouTube Shorts UI also covers edges.\n"
+            "- TOP 12% of image: BLOCKED (platform UI / IG grid crop). NEVER place text here.\n"
+            "- BOTTOM 25% of image: BLOCKED (YouTube Shorts UI + IG grid crop). NEVER place text here.\n"
+            "- LEFT/RIGHT 8%: edge margin. Avoid text here.\n"
+            "- ALL critical text and the FACE must be within 25%-65% from the top — that is the\n"
+            "  visible center band that survives both YT Shorts UI and IG profile-grid 4:5 crop.\n\n"
+            "FACE / EYES RULE (HIGHEST CTR LEVER — MUST FOLLOW):\n"
+            "- The cover MUST contain a clear human face making EYE CONTACT with the camera.\n"
+            "- Face should occupy 25-40% of the visible frame, positioned in the upper-center band.\n"
+            "- Expression: SHOCKED, surprised, or pointing-at-text — never neutral / closed-mouth.\n"
+            "- Eyes wide open, looking directly into the lens (parasocial scroll-stop trigger).\n"
+            "- If the reference image has no face, ADD a realistic Indian factory-owner / customer face\n"
+            "  in the upper-center band (men 30-45y, beard ok, simple shirt, warm skin tones).\n"
+            "- NEVER show the back of a head, blurry face, or face cropped at the eyes.\n\n"
             "IMAGE RULES (NEVER BREAK THESE):\n"
             "- Output exactly 1080x1920 pixels (Reel 9:16)\n"
-            "- NEVER crop, distort, stretch, or modify the reference image — it must remain EXACTLY as given\n"
-            "- Do NOT generate a completely new image — my reference photo IS the base\n"
-            "- My image is the background/base — everything else goes ON TOP of it\n"
-            "- Keep my face and product clearly visible at all times\n\n"
+            "- The reference image is the BASE/BACKGROUND. You may zoom, recompose, or add a face\n"
+            "  on top, but keep the same overall scene/colors so it matches the video opener.\n"
+            "- Keep face and product clearly visible at all times\n\n"
             "TEXT RULES (NEVER BREAK THESE):\n"
             "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
             "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
@@ -1940,7 +1980,9 @@ COST_RATES = {
     "claude_opus_output_1k": 0.075,     # $75/M output tokens
     "openai_tts_per_char": 0.000015,    # $15/1M chars
     "elevenlabs_per_char": 0.00003,     # ~$0.30/1K chars (pro plan)
-    "veo_per_clip": 0.50,              # ~$0.50 per 8s clip (estimate)
+    "sarvam_per_char": 0.000010,        # ~$0.01/1K chars (Bulbul v3)
+    "veo_per_clip": 0.96,               # Veo 3.1 Fast: ~$0.12/sec × 8s @ 1080p
+    "veo_full_per_clip": 3.20,          # Veo 3.1 Full: $0.40/sec × 8s
     "kling_per_clip": 0.35,            # ~$0.35 per 5s clip ($0.07/s via fal.ai)
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
     "replicate_flux_image": 0.025,      # ~$0.025 per FLUX Dev image
@@ -1977,16 +2019,28 @@ class CostTracker:
 
     def track_tts(self, provider, char_count):
         """Track TTS cost."""
-        if provider == "elevenlabs":
-            cost = char_count * COST_RATES["elevenlabs_per_char"]
-        else:
-            cost = char_count * COST_RATES["openai_tts_per_char"]
+        rate_key = {
+            "elevenlabs": "elevenlabs_per_char",
+            "sarvam": "sarvam_per_char",
+            "openai": "openai_tts_per_char",
+        }.get(provider, "openai_tts_per_char")
+        cost = char_count * COST_RATES[rate_key]
         self.add(f"tts_{provider}", cost, f"{char_count} chars")
 
-    def track_veo(self, num_clips):
-        """Track Veo video generation cost."""
-        cost = num_clips * COST_RATES["veo_per_clip"]
-        self.add("veo_clips", cost, f"{num_clips} clips")
+    def track_veo(self, num_clips, hero_full=False):
+        """Track Veo video generation cost.
+
+        With VEO_HERO_FULL=1: clip #1 uses full quality (~$3.20), rest are Fast (~$0.96).
+        Without: all clips Fast (~$0.96 each at 1080p).
+        """
+        per_fast = COST_RATES.get("veo_per_clip", 0.96)
+        per_full = COST_RATES.get("veo_full_per_clip", 3.20)
+        if hero_full and num_clips > 0:
+            cost = per_full + (num_clips - 1) * per_fast
+            self.add("veo_clips", cost, f"1 full + {num_clips - 1} fast")
+        else:
+            cost = num_clips * per_fast
+            self.add("veo_clips", cost, f"{num_clips} clips")
 
     def track_kling(self, num_clips):
         """Track Kling (fal.ai) fallback video generation cost."""
@@ -3493,6 +3547,189 @@ def generate_bg_music(mood="calm"):
                 print(f"   ⚠️ Replicate ACE-Step failed after {attempt} attempt(s): {e}")
                 return None
     return None
+
+
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║                   TTS PRE-PROCESSING + SARVAM CLIENT                 ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
+_HINDI_NUMBER_BELOW_100 = {
+    0: "shunya", 1: "ek", 2: "do", 3: "teen", 4: "chaar", 5: "paanch",
+    6: "chhe", 7: "saat", 8: "aath", 9: "nau", 10: "das", 11: "gyarah",
+    12: "barah", 13: "terah", 14: "chaudah", 15: "pandrah", 16: "solah",
+    17: "satrah", 18: "atharah", 19: "unnees", 20: "bees", 21: "ikkees",
+    22: "baaees", 25: "pachees", 30: "tees", 40: "chalees", 50: "pachaas",
+    # 60 = "saath" in Hindi but identical roman spelling collides with 7 ("saat").
+    # Use "saatth" so Sarvam differentiates it phonetically.
+    60: "saatth", 70: "sattar", 80: "assi", 90: "nabbe", 100: "sau",
+}
+
+
+def _hindi_number(n: int) -> str:
+    """Convert an integer to spoken Hinglish digits. Falls back to digit-by-digit."""
+    if n in _HINDI_NUMBER_BELOW_100:
+        return _HINDI_NUMBER_BELOW_100[n]
+    if n < 100:
+        tens, ones = (n // 10) * 10, n % 10
+        return f"{_HINDI_NUMBER_BELOW_100.get(tens, '')} {_HINDI_NUMBER_BELOW_100.get(ones, '')}".strip()
+    if n < 1000:
+        h, rest = n // 100, n % 100
+        head = f"{_HINDI_NUMBER_BELOW_100[h]} sau"
+        return head if rest == 0 else f"{head} {_hindi_number(rest)}"
+    if n < 100000:
+        thousands, rest = n // 1000, n % 1000
+        head = f"{_hindi_number(thousands)} hazaar"
+        return head if rest == 0 else f"{head} {_hindi_number(rest)}"
+    if n < 10000000:
+        lakhs, rest = n // 100000, n % 100000
+        head = f"{_hindi_number(lakhs)} lakh"
+        return head if rest == 0 else f"{head} {_hindi_number(rest)}"
+    crores, rest = n // 10000000, n % 10000000
+    head = f"{_hindi_number(crores)} crore"
+    return head if rest == 0 else f"{head} {_hindi_number(rest)}"
+
+
+_TTS_ACRONYM_MAP = {
+    "DTG": "dee tee jee", "DTF": "dee tee ef", "GSM": "jee es em",
+    "MOQ": "em o cue", "B2B": "bee tu bee", "B2C": "bee tu see",
+    "ROI": "aar o aai", "USP": "yu es pee", "POD": "pee o dee",
+    "SKU": "es kay yu", "EMI": "ee em aai",
+}
+
+
+def normalize_for_tts(text: str) -> str:
+    """Normalize a Hinglish script for cleaner TTS output.
+
+    Fixes the issues we keep hearing in production:
+      ₹140  → ek so chalis rupaye
+      ₹10,000 → das hazaar rupaye
+      DTG / DTF / GSM → spelled-out phonetic
+      Strips '...' that TTS engines read as long silence.
+    """
+    import re as _re
+    if not text:
+        return text
+
+    s = text
+
+    def _rupee_repl(m):
+        digits = m.group(1).replace(",", "")
+        try:
+            n = int(digits)
+        except ValueError:
+            return m.group(0)
+        return f"{_hindi_number(n)} rupaye"
+
+    # ₹140 / ₹ 1,000 / Rs.140 / Rs 10,000
+    s = _re.sub(r"₹\s*([\d,]+)", _rupee_repl, s)
+    s = _re.sub(r"\bRs\.?\s*([\d,]+)", _rupee_repl, s)
+
+    # Standalone large-ish numbers with optional commas (≥ 3 digits) — speak as Hinglish
+    def _bignum_repl(m):
+        digits = m.group(0).replace(",", "")
+        try:
+            n = int(digits)
+        except ValueError:
+            return m.group(0)
+        if n < 100:
+            return m.group(0)  # Small numbers TTS handles fine
+        return _hindi_number(n)
+
+    s = _re.sub(r"\b\d[\d,]{2,}\b", _bignum_repl, s)
+
+    # Acronyms — replace whole-word, case-insensitive, keep surrounding text
+    for acr, phon in _TTS_ACRONYM_MAP.items():
+        s = _re.sub(rf"\b{acr}\b", phon, s, flags=_re.IGNORECASE)
+
+    # Remove ellipses that TTS reads as long pauses
+    s = s.replace("…", ", ").replace("...", ", ")
+    s = _re.sub(r",\s*,", ",", s)
+    s = _re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def sarvam_tts_to_mp3(text: str, api_key: str, output_mp3_path: str) -> str:
+    """Generate Sarvam TTS audio and write to MP3 (chunks long text automatically).
+
+    Returns the MP3 path on success, raises on failure.
+    """
+    import requests as _requests
+    import base64 as _b64
+    import subprocess as _sp
+
+    # Sarvam accepts up to ~1500 chars per request — chunk on sentence boundaries
+    chunks: list[str] = []
+    buf = ""
+    for sentence in text.replace("।", ".").split("."):
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        sentence = sentence + "."
+        if len(buf) + len(sentence) + 1 > 1400:
+            if buf:
+                chunks.append(buf)
+            buf = sentence
+        else:
+            buf = (buf + " " + sentence).strip() if buf else sentence
+    if buf:
+        chunks.append(buf)
+    if not chunks:
+        chunks = [text]
+
+    raw_paths: list[str] = []
+    for i, chunk in enumerate(chunks):
+        resp = _requests.post(
+            "https://api.sarvam.ai/text-to-speech",
+            headers={
+                "api-subscription-key": api_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "text": chunk,
+                "target_language_code": SARVAM_TARGET_LANG,
+                "speaker": SARVAM_SPEAKER,
+                "model": SARVAM_MODEL,
+                "speech_sample_rate": SARVAM_SAMPLE_RATE,
+                "pace": SARVAM_PACE,
+                "temperature": SARVAM_TEMPERATURE,
+            },
+            timeout=90,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        audios = data.get("audios") or []
+        if not audios:
+            raise RuntimeError(f"Sarvam returned no audio (chunk {i+1}/{len(chunks)})")
+        wav_path = output_mp3_path.replace(".mp3", f"_chunk{i}.wav")
+        with open(wav_path, "wb") as f:
+            f.write(_b64.b64decode(audios[0]))
+        raw_paths.append(wav_path)
+
+    # Concat WAVs and convert to MP3
+    if len(raw_paths) == 1:
+        _sp.run(["ffmpeg", "-y", "-i", raw_paths[0], "-codec:a", "libmp3lame",
+                 "-q:a", "2", output_mp3_path],
+                capture_output=True, timeout=60, check=True)
+    else:
+        list_path = output_mp3_path + ".concat.txt"
+        with open(list_path, "w") as f:
+            for p in raw_paths:
+                f.write(f"file '{p}'\n")
+        _sp.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+                 "-codec:a", "libmp3lame", "-q:a", "2", output_mp3_path],
+                capture_output=True, timeout=120, check=True)
+        try:
+            os.remove(list_path)
+        except OSError:
+            pass
+
+    for p in raw_paths:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+    return output_mp3_path
 
 
 def load_bg_music(mood="calm"):
@@ -5912,6 +6149,7 @@ def main():
 
     # ── Feature Dashboard ──
     elevenlabs_available = bool(os.environ.get('ELEVENLABS_API_KEY'))
+    sarvam_available = bool(os.environ.get('SARVAM_API_KEY'))
     ig_available = bool(os.environ.get('INSTAGRAM_ACCESS_TOKEN'))
 
     print()
@@ -5936,6 +6174,7 @@ def main():
     print("   ║                                                   ║")
     print("   ║ ── VIDEO GENERATION ──                            ║")
     print(f"   ║ Veo Model              : {VEO_MODEL:>25} ║")
+    print(f"   ║ Hero Clip (full Veo)   : {'ON (clip 1)' if VEO_HERO_FULL else 'OFF':>25} ║")
     print(f"   ║ Clips per Video        : {VEO_CLIPS_PER_VIDEO:>25} ║")
     print(f"   ║ Veo Duration/Clip      : {str(VEO_DURATION) + 's':>25} ║")
     print(f"   ║ Veo Retries            : {VEO_MAX_RETRIES:>25} ║")
@@ -5951,8 +6190,17 @@ def main():
         print(f"   ║ Kling Duration/Clip    : {KLING_DURATION + 's':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── AUDIO ──                                       ║")
-    print(f"   ║ TTS Primary            : {'ElevenLabs' if elevenlabs_available else 'OpenAI (no 11Labs key)':>25} ║")
-    print(f"   ║ TTS Fallback           : {'OpenAI gpt-4o-mini-tts':>25} ║")
+    if sarvam_available:
+        _tts_primary = "Sarvam Bulbul v3"
+        _tts_fb = "ElevenLabs → OpenAI"
+    elif elevenlabs_available:
+        _tts_primary = "ElevenLabs Hindi"
+        _tts_fb = "OpenAI gpt-4o-mini-tts"
+    else:
+        _tts_primary = "OpenAI (no Sarvam/11Labs)"
+        _tts_fb = "(none)"
+    print(f"   ║ TTS Primary            : {_tts_primary:>25} ║")
+    print(f"   ║ TTS Fallback           : {_tts_fb:>25} ║")
     print(f"   ║ Audio Normalization    : {'ON (-16 LUFS)':>25} ║")
     print(f"   ║ Background Music       : {'ON' if ADD_BG_MUSIC else 'OFF':>25} ║")
     print(f"   ║ Hook SFX (bass drop)   : {'ON' if ADD_HOOK_SFX else 'OFF':>25} ║")
@@ -6161,12 +6409,27 @@ def main():
     if os.environ.get("REPLICATE_API_TOKEN"):
         cost.track_replicate()
 
-    # ── 4. Generate Voice (ElevenLabs primary → OpenAI fallback) ──
+    # ── 4. Generate Voice (Sarvam primary → ElevenLabs → OpenAI fallback) ──
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     voice_ok = False
+    sarvam_key = os.environ.get("SARVAM_API_KEY", "").strip()
 
-    # Try ElevenLabs first (ElevenLabs Hindi — Emotive Hindi)
-    if elevenlabs_key:
+    tts_input = normalize_for_tts(script_voice)
+
+    # Try Sarvam first (Indian-native Hinglish — handles ₹, digits, code-switching)
+    if sarvam_key and not voice_ok:
+        print("   🎙️ Generating voice (Sarvam Bulbul v3 — Hinglish native)...")
+        try:
+            audio_path = sarvam_tts_to_mp3(tts_input, sarvam_key, audio_path)
+            print(f"   ✅ Voice: Sarvam {SARVAM_MODEL} ({SARVAM_SPEAKER})")
+            cost.track_tts("sarvam", len(tts_input))
+            voice_ok = True
+        except Exception as e:
+            print(f"   ⚠️ Sarvam TTS failed: {e}")
+            print("   🔄 Falling back to ElevenLabs...")
+
+    # Fallback 1: ElevenLabs Hindi
+    if not voice_ok and elevenlabs_key:
         print("   🎙️ Generating voice (ElevenLabs — ElevenLabs Hindi)...")
         try:
             from elevenlabs import ElevenLabs
@@ -6174,55 +6437,58 @@ def main():
             audio_iter = el_client.text_to_speech.convert(
                 voice_id=ELEVENLABS_VOICE_ID,
                 model_id=ELEVENLABS_MODEL,
-                text=script_voice,
+                text=tts_input,
                 voice_settings=ELEVENLABS_VOICE_SETTINGS,
             )
             with open(audio_path, "wb") as f:
                 for chunk in audio_iter:
                     f.write(chunk)
             print("   ✅ Voice: ElevenLabs ElevenLabs Hindi (Emotive Hindi)")
-            cost.track_tts("elevenlabs", len(script_voice))
+            cost.track_tts("elevenlabs", len(tts_input))
             voice_ok = True
         except Exception as e:
             print(f"   ⚠️ ElevenLabs TTS failed: {e}")
             print("   🔄 Falling back to OpenAI TTS...")
 
-    # Fallback: OpenAI gpt-4o-mini-tts
+    # Fallback 2: OpenAI gpt-4o-mini-tts
     if not voice_ok:
         print("   🎙️ Generating voice (OpenAI TTS fallback)...")
         try:
             response = openai_client.audio.speech.create(
                 model="gpt-4o-mini-tts",
                 voice=TARGET_VOICE,
-                input=script_voice + "...",
+                input=tts_input + "...",
                 instructions=VOICE_INSTRUCTIONS,
                 speed=VOICE_SPEED,
                 response_format="mp3",
             )
             response.stream_to_file(audio_path)
             print(f"   ✅ Voice: OpenAI {TARGET_VOICE} (fallback)")
-            cost.track_tts("openai", len(script_voice))
+            cost.track_tts("openai", len(tts_input))
             voice_ok = True
         except Exception as e:
             print(f"   ❌ OpenAI TTS also failed: {e}")
             return
 
-    # ── 4b. Normalize voice audio loudness (consistent -16 LUFS across all videos) ──
+    # ── 4b. Tighten silences (>0.3s gaps → 0.2s) + normalize loudness (-14 LUFS YT target) ──
     try:
         import subprocess
-        normalized_path = audio_path.replace(".mp3", "_norm.mp3")
+        tightened_path = audio_path.replace(".mp3", "_tight.mp3")
+        # silenceremove: keep audio above -32dB; squash long pauses
         subprocess.run([
             "ffmpeg", "-i", audio_path,
-            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-            "-y", normalized_path,
-        ], capture_output=True, timeout=30)
-        if os.path.exists(normalized_path) and os.path.getsize(normalized_path) > 0:
-            os.replace(normalized_path, audio_path)
-            print("   🔊 Voice normalized to -16 LUFS")
+            "-af",
+            "silenceremove=stop_periods=-1:stop_duration=0.3:stop_threshold=-32dB:"
+            "stop_silence=0.2,loudnorm=I=-14:TP=-1.5:LRA=11",
+            "-y", tightened_path,
+        ], capture_output=True, timeout=60)
+        if os.path.exists(tightened_path) and os.path.getsize(tightened_path) > 0:
+            os.replace(tightened_path, audio_path)
+            print("   🔊 Voice tightened (silence ≤0.2s) + normalized to -14 LUFS")
         else:
-            print("   ⚠️ Loudness normalization skipped (ffmpeg output empty)")
+            print("   ⚠️ Voice post-processing skipped (ffmpeg output empty)")
     except Exception as e:
-        print(f"   ⚠️ Loudness normalization skipped: {e}")
+        print(f"   ⚠️ Voice post-processing skipped: {e}")
 
     # ── 5. Generate Video Clips (Veo 3.1, Kling fallback) ──
     downloaded_clips = []
@@ -6252,11 +6518,13 @@ def main():
         clip_path = f"{WORK_DIR}/veo_clip_0_{random.randint(100,999)}.mp4"
         clip_success = False
 
+        hero_model = VEO_HERO_MODEL if VEO_HERO_FULL else VEO_MODEL
         for attempt in range(1, VEO_MAX_RETRIES + 1):
             try:
-                print(f"   ⏳ Real Clip 1: attempt {attempt}...", end=" ")
+                model_label = "FULL" if hero_model != VEO_MODEL else "fast"
+                print(f"   ⏳ Hero Clip 1 ({model_label}): attempt {attempt}...", end=" ")
                 operation = veo_client.models.generate_videos(
-                    model=VEO_MODEL,
+                    model=hero_model,
                     prompt=prompt_text,
                     config=types.GenerateVideosConfig(
                         aspect_ratio=VEO_ASPECT_RATIO,
@@ -6342,7 +6610,7 @@ def main():
             downloaded_clips.append(placeholder_path)
 
         real_count = 1 if clip_success else 0
-        cost.track_veo(real_count)
+        cost.track_veo(real_count, hero_full=VEO_HERO_FULL)
         print(f"   ✅ {len(downloaded_clips)} clips ready ({real_count} real Veo + {VEO_CLIPS_PER_VIDEO - real_count} blank)")
 
     else:
@@ -6480,7 +6748,7 @@ def main():
         got = len(downloaded_clips)
         veo_count = got - kling_clips
         if veo_count > 0:
-            cost.track_veo(veo_count)
+            cost.track_veo(veo_count, hero_full=VEO_HERO_FULL)
         if kling_clips > 0:
             cost.track_kling(kling_clips)
         if got < expected:
@@ -6525,7 +6793,37 @@ def main():
             subtitle_segments = new_segs
             cost.track_whisper(audio_clip_dur)
             print("   ✅ Whisper synced!")
-    except:
+
+        # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
+        try:
+            split_segs = []
+            for seg in subtitle_segments:
+                dur = max(0.0, seg["end"] - seg["start"])
+                if dur <= MAX_SUBTITLE_DURATION:
+                    split_segs.append(seg)
+                    continue
+                words_in = seg["text"].split()
+                # Split into halves until each piece fits under MAX_SUBTITLE_DURATION
+                pieces = max(2, int(dur / MAX_SUBTITLE_DURATION) + 1)
+                per = max(1, len(words_in) // pieces)
+                slices = [words_in[i:i + per] for i in range(0, len(words_in), per)]
+                # Merge tiny tail into previous slice
+                if len(slices) > pieces and len(slices[-1]) <= 1 and slices[:-1]:
+                    slices[-2].extend(slices[-1])
+                    slices = slices[:-1]
+                slice_dur = dur / max(len(slices), 1)
+                for idx, sl in enumerate(slices):
+                    split_segs.append({
+                        "text": " ".join(sl),
+                        "start": seg["start"] + idx * slice_dur,
+                        "end":   seg["start"] + (idx + 1) * slice_dur,
+                    })
+            if len(split_segs) != len(subtitle_segments):
+                print(f"   ✂️ Caption pacing: {len(subtitle_segments)} → {len(split_segs)} (≤{MAX_SUBTITLE_DURATION}s each)")
+            subtitle_segments = split_segs
+        except Exception as _e:
+            print(f"   ⚠️ Caption split skipped: {_e}")
+    except Exception:
         pass
 
     # ── 7. Video Assembly ──
@@ -6848,6 +7146,42 @@ def main():
         mixed_audio_with_ambient = mixed_audio
 
     final_video = final_video.set_audio(mixed_audio_with_ambient)
+
+    # ── 8b. Branded 2-second outro card (replaces orphan black-frame ending) ──
+    try:
+        outro_dur = 2.0
+        outro_bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT),
+                             color=(15, 15, 25), duration=outro_dur)
+        outro_title = TextClip("Sale91.com", fontsize=132, font=SUBTITLE_FONT,
+                               color="white", stroke_color="black", stroke_width=3,
+                               method='label')
+        otw, oth = outro_title.size
+        outro_title = (outro_title
+                       .set_position(((VIDEO_WIDTH - otw) // 2, int(VIDEO_HEIGHT * 0.36)))
+                       .set_duration(outro_dur)
+                       .crossfadein(0.3))
+        outro_sub = TextClip("MOQ sirf 10 pieces", fontsize=70, font=SUBTITLE_FONT,
+                             color="#FFD700", method='label')
+        osw, osh = outro_sub.size
+        outro_sub = (outro_sub
+                     .set_position(((VIDEO_WIDTH - osw) // 2, int(VIDEO_HEIGHT * 0.50)))
+                     .set_duration(outro_dur)
+                     .crossfadein(0.3))
+        outro_cta = TextClip("Order now → Sale91.com", fontsize=48, font=SUBTITLE_FONT,
+                             color="white", method='label')
+        ocw, och = outro_cta.size
+        outro_cta = (outro_cta
+                     .set_position(((VIDEO_WIDTH - ocw) // 2, int(VIDEO_HEIGHT * 0.60)))
+                     .set_duration(outro_dur)
+                     .crossfadein(0.3))
+        outro_card = CompositeVideoClip(
+            [outro_bg, outro_title, outro_sub, outro_cta],
+            size=(VIDEO_WIDTH, VIDEO_HEIGHT)
+        ).set_duration(outro_dur)
+        final_video = concatenate_videoclips([final_video, outro_card], method="chain")
+        print(f"   🎬 Appended {outro_dur}s outro card")
+    except Exception as e:
+        print(f"   ⚠️ Outro card skipped: {e}")
 
     # ── 9. Render (with safety net for ambient audio issues) ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
