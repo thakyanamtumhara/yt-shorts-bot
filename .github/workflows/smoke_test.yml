@@ -1,0 +1,117 @@
+name: Smoke Test (fast preflight)
+
+# Verifies API keys, Python imports, Claude+Sarvam connectivity in ~60s
+# Run manually before any expensive workflow_dispatch of the daily generator.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Smoke-test components
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: |
+          set -e
+          pip install -q requests anthropic
+          python3 - <<'PY'
+          import os, json, base64, sys
+          import requests, anthropic
+
+          fails = []
+          def check(label, cond, detail=""):
+              status = "✅" if cond else "❌"
+              print(f"{status} {label}{(' — ' + detail) if detail else ''}")
+              if not cond:
+                  fails.append(label)
+
+          # 1. All required env vars present
+          for k in ["ANTHROPIC_API_KEY","SARVAM_API_KEY","OPENAI_API_KEY","GOOGLE_API_KEY",
+                    "YOUTUBE_API_KEY_1","INSTAGRAM_ACCESS_TOKEN","INSTAGRAM_BUSINESS_ID"]:
+              check(f"env {k}", bool(os.environ.get(k)))
+
+          # 2. Sarvam Bulbul v3 + voice 'amit' alive
+          try:
+              r = requests.post("https://api.sarvam.ai/text-to-speech",
+                  headers={"api-subscription-key": os.environ["SARVAM_API_KEY"], "Content-Type":"application/json"},
+                  json={"text":"test","target_language_code":"hi-IN","speaker":"amit",
+                        "model":"bulbul:v3","speech_sample_rate":22050},
+                  timeout=20)
+              check("Sarvam Bulbul v3", r.status_code == 200 and bool(r.json().get("audios")),
+                    f"HTTP {r.status_code}")
+          except Exception as e:
+              check("Sarvam Bulbul v3", False, str(e)[:80])
+
+          # 3. Anthropic Claude alive + can produce valid JSON
+          try:
+              c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+              resp = c.messages.create(
+                  model="claude-opus-4-6", max_tokens=300,
+                  messages=[{"role":"user","content":"Return EXACTLY this JSON object (no extra text): {\"ok\": true, \"hello\": \"world\"}"}],
+              )
+              raw = resp.content[0].text.strip()
+              if raw.startswith("```"): raw = raw.split("\n",1)[1].rsplit("```",1)[0]
+              parsed = json.loads(raw)
+              check("Anthropic Claude (JSON parse)", parsed.get("ok") is True, f"input={resp.usage.input_tokens}")
+          except Exception as e:
+              check("Anthropic Claude", False, str(e)[:80])
+
+          # 4. YouTube Data API key alive
+          try:
+              r = requests.get("https://www.googleapis.com/youtube/v3/channels",
+                  params={"key": os.environ["YOUTUBE_API_KEY_1"],
+                          "id":"UCdgOMA7WO48MYimj6q6mvNQ","part":"id"},
+                  timeout=10)
+              check("YouTube Data API", r.status_code == 200, f"HTTP {r.status_code}")
+          except Exception as e:
+              check("YouTube Data API", False, str(e)[:80])
+
+          # 5. Instagram token alive
+          try:
+              r = requests.get("https://graph.facebook.com/v21.0/me",
+                  params={"access_token": os.environ["INSTAGRAM_ACCESS_TOKEN"], "fields":"id,name"},
+                  timeout=10)
+              check("Instagram (FB Graph)", r.status_code == 200,
+                    r.json().get("name","?") if r.status_code == 200 else f"HTTP {r.status_code}")
+          except Exception as e:
+              check("Instagram (FB Graph)", False, str(e)[:80])
+
+          # 6. Python source compiles (no syntax errors in daily_short.py)
+          import py_compile
+          try:
+              py_compile.compile("daily_short.py", doraise=True)
+              check("daily_short.py syntax", True)
+          except py_compile.PyCompileError as e:
+              check("daily_short.py syntax", False, str(e)[:80])
+
+          # 7. Workflow YAML passes SARVAM_API_KEY
+          y = open(".github/workflows/daily_short.yml").read()
+          check("daily_short.yml passes SARVAM_API_KEY", "SARVAM_API_KEY:" in y)
+
+          if fails:
+              print()
+              print(f"❌ Smoke test FAILED — {len(fails)} issue(s):")
+              for f in fails: print(f"  - {f}")
+              sys.exit(1)
+          print()
+          print("✅ All smoke checks passed — safe to run expensive workflows")
+          PY
