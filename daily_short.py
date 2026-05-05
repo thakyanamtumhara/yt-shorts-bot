@@ -3651,6 +3651,36 @@ _TTS_ACRONYM_MAP = {
     "SKU": "es kay yu", "EMI": "ee em aai",
 }
 
+# Phonetic respelling for Hinglish words ElevenLabs Hindi mispronounces.
+# Goal: nudge ElevenLabs's tokenizer toward the correct Hindi sound without
+# changing what the script means. Only fixes the audio — captions still read
+# the original word because the captions are built from script_voice BEFORE
+# this map is applied.
+_TTS_PHONETIC_MAP = {
+    # User-reported mispronunciations:
+    "thik": "theek",                  # ठीक — 'th' was sounding like English think
+    "chalega": "chalegaa",            # short 'a' was clipped — double-a forces longer vowel
+    "chalegi": "chalegi",
+    "chalenge": "chalengay",
+    # Common ones with the same vowel-clipping issue:
+    "matlab": "mut-lub",              # मतलब — sounded too English
+    "samjho": "samjho",
+    "dekho": "deh-kho",
+    "bola": "bolaa",                  # बोला — short 'a' clip
+    "kaha": "kahaa",
+    "bata": "bataa",
+    "raha": "rahaa",
+    "rakha": "rakhaa",
+    "lagta": "lagtaa",
+    "hota": "hotaa",
+    "karta": "kartaa",
+    # 'ph' Hindi words (फ) — ElevenLabs sometimes reads as English 'f':
+    "phir": "fir",
+    # Common 'kh' words where the aspiration is lost:
+    "rakh": "rakh",
+    "dekh": "dekh",
+}
+
 
 def normalize_for_tts(text: str) -> str:
     """Normalize a Hinglish script for cleaner TTS output.
@@ -3704,22 +3734,27 @@ def normalize_for_tts(text: str) -> str:
     bare_mult_pat = r"\b(\d{1,4})\s*(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)\b"
     s = _re.sub(bare_mult_pat, _bare_mult_repl, s, flags=_re.IGNORECASE)
 
-    # Standalone large-ish numbers with optional commas (≥ 3 digits) — speak as Hinglish
+    # Standalone numbers — convert ALL to Hinglish so ElevenLabs reads "8" as "aat"
+    # not "eight", "80" as "assi" not "eighty", "200" as "do sau", etc.
     def _bignum_repl(m):
         digits = m.group(0).replace(",", "")
         try:
             n = int(digits)
         except ValueError:
             return m.group(0)
-        if n < 100:
-            return m.group(0)  # Small numbers TTS handles fine
         return _hindi_number(n)
 
-    s = _re.sub(r"\b\d[\d,]{2,}\b", _bignum_repl, s)
+    # Match standalone integer (1-7 digits, with optional commas)
+    s = _re.sub(r"\b\d[\d,]{0,7}\b", _bignum_repl, s)
 
     # Acronyms — replace whole-word, case-insensitive, keep surrounding text
     for acr, phon in _TTS_ACRONYM_MAP.items():
         s = _re.sub(rf"\b{acr}\b", phon, s, flags=_re.IGNORECASE)
+
+    # Phonetic respelling of common Hinglish words that ElevenLabs mispronounces.
+    # Whole-word, case-insensitive replacement that preserves the intent of the script.
+    for word, phon in _TTS_PHONETIC_MAP.items():
+        s = _re.sub(rf"\b{word}\b", phon, s, flags=_re.IGNORECASE)
 
     # Remove ellipses that TTS reads as long pauses
     s = s.replace("…", ", ").replace("...", ", ")
@@ -6917,9 +6952,14 @@ def main():
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
     # ── 6. Subtitles (Whisper) ──
+    # Use script_voice (Hinglish) instead of script_english so captions MATCH the audio.
+    # Audio is Hindi; Whisper transcribes Hindi; chunks built from same Hindi words
+    # = perfect 1:1 alignment, no proportional-mapping drift, no English/Hindi mismatch.
+    # Indian audience (B2B tshirt buyers) reads Hinglish natively — better retention too.
     subtitle_segments = []
     chunks = []
-    words = script_english.split()
+    sub_source = script_voice if script_voice else script_english
+    words = sub_source.split()
     for k in range(0, len(words), WORDS_PER_SUBTITLE):
         chunks.append(" ".join(words[k:k+WORDS_PER_SUBTITLE]))
 
