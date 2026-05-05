@@ -1916,9 +1916,10 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             pass
 
         # Step 4: Publish (or confirm schedule)
-        if NEW_TEST_MODE:
-            # NEW_TEST_MODE: skip publishing — container was created (placeholder video, not worth posting)
-            print(f"   🧪 NEW TEST MODE — Instagram container created & processed but NOT published")
+        if NEW_TEST_MODE or SINGLE_VEO_TEST:
+            # Test modes: do NOT publish to IG (would give wrong impression to public followers)
+            mode_label = "NEW TEST MODE" if NEW_TEST_MODE else "SINGLE VEO TEST"
+            print(f"   🧪 {mode_label} — Instagram container created & processed but NOT published")
             print(f"      Container ID: {container_id}")
             print(f"      ℹ️ Instagram API does not support private/draft Reels — skipping publish for test")
             # Cleanup: delete temp video from S3
