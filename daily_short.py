@@ -25,6 +25,7 @@ import random
 import os
 import glob
 import math
+import re
 import time
 import pytz
 from datetime import datetime, timedelta
@@ -6466,7 +6467,6 @@ def main():
 
     script_voice = data["script_voice"]
     # Sanitize script for TTS: strip ellipsis and elongated sounds that cause distortion
-    import re
     script_voice = script_voice.replace("...", ",").replace("..", ",")
     script_voice = re.sub(r'(\w)\1{3,}', lambda m: m.group(0)[:2], script_voice)  # "aaaaaa" → "aa"
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
