@@ -3667,17 +3667,42 @@ def normalize_for_tts(text: str) -> str:
 
     s = text
 
+    # Multipliers spoken in Hindi
+    _MULT = {"k": 1_000, "thousand": 1_000, "hazaar": 1_000, "hazar": 1_000,
+             "l": 100_000, "lakh": 100_000, "lac": 100_000, "lacs": 100_000, "lakhs": 100_000,
+             "cr": 10_000_000, "crore": 10_000_000, "crores": 10_000_000}
+
     def _rupee_repl(m):
         digits = m.group(1).replace(",", "")
+        suffix = (m.group(2) or "").strip().lower()
         try:
             n = int(digits)
         except ValueError:
             return m.group(0)
+        if suffix in _MULT:
+            n = n * _MULT[suffix]
         return f"{_hindi_number(n)} rupaye"
 
-    # ₹140 / ₹ 1,000 / Rs.140 / Rs 10,000
-    s = _re.sub(r"₹\s*([\d,]+)", _rupee_repl, s)
-    s = _re.sub(r"\bRs\.?\s*([\d,]+)", _rupee_repl, s)
+    # ₹140 / ₹ 1,000 / ₹2 lakh / ₹50K / ₹2 crore / Rs.140 / Rs 10,000 / Rs 2L
+    # The non-capturing group consumes "\s*<suffix>" only when a known suffix matches,
+    # so we don't eat the trailing space when there's no multiplier (e.g. "₹140 lagat").
+    suffix_re = r"(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)"
+    rupee_pat = rf"₹\s*([\d,]+)(?:\s*{suffix_re})?\b"
+    s = _re.sub(rupee_pat, _rupee_repl, s, flags=_re.IGNORECASE)
+    rs_pat = rf"\bRs\.?\s*([\d,]+)(?:\s*{suffix_re})?\b"
+    s = _re.sub(rs_pat, _rupee_repl, s, flags=_re.IGNORECASE)
+
+    # Bare "2 lakh" / "50K" / "2 crore" without ₹ prefix — also normalize these
+    def _bare_mult_repl(m):
+        digits = m.group(1).replace(",", "")
+        suffix = m.group(2).strip().lower()
+        try:
+            n = int(digits) * _MULT[suffix]
+        except (ValueError, KeyError):
+            return m.group(0)
+        return _hindi_number(n)
+    bare_mult_pat = r"\b(\d{1,4})\s*(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)\b"
+    s = _re.sub(bare_mult_pat, _bare_mult_repl, s, flags=_re.IGNORECASE)
 
     # Standalone large-ish numbers with optional commas (≥ 3 digits) — speak as Hinglish
     def _bignum_repl(m):
@@ -6535,38 +6560,20 @@ def main():
     if os.environ.get("REPLICATE_API_TOKEN"):
         cost.track_replicate()
 
-    # ── 4. Generate Voice (Sarvam primary → ElevenLabs → OpenAI fallback) ──
+    # ── 4. Generate Voice (ElevenLabs primary → Sarvam → OpenAI fallback) ──
+    # ElevenLabs has the best PROSODY for storytelling; Sarvam handles digit/Hindi
+    # pronunciation natively. We get the best of both by running normalize_for_tts()
+    # FIRST (turns ₹2 lakh → "do laakh rupaye", DTG → "dee tee jee" etc.) then
+    # feeding clean text to ElevenLabs's expressive Hindi voice.
     audio_path = f"{WORK_DIR}/voice_{random.randint(100,999)}.mp3"
     voice_ok = False
     sarvam_key = os.environ.get("SARVAM_API_KEY", "").strip()
-    sarvam_attempted = False
-    sarvam_fired = False
 
     tts_input = normalize_for_tts(script_voice)
 
-    # Try Sarvam first (Indian-native Hinglish — handles ₹, digits, code-switching)
-    if sarvam_key and not voice_ok:
-        sarvam_attempted = True
-        print("   🎙️ Generating voice (Sarvam Bulbul v3 — Hinglish native)...")
-        try:
-            audio_path = sarvam_tts_to_mp3(tts_input, sarvam_key, audio_path)
-            print(f"   ✅ Voice: Sarvam {SARVAM_MODEL} ({SARVAM_SPEAKER})")
-            cost.track_tts("sarvam", len(tts_input))
-            voice_ok = True
-            sarvam_fired = True
-        except Exception as e:
-            print(f"   ⚠️ Sarvam TTS failed: {e}")
-            # Cost-protection: in test modes, abort BEFORE Veo so we don't waste
-            # $3.20 on a Veo clip that we'd have to re-generate when re-testing Sarvam.
-            if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
-                print("   🛑 Test mode + Sarvam failed → ABORTING before Veo to save cost.")
-                print("   🛑 Fix Sarvam first, then re-run the test. (No Veo charge incurred.)")
-                return
-            print("   🔄 Falling back to ElevenLabs...")
-
-    # Fallback 1: ElevenLabs Hindi
-    if not voice_ok and elevenlabs_key:
-        print("   🎙️ Generating voice (ElevenLabs — ElevenLabs Hindi)...")
+    # Primary: ElevenLabs Hindi (Emotive — best prosody for storytelling)
+    if elevenlabs_key and not voice_ok:
+        print("   🎙️ Generating voice (ElevenLabs Hindi — Emotive prosody)...")
         try:
             from elevenlabs import ElevenLabs
             el_client = ElevenLabs(api_key=elevenlabs_key)
@@ -6579,11 +6586,29 @@ def main():
             with open(audio_path, "wb") as f:
                 for chunk in audio_iter:
                     f.write(chunk)
-            print("   ✅ Voice: ElevenLabs ElevenLabs Hindi (Emotive Hindi)")
+            print("   ✅ Voice: ElevenLabs Hindi (with Hinglish pre-normalization)")
             cost.track_tts("elevenlabs", len(tts_input))
             voice_ok = True
         except Exception as e:
             print(f"   ⚠️ ElevenLabs TTS failed: {e}")
+            if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
+                print("   🛑 Test mode + ElevenLabs failed → ABORTING before Veo to save cost.")
+                return
+            print("   🔄 Falling back to Sarvam...")
+
+    # Fallback 1: Sarvam Bulbul v3 (Indian-native Hinglish)
+    if sarvam_key and not voice_ok:
+        print("   🎙️ Generating voice (Sarvam Bulbul v3 — Hinglish native)...")
+        try:
+            audio_path = sarvam_tts_to_mp3(tts_input, sarvam_key, audio_path)
+            print(f"   ✅ Voice: Sarvam {SARVAM_MODEL} ({SARVAM_SPEAKER})")
+            cost.track_tts("sarvam", len(tts_input))
+            voice_ok = True
+        except Exception as e:
+            print(f"   ⚠️ Sarvam TTS failed: {e}")
+            if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
+                print("   🛑 Test mode + all premium TTS failed → ABORTING before Veo.")
+                return
             print("   🔄 Falling back to OpenAI TTS...")
 
     # Fallback 2: OpenAI gpt-4o-mini-tts
