@@ -6420,7 +6420,7 @@ def main():
 
         try:
             resp = claude.messages.create(
-                model="claude-opus-4-6", max_tokens=1500,
+                model="claude-opus-4-6", max_tokens=2500,
                 messages=[{"role": "user", "content": prompt}]
             )
             cost.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
