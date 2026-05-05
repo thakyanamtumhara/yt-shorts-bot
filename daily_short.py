@@ -249,6 +249,10 @@ VEO_AMBIENT_VOLUME = 0
 ADD_HOOK_SFX = True
 HOOK_SFX_VOLUME = 0.25
 
+# Transition Whoosh SFX (short whoosh at each clip boundary — adds cuts/min punch)
+ADD_TRANSITION_SFX = True
+TRANSITION_SFX_VOLUME = 0.18
+
 # Hook Text (scroll-stopping overlay on first frame)
 ADD_HOOK_TEXT = True
 HOOK_DURATION = 2.0  # 2 seconds for better scroll-stop impact
@@ -308,9 +312,9 @@ THUMBNAIL_RESEARCH_MAX_AGE_DAYS = 7
 
 # Auto-Pin Comment — posts a CTA comment and pins it on every upload
 AUTO_PIN_COMMENT = True
-PIN_COMMENT_TEXT = """📦 Plain t-shirt chahiye printing ke liye?
-👉 Sale91.com pe order karo — MOQ sirf 10 pieces
-🚚 Pan India delivery | 3 lakh+ ready stock"""
+PIN_COMMENT_TEXT = """🤔 Aapka next question kya hai? Comment mein puchho 👇
+
+📦 Plain t-shirt for printing? → Sale91.com (MOQ 10 pieces, Pan India)"""
 
 # Auto-Playlist — organize videos into series playlists automatically
 AUTO_PLAYLIST = True
@@ -3118,6 +3122,27 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Each prompt should be 40-80 words for best results
 - Describe REALISTIC scenes that could exist in a real Indian textile business
 - Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
+
+━━━ VISUAL CONTINUITY (CRITICAL FOR PERCEIVED QUALITY) ━━━
+The 5 clips will be cut together with NO scene-setting transitions, so they
+must feel like ONE cohesive video, not 5 unrelated stock shots.
+
+Pick ONE consistent visual identity at the top of your prompt-set and APPLY IT
+TO ALL 5 PROMPTS verbatim:
+  • LIGHTING: e.g. "warm tungsten + cool window rim light, late-afternoon mood"
+    OR "cool overhead daylight, factory floor". Pick ONE — repeat it in every prompt.
+  • COLOR PALETTE: e.g. "cinematic teal + amber" OR "neutral whites + earthy browns".
+    Pick ONE — repeat in every prompt.
+  • LOCATION FEEL: e.g. "small Tiruppur factory floor with concrete walls, fabric stacks,
+    incandescent bulbs" — ALL clips happen in this same world.
+  • LENS FEEL: e.g. "shallow DOF, 35mm cinematic, slight handheld" — same lens across all 5.
+
+NEVER mix dark cinematic with bright daylight stock-photo style across clips.
+NEVER use US/UK price tags ($), branded labels, or non-Indian context.
+The B-roll currency, signage, packaging style must be Indian.
+
+Open each video_prompt with the same one-line "STYLE LOCK" preamble (just copy/
+paste it across all 5), then describe that clip's scene in detail.
 - AVOID repeating visuals from recent videos. These prompts were used recently (DO NOT reuse similar scenes):
 {_get_recent_clip_prompts()}
 
@@ -3832,6 +3857,78 @@ def generate_hook_sfx(duration=0.6):
         return sfx
     except Exception as e:
         print(f"   ⚠️ Hook SFX generation failed: {e}")
+        return None
+
+
+def generate_transition_whoosh(duration=0.4):
+    """Short rising-pitch whoosh for clip boundaries. Adds 'cuts/min' polish.
+
+    Spectral design: pink-ish noise burst + rising sine sweep + soft envelope.
+    Lighter than the hook boom — meant to subtly punctuate, not dominate.
+    """
+    if not ADD_TRANSITION_SFX:
+        return None
+    try:
+        import numpy as np
+        from moviepy.audio.AudioClip import AudioClip
+
+        sr = 44100
+
+        def make_frame(t):
+            t = np.asarray(t, dtype=np.float64)
+            vol = TRANSITION_SFX_VOLUME
+
+            # Rising sine sweep 600Hz → 2400Hz over the duration
+            sweep_freq = 600 + (1800 * (t / max(duration, 0.01)))
+            phase = 2 * np.pi * np.cumsum(np.broadcast_to(sweep_freq, t.shape) / sr) \
+                if t.ndim > 0 else 2 * np.pi * sweep_freq * t
+            sweep = np.sin(phase) * vol * 0.35
+
+            # Pink-ish noise burst (deterministic, sine-sum approximation)
+            noise = np.zeros_like(t)
+            for f, amp in [(1200, 0.18), (1900, 0.14), (2700, 0.12), (3800, 0.08), (5400, 0.06)]:
+                noise += np.sin(2 * np.pi * f * t + f * 0.31) * amp
+            noise *= vol
+
+            # Envelope: fast attack, smooth decay (whoosh shape)
+            env = (1 - np.exp(-t * 30)) * np.exp(-t * 5)
+            result = (sweep + noise) * env
+
+            # Soft clip
+            result = np.tanh(result * 1.4) * 0.7
+            return np.column_stack([result, result])
+
+        return AudioClip(make_frame, duration=duration, fps=sr)
+    except Exception as e:
+        print(f"   ⚠️ Transition whoosh generation failed: {e}")
+        return None
+
+
+def build_transition_sfx_layer(num_clips, clip_duration_sec, total_duration):
+    """Build an audio layer of transition whooshes positioned at each clip boundary.
+    Returns CompositeAudioClip or None if disabled / no transitions.
+    """
+    if not ADD_TRANSITION_SFX or num_clips <= 1:
+        return None
+    try:
+        from moviepy.audio.AudioClip import CompositeAudioClip
+        sfx_clips = []
+        whoosh_dur = 0.4
+        # Whoosh starts ~0.15s BEFORE each cut so it leads into the new clip
+        for i in range(1, num_clips):
+            cut_t = i * clip_duration_sec
+            start_t = max(0.0, cut_t - 0.15)
+            if start_t + whoosh_dur > total_duration:
+                continue
+            whoosh = generate_transition_whoosh(duration=whoosh_dur)
+            if whoosh is None:
+                continue
+            sfx_clips.append(whoosh.set_start(start_t))
+        if not sfx_clips:
+            return None
+        return CompositeAudioClip(sfx_clips)
+    except Exception as e:
+        print(f"   ⚠️ Transition SFX layer skipped: {e}")
         return None
 
 
@@ -7136,12 +7233,25 @@ def main():
     # Mix background music with voice
     mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
 
+    # Build transition whoosh layer at clip boundaries (1 whoosh per cut)
+    num_clips_for_sfx = max(1, len(downloaded_clips))
+    cd_for_sfx = total_duration / num_clips_for_sfx
+    transition_sfx = build_transition_sfx_layer(num_clips_for_sfx, cd_for_sfx, total_duration)
+
     # Add Veo ambient audio layer if available
     has_ambient = False
+    audio_layers = [mixed_audio]
     if ambient_clip:
-        mixed_audio_with_ambient = CompositeAudioClip([mixed_audio, ambient_clip])
-        print(f"   ✅ Final audio: voice + background music + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)")
+        audio_layers.append(ambient_clip)
         has_ambient = True
+    if transition_sfx is not None:
+        audio_layers.append(transition_sfx)
+        print(f"   💥 Added {num_clips_for_sfx - 1} transition whooshes at clip boundaries")
+    if len(audio_layers) > 1:
+        mixed_audio_with_ambient = CompositeAudioClip(audio_layers)
+        amb_str = f" + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)" if has_ambient else ""
+        sfx_str = " + transition SFX" if transition_sfx is not None else ""
+        print(f"   ✅ Final audio: voice + BGM{amb_str}{sfx_str}")
     else:
         mixed_audio_with_ambient = mixed_audio
 
