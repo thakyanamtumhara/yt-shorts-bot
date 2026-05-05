@@ -52,26 +52,32 @@ def get_youtube_service():
 
 
 def sanitize_tags(tags):
-    """Clean and validate tags for YouTube API (prevents invalidTags error)."""
+    """Clean and validate tags for YouTube API (prevents invalidTags error).
+
+    YouTube enforces: per-tag ≤30 chars, total ≤500 chars including quote
+    wrapping on multi-word tags (len+2) and comma separators between tags.
+    """
     cleaned = []
-    total_chars = 0
+    used_budget = 0
     seen = set()
+    BUDGET = 450
     for tag in tags:
         if not isinstance(tag, str):
             tag = str(tag)
         tag = tag.strip()
-        # Keep only: word chars (letters/digits/underscore in any script), spaces, hyphens, ampersands, apostrophes
-        tag = re.sub(r'[^\w\s\-&\']', '', tag)
-        tag = re.sub(r'\s+', ' ', tag)
-        tag = tag.strip()
-        tag = tag[:100]
+        tag = re.sub(r'[^a-zA-Z0-9\s\-]', '', tag)
+        tag = re.sub(r'\s+', ' ', tag).strip()
+        tag = tag[:30]
         if not tag or tag.lower() in seen:
             continue
-        if total_chars + len(tag) > 500:
-            break
+        effective = len(tag) + (2 if ' ' in tag else 0)
+        if cleaned:
+            effective += 1
+        if used_budget + effective > BUDGET:
+            continue
         seen.add(tag.lower())
         cleaned.append(tag)
-        total_chars += len(tag)
+        used_budget += effective
     return cleaned
 
 

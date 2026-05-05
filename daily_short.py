@@ -519,34 +519,34 @@ def get_topic_tags(topic):
 def sanitize_tags(tags):
     """Clean and validate tags for YouTube API (prevents invalidTags error).
 
-    YouTube rules:
-    - Each tag must be a non-empty string
-    - No angle brackets < >, no commas (used as internal separator)
-    - Individual tag max ~100 chars, total of all tags max 500 chars
-    - No leading/trailing whitespace
-    - ASCII letters, digits, spaces, and hyphens only (safest for YouTube)
+    YouTube rules (enforced server-side; violations → 400 invalidTags):
+    - Each tag must be a non-empty ASCII string ≤ 30 chars
+    - 500-char total budget includes quote wrapping on multi-word tags
+      (a tag with a space is counted as len + 2) and comma separators between tags
+    - No angle brackets, quotes, or commas
     """
     import re as _re
     cleaned = []
-    total_chars = 0
+    used_budget = 0
     seen = set()
+    BUDGET = 450  # Safety margin under YouTube's 500-char hard limit
     for tag in tags:
         if not isinstance(tag, str):
             tag = str(tag)
-        # Strip whitespace and keep only ASCII-safe chars: letters, digits, spaces, hyphens
         tag = tag.strip()
         tag = _re.sub(r'[^a-zA-Z0-9\s\-]', '', tag)
-        tag = _re.sub(r'\s+', ' ', tag)             # Collapse multiple spaces
-        tag = tag.strip()
-        tag = tag[:100]                              # Individual tag limit
+        tag = _re.sub(r'\s+', ' ', tag).strip()
+        tag = tag[:30]                                # YouTube per-tag max
         if not tag or tag.lower() in seen:
             continue
-        # YouTube total tags character limit is 500
-        if total_chars + len(tag) > 500:
-            break
+        effective = len(tag) + (2 if ' ' in tag else 0)   # quote overhead
+        if cleaned:
+            effective += 1                                  # comma separator
+        if used_budget + effective > BUDGET:
+            continue
         seen.add(tag.lower())
         cleaned.append(tag)
-        total_chars += len(tag)
+        used_budget += effective
     return cleaned
 
 
