@@ -1917,8 +1917,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
 
         # Step 4: Publish (or confirm schedule)
         if NEW_TEST_MODE:
-            # In New Test Mode, skip publishing — container was created and processed successfully
-            # This tests the full pipeline (S3 upload, container creation, processing) without going public
+            # NEW_TEST_MODE: skip publishing — container was created (placeholder video, not worth posting)
             print(f"   🧪 NEW TEST MODE — Instagram container created & processed but NOT published")
             print(f"      Container ID: {container_id}")
             print(f"      ℹ️ Instagram API does not support private/draft Reels — skipping publish for test")
@@ -3022,6 +3021,34 @@ collar ki complaint kabhi nahi aayegi... simple hai."
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
 11. INCLUDE SPECIFIC DETAILS — numbers (GSM values, piece counts, prices), names of techniques, comparisons.
+
+━━━ IG REELS RETENTION RULES (this script also runs as an Instagram Reel) ━━━
+
+12. 0-2s OPEN A LOOP — first sentence must POSE a question or set up a contradiction
+    that the viewer NEEDS resolved. They scroll if they think they already know the
+    answer. Make them feel "ek second ruko, ye toh nahi pata tha."
+    Examples:
+      - "Ek customer ne ₹50,000 ka order cancel kar diya... pata hai kyu? Ek chhoti si galti."
+      - "200 GSM aur 220 GSM dono same lagte hain... but printing pe ek hi survive karta hai."
+
+13. CLOSE THE LOOP AT 70-80% — reveal the answer/lesson roughly 4/5ths into the script,
+    NOT at the very end. Top-tier Reels open a loop, build tension, deliver payoff with
+    ~10-15s of script left for "so what to do" — that 10s is where SHARES happen.
+
+14. ONE SHOCKING NUMBER per script — Indian B2B Reels viewers SAVE for numbers they
+    can use ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). Bury one
+    surprising number in the middle that makes them want to remember/share.
+
+15. STRUCTURE FOR REELS GRID DISCOVERY — a viewer scrolling Explore/Reels feed sees
+    your video next to 30 others. The first 1.5 seconds must look DIFFERENT from
+    a generic talking-head Short. The hook visual + bold caption do this — script's
+    job is to EARN the hold past 3s.
+
+16. NEVER end on a slow trailing-off when the script could END on the saveable insight.
+    The Hindi "...bas yehi hota hai, simple hai" style is good for YT but it costs the
+    Reels share-rate. Better: end the LAST sentence with the actionable takeaway, then
+    let the outro card carry the rest. Trade off: slightly less natural-feeling close
+    in exchange for higher save-and-share rate on IG.
     Specificity = credibility. "200 GSM" is better than "thick fabric".
 
 ━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
@@ -3459,9 +3486,10 @@ Custom printing businesses | Merch brands | Corporate orders
         }
     }
 
-    if NEW_TEST_MODE:
+    if NEW_TEST_MODE or SINGLE_VEO_TEST:
         body["status"]["privacyStatus"] = "unlisted"
-        print(f"   🧪 NEW TEST MODE — uploading as UNLISTED (not visible to public)")
+        mode_label = "NEW TEST MODE" if NEW_TEST_MODE else "SINGLE VEO TEST"
+        print(f"   🧪 {mode_label} — uploading as UNLISTED (not visible to public)")
     elif SCHEDULE_PUBLISH:
         publish_ist, publish_utc = get_publish_time(youtube=youtube)
         body["status"]["privacyStatus"] = "private"
@@ -7353,9 +7381,10 @@ def main():
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 
                 if vid_id and vid_id != "?":
-                    if NEW_TEST_MODE:
-                        # In New Test Mode, skip comment/playlist — video is unlisted for testing only
-                        print(f"   🧪 NEW TEST MODE — skipping comment pin & playlist (unlisted test upload)")
+                    if NEW_TEST_MODE or SINGLE_VEO_TEST:
+                        # Test modes: skip comment/playlist — video is unlisted for testing only
+                        mode_label = "NEW TEST MODE" if NEW_TEST_MODE else "SINGLE VEO TEST"
+                        print(f"   🧪 {mode_label} — skipping comment pin & playlist (unlisted test upload)")
                         if thumbnail_path:
                             print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
                     else:
@@ -7435,7 +7464,7 @@ def main():
             save_ig_upload_record(ig_media_id, yt_title, fresh_topic)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
-    if not TEST_MODE and not NEW_TEST_MODE and not upload_failed and vid_id:
+    if not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST and not upload_failed and vid_id:
         try:
             blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
                 claude_client=claude,
