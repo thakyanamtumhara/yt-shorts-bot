@@ -3637,7 +3637,7 @@ def _hindi_number(n: int) -> str:
         return head if rest == 0 else f"{head} {_hindi_number(rest)}"
     if n < 10000000:
         lakhs, rest = n // 100000, n % 100000
-        head = f"{_hindi_number(lakhs)} lakh"
+        head = f"{_hindi_number(lakhs)} laakh"   # 'laakh' with double-a so ElevenLabs reads the long vowel
         return head if rest == 0 else f"{head} {_hindi_number(rest)}"
     crores, rest = n // 10000000, n % 10000000
     head = f"{_hindi_number(crores)} crore"
