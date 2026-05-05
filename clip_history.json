@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Screen printing mein mesh count matter karta hai — detail ka game hai",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a white cotton t-shirt flat on a table, the chest area showing a badly printed design where fine lines and portrait details have bled together into an unrecognizable blotchy mess, warm fluorescent workshop lighting, camera slowly dollying in to reveal the ruined print detail, vertical 9:16 format.",
-      "Medium close-up of a manual screen printing station in a small Indian workshop, a wooden-frame silk screen clamped on the press with a squeegee resting on top, a plain white t-shirt positioned underneath ready for printing, natural overhead tube lighting, camera slowly panning across the setup from left to right, no faces visible, vertical 9:16 format.",
-      "Extreme close-up macro shot comparing two different screen printing mesh fabrics held side by side by Indian man's fingers — one is a coarse low mesh count screen with visibly large openings, the other is a fine high mesh count screen with tiny tight openings, bright workshop desk lamp illuminating the mesh texture clearly, slight camera rack focus shifting between the two, vertical 9:16 format.",
-      "Close-up overhead shot of Indian man's hands pulling a squeegee across a fine mesh screen on a manual screen press, ink being pushed through the mesh onto a white cotton t-shirt below, showing the smooth controlled stroke technique, bright even fluorescent lighting from above, camera static with slight subtle zoom, vertical 9:16 format.",
-      "Close-up shot of Indian man's hands lifting a freshly screen-printed white cotton round-neck t-shirt off the press platen, revealing a crisp sharp detailed print with clean fine lines and smooth halftone gradients, the print looking professional and flawless, warm satisfying indoor lighting, camera slowly tilting up to show the full design area, vertical 9:16 format."
-    ],
-    "date": "2026-03-28T12:37:43.196052"
-  },
-  {
     "topic": "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
     "prompts": [
       "Close-up shot of an Indian man's hands scrolling through a phone screen showing multiple WhatsApp complaint messages with angry emojis and text, phone resting on a cluttered desk with fabric swatches and printed t-shirts scattered around, warm overhead fluorescent lighting, slight camera push-in, vertical 9:16 format, realistic Indian small business office setting.",
@@ -328,5 +317,16 @@
       "Medium shot of neatly stacked and poly-packed plain cotton t-shirts in multiple colors arranged in rows on a clean warehouse shelf, with an Indian man's hand placing a final checked piece on top. Clean bright LED warehouse lighting, camera slowly tilting up to reveal the organized stock. Vertical 9:16 format, 8 seconds."
     ],
     "date": "2026-05-05T13:21:48.802680"
+  },
+  {
+    "topic": "240 GSM Oversized T-Shirt Ka Sach — Royal Blue Mein Kyu Hota Hai Color Fade? GSM vs Fabric Quality Explained",
+    "prompts": [
+      "Close-up of Indian man's hands holding a Royal Blue oversized cotton t-shirt under bright white tubelight, slowly turning it to reveal visible color fade patches and whitish streaks near the shoulder area, the fabric looks washed-out compared to a fresh piece visible in the background, warm indoor lighting, slight camera push-in, vertical 9:16 format.",
+      "Medium shot of a wooden table with five folded oversized cotton t-shirts in different colors — black, white, maroon, olive green, and Royal Blue — arranged in a neat row, Indian man's hands slowly pulling out the Royal Blue one and placing it separately in front, natural daylight from a nearby window, camera slightly overhead angle, vertical 9:16 format.",
+      "Extreme close-up of two Royal Blue cotton fabric swatches held side by side between Indian man's fingers — one looking vibrant and rich in color, the other looking dull and faded with slight whitish haze, camera slowly racks focus between the two pieces, bright LED studio lighting illuminating the fabric texture clearly, vertical 9:16 format.",
+      "Close-up of Indian man's hands pressing a damp white cotton cloth firmly against a Royal Blue oversized t-shirt laid flat on a steel table, then slowly lifting the white cloth to reveal slight blue color transfer marks on it, camera tight on the hands and fabrics, bright overhead fluorescent lighting in a small textile workshop setting, vertical 9:16 format.",
+      "Medium close-up of a freshly washed Royal Blue oversized cotton t-shirt hanging on a steel drying rack in bright natural sunlight on a rooftop, the fabric looks rich and color-stable with no fade marks, gentle breeze causing slight movement in the fabric, camera slowly dollies forward toward the t-shirt, clear blue sky visible in the background, vertical 9:16 format."
+    ],
+    "date": "2026-05-05T15:14:30.177383"
   }
 ]

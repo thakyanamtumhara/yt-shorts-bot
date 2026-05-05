@@ -1175,5 +1175,19 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.17
     }
+  },
+  {
+    "date": "2026-05-05T15:25:22.821505",
+    "topic": "240 GSM Oversized T-Shirt Ka Sach \u2014 Royal Blue Mein Kyu Hota Hai Color Fade? GSM vs Fabric Quality Explained",
+    "title": "Stop Blaming GSM! Why Royal Blue T-Shirts Always Fade",
+    "total_usd": 0.4204,
+    "duration_min": 12.3,
+    "breakdown": {
+      "claude_opus": 0.2879,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0311,
+      "whisper": 0.0064,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
