@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Bulk mein order karo toh rate kam milta hai — par pehle sample lo",
-    "prompts": [
-      "Close-up shot of an Indian man's hands scrolling through a phone screen showing multiple WhatsApp complaint messages with angry emojis and text, phone resting on a cluttered desk with fabric swatches and printed t-shirts scattered around, warm overhead fluorescent lighting, slight camera push-in, vertical 9:16 format, realistic Indian small business office setting.",
-      "Medium shot of a row of neatly folded white plain round-neck t-shirts arranged on a long wooden table in an Indian textile warehouse, two separate stacks side by side from different batches, warm yellow tube light overhead, camera slowly dollying right to reveal both stacks, vertical 9:16, no faces visible, realistic warehouse environment with poly bags in background.",
-      "Close-up of Indian man's hands placing two white plain cotton t-shirts flat on a dark surface, rubbing the fabric between thumb and fingers on each shirt alternately to compare texture and feel, one shirt slightly smoother than the other, natural indoor lighting from a nearby window, slow deliberate hand movements, vertical 9:16 format, no face visible.",
-      "Close-up shot of Indian man's hands holding a freshly DTF-printed white t-shirt under running tap water in a steel wash basin, gently rubbing the printed area to test wash fastness, water droplets visible, bright bathroom tubelight overhead, camera angled from above looking down at the washing action, vertical 9:16 format, realistic Indian setting.",
-      "Medium close-up of Indian man's hands confidently stacking a large quantity of white plain round-neck t-shirts into a neat pile on a clean warehouse table, poly-packed bundles visible in the background on metal shelving racks, warm overhead lighting, camera slowly pulling back to reveal the satisfying large organized stack, vertical 9:16 format, no face visible."
-    ],
-    "date": "2026-03-29T12:38:29.996665"
-  },
-  {
     "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
     "prompts": [
       "Close-up of a frustrated Indian man's hands holding a freshly screen-printed white round-neck t-shirt with a multi-color logo that looks slightly dull and oversaturated, laid flat on a messy workshop table with ink jars and squeegees visible in the background, warm overhead fluorescent lighting, camera slowly pushes in, vertical 9:16 format.",
@@ -328,5 +317,16 @@
       "Medium close-up of a freshly washed Royal Blue oversized cotton t-shirt hanging on a steel drying rack in bright natural sunlight on a rooftop, the fabric looks rich and color-stable with no fade marks, gentle breeze causing slight movement in the fabric, camera slowly dollies forward toward the t-shirt, clear blue sky visible in the background, vertical 9:16 format."
     ],
     "date": "2026-05-05T15:14:30.177383"
+  },
+  {
+    "topic": "Usne ₹2 Lakh Ka Order Liya Bina GST Number Ke — Ye Galti Mat Karna 🚫 | B2B Mistake",
+    "prompts": [
+      "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Close-up of Indian man's hands counting a thick stack of Indian ₹500 currency notes on a cluttered wooden desk, a printed invoice paper visible beside the cash showing large numbers, a mobile phone screen glowing nearby, warm shadows falling across the desk surface, camera slowly dollying in.",
+      "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Medium shot of rows and rows of neatly poly-packed plain cotton t-shirts in multiple colors stacked inside brown corrugated cardboard cartons on an Indian warehouse floor, a handwritten dispatch slip tucked into the top carton, camera slowly panning right across the cartons showing the scale of 1500 pieces.",
+      "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Close-up of Indian man's hands holding a GST tax invoice printout on A4 paper, one finger pointing at the CGST and SGST line items showing 9% each, the total amount circled with a red pen, a second plain receipt without GST details placed beside it for comparison, camera rack-focusing between the two documents.",
+      "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Over-the-shoulder shot of Indian man's hands typing on a laptop keyboard showing a GST registration portal form on screen, a PAN card and Aadhaar photocopy placed on the desk beside the laptop, a chai glass visible at the edge of frame, camera slowly pushing in toward the screen with warm ambient light reflecting off the laptop surface.",
+      "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Close-up of Indian man's hands placing a fresh GST certificate printout on a desk next to a neatly arranged stack of plain white cotton t-shirts and a new printed invoice, a satisfied thumbs-up gesture from one hand entering frame, warm golden light catching the certificate text, camera slowly pulling back to reveal the organized desk setup."
+    ],
+    "date": "2026-05-05T17:01:06.809209"
   }
 ]

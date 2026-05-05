@@ -1189,5 +1189,20 @@
       "whisper": 0.0064,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-05-05T17:14:10.900133",
+    "topic": "Usne \u20b92 Lakh Ka Order Liya Bina GST Number Ke \u2014 Ye Galti Mat Karna \ud83d\udeab | B2B Mistake",
+    "title": "He Ordered 1500 T-Shirts Without GST \u2014 See What Happened",
+    "total_usd": 3.6498,
+    "duration_min": 14.6,
+    "breakdown": {
+      "claude_opus": 0.3361,
+      "replicate_music": 0.05,
+      "tts_sarvam": 0.0112,
+      "veo_clips": 3.2,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
