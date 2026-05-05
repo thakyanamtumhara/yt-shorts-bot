@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Screen print mein spot colors aur CMYK — kab kaunsa use karo",
-    "prompts": [
-      "Close-up of a frustrated Indian man's hands holding a freshly screen-printed white round-neck t-shirt with a multi-color logo that looks slightly dull and oversaturated, laid flat on a messy workshop table with ink jars and squeegees visible in the background, warm overhead fluorescent lighting, camera slowly pushes in, vertical 9:16 format.",
-      "Medium close-up of a wooden screen printing carousel with multiple screens mounted, each screen frame labeled with different ink colors, a stack of plain white cotton t-shirts sits on a metal table beside it, an Indian textile workshop environment with concrete floor and tube lights, camera slowly pans left to right revealing the full setup, vertical 9:16.",
-      "Top-down overhead shot of two printed t-shirt samples placed side by side on a clean white surface — left shirt shows a bold 2-color logo print with crisp vibrant edges (spot color), right shirt shows a photographic full-color landscape image print (CMYK), natural daylight from a window, camera holds steady then slowly zooms out, vertical 9:16.",
-      "Close-up of Indian man's hands using a squeegee to pull bright magenta ink across a fine mesh screen onto white cotton fabric stretched on a flatbed screen printing press, ink spreading evenly with visible halftone dot pattern on the mesh, workshop background slightly blurred, warm yellow overhead light, camera angle slightly tilted, vertical 9:16.",
-      "Close-up of Indian man's hands holding up a freshly printed white plain round-neck t-shirt showing a vibrant full-color photographic print with smooth gradients and sharp detail, rotating it slightly to catch the light, clean organized printing workshop background with neatly stacked blank t-shirts on shelves, bright even lighting, camera slowly dollies forward, vertical 9:16."
-    ],
-    "date": "2026-03-30T13:00:47.682740"
-  },
-  {
     "topic": "White ink DTG pe costly hai — dark tshirt pe margin kam hoga",
     "prompts": [
       "Close-up shot of a DTG printer head moving slowly over a black round-neck t-shirt, white ink being deposited as the base layer, bright white streaks appearing on the dark fabric surface, warm workshop lighting, slight camera push-in, vertical 9:16 format, no text, no faces visible, only the machine platen and t-shirt.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Warm tungsten overhead lighting with cool window rim light, late-afternoon mood, neutral whites and earthy browns palette, small Indian textile office with fabric stacks in background, shallow DOF 35mm cinematic slight handheld feel. Scene: Close-up of Indian man's hands placing a fresh GST certificate printout on a desk next to a neatly arranged stack of plain white cotton t-shirts and a new printed invoice, a satisfied thumbs-up gesture from one hand entering frame, warm golden light catching the certificate text, camera slowly pulling back to reveal the organized desk setup."
     ],
     "date": "2026-05-05T17:01:06.809209"
+  },
+  {
+    "topic": "DTF Printer Kaunsa Lein? ₹80K vs ₹3 Lakh — Kya Farak Padta Hai Business Mein | Real Comparison",
+    "prompts": [
+      "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Close-up of Indian man's hands holding a small desktop DTF printer's print head assembly that looks visibly clogged with dried white ink residue, fingers pointing at the damaged nozzle area, a crumpled repair bill with Indian rupee amounts visible nearby on a wooden desk, frustration implied through the tight grip on the part.",
+      "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Medium shot of a small A3-size DTF printer sitting on a cluttered wooden desk in a compact Indian workshop, the printer slowly feeding a PET film through with a partially printed colorful design, timer on a phone screen beside it showing 4 minutes elapsed, stacks of plain white t-shirts visible in the background on metal shelving.",
+      "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Wide shot showing two DTF printers placed side by side on separate tables — a small compact A3 printer on the left and a large 60cm industrial DTF printer on the right, both actively printing transfers, the larger machine visibly feeding film much faster, camera slowly dollying from left to right comparing the two machines, Indian workshop environment with fabric rolls stacked against the back wall.",
+      "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Close-up of Indian man's hands peeling a freshly printed DTF transfer film off a heat press, revealing a vibrant multicolor design perfectly bonded onto a black cotton round-neck t-shirt, steam rising slightly from the press, the hands carefully lifting one corner to show clean sharp print edges, a stack of completed printed t-shirts visible in soft focus behind.",
+      "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Medium shot of Indian man's hands organizing a completed batch of 15-20 printed cotton t-shirts in various colors neatly folded and stacked on a packing table, a large industrial DTF printer humming in the background still printing the next batch, poly bags and shipping labels scattered on the table, conveying efficient production flow and business readiness."
+    ],
+    "date": "2026-05-05T17:40:29.541751"
   }
 ]
