@@ -1158,5 +1158,22 @@
       "whisper": 0.0081,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-05-05T13:44:49.042525",
+    "topic": "Customer Ne 5000 Pieces Return Kiye \u2014 Sirf Ek Stitching Mistake Ki Wajah Se \ud83d\ude24 Quality Check Story",
+    "title": "5000 T-Shirts Returned: One Stitching Mistake Cost Us Lakhs \ud83d\ude24",
+    "total_usd": 3.1695,
+    "duration_min": 24.4,
+    "breakdown": {
+      "claude_opus": 0.2905,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0324,
+      "veo_clips": 2.5,
+      "whisper": 0.0065,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.17
+    }
   }
 ]

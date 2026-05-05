@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Client ne return kiya? Pre-shrunk nahi tha shayad",
-    "prompts": [
-      "Close-up shot of Indian man's hands pulling a crumpled plain black round-neck t-shirt out of a front-loading washing machine drum, warm fluorescent indoor lighting, the fabric looks visibly wrinkled and slightly misshapen, camera slowly zooms in on the t-shirt as it emerges from the machine, vertical 9:16 format, realistic Indian laundry room setting.",
-      "Medium close-up shot of a brown cardboard box on a concrete warehouse floor being pushed back across a counter by Indian man's hands, several neatly folded plain navy blue t-shirts visible inside the open box, a printed invoice paper resting on top, overhead warm warehouse lighting, slight camera pan across the returned goods, vertical 9:16 format.",
-      "Close-up overhead shot of two identical plain white round-neck t-shirts laid flat side by side on a grey cutting table, one noticeably smaller than the other, a yellow measuring tape stretched across both showing the size difference, bright daylight from a nearby window, camera slowly tilts downward to emphasize the contrast, vertical 9:16 format, Indian textile workshop setting.",
-      "Close-up shot of Indian man's hands using a yellow fabric measuring tape to measure the chest width of a plain maroon t-shirt laid flat on a clean steel table, a notebook with handwritten measurements and a pen visible beside the shirt, warm indoor tubelight lighting, camera slightly dollies forward as the tape is pulled taut, vertical 9:16 format.",
-      "Close-up shot of Indian man's hands gently stretching and feeling the smooth fabric of a fresh plain white pre-shrunk cotton t-shirt, the fabric bouncing back to shape, a stack of neatly folded multicolor plain t-shirts in poly bags visible in the soft-focus background on a warehouse shelf, bright warm lighting, camera slowly racks focus from hands to the stacked inventory, vertical 9:16 format."
-    ],
-    "date": "2026-03-27T17:51:09.784560"
-  },
-  {
     "topic": "Screen printing mein mesh count matter karta hai — detail ka game hai",
     "prompts": [
       "Close-up shot of Indian man's hands holding a white cotton t-shirt flat on a table, the chest area showing a badly printed design where fine lines and portrait details have bled together into an unrecognizable blotchy mess, warm fluorescent workshop lighting, camera slowly dollying in to reveal the ruined print detail, vertical 9:16 format.",
@@ -328,5 +317,16 @@
       "Close-up overhead shot of three neatly folded printed t-shirts arranged in a row on a clean white surface, each with a small stack of Indian currency notes (₹500 and ₹100 denominations) placed next to them, with varying stack heights showing profit differences. Bright natural daylight from a nearby window. Camera slowly tilts down revealing all three from top. Vertical 9:16 format, 8 seconds."
     ],
     "date": "2026-05-04T13:27:45.597216"
+  },
+  {
+    "topic": "Customer Ne 5000 Pieces Return Kiye — Sirf Ek Stitching Mistake Ki Wajah Se 😤 Quality Check Story",
+    "prompts": [
+      "Close-up of a large pile of folded plain white cotton t-shirts being dumped from a cardboard box onto a warehouse table, creating a messy heap. Warm fluorescent warehouse lighting, camera at eye level, slight shake to convey urgency. Indian man's hands visible pushing the box. Vertical 9:16 format, 8 seconds.",
+      "Extreme close-up of a plain navy blue cotton t-shirt's side seam held taut between two Indian man's hands, camera slowly dollying in to reveal visible thread skips and small gaps in the stitching line. Bright daylight from a nearby window, shallow depth of field. Vertical 9:16 format, 8 seconds.",
+      "Close-up of an industrial overlock sewing machine stitching the side seam of a plain black t-shirt in a small Indian garment factory. Camera focuses on the needle area showing thread feeding and fabric moving under the presser foot. Overhead fluorescent lighting, slight camera pan following the fabric movement. Vertical 9:16 format, 8 seconds.",
+      "Close-up of Indian man's hands pulling a plain white t-shirt's side seam apart horizontally with both thumbs, demonstrating a stretch test. Camera angle slightly from above showing the seam gap opening under tension. Bright warm indoor lighting on a wooden work table, slow deliberate pulling motion. Vertical 9:16 format, 8 seconds.",
+      "Medium shot of neatly stacked and poly-packed plain cotton t-shirts in multiple colors arranged in rows on a clean warehouse shelf, with an Indian man's hand placing a final checked piece on top. Clean bright LED warehouse lighting, camera slowly tilting up to reveal the organized stock. Vertical 9:16 format, 8 seconds."
+    ],
+    "date": "2026-05-05T13:21:48.802680"
   }
 ]
