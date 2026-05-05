@@ -1,0 +1,94 @@
+name: Audio Sample (TTS verification)
+
+# Generates a 10-15s ElevenLabs audio sample with the actual preprocessor logic.
+# Saves the WAV as an artifact so you can download and listen without running
+# the full daily pipeline (no apt-get install, no Veo, no upload).
+# Cost: ~$0.02 in ElevenLabs credits + Whisper for verification transcript.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_text:
+        description: 'Hinglish phrase to test (default: covers all reported issues)'
+        required: false
+        default: 'Ek customer ne mujhe call kiya, bola DTF printer liya tha 80 hazaar ka, 3 mahine chalega, par thik nahi chala. 8 piece order pe ₹2 lakh ka loss hua, matlab ye galti mat karna.'
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Generate sample
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          set -e
+          pip install -q requests
+          python3 - << 'PY'
+          import os, sys, importlib.util
+
+          # Load just the preprocessor functions from daily_short.py without running main()
+          spec = importlib.util.spec_from_file_location("ds", "daily_short.py")
+          # We can't full-import (heavy deps). Read the file and exec just the symbols we need.
+          src = open("daily_short.py").read()
+          start = src.index("# ╔══════════════════════════════════════════════════════════════════════╗\n# ║                   TTS PRE-PROCESSING")
+          end = src.index("def sarvam_tts_to_mp3")
+          ns = {}
+          exec(src[start:end], ns)
+          normalize_for_tts = ns["normalize_for_tts"]
+
+          text = os.environ.get("INPUT_SAMPLE_TEXT") or "${{ inputs.sample_text }}"
+          if not text or text == "None":
+              text = "Ek customer ne mujhe call kiya, bola DTF printer liya tha 80 hazaar ka, 3 mahine chalega, par thik nahi chala. 8 piece order pe ₹2 lakh ka loss hua, matlab ye galti mat karna."
+
+          print("=" * 70)
+          print("ORIGINAL SCRIPT:")
+          print(text)
+          print()
+          processed = normalize_for_tts(text)
+          print("AFTER PREPROCESSOR (this is what ElevenLabs sees):")
+          print(processed)
+          print("=" * 70)
+
+          # Call ElevenLabs Hindi voice (same voice + settings as production)
+          import requests
+          ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"
+          ELEVENLABS_MODEL = "eleven_multilingual_v2"
+          api_key = os.environ["ELEVENLABS_API_KEY"]
+          r = requests.post(
+              f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
+              headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
+              json={
+                  "text": processed,
+                  "model_id": ELEVENLABS_MODEL,
+                  "voice_settings": {"stability": 0.62, "similarity_boost": 0.75, "style": 0.22, "use_speaker_boost": True},
+              },
+              timeout=60,
+          )
+          r.raise_for_status()
+          with open("sample_audio.mp3", "wb") as f:
+              f.write(r.content)
+          print(f"✅ Generated sample_audio.mp3 ({len(r.content)} bytes)")
+
+          # Save the script texts alongside for reference
+          with open("sample_meta.txt", "w") as f:
+              f.write(f"ORIGINAL:\n{text}\n\nAFTER PREPROCESSOR:\n{processed}\n")
+          PY
+
+      - name: Upload audio sample artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-sample
+          path: |
+            sample_audio.mp3
+            sample_meta.txt
+          retention-days: 7
