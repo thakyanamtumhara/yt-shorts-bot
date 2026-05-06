@@ -126,7 +126,9 @@ SARVAM_SAMPLE_RATE = 22050
 
 # ── ElevenLabs TTS (Fallback 1) ──
 ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
-ELEVENLABS_MODEL = "eleven_multilingual_v2"
+# Set ELEVENLABS_MODEL=eleven_v3 to use the newest (more natural) model.
+# Defaults to multilingual_v2 (stable, broad availability). v3 access is account-tier dependent.
+ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
 ELEVENLABS_VOICE_SETTINGS = {
     "stability": 0.62,
     "similarity_boost": 0.75,
@@ -3644,43 +3646,22 @@ def _hindi_number(n: int) -> str:
     return head if rest == 0 else f"{head} {_hindi_number(rest)}"
 
 
+# Acronyms — keep most as-is. ElevenLabs multilingual+ models handle common
+# initialisms (DTG, GSM, B2B, MOQ) natively. We only respell when a model
+# version mispronounces a specific one. Empty by default — the original
+# capitalized acronym in the script reaches ElevenLabs unchanged.
 _TTS_ACRONYM_MAP = {
-    # Hyphenated form so ElevenLabs reads them as ONE connected word — spaces
-    # cause inter-letter gaps ("jee... es... em") which sound choppy.
-    "DTG": "dee-tee-jee", "DTF": "dee-tee-ef", "GSM": "jee-es-em",
-    "MOQ": "em-o-cue", "B2B": "bee-tu-bee", "B2C": "bee-tu-see",
-    "ROI": "aar-o-aai", "USP": "yu-es-pee", "POD": "pee-o-dee",
-    "SKU": "es-kay-yu", "EMI": "ee-em-aai",
+    # (empty — re-enable specific entries only when a user test confirms it)
 }
 
-# Phonetic respelling for Hinglish words ElevenLabs Hindi mispronounces.
-# Goal: nudge ElevenLabs's tokenizer toward the correct Hindi sound without
-# changing what the script means. Only fixes the audio — captions still read
-# the original word because the captions are built from script_voice BEFORE
-# this map is applied.
+# Phonetic respelling map — kept minimal.
+# Earlier I had aggressive respellings (chalegaa, theek, mut-lub etc.) which
+# made ElevenLabs sound WORSE, not better. ElevenLabs Hindi/multilingual is
+# smart enough to handle natural Hinglish — over-engineering the input degrades
+# its prosody. Only keep entries that are PROVEN broken via user feedback.
 _TTS_PHONETIC_MAP = {
-    # User-reported mispronunciations:
-    "thik": "theek",                  # ठीक — 'th' was sounding like English think
-    "chalega": "chalegaa",            # short 'a' was clipped — double-a forces longer vowel
-    "chalegi": "chalegi",
-    "chalenge": "chalengay",
-    # Common ones with the same vowel-clipping issue:
-    "matlab": "mut-lub",              # मतलब — sounded too English
-    "samjho": "samjho",
-    "dekho": "deh-kho",
-    "bola": "bolaa",                  # बोला — short 'a' clip
-    "kaha": "kahaa",
-    "bata": "bataa",
-    "raha": "rahaa",
-    "rakha": "rakhaa",
-    "lagta": "lagtaa",
-    "hota": "hotaa",
-    "karta": "kartaa",
-    # 'ph' Hindi words (फ) — ElevenLabs sometimes reads as English 'f':
-    "phir": "fir",
-    # Common 'kh' words where the aspiration is lost:
-    "rakh": "rakh",
-    "dekh": "dekh",
+    # (empty — re-enable specific entries only when a user test confirms a word
+    # is consistently mispronounced.)
 }
 
 
@@ -6668,24 +6649,26 @@ def main():
             print(f"   ❌ OpenAI TTS also failed: {e}")
             return
 
-    # ── 4b. Tighten silences (target ~10%) + normalize loudness (-14 LUFS YT target) ──
-    # Audit of 2026-05-06 video: 17.8% silence (35 gaps avg 0.4s) — choppy.
-    # Tested 9 settings on the actual audio: stop_duration=0.15, stop_silence=0.10
-    # at -28dB threshold gives 10% silence (top-creator range 8-12%) without
-    # making speech feel rushed. 0.08 was too aggressive (0% silence = robotic).
+    # ── 4b. Loudness normalize ONLY (preserve ElevenLabs natural prosody) ──
+    # User feedback (2026-05-06): ElevenLabs preview sounds perfect; bot output
+    # sounds choppy. Cause: my silenceremove was killing natural inter-word pauses
+    # that ElevenLabs deliberately adds for human-feel. ElevenLabs is good enough
+    # that we should NOT post-process the speech timing — only adjust loudness.
+    # If a specific run is too gappy, set TIGHTEN_SILENCES=1 to enable trimming.
     try:
         import subprocess
         tightened_path = audio_path.replace(".mp3", "_tight.mp3")
+        if os.environ.get("TIGHTEN_SILENCES", "").strip() in ("1", "true", "yes"):
+            # Gentle: only kill silences > 1.5s (clearly intro/outro pauses, not prosody)
+            af = "silenceremove=stop_periods=-1:stop_duration=1.5:stop_threshold=-32dB:stop_silence=0.6,loudnorm=I=-14:TP=-1.5:LRA=11"
+        else:
+            af = "loudnorm=I=-14:TP=-1.5:LRA=11"
         subprocess.run([
-            "ffmpeg", "-i", audio_path,
-            "-af",
-            "silenceremove=stop_periods=-1:stop_duration=0.15:stop_threshold=-28dB:"
-            "stop_silence=0.10,loudnorm=I=-14:TP=-1.5:LRA=11",
-            "-y", tightened_path,
+            "ffmpeg", "-i", audio_path, "-af", af, "-y", tightened_path,
         ], capture_output=True, timeout=60)
         if os.path.exists(tightened_path) and os.path.getsize(tightened_path) > 0:
             os.replace(tightened_path, audio_path)
-            print("   🔊 Voice tightened (~10% silence) + normalized to -14 LUFS")
+            print("   🔊 Voice normalized to -14 LUFS (prosody preserved)")
         else:
             print("   ⚠️ Voice post-processing skipped (ffmpeg output empty)")
     except Exception as e:
