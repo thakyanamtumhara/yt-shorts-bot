@@ -1,16 +1,5 @@
 [
   {
-    "topic": "White ink DTG pe costly hai — dark tshirt pe margin kam hoga",
-    "prompts": [
-      "Close-up shot of a DTG printer head moving slowly over a black round-neck t-shirt, white ink being deposited as the base layer, bright white streaks appearing on the dark fabric surface, warm workshop lighting, slight camera push-in, vertical 9:16 format, no text, no faces visible, only the machine platen and t-shirt.",
-      "Medium shot of Indian man's hands placing a plain black cotton t-shirt flat on a DTG printer platen, adjusting the fabric smooth with fingers, several folded dark colored blank t-shirts stacked beside the printer on a small table, bright fluorescent workshop lighting, camera static with slight handheld movement, vertical 9:16.",
-      "Split-view style close-up of two freshly DTG-printed round-neck t-shirts side by side on a wooden table — one white t-shirt with a colorful graphic print, one black t-shirt with the same graphic showing visible white ink base layer, Indian man's hands sliding them closer together for comparison, warm indoor lighting, camera slowly dollies forward, vertical 9:16, no text.",
-      "Close-up of Indian man's hands holding a calculator and a small notebook with handwritten numbers, a few DTG ink cartridges — one white and one cyan — placed on the desk beside plain black and white t-shirts, the hand taps numbers on the calculator, natural desk lamp lighting, slight overhead camera angle, vertical 9:16, no faces.",
-      "Close-up shot of a perfectly DTG-printed black round-neck t-shirt with a vibrant multicolor design being carefully folded by Indian man's hands on a clean white surface, the print colors are vivid and sharp against the dark fabric, soft warm lighting, camera slowly pulls back to reveal the neat finished product, vertical 9:16, no text, no face."
-    ],
-    "date": "2026-03-31T12:59:26.297178"
-  },
-  {
     "topic": "Myth: Black tshirt pe print nahi tikta — technique galat hai tumhari",
     "prompts": [
       "Close-up shot of Indian man's hands holding a washed black round-neck cotton t-shirt with a visibly cracked and faded white DTG print design on the chest area, fabric slightly wrinkled from washing, bright daylight from a nearby window illuminating the damaged print clearly, camera slowly zooming in on the cracked print lines, vertical 9:16 format, realistic textile workshop setting.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Cool overhead fluorescent lighting with warm highlights from a desk lamp, small Indian workshop feel with concrete walls and cluttered desk, shallow DOF 35mm cinematic, slight handheld movement. Medium shot of Indian man's hands organizing a completed batch of 15-20 printed cotton t-shirts in various colors neatly folded and stacked on a packing table, a large industrial DTF printer humming in the background still printing the next batch, poly bags and shipping labels scattered on the table, conveying efficient production flow and business readiness."
     ],
     "date": "2026-05-05T17:40:29.541751"
+  },
+  {
+    "topic": "Summer Mein 180 GSM vs 220 GSM — Kaun Sa Cotton T-Shirt Zyada Bikta Hai? Real Data 🔥",
+    "prompts": [
+      "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Close-up of Indian man's hands flipping through a tall stack of folded plain white cotton t-shirts on a metal warehouse shelf, camera slowly pulls back to reveal hundreds of unsold folded t-shirts stacked in rows behind, dust particles visible in the window light, the sheer quantity feels overwhelming and unsold.",
+      "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Medium shot of two plain white cotton round-neck t-shirts held side by side by Indian man's hands against a raw wooden table surface, one visibly thinner and lighter (180 GSM) and one noticeably thicker and denser (220 GSM), camera slowly dollies in to show the fabric density difference, slight breeze making the thinner one flutter gently.",
+      "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Close-up of Indian man's hand placing a plain light grey cotton t-shirt on a small digital weighing scale on a workbench, the scale display shows a number in grams, camera tilts up slightly to reveal a second darker thicker t-shirt waiting beside the scale, natural light catching the fabric texture differences between the two garments.",
+      "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Close-up of Indian man's fingers pinching and stretching the fabric of a plain black cotton t-shirt held up against daylight from the warehouse window, light passing slightly through the thinner fabric showing its transparency, then the hand picks up a thicker black t-shirt and repeats the same gesture with no light passing through, demonstrating the density difference clearly.",
+      "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Overhead bird's-eye shot of a clean wooden packing table with three neatly folded plain cotton t-shirts arranged left to right — a light pastel yellow (thin, 180 GSM), a white (medium, 200 GSM), and a black (thick, 220 GSM), Indian man's hands gently tap the middle white one approvingly, camera slowly zooms in on the balanced selection, warm light casting soft shadows on the fabric folds."
+    ],
+    "date": "2026-05-06T13:50:59.335667"
   }
 ]

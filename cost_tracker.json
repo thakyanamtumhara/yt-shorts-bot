@@ -1218,5 +1218,22 @@
       "whisper": 0.007,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-05-06T14:15:03.064227",
+    "topic": "Summer Mein 180 GSM vs 220 GSM \u2014 Kaun Sa Cotton T-Shirt Zyada Bikta Hai? Real Data \ud83d\udd25",
+    "title": "180 GSM vs 220 GSM in Summer? 600 Pieces UNSOLD \ud83d\ude31",
+    "total_usd": 7.7606,
+    "duration_min": 25.5,
+    "breakdown": {
+      "claude_opus": 0.3291,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0359,
+      "veo_clips": 7.04,
+      "whisper": 0.0078,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1778
+    }
   }
 ]
