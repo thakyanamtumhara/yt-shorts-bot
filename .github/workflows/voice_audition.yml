@@ -1,0 +1,131 @@
+name: Voice Audition (top Hindi voices side-by-side)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_text:
+        description: 'Hinglish line to read in each voice'
+        required: false
+        default: 'Ek customer ne mujhe call kiya, bola DTG print karwana hai par profit nahi mil raha. Maine bola, GSM check karo, fabric kya tha. ₹2 lakh ka order tha, 200 piece DTF print, 3 hafte mein deliver karna tha. Simple hai, agar 200 GSM cotton lo, print bhi accha aayega aur margin bhi banegi.'
+      voice_ids:
+        description: 'Comma-separated voice IDs (or leave blank to use top 3 Hindi defaults)'
+        required: false
+        default: ''
+      model_id:
+        description: 'ElevenLabs model id'
+        required: false
+        default: 'eleven_multilingual_v2'
+
+jobs:
+  audition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Generate samples
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          INPUT_SAMPLE_TEXT: ${{ inputs.sample_text }}
+          INPUT_VOICE_IDS: ${{ inputs.voice_ids }}
+          INPUT_MODEL_ID: ${{ inputs.model_id }}
+        run: |
+          set -e
+          pip install -q requests
+          python3 - << 'PY'
+          import os, json, requests
+
+          api_key = os.environ["ELEVENLABS_API_KEY"]
+          text = os.environ.get("INPUT_SAMPLE_TEXT") or "Hello"
+          model_id = os.environ.get("INPUT_MODEL_ID") or "eleven_multilingual_v2"
+          voice_ids_csv = os.environ.get("INPUT_VOICE_IDS", "").strip()
+
+          # Apply MINIMAL preprocessing (just ₹/numbers — leave words alone)
+          src = open("daily_short.py").read()
+          start = src.index("# ╔══════════════════════════════════════════════════════════════════════╗\n# ║                   TTS PRE-PROCESSING")
+          end = src.index("def sarvam_tts_to_mp3")
+          ns = {}
+          exec(src[start:end], ns)
+          normalize_for_tts = ns["normalize_for_tts"]
+          processed = normalize_for_tts(text)
+          print(f"Original  : {text}")
+          print(f"After prep: {processed}")
+          print()
+
+          # Resolve voice IDs — if blank, query library for top Hindi voices
+          if voice_ids_csv:
+              voice_ids = [v.strip() for v in voice_ids_csv.split(",") if v.strip()]
+          else:
+              # Search ElevenLabs Voice Library for Hindi voices
+              r = requests.get(
+                  "https://api.elevenlabs.io/v1/shared-voices",
+                  headers={"xi-api-key": api_key},
+                  params={"language": "hi", "page_size": 20, "category": "professional"},
+                  timeout=20,
+              )
+              if r.status_code == 200:
+                  voices = r.json().get("voices", [])
+                  # Pick 3 highest-rated/most-used Hindi voices
+                  voices_sorted = sorted(voices, key=lambda v: -(v.get("cloned_by_count", 0) or 0))[:3]
+                  voice_ids = [v["voice_id"] for v in voices_sorted]
+                  for v in voices_sorted:
+                      print(f"  Picked: {v.get('name','?')} (id={v['voice_id']}) — {v.get('cloned_by_count',0)} clones")
+              else:
+                  print(f"  Library API HTTP {r.status_code} — falling back to hardcoded voice")
+                  voice_ids = ["FZkK3TvQ0pjyDmT8fzIW"]
+          print()
+
+          os.makedirs("samples", exist_ok=True)
+          meta_lines = [f"Original script:\n{text}\n\nAfter preprocessor (this is what ElevenLabs sees):\n{processed}\n\nModel: {model_id}\n\nSamples:"]
+
+          for i, vid in enumerate(voice_ids, 1):
+              # Get voice name for the filename
+              name = vid
+              try:
+                  vr = requests.get(f"https://api.elevenlabs.io/v1/voices/{vid}",
+                                    headers={"xi-api-key": api_key}, timeout=10)
+                  if vr.status_code == 200:
+                      name = vr.json().get("name", vid)
+              except Exception:
+                  pass
+
+              print(f"[{i}] Generating with voice '{name}' (id={vid})...")
+              r = requests.post(
+                  f"https://api.elevenlabs.io/v1/text-to-speech/{vid}",
+                  headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
+                  json={
+                      "text": processed,
+                      "model_id": model_id,
+                      "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": True},
+                  },
+                  timeout=60,
+              )
+              if r.status_code != 200:
+                  print(f"  ❌ HTTP {r.status_code}: {r.text[:200]}")
+                  meta_lines.append(f"  {i}. {name} ({vid}) — FAILED HTTP {r.status_code}")
+                  continue
+              fname = f"samples/{i:02d}_{name.replace(' ', '_').replace('/', '-')}_{vid[:8]}.mp3"
+              with open(fname, "wb") as f:
+                  f.write(r.content)
+              size_kb = len(r.content) // 1024
+              print(f"  ✅ saved {fname} ({size_kb} KB)")
+              meta_lines.append(f"  {i}. {name} (id={vid}) → {fname.split('/')[-1]}")
+
+          with open("samples/META.txt", "w") as f:
+              f.write("\n".join(meta_lines))
+          print("\nDone. Listen to each MP3 in the artifact and pick the one closest to ElevenLabs preview quality.")
+          PY
+
+      - name: Upload audition artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-audition
+          path: samples/
+          retention-days: 7
