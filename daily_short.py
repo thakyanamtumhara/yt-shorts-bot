@@ -6668,21 +6668,24 @@ def main():
             print(f"   ❌ OpenAI TTS also failed: {e}")
             return
 
-    # ── 4b. Tighten silences (>0.3s gaps → 0.2s) + normalize loudness (-14 LUFS YT target) ──
+    # ── 4b. Tighten silences (target ~10%) + normalize loudness (-14 LUFS YT target) ──
+    # Audit of 2026-05-06 video: 17.8% silence (35 gaps avg 0.4s) — choppy.
+    # Tested 9 settings on the actual audio: stop_duration=0.15, stop_silence=0.10
+    # at -28dB threshold gives 10% silence (top-creator range 8-12%) without
+    # making speech feel rushed. 0.08 was too aggressive (0% silence = robotic).
     try:
         import subprocess
         tightened_path = audio_path.replace(".mp3", "_tight.mp3")
-        # silenceremove: keep audio above -32dB; squash long pauses
         subprocess.run([
             "ffmpeg", "-i", audio_path,
             "-af",
-            "silenceremove=stop_periods=-1:stop_duration=0.3:stop_threshold=-32dB:"
-            "stop_silence=0.2,loudnorm=I=-14:TP=-1.5:LRA=11",
+            "silenceremove=stop_periods=-1:stop_duration=0.15:stop_threshold=-28dB:"
+            "stop_silence=0.10,loudnorm=I=-14:TP=-1.5:LRA=11",
             "-y", tightened_path,
         ], capture_output=True, timeout=60)
         if os.path.exists(tightened_path) and os.path.getsize(tightened_path) > 0:
             os.replace(tightened_path, audio_path)
-            print("   🔊 Voice tightened (silence ≤0.2s) + normalized to -14 LUFS")
+            print("   🔊 Voice tightened (~10% silence) + normalized to -14 LUFS")
         else:
             print("   ⚠️ Voice post-processing skipped (ffmpeg output empty)")
     except Exception as e:
