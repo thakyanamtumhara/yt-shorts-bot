@@ -3645,10 +3645,12 @@ def _hindi_number(n: int) -> str:
 
 
 _TTS_ACRONYM_MAP = {
-    "DTG": "dee tee jee", "DTF": "dee tee ef", "GSM": "jee es em",
-    "MOQ": "em o cue", "B2B": "bee tu bee", "B2C": "bee tu see",
-    "ROI": "aar o aai", "USP": "yu es pee", "POD": "pee o dee",
-    "SKU": "es kay yu", "EMI": "ee em aai",
+    # Hyphenated form so ElevenLabs reads them as ONE connected word — spaces
+    # cause inter-letter gaps ("jee... es... em") which sound choppy.
+    "DTG": "dee-tee-jee", "DTF": "dee-tee-ef", "GSM": "jee-es-em",
+    "MOQ": "em-o-cue", "B2B": "bee-tu-bee", "B2C": "bee-tu-see",
+    "ROI": "aar-o-aai", "USP": "yu-es-pee", "POD": "pee-o-dee",
+    "SKU": "es-kay-yu", "EMI": "ee-em-aai",
 }
 
 # Phonetic respelling for Hinglish words ElevenLabs Hindi mispronounces.
