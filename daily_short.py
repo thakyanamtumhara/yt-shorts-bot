@@ -129,10 +129,12 @@ ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
 # Set ELEVENLABS_MODEL=eleven_v3 to use the newest (more natural) model.
 # Defaults to multilingual_v2 (stable, broad availability). v3 access is account-tier dependent.
 ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
+# ElevenLabs Voice Library DEFAULT settings — what their web previews use.
+# We match these so bot output sounds identical to the preview the user heard.
 ELEVENLABS_VOICE_SETTINGS = {
-    "stability": 0.62,
+    "stability": 0.50,        # was 0.62 — preview uses 0.50
     "similarity_boost": 0.75,
-    "style": 0.22,
+    "style": 0.00,            # was 0.22 — preview uses 0.00 (less artificial emphasis)
     "use_speaker_boost": True,
 }
 

@@ -70,7 +70,8 @@ jobs:
               json={
                   "text": processed,
                   "model_id": ELEVENLABS_MODEL,
-                  "voice_settings": {"stability": 0.62, "similarity_boost": 0.75, "style": 0.22, "use_speaker_boost": True},
+                  # Match ElevenLabs Library web-preview defaults exactly
+                  "voice_settings": {"stability": 0.50, "similarity_boost": 0.75, "style": 0.00, "use_speaker_boost": True},
               },
               timeout=60,
           )
