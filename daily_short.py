@@ -125,7 +125,7 @@ SARVAM_TARGET_LANG = "hi-IN"
 SARVAM_SAMPLE_RATE = 22050
 
 # ── ElevenLabs TTS (Fallback 1) ──
-ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"  # Hindi voice
+ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "cejtKjfE9sHUZ1FnUYEV")  # Ketu Original (PVC clone)
 # Set ELEVENLABS_MODEL=eleven_v3 to use the newest (more natural) model.
 # Defaults to multilingual_v2 (stable, broad availability). v3 access is account-tier dependent.
 ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")

@@ -61,7 +61,7 @@ jobs:
 
           # Call ElevenLabs Hindi voice (same voice + settings as production)
           import requests
-          ELEVENLABS_VOICE_ID = "FZkK3TvQ0pjyDmT8fzIW"
+          ELEVENLABS_VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"
           ELEVENLABS_MODEL = "eleven_multilingual_v2"
           api_key = os.environ["ELEVENLABS_API_KEY"]
           r = requests.post(
