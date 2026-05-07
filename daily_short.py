@@ -3947,6 +3947,19 @@ _TTS_HINGLISH_DEVANAGARI = {
     "niklega": "निकलेगा", "niklegi": "निकलेगी",
     "pehchano": "पहचानो", "pehchaan": "पहचान",
     "roa": "रोआ",
+    # Cycle 6 additions
+    "fark": "फ़र्क", "fark_": "फ़र्क",  # alt spellings
+    "bas": "बस",
+    "dikhta": "दिखता", "dikhti": "दिखती",
+    "isi": "इसी", "usi": "उसी",
+    "isse": "इससे", "isme": "इसमें", "usme": "उसमें",
+    "khata": "खाता", "khaata": "खाता",
+    "warna": "वरना",  # alt of varna (already mapped)
+    "khareed": "ख़रीद", "khareeda": "ख़रीदा", "khareedna": "ख़रीदना",
+    "bechen": "बेचें", "khareeden": "ख़रीदें",
+    # Common short connectors
+    "haye": "हाय", "uff": "उफ़",
+    "achchhi": "अच्छी", "acchhe": "अच्छे",  # alt spellings
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in

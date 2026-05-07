@@ -214,6 +214,17 @@ EXPECTED_ENGLISH = {
     "viscose", "modal", "linen", "silk", "wool", "denim",
     "stretch", "stretchy", "skinny", "slim", "loose", "regular",
     "v-neck", "u-neck", "polo-neck", "round-neck", "crew-neck",
+    # Cycle 6: more textile English
+    "shoulder", "calculate", "crease", "door", "drop", "dyeing",
+    "fit", "freight", "interlock", "jersey", "marks", "permanent",
+    "properly", "scissor", "single", "smell", "washing", "weighing",
+    "weight", "weighing-scale", "scale", "mm", "cm", "inch", "inches",
+    "feet", "foot", "yard", "kilo", "kilos", "tonne", "tonnes", "ton",
+    "gram", "grams", "ml", "litre", "litres", "liter", "liters",
+    "pcs", "pc", "qty", "qty.",
+    # CIF/FOB / shipping incoterms
+    "cif", "fob", "exw", "incoterms",
+    "container", "containers", "lcl", "fcl", "etd", "eta",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",
