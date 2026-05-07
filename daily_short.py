@@ -3960,6 +3960,26 @@ _TTS_HINGLISH_DEVANAGARI = {
     # Common short connectors
     "haye": "हाय", "uff": "उफ़",
     "achchhi": "अच्छी", "acchhe": "अच्छे",  # alt spellings
+    # Cycles 7+8 additions (real production topics, second batch)
+    "bikta": "बिकता", "bikti": "बिकती",
+    "chalayein": "चलाएँ", "chalega_": "चलेगा",  # already mapped
+    "dhul": "धुल", "dhula_": "धुला",  # already mapped
+    "dhundein": "ढूँढ़ें", "dhundo": "ढूँढ़ो", "dhundta": "ढूँढ़ता",
+    "haath": "हाथ",  # alt spelling of hath
+    "jayega": "जाएगा",  # alt of jaayega
+    "kama": "कमा", "kamai": "कमाई", "kamana": "कमाना", "kamaye": "कमाए",
+    "karega": "करेगा", "karegi": "करेगी",
+    "karwai": "करवाई", "karyavahi": "कार्रवाई",
+    "kheench": "खींच", "kheecho": "खींचो",
+    "kyu": "क्यों",  # alt of kyun
+    "lein": "लें", "denge_": "देंगे",  # already mapped
+    "ruka": "रुका", "ruki": "रुकी", "rukna": "रुकना",
+    "sa": "सा", "se_": "से",  # already mapped; sa is suffix
+    "seekhe": "सीखे",
+    "wajah": "वजह", "vajah": "वजह",
+    # Few more inflections noticed
+    "fir_": "फिर",  # already mapped
+    "dukan": "दुकान", "dukan_": "दुकान",
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in

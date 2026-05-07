@@ -225,6 +225,13 @@ EXPECTED_ENGLISH = {
     # CIF/FOB / shipping incoterms
     "cif", "fob", "exw", "incoterms",
     "container", "containers", "lcl", "fcl", "etd", "eta",
+    # Cycles 7+8 additions
+    "real", "after", "before", "combo", "flags", "losing", "lost",
+    "mistake", "mistakes", "pre-treatment", "pre-shrunk",
+    "red", "regret", "slub", "sticker", "texture", "small", "big",
+    "basics", "consistency", "cut", "dtfprinting", "setup", "seam",
+    "strength", "t-shirts", "vinyl", "matte", "glossy",
+    "embossed", "debossed", "puff", "discharge",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",
