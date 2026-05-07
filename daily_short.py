@@ -3904,6 +3904,43 @@ _TTS_HINGLISH_DEVANAGARI = {
     "ladka": "लड़का", "ladki": "लड़की", "ladke": "लड़के", "ladkiyaan": "लड़कियाँ",
     "behen": "बहन", "bhaiya": "भैया", "didi": "दीदी",
     "rishtedaar": "रिश्तेदार", "dost": "दोस्त",
+    # Cycle 4 additions
+    "dheere": "धीरे",
+    "khud": "ख़ुद", "khudko": "ख़ुदको",
+    "bachpan": "बचपन", "javaani": "जवानी", "budhaapa": "बुढ़ापा",
+    "badhotari": "बढ़ोतरी", "kami": "कमी",
+    "banao": "बनाओ", "banata": "बनाता",
+    "bandh": "बंद", "khol": "खोल", "khulna": "खुलना",
+    "bika": "बिका", "biki": "बिकी", "bikna": "बिकना", "bikega": "बिकेगा", "bikegi": "बिकेगी",
+    "bechna": "बेचना", "becha": "बेचा", "bechi": "बेची", "bechte": "बेचते",
+    "chalana": "चलाना", "chal": "चल", "chalna": "चलना",
+    "cheez": "चीज़",
+    "dhula": "धुला", "dhuli": "धुली", "dhona": "धोना",
+    "dikhane": "दिखाने", "dikhayi": "दिखाई", "dikhaye": "दिखाए",
+    "honi": "होनी",
+    "jaa": "जा",
+    "kapda": "कपड़ा", "kapde": "कपड़े",
+    "kara": "किया",  # alternate spelling
+    "karwane": "करवाने",
+    "kharch": "ख़र्च", "kharcha": "ख़र्चा",
+    "lagao": "लगाओ", "lagata": "लगाता", "lagatar": "लगातार",
+    "mangwaaya": "मँगवाया",
+    "milengi": "मिलेंगी", "milega": "मिलेगा", "milegi": "मिलेगी",
+    "mujhse": "मुझसे", "tujhse": "तुझसे", "ussे": "उससे",
+    "padosi": "पड़ोसी",
+    "padti": "पड़ती",
+    "rishte": "रिश्ते",
+    "sabhi": "सभी", "sabki": "सबकी", "sabka": "सबका", "sabke": "सबके",
+    "seekhne": "सीखने", "seekhna": "सीखना", "sikha": "सीखा", "sikhi": "सीखी", "seekha": "सीखा",
+    "taiyari": "तैयारी",
+    "ummeed": "उम्मीद", "asha": "आशा",
+    "waha": "वहाँ",
+    # Common short words I missed
+    "thoda_": "थोड़ा",  # already mapped
+    "saari_": "सारी",  # already mapped
+    "soche": "सोचे",
+    "samjha_": "समझा",  # already
+    "raha_": "रहा",  # already
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
