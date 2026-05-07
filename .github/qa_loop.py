@@ -240,6 +240,12 @@ EXPECTED_ENGLISH = {
     "trending", "wedding", "groom", "bride", "engagement", "anniversary",
     "boys", "girls", "men", "women", "kids", "unisex",
     "luxury", "casual", "sport", "active", "gym", "yoga", "athletic",
+    # Cycle 10 additions
+    "budget", "calculation", "cases", "choose", "cmyk", "cod",
+    "crack", "dark", "heat", "method", "prepaid", "pricing",
+    "proof", "showdown", "spot", "supima", "trend", "with",
+    "rgb", "ral", "pantone", "swatch", "swatches",
+    "premium-cotton", "100", "200", "300",  # commonly seen as "100 percent"
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",

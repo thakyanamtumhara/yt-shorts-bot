@@ -3990,7 +3990,21 @@ _TTS_HINGLISH_DEVANAGARI = {
     "tarika": "तरीक़ा", "tarike": "तरीक़े",
     "toota": "टूटा", "tooti": "टूटी", "tootna": "टूटना",
     "phenkna": "फेंकना", "phenka": "फेंका", "phenk": "फेंक",
-    "kha_": "खा",  # already mapped
+    # Cycle 10 final additions
+    "badhenge": "बढ़ेंगे", "ghatenge": "घटेंगे",
+    "galat": "ग़लत", "sahihe": "सहीहै",
+    "jeetega": "जीतेगा", "harega": "हारेगा", "jeetegi": "जीतेगी",
+    "kitna": "कितना", "kitni": "कितनी", "kitne": "कितने",
+    "pucha": "पूछा", "puchhi": "पूछी", "puchhna": "पूछना", "puch": "पूछ",
+    "doge": "दोगे", "dogi": "दोगी", "loge": "लोगे", "logi": "लोगी",
+    # Common pairs
+    "kab_": "कब", "tab_": "तब",
+    "kahin": "कहीं", "wahaan": "वहाँ",
+    "shayad": "शायद", "zaroori_": "ज़रूरी",
+    "pakka": "पक्का", "kachha": "कच्चा",
+    "saaf": "साफ़", "ganda": "गंदा",
+    "jaldi": "जल्दी", "der": "देर",
+    "naam": "नाम", "kaam_": "काम",  # already mapped
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
