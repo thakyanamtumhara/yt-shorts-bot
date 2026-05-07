@@ -3612,20 +3612,20 @@ def generate_bg_music(mood="calm"):
 # ║                   TTS PRE-PROCESSING + SARVAM CLIENT                 ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 
+# Devanagari numbers — ElevenLabs Hindi pipeline pronounces Devanagari natively.
+# Latin-script Hinglish ("assi", "aath") gets read as English gibberish.
 _HINDI_NUMBER_BELOW_100 = {
-    0: "shunya", 1: "ek", 2: "do", 3: "teen", 4: "chaar", 5: "paanch",
-    6: "chhe", 7: "saat", 8: "aath", 9: "nau", 10: "das", 11: "gyarah",
-    12: "barah", 13: "terah", 14: "chaudah", 15: "pandrah", 16: "solah",
-    17: "satrah", 18: "atharah", 19: "unnees", 20: "bees", 21: "ikkees",
-    22: "baaees", 25: "pachees", 30: "tees", 40: "chalees", 50: "pachaas",
-    # 60 = "saath" in Hindi but identical roman spelling collides with 7 ("saat").
-    # Use "saatth" so Sarvam differentiates it phonetically.
-    60: "saatth", 70: "sattar", 80: "assi", 90: "nabbe", 100: "sau",
+    0: "शून्य", 1: "एक", 2: "दो", 3: "तीन", 4: "चार", 5: "पाँच",
+    6: "छह", 7: "सात", 8: "आठ", 9: "नौ", 10: "दस", 11: "ग्यारह",
+    12: "बारह", 13: "तेरह", 14: "चौदह", 15: "पंद्रह", 16: "सोलह",
+    17: "सत्रह", 18: "अट्ठारह", 19: "उन्नीस", 20: "बीस", 21: "इक्कीस",
+    22: "बाईस", 25: "पच्चीस", 30: "तीस", 40: "चालीस", 50: "पचास",
+    60: "साठ", 70: "सत्तर", 80: "अस्सी", 90: "नब्बे", 100: "सौ",
 }
 
 
 def _hindi_number(n: int) -> str:
-    """Convert an integer to spoken Hinglish digits. Falls back to digit-by-digit."""
+    """Convert an integer to spoken Hindi (Devanagari)."""
     if n in _HINDI_NUMBER_BELOW_100:
         return _HINDI_NUMBER_BELOW_100[n]
     if n < 100:
@@ -3633,18 +3633,18 @@ def _hindi_number(n: int) -> str:
         return f"{_HINDI_NUMBER_BELOW_100.get(tens, '')} {_HINDI_NUMBER_BELOW_100.get(ones, '')}".strip()
     if n < 1000:
         h, rest = n // 100, n % 100
-        head = f"{_HINDI_NUMBER_BELOW_100[h]} sau"
+        head = f"{_HINDI_NUMBER_BELOW_100[h]} सौ"
         return head if rest == 0 else f"{head} {_hindi_number(rest)}"
     if n < 100000:
         thousands, rest = n // 1000, n % 1000
-        head = f"{_hindi_number(thousands)} hazaar"
+        head = f"{_hindi_number(thousands)} हज़ार"
         return head if rest == 0 else f"{head} {_hindi_number(rest)}"
     if n < 10000000:
         lakhs, rest = n // 100000, n % 100000
-        head = f"{_hindi_number(lakhs)} laakh"   # 'laakh' with double-a so ElevenLabs reads the long vowel
+        head = f"{_hindi_number(lakhs)} लाख"
         return head if rest == 0 else f"{head} {_hindi_number(rest)}"
     crores, rest = n // 10000000, n % 10000000
-    head = f"{_hindi_number(crores)} crore"
+    head = f"{_hindi_number(crores)} करोड़"
     return head if rest == 0 else f"{head} {_hindi_number(rest)}"
 
 
@@ -3664,6 +3664,35 @@ _TTS_ACRONYM_MAP = {
 _TTS_PHONETIC_MAP = {
     # (empty — re-enable specific entries only when a user test confirms a word
     # is consistently mispronounced.)
+}
+
+# Hinglish (Latin) → Devanagari for high-frequency Hindi words ElevenLabs
+# reads as English. Confirmed broken via user feedback: "mat", "thik", "matlab",
+# plus their semantic neighbors. English nouns (piece, order, customer, DTF,
+# printer, loss) stay in Latin so the multilingual model code-switches naturally.
+_TTS_HINGLISH_DEVANAGARI = {
+    # User-reported (2026-05-08): mat/thik/assi mispronounced.
+    "mat": "मत", "matlab": "मतलब", "thik": "ठीक", "theek": "ठीक",
+    # High-frequency function words / verbs in our scripts:
+    "nahi": "नहीं", "nahin": "नहीं", "haan": "हाँ", "hai": "है", "hain": "हैं",
+    "tha": "था", "thi": "थी", "the": "थे",
+    "kiya": "किया", "karna": "करना", "karta": "करता", "karti": "करती",
+    "bola": "बोला", "boli": "बोली", "bolta": "बोलता",
+    "liya": "लिया", "lena": "लेना", "diya": "दिया", "dena": "देना",
+    "chala": "चला", "chalega": "चलेगा", "chalti": "चलती",
+    "hua": "हुआ", "hui": "हुई", "hota": "होता", "hoti": "होती",
+    "mujhe": "मुझे", "tumhe": "तुम्हें", "usse": "उससे",
+    "mahine": "महीने", "mahina": "महीना", "saal": "साल", "din": "दिन",
+    "galti": "गलती", "loss": "loss",  # leave 'loss' English on purpose
+    "rupaye": "रुपये", "rupiya": "रुपया", "rupaiye": "रुपये",
+    "hazaar": "हज़ार", "hazar": "हज़ार",
+    "lakh": "लाख", "laakh": "लाख",
+    "crore": "करोड़",
+    # Function words / postpositions — almost never English in our scripts.
+    "ek": "एक", "ne": "ने", "ka": "का", "ki": "की", "ke": "के",
+    "ko": "को", "mein": "में", "pe": "पे", "ye": "ये", "yeh": "यह",
+    "woh": "वो", "vo": "वो", "aur": "और", "lekin": "लेकिन",
+    "phir": "फिर", "abhi": "अभी", "ab": "अब",
 }
 
 
@@ -3696,7 +3725,7 @@ def normalize_for_tts(text: str) -> str:
             return m.group(0)
         if suffix in _MULT:
             n = n * _MULT[suffix]
-        return f"{_hindi_number(n)} rupaye"
+        return f"{_hindi_number(n)} रुपये"
 
     # ₹140 / ₹ 1,000 / ₹2 lakh / ₹50K / ₹2 crore / Rs.140 / Rs 10,000 / Rs 2L
     # The non-capturing group consumes "\s*<suffix>" only when a known suffix matches,
@@ -3743,6 +3772,11 @@ def normalize_for_tts(text: str) -> str:
     # Whole-word, case-insensitive replacement that preserves the intent of the script.
     for word, phon in _TTS_PHONETIC_MAP.items():
         s = _re.sub(rf"\b{word}\b", phon, s, flags=_re.IGNORECASE)
+
+    # Hinglish romanized → Devanagari for high-frequency Hindi words.
+    # Whole-word, case-insensitive. English-only nouns are not in the map.
+    for word, deva in _TTS_HINGLISH_DEVANAGARI.items():
+        s = _re.sub(rf"\b{word}\b", deva, s, flags=_re.IGNORECASE)
 
     # Remove ellipses that TTS reads as long pauses
     s = s.replace("…", ", ").replace("...", ", ")
