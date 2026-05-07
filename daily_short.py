@@ -3979,7 +3979,18 @@ _TTS_HINGLISH_DEVANAGARI = {
     "wajah": "वजह", "vajah": "वजह",
     # Few more inflections noticed
     "fir_": "फिर",  # already mapped
-    "dukan": "दुकान", "dukan_": "दुकान",
+    "dukan": "दुकान",
+    # Cycle 9 additions (20-script production sample)
+    "banda": "बंदा", "bande": "बंदे", "bandi": "बंदी",
+    "padhta": "पढ़ता", "padhti": "पढ़ती", "padhte": "पढ़ते",
+    "rakho": "रखो", "rakhe": "रखे", "rakhe_": "रखें", "rakhi": "रखी",
+    "ro": "रो", "roya": "रोया", "roti": "रोती", "rota": "रोता", "rona": "रोना",
+    "sach": "सच", "jhooth": "झूठ",
+    "sachai": "सच्चाई", "jhuthi": "झूठी",
+    "tarika": "तरीक़ा", "tarike": "तरीक़े",
+    "toota": "टूटा", "tooti": "टूटी", "tootna": "टूटना",
+    "phenkna": "फेंकना", "phenka": "फेंका", "phenk": "फेंक",
+    "kha_": "खा",  # already mapped
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in

@@ -232,6 +232,14 @@ EXPECTED_ENGLISH = {
     "basics", "consistency", "cut", "dtfprinting", "setup", "seam",
     "strength", "t-shirts", "vinyl", "matte", "glossy",
     "embossed", "debossed", "puff", "discharge",
+    # Cycle 9 additions (mostly pure English fashion/textile)
+    "matter", "acid", "band", "blue", "carded", "change", "combed",
+    "common", "cutter", "detail", "explained", "fade", "game",
+    "instructions", "issue", "look", "merch", "mesh", "oversized",
+    "percentage", "raglan", "royal", "sporty", "startup", "thread",
+    "trending", "wedding", "groom", "bride", "engagement", "anniversary",
+    "boys", "girls", "men", "women", "kids", "unisex",
+    "luxury", "casual", "sport", "active", "gym", "yoga", "athletic",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",
