@@ -1,0 +1,57 @@
+name: Voice QA Loop
+
+# Generates ElevenLabs audio for an array of test scripts, transcribes each
+# via Whisper-Hindi, and outputs a JSON of mispronunciation candidates
+# (Latin words in the Hindi transcript that aren't expected English).
+
+on:
+  workflow_dispatch:
+    inputs:
+      scripts_json:
+        description: 'JSON array of Hinglish test scripts'
+        required: true
+        type: string
+      cycle_num:
+        description: 'Cycle number (for artifact naming)'
+        required: false
+        default: '1'
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install deps
+        run: pip install -q requests
+
+      - name: Run QA loop
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SCRIPTS_JSON: ${{ inputs.scripts_json }}
+        run: |
+          python3 .github/qa_loop.py
+          # Make artifacts available at workspace root for upload step
+          cp /tmp/qa_results.json ./qa_results.json
+          cp /tmp/qa_transcripts.txt ./qa_transcripts.txt
+          cp -r /tmp/qa_out ./qa_audio || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-qa-cycle-${{ inputs.cycle_num }}
+          path: |
+            qa_results.json
+            qa_transcripts.txt
+            qa_audio/
+          retention-days: 7
