@@ -205,6 +205,15 @@ EXPECTED_ENGLISH = {
     "instagram", "facebook", "twitter", "tiktok", "linkedin",
     "whatsapp", "telegram", "snapchat", "youtube",
     "dm", "post", "posts", "reels", "stories", "feed", "tag", "tags",
+    # Cycle 5: domain-specific (real production topics)
+    "blank", "blanks", "vs", "myth", "cheap", "confuse", "corporate",
+    "final", "margins", "off-white", "rayon", "sell", "sublimation",
+    "sweatshirt", "sweatshirts", "tight", "tri-blend", "winter", "summer",
+    "spring", "monsoon", "autumn",
+    "rib", "ribbed", "ribbing", "blend", "blended",
+    "viscose", "modal", "linen", "silk", "wool", "denim",
+    "stretch", "stretchy", "skinny", "slim", "loose", "regular",
+    "v-neck", "u-neck", "polo-neck", "round-neck", "crew-neck",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",

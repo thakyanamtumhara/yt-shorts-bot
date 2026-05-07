@@ -3939,8 +3939,14 @@ _TTS_HINGLISH_DEVANAGARI = {
     "thoda_": "थोड़ा",  # already mapped
     "saari_": "सारी",  # already mapped
     "soche": "सोचे",
-    "samjha_": "समझा",  # already
-    "raha_": "रहा",  # already
+    # Cycle 5 additions (real production topics)
+    "kaunsa": "कौनसा", "kaunsi": "कौनसी", "kaunse": "कौनसे",
+    "bekar": "बेकार", "behtareen": "बेहतरीन", "kamaal": "कमाल",
+    "kismein": "किसमें", "kisko": "किसको", "kiska": "किसका", "kiski": "किसकी", "kiske": "किसके",
+    "leke": "लेके", "deke": "देके",
+    "niklega": "निकलेगा", "niklegi": "निकलेगी",
+    "pehchano": "पहचानो", "pehchaan": "पहचान",
+    "roa": "रोआ",
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
