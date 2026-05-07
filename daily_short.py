@@ -3719,13 +3719,16 @@ def normalize_for_tts(text: str) -> str:
     bare_mult_pat = r"\b(\d{1,4})\s*(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)\b"
     s = _re.sub(bare_mult_pat, _bare_mult_repl, s, flags=_re.IGNORECASE)
 
-    # Standalone numbers — convert ALL to Hinglish so ElevenLabs reads "8" as "aat"
-    # not "eight", "80" as "assi" not "eighty", "200" as "do sau", etc.
+    # Standalone numbers — convert numbers ≥10 to Hinglish ("80" → "assi", "200" → "do sau").
+    # Single digits (1-9) stay as digits — Hinglish code-mixers naturally say
+    # "8 piece" not "aath piece"; ElevenLabs multilingual reads them contextually.
     def _bignum_repl(m):
         digits = m.group(0).replace(",", "")
         try:
             n = int(digits)
         except ValueError:
+            return m.group(0)
+        if n < 10:
             return m.group(0)
         return _hindi_number(n)
 
