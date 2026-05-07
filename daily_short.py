@@ -3690,9 +3690,16 @@ _TTS_HINGLISH_DEVANAGARI = {
     "crore": "करोड़",
     # Function words / postpositions — almost never English in our scripts.
     "ek": "एक", "ne": "ने", "ka": "का", "ki": "की", "ke": "के",
-    "ko": "को", "mein": "में", "pe": "पे", "ye": "ये", "yeh": "यह",
-    "woh": "वो", "vo": "वो", "aur": "और", "lekin": "लेकिन",
+    "ko": "को", "mein": "में", "pe": "पे", "par": "पर", "se": "से",
+    "to": "तो", "bhi": "भी",
+    "ye": "ये", "yeh": "यह", "woh": "वो", "vo": "वो",
+    "aur": "और", "lekin": "लेकिन", "ya": "या", "kyunki": "क्योंकि",
+    "agar": "अगर", "jab": "जब", "tab": "तब",
+    "kya": "क्या", "kyun": "क्यों", "kaise": "कैसे", "kahan": "कहाँ",
     "phir": "फिर", "abhi": "अभी", "ab": "अब",
+    "sab": "सब", "kuch": "कुछ", "koi": "कोई", "bahut": "बहुत",
+    "ho": "हो", "hoga": "होगा", "hogi": "होगी", "honge": "होंगे",
+    "kar": "कर", "karo": "करो", "kare": "करे", "karein": "करें",
 }
 
 
