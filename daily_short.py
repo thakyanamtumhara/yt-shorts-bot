@@ -3819,7 +3819,55 @@ _TTS_HINGLISH_DEVANAGARI = {
     "kuchh": "कुछ",
     # Light pronoun additions
     "isliye": "इसलिए", "iska": "इसका", "iski": "इसकी", "iske": "इसके",
+    "iss": "इस", "us": "उस", "in": "इन", "un": "उन",
+    # Cycle 2 additions — high-frequency Hindi words still slipping through.
+    # Verbs / inflections
+    "khatam": "ख़त्म", "khatm": "ख़त्म",
+    "lo": "लो", "le": "ले", "li": "ली",
+    "paas": "पास", "pas": "पास",
+    "toh": "तो",  # alt spelling
+    "zaruri": "ज़रूरी", "zaroori": "ज़रूरी",  # alt spellings
+    "ekdam": "एकदम",  # alt of ekdum
+    "aaj": "आज", "kal": "कल",
+    "aane": "आने", "jaane": "जाने",
+    "aisi": "ऐसी", "aisa": "ऐसा", "aise": "ऐसे",
+    "apne": "अपने", "apna": "अपना", "apni": "अपनी",
+    "baar": "बार", "baari": "बारी",
+    "banta": "बनता", "banti": "बनती", "bante": "बनते",
+    "bataun": "बताऊँ", "batayegi": "बताएगी", "batayega": "बताएगा",
+    "behtar": "बेहतर", "achchha": "अच्छा",
+    "chadhti": "चढ़ती", "chadhna": "चढ़ना", "chadha": "चढ़ा",
+    "chhat": "छत", "chad": "छत",
+    "dhoondhe": "ढूँढ़े", "dhoondhna": "ढूँढ़ना", "dhoondha": "ढूँढ़ा",
+    "di": "दी", "diye": "दिये", "diyaa": "दिया",
+    "dikhata": "दिखाता", "dikhati": "दिखाती", "dikhana": "दिखाना", "dikha": "दिखा",
+    "doosri": "दूसरी", "doosra": "दूसरा", "doosre": "दूसरे",
+    "gadbad": "गड़बड़",
+    "hath": "हाथ",
+    "humare": "हमारे", "humse": "हमसे", "humein": "हमें",
+    "mana": "मना",
+    "mangao": "मँगाओ", "mangwana": "मँगवाना",
+    "mile": "मिले", "milne": "मिलने", "milta": "मिलता", "milte": "मिलते",
+    "neeche": "नीचे", "upar": "ऊपर", "andar": "अंदर", "bahar": "बाहर",
+    "pada": "पड़ा", "padi": "पड़ी", "padega": "पड़ेगा", "padegi": "पड़ेगी",
+    "pehli": "पहली", "pehla": "पहला", "pehle_": "पहले",  # pehle already mapped
+    "poora": "पूरा", "poori": "पूरी", "poore": "पूरे",
+    "pohchana": "पहुँचाना", "pahuchana": "पहुँचाना", "pohcha": "पहुँचा",
+    "samjhao": "समझाओ", "samjho": "समझो",
+    "taraf": "तरफ़",
+    "wapas": "वापस", "wapis": "वापस",
+    "yahan": "यहाँ", "yahin": "यहीं", "wahan": "वहाँ", "wahin": "वहीं",
+    "zaroor": "ज़रूर",
+    "asli": "असली", "asal": "असल",
+    "ekta": "एकता",
+    "hi_": "ही",  # placeholder; actual mapping below to avoid case-sensitive lookup duplicate
+    "gunjayish": "गुंजाइश",
 }
+
+# 'hi' as a particle (emphatic "ही") is too risky to put in the main map
+# because it collides with the English greeting "Hi" — but in our scripts it's
+# always Hindi. Add it cautiously.
+_TTS_HINGLISH_DEVANAGARI["hi"] = "ही"
 
 
 def normalize_for_tts(text: str) -> str:
