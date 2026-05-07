@@ -3860,13 +3860,54 @@ _TTS_HINGLISH_DEVANAGARI = {
     "zaroor": "ज़रूर",
     "asli": "असली", "asal": "असल",
     "ekta": "एकता",
-    "hi_": "ही",  # placeholder; actual mapping below to avoid case-sensitive lookup duplicate
     "gunjayish": "गुंजाइश",
+    # Cycle 3 additions
+    "baje": "बजे", "ghante": "घंटे", "ghanta": "घंटा",
+    "aa": "आ", "ja": "जा",
+    "aajkal": "आजकल",
+    "agle": "अगले", "agla": "अगला", "agli": "अगली",
+    "bachta": "बचता", "bachti": "बचती", "bachna": "बचना",
+    "badh": "बढ़", "badhega": "बढ़ेगा", "badhegi": "बढ़ेगी",
+    "bana": "बना", "bani": "बनी", "banwana": "बनवाना",
+    "beta": "बेटा", "beti": "बेटी",
+    "chhodi": "छोड़ी", "chhoda": "छोड़ा", "chhodna": "छोड़ना",
+    "dhairya": "धैर्य",
+    "haar": "हार", "haari": "हारी", "haare": "हारे",
+    "hawa": "हवा",
+    "hone": "होने", "hoga_": "होगा",
+    "jaaye": "जाए", "jaye": "जाए",
+    "karenge": "करेंगे", "karni": "करनी", "karunga": "करूँगा",
+    "karungi": "करूँगी", "karwana": "करवाना",
+    "khela": "खेला", "kheli": "खेली", "khelta": "खेलता", "khelti": "खेलती", "khelna": "खेलना",
+    "khush": "ख़ुश", "khushi": "ख़ुशी", "dukh": "दुख", "dukhi": "दुखी",
+    "lagega": "लगेगा", "lagegi": "लगेगी",
+    "likhne": "लिखने", "likhna": "लिखना", "likha": "लिखा", "likhi": "लिखी", "likho": "लिखो",
+    "maani": "मानी", "manna": "मानना",
+    "man": "मन", "dimag": "दिमाग",
+    "marte": "मारते", "marna": "मारना", "maari": "मारी",
+    "mausam": "मौसम",
+    "nikal": "निकल", "nikli": "निकली", "nikla": "निकला", "nikalna": "निकलना",
+    "padhai": "पढ़ाई", "padhna": "पढ़ना", "padha": "पढ़ा", "padhi": "पढ़ी",
+    "pagal": "पागल",
+    "pasand": "पसंद", "napasand": "नापसंद",
+    "pohchna": "पहुँचना", "pahuchna": "पहुँचना",
+    "sake": "सके", "saka": "सका",
+    "sakta": "सकता", "sakte": "सकते", "sakti": "सकती",
+    "sardi": "सर्दी", "garmi": "गर्मी", "barsaat": "बरसात",
+    "seedha": "सीधा", "seedhi": "सीधी",
+    "shaadi": "शादी",
+    "shuru": "शुरू", "shuruwat": "शुरुआत",
+    "suno": "सुनो", "sunna": "सुनना",
+    "taanay": "ताने", "taana": "ताना",
+    "uthkar": "उठकर", "uthna": "उठना", "utha": "उठा", "uthi": "उठी",
+    "papa": "पापा", "mummy": "मम्मी",
+    "ladka": "लड़का", "ladki": "लड़की", "ladke": "लड़के", "ladkiyaan": "लड़कियाँ",
+    "behen": "बहन", "bhaiya": "भैया", "didi": "दीदी",
+    "rishtedaar": "रिश्तेदार", "dost": "दोस्त",
 }
 
-# 'hi' as a particle (emphatic "ही") is too risky to put in the main map
-# because it collides with the English greeting "Hi" — but in our scripts it's
-# always Hindi. Add it cautiously.
+# 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
+# theory — in our scripts it's always Hindi. Conditional add.
 _TTS_HINGLISH_DEVANAGARI["hi"] = "ही"
 
 
