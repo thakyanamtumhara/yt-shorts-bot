@@ -3612,15 +3612,32 @@ def generate_bg_music(mood="calm"):
 # ║                   TTS PRE-PROCESSING + SARVAM CLIENT                 ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 
-# Devanagari numbers — ElevenLabs Hindi pipeline pronounces Devanagari natively.
-# Latin-script Hinglish ("assi", "aath") gets read as English gibberish.
+# Devanagari numbers 0-100 — ElevenLabs Hindi pipeline pronounces Devanagari
+# natively. Latin-script Hinglish ("assi", "aath") gets read as English gibberish.
+# IMPORTANT: every number 11-99 is a unique Hindi word, NOT compositional like
+# English "thirty-five". Full table required.
 _HINDI_NUMBER_BELOW_100 = {
-    0: "शून्य", 1: "एक", 2: "दो", 3: "तीन", 4: "चार", 5: "पाँच",
-    6: "छह", 7: "सात", 8: "आठ", 9: "नौ", 10: "दस", 11: "ग्यारह",
-    12: "बारह", 13: "तेरह", 14: "चौदह", 15: "पंद्रह", 16: "सोलह",
-    17: "सत्रह", 18: "अट्ठारह", 19: "उन्नीस", 20: "बीस", 21: "इक्कीस",
-    22: "बाईस", 25: "पच्चीस", 30: "तीस", 40: "चालीस", 50: "पचास",
-    60: "साठ", 70: "सत्तर", 80: "अस्सी", 90: "नब्बे", 100: "सौ",
+    0: "शून्य", 1: "एक", 2: "दो", 3: "तीन", 4: "चार",
+    5: "पाँच", 6: "छह", 7: "सात", 8: "आठ", 9: "नौ",
+    10: "दस", 11: "ग्यारह", 12: "बारह", 13: "तेरह", 14: "चौदह",
+    15: "पंद्रह", 16: "सोलह", 17: "सत्रह", 18: "अट्ठारह", 19: "उन्नीस",
+    20: "बीस", 21: "इक्कीस", 22: "बाईस", 23: "तेईस", 24: "चौबीस",
+    25: "पच्चीस", 26: "छब्बीस", 27: "सत्ताईस", 28: "अट्ठाईस", 29: "उनतीस",
+    30: "तीस", 31: "इकतीस", 32: "बत्तीस", 33: "तैंतीस", 34: "चौंतीस",
+    35: "पैंतीस", 36: "छत्तीस", 37: "सैंतीस", 38: "अड़तीस", 39: "उनतालीस",
+    40: "चालीस", 41: "इकतालीस", 42: "बयालीस", 43: "तैंतालीस", 44: "चौवालीस",
+    45: "पैंतालीस", 46: "छियालीस", 47: "सैंतालीस", 48: "अड़तालीस", 49: "उनचास",
+    50: "पचास", 51: "इक्यावन", 52: "बावन", 53: "तिरपन", 54: "चौवन",
+    55: "पचपन", 56: "छप्पन", 57: "सत्तावन", 58: "अट्ठावन", 59: "उनसठ",
+    60: "साठ", 61: "इकसठ", 62: "बासठ", 63: "तिरसठ", 64: "चौंसठ",
+    65: "पैंसठ", 66: "छियासठ", 67: "सड़सठ", 68: "अड़सठ", 69: "उनहत्तर",
+    70: "सत्तर", 71: "इकहत्तर", 72: "बहत्तर", 73: "तिहत्तर", 74: "चौहत्तर",
+    75: "पचहत्तर", 76: "छिहत्तर", 77: "सतहत्तर", 78: "अठहत्तर", 79: "उन्यासी",
+    80: "अस्सी", 81: "इक्यासी", 82: "बयासी", 83: "तिरासी", 84: "चौरासी",
+    85: "पचासी", 86: "छियासी", 87: "सत्तासी", 88: "अठ्ठासी", 89: "नवासी",
+    90: "नब्बे", 91: "इक्यानवे", 92: "बानवे", 93: "तिरानवे", 94: "चौरानवे",
+    95: "पंचानवे", 96: "छियानवे", 97: "सत्तानवे", 98: "अट्ठानवे", 99: "निन्यानवे",
+    100: "सौ",
 }
 
 
@@ -3629,8 +3646,8 @@ def _hindi_number(n: int) -> str:
     if n in _HINDI_NUMBER_BELOW_100:
         return _HINDI_NUMBER_BELOW_100[n]
     if n < 100:
-        tens, ones = (n // 10) * 10, n % 10
-        return f"{_HINDI_NUMBER_BELOW_100.get(tens, '')} {_HINDI_NUMBER_BELOW_100.get(ones, '')}".strip()
+        # Should never happen — table is complete 0-100. Defensive fallback.
+        return str(n)
     if n < 1000:
         h, rest = n // 100, n % 100
         head = f"{_HINDI_NUMBER_BELOW_100[h]} सौ"
@@ -3700,6 +3717,42 @@ _TTS_HINGLISH_DEVANAGARI = {
     "sab": "सब", "kuch": "कुछ", "koi": "कोई", "bahut": "बहुत",
     "ho": "हो", "hoga": "होगा", "hogi": "होगी", "honge": "होंगे",
     "kar": "कर", "karo": "करो", "kare": "करे", "karein": "करें",
+    "karte": "करते", "karta": "करता", "karti": "करती",
+    "kiya": "किया", "kiye": "किये",
+    # Pronouns
+    "main": "मैं", "maine": "मैंने", "mera": "मेरा", "meri": "मेरी", "mere": "मेरे",
+    "tum": "तुम", "tumhara": "तुम्हारा", "tumhari": "तुम्हारी", "tumhare": "तुम्हारे",
+    "aap": "आप", "aapka": "आपका", "aapki": "आपकी", "aapke": "आपके",
+    "humne": "हमने", "hum": "हम", "hamara": "हमारा", "hamari": "हमारी", "hamare": "हमारे",
+    "uska": "उसका", "uski": "उसकी", "uske": "उसके", "usne": "उसने",
+    # Common verbs / state
+    "raha": "रहा", "rahi": "रही", "rahe": "रहे",
+    "gaya": "गया", "gayi": "गई", "gaye": "गए",
+    "aaya": "आया", "aayi": "आई", "aaye": "आए", "aata": "आता", "aati": "आती", "aate": "आते",
+    "jaata": "जाता", "jata": "जाता", "jaati": "जाती", "jaate": "जाते",
+    "rakha": "रखा", "rakhna": "रखना", "rakhte": "रखते",
+    "samjha": "समझा", "samjhi": "समझी", "samajh": "समझ", "samajhna": "समझना",
+    "dekh": "देख", "dekha": "देखा", "dekhna": "देखना", "dekhte": "देखते",
+    "bola": "बोला", "boli": "बोली", "bole": "बोले",
+    "sun": "सुन", "suna": "सुना", "sunna": "सुनना",
+    "chahiye": "चाहिए",
+    # Adjectives / adverbs
+    "accha": "अच्छा", "acchi": "अच्छी", "acche": "अच्छे",
+    "zyada": "ज़्यादा", "kam": "कम", "thoda": "थोड़ा", "thodi": "थोड़ी",
+    "zaroori": "ज़रूरी", "varna": "वरना",
+    "kharab": "खराब", "sahi": "सही",
+    "pehle": "पहले", "baad": "बाद",
+    "pichhle": "पिछले", "pichhli": "पिछली",
+    # Filler / discourse
+    "yaar": "यार", "bhai": "भाई", "arre": "अरे",
+    "baat": "बात", "mehnat": "मेहनत",
+    "mila": "मिला", "milta": "मिलता", "milti": "मिलती",
+    "subah": "सुबह", "shaam": "शाम", "raat": "रात",
+    "sirf": "सिर्फ", "bilkul": "बिलकुल", "matlab": "मतलब",
+    "dete": "देते", "deta": "देता", "deti": "देती",
+    "lete": "लेते", "leta": "लेता", "leti": "लेती",
+    "bhara": "भरा", "bhari": "भरी", "bharte": "भरते",
+    "naya": "नया", "nayi": "नई", "naye": "नए", "purana": "पुराना", "purani": "पुरानी",
 }
 
 
@@ -3723,24 +3776,35 @@ def normalize_for_tts(text: str) -> str:
              "l": 100_000, "lakh": 100_000, "lac": 100_000, "lacs": 100_000, "lakhs": 100_000,
              "cr": 10_000_000, "crore": 10_000_000, "crores": 10_000_000}
 
+    _MULT_WORDS = {1_000: "हज़ार", 100_000: "लाख", 10_000_000: "करोड़"}
+
+    def _spell_decimals(dec_part: str) -> str:
+        """'5' → 'पाँच'; '50' → 'पाँच शून्य'. Digit-by-digit Devanagari."""
+        return " ".join(_HINDI_NUMBER_BELOW_100.get(int(d), d) for d in dec_part)
+
     def _rupee_repl(m):
-        digits = m.group(1).replace(",", "")
-        suffix = (m.group(2) or "").strip().lower()
+        int_part = m.group(1).replace(",", "")
+        dec_part = m.group(2)  # may be None
+        suffix = (m.group(3) or "").strip().lower()
         try:
-            n = int(digits)
+            int_n = int(int_part)
         except ValueError:
             return m.group(0)
         if suffix in _MULT:
-            n = n * _MULT[suffix]
-        return f"{_hindi_number(n)} रुपये"
+            head = _hindi_number(int_n)
+            if dec_part:
+                head = f"{head} दशमलव {_spell_decimals(dec_part)}"
+            return f"{head} {_MULT_WORDS[_MULT[suffix]]} रुपये"
+        if dec_part:
+            return f"{_hindi_number(int_n)} दशमलव {_spell_decimals(dec_part)} रुपये"
+        return f"{_hindi_number(int_n)} रुपये"
 
-    # ₹140 / ₹ 1,000 / ₹2 lakh / ₹50K / ₹2 crore / Rs.140 / Rs 10,000 / Rs 2L
-    # The non-capturing group consumes "\s*<suffix>" only when a known suffix matches,
-    # so we don't eat the trailing space when there's no multiplier (e.g. "₹140 lagat").
+    # ₹140 / ₹ 1,000 / ₹2 lakh / ₹50K / ₹2.5 crore / Rs.140 / Rs 10,000 / Rs 2L
+    # Now also captures optional decimal part (₹2.5 crore).
     suffix_re = r"(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)"
-    rupee_pat = rf"₹\s*([\d,]+)(?:\s*{suffix_re})?\b"
+    rupee_pat = rf"₹\s*([\d,]+)(?:\.(\d+))?(?:\s*{suffix_re})?\b"
     s = _re.sub(rupee_pat, _rupee_repl, s, flags=_re.IGNORECASE)
-    rs_pat = rf"\bRs\.?\s*([\d,]+)(?:\s*{suffix_re})?\b"
+    rs_pat = rf"\bRs\.?\s*([\d,]+)(?:\.(\d+))?(?:\s*{suffix_re})?\b"
     s = _re.sub(rs_pat, _rupee_repl, s, flags=_re.IGNORECASE)
 
     # Bare "2 lakh" / "50K" / "2 crore" without ₹ prefix — also normalize these
