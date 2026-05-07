@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Myth: Black tshirt pe print nahi tikta — technique galat hai tumhari",
-    "prompts": [
-      "Close-up shot of Indian man's hands holding a washed black round-neck cotton t-shirt with a visibly cracked and faded white DTG print design on the chest area, fabric slightly wrinkled from washing, bright daylight from a nearby window illuminating the damaged print clearly, camera slowly zooming in on the cracked print lines, vertical 9:16 format, realistic textile workshop setting.",
-      "Medium close-up of a row of plain black cotton t-shirts hanging neatly on a steel clothing rack in an Indian warehouse, warm overhead fluorescent lighting, camera dollying slowly right past the shirts showing the deep black fabric color and smooth bio-washed texture, no faces visible, industrial shelving with stacked fabric rolls blurred in the background, vertical 9:16 format.",
-      "Close-up shot of two black t-shirts laid flat side by side on a clean white table under bright studio lighting, left shirt shows a vibrant crisp white logo print, right shirt shows the same design faded and patchy, Indian man's hand pointing at the faded print then moving to the crisp one for comparison, camera static with slight focus pull between the two, vertical 9:16 format.",
-      "Close-up shot of a pre-treatment spray machine nozzle spraying a fine even mist onto a plain black t-shirt stretched flat on a heat press platen, mist visible catching the overhead workshop light, slight steam rising from the damp fabric, camera angle from above at 45 degrees slowly pushing in, small Indian printing workshop background with equipment visible but blurred, vertical 9:16 format.",
-      "Close-up shot of Indian man's hands peeling a DTF transfer film off a black round-neck t-shirt on a heat press, revealing a sharp vibrant full-color print underneath, slight steam wisps rising from the hot fabric, warm workshop lighting, camera slowly tilting up from the peel point to show the complete clean print, satisfying reveal moment, vertical 9:16 format."
-    ],
-    "date": "2026-04-01T13:01:07.550985"
-  },
-  {
     "topic": "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
     "prompts": [
       "Close-up of Indian man's hands peeling a cracked and flaking white heat transfer vinyl design off a navy blue round-neck cotton t-shirt laid flat on a wooden work table, showing visible cracks and lifted edges in bright daylight from a nearby window, camera slowly zooms in on the damaged print area, vertical 9:16 format.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Soft natural daylight from a large warehouse window mixed with warm incandescent overhead bulbs, neutral whites and earthy brown tones, Indian textile warehouse setting with concrete floors and metal shelving, shallow DOF 35mm cinematic with slight handheld movement. SCENE: Overhead bird's-eye shot of a clean wooden packing table with three neatly folded plain cotton t-shirts arranged left to right — a light pastel yellow (thin, 180 GSM), a white (medium, 200 GSM), and a black (thick, 220 GSM), Indian man's hands gently tap the middle white one approvingly, camera slowly zooms in on the balanced selection, warm light casting soft shadows on the fabric folds."
     ],
     "date": "2026-05-06T13:50:59.335667"
+  },
+  {
+    "topic": "Cotton vs Polyester in Garmi ☀️ — Summer Mein Kaunsa Fabric Print Business Ke Liye Best Hai?",
+    "prompts": [
+      "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Close-up of Indian man's hands holding a crumpled polyester blend t-shirt with a clearly bubbled and peeling DTG print on the chest area, the print visibly lifting and cracking under bright sunlight, hands turning the shirt to reveal the damage, a small stack of similar returned shirts visible in soft focus behind on a metal table.",
+      "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Medium close-up of two plain t-shirts laid flat side by side on a rough wooden cutting table - one white 100% cotton and one white polyester blend - a hand presses down on each fabric alternately showing the texture difference, cotton fabric bouncing back softly while polyester looks shiny and stiff, fabric rolls and scissors visible in the blurred background.",
+      "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Extreme close-up of water droplets being poured slowly from a small steel glass onto two fabric swatches pinned to a board - the cotton swatch absorbs the water immediately darkening the fabric, while the polyester swatch shows water beading and rolling off the surface, camera slowly dollies in to capture the absorption difference, workshop wall with hanging fabric samples in soft focus behind.",
+      "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Close-up of two printed t-shirts being stretched by Indian hands side by side - one cotton with a vibrant intact DTG print and one polyester blend with the same design showing visible fading and micro-cracks, hands pulling the fabric taut to highlight the print quality difference, a heat press machine partially visible in the warm background, metal table surface catching sunlight.",
+      "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Slow camera dolly across a neatly arranged row of freshly printed 100% cotton round-neck t-shirts in multiple colors - black, white, navy, maroon, olive - laid out on a long packing table, prints looking crisp and vibrant, a hand gently picks up one shirt and holds it toward the sunlight streaming through the shutter showing the smooth bio-washed texture, cardboard shipping boxes stacked in the soft-focus background."
+    ],
+    "date": "2026-05-07T13:48:37.178243"
   }
 ]

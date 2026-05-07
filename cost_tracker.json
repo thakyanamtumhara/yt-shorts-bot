@@ -1235,5 +1235,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1778
     }
+  },
+  {
+    "date": "2026-05-07T14:13:09.485350",
+    "topic": "Cotton vs Polyester in Garmi \u2600\ufe0f \u2014 Summer Mein Kaunsa Fabric Print Business Ke Liye Best Hai?",
+    "title": "40 Returns in 1 Week! DTG on Polyester in Summer? \ud83e\udd75",
+    "total_usd": 7.7625,
+    "duration_min": 26.1,
+    "breakdown": {
+      "claude_opus": 0.335,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0348,
+      "veo_clips": 7.04,
+      "whisper": 0.0074,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1753
+    }
   }
 ]
