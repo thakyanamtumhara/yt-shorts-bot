@@ -3679,8 +3679,10 @@ _TTS_ACRONYM_MAP = {
 # smart enough to handle natural Hinglish — over-engineering the input degrades
 # its prosody. Only keep entries that are PROVEN broken via user feedback.
 _TTS_PHONETIC_MAP = {
-    # (empty — re-enable specific entries only when a user test confirms a word
-    # is consistently mispronounced.)
+    # User-reported mispronunciations — respell so ElevenLabs's multilingual
+    # model reads the intended English phonemes. Each entry must be tested.
+    # Format: <Latin word as Claude writes> → <Latin respelling that ElevenLabs reads correctly>
+    "combed": "kohmd",  # 2026-05-08: produced "kom-BED" instead of "KOMD"
 }
 
 # Hinglish (Latin) → Devanagari for high-frequency Hindi words ElevenLabs
