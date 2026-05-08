@@ -369,6 +369,15 @@ EXPECTED_ENGLISH = {
     "specification", "speed", "spread", "sq", "stretchable",
     "suddenly", "suited", "tabs", "term", "third", "tricky",
     "verification", "weed", "wet", "within", "wrinkles",
+    # Round 6 English additions
+    "sports", "staple", "twist", "urgent", "artwork", "balls",
+    "complex", "finalize", "industrial", "miss", "prefer", "tested",
+    "activities", "adhesive", "armpits", "attach", "attract", "avoid",
+    "badges", "buy", "chinese", "choice", "comb", "connected",
+    "consistently", "cooler", "cost-effective", "create", "cross",
+    "cyan", "detailing", "diagonal", "done", "dryer", "drying",
+    "equipment", "fast-track", "friction", "functional", "gradient",
+    "guests", "hardly", "identify", "invoicing",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",
