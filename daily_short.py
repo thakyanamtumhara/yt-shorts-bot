@@ -4005,6 +4005,19 @@ _TTS_HINGLISH_DEVANAGARI = {
     "saaf": "साफ़", "ganda": "गंदा",
     "jaldi": "जल्दी", "der": "देर",
     "naam": "नाम", "kaam_": "काम",  # already mapped
+    # Spot-check feedback (post-cycle 10): user identified these three
+    "kismat": "किस्मत", "kismet": "किस्मत", "kismata": "किस्मत",
+    "naseeb": "नसीब", "bhagya": "भाग्य",
+    "rishtey": "रिश्ते",  # alt of rishte (already mapped)
+    "banane": "बनाने", "banao_": "बनाओ",  # banao already mapped; banane is gerund
+    # Bonus inflections of "banana" (to make)
+    "banaiye": "बनाइए", "banaayi": "बनाई", "banwaiye": "बनवाइए",
+    # Other common gerunds I might have missed
+    "karne_": "करने", "dekhna_": "देखना",  # already mapped; placeholders
+    "khareedna": "ख़रीदना", "bechna_": "बेचना",  # bechna already
+    "padhane": "पढ़ाने", "padhana": "पढ़ाना",
+    "samjhana": "समझाना",
+    "denge_": "देंगे", "lenge_": "लेंगे",  # already mapped
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
