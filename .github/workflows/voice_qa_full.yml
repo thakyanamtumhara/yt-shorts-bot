@@ -1,0 +1,56 @@
+name: Voice QA Full (Topic → Script → Audio)
+
+# Like voice_qa.yml but for each input TOPIC, first uses Claude to generate
+# a full ~45-55 sec Hinglish script (matching production style), then runs
+# preprocess + ElevenLabs + Whisper. This tests against the actual vocabulary
+# distribution that production sees daily.
+
+on:
+  workflow_dispatch:
+    inputs:
+      topics_json:
+        description: 'JSON array of Hinglish topics (headlines)'
+        required: true
+        type: string
+      cycle_num:
+        description: 'Cycle number for artifact naming'
+        required: false
+        default: '1'
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - run: pip install -q requests
+
+      - name: Run full QA loop
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TOPICS_JSON: ${{ inputs.topics_json }}
+        run: |
+          python3 .github/qa_full_loop.py
+          cp /tmp/qa_results.json ./qa_results.json
+          cp /tmp/qa_transcripts.txt ./qa_transcripts.txt
+          cp /tmp/generated_scripts.json ./generated_scripts.json
+          cp -r /tmp/qa_out ./qa_audio || true
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-qa-full-cycle-${{ inputs.cycle_num }}
+          path: |
+            qa_results.json
+            qa_transcripts.txt
+            generated_scripts.json
+            qa_audio/
+          retention-days: 7
