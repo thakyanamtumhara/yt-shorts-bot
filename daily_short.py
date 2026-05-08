@@ -4017,7 +4017,47 @@ _TTS_HINGLISH_DEVANAGARI = {
     "khareedna": "ख़रीदना", "bechna_": "बेचना",  # bechna already
     "padhane": "पढ़ाने", "padhana": "पढ़ाना",
     "samjhana": "समझाना",
-    "denge_": "देंगे", "lenge_": "लेंगे",  # already mapped
+    # Exhaustive scan of 133 production topics — Hindi words I missed before
+    "patla": "पतला", "patli": "पतली", "patle": "पतले",
+    "mota": "मोटा", "moti": "मोटी", "mote": "मोटे",
+    "cheezein": "चीज़ें", "cheezon": "चीज़ों",
+    "farq": "फ़र्क़", "farak": "फ़र्क़",
+    "na": "ना",
+    "padta": "पड़ता", "padti_": "पड़ती",  # already mapped
+    "aasmaan": "आसमान", "aasman": "आसमान",
+    "aayega": "आएगा", "aayegi": "आएगी", "aayenge": "आएँगे",
+    "bachega": "बचेगा", "bachegi": "बचेगी",
+    "badhti": "बढ़ती",
+    "banana": "बनाना",  # Hindi "to make/build". Fruit banana never appears in our textile domain.
+    "becho": "बेचो",
+    "dene": "देने",
+    "dikkat": "दिक्कत",
+    "dikta": "दिखता",  # alt of dikhta
+    "galtiyan": "ग़लतियाँ", "galtiyon": "ग़लतियों",
+    "kariyega": "करियेगा", "kariye": "करिये",
+    "karwa": "करवा",
+    "kheechta": "खींचता",
+    "niche": "नीचे",  # alt of neeche
+    "rehta": "रहता", "rehti": "रहती", "rehte": "रहते",
+    "rukega": "रुकेगा", "rukegi": "रुकेगी",
+    "saste": "सस्ते",
+    "shuruat": "शुरुआत",  # alt of shuruwat (already mapped)
+    "sochte": "सोचते",
+    "tikta": "टिकता", "tikti": "टिकती", "tikne": "टिकने",
+    "zameen": "ज़मीन",
+    "zaroorat": "ज़रूरत",
+    # Critical: "banana" the gerund is a name collision with English fruit.
+    # Only safe to map in clearly-Hindi context. Map the *_kar_* forms instead:
+    "banane_": "बनाने",  # already mapped
+    # Plurals + extras
+    "saalon": "सालों", "dinon": "दिनों", "logon_": "लोगों",
+    "baatein": "बातें", "baaton": "बातों", "baat_": "बात",
+    "din_": "दिन",
+    # More inflections of common verbs
+    "rakhna_": "रखना", "rakhne": "रखने",  # rakhna already
+    "lagti_": "लगती", "lagne": "लगने",  # lagti already
+    "milte": "मिलते", "milti_": "मिलती",  # milta/i/e
+    "uthte": "उठते", "uthti": "उठती",
 }
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in

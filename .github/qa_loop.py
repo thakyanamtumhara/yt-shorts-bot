@@ -246,6 +246,22 @@ EXPECTED_ENGLISH = {
     "proof", "showdown", "spot", "supima", "trend", "with",
     "rgb", "ral", "pantone", "swatch", "swatches",
     "premium-cotton", "100", "200", "300",  # commonly seen as "100 percent"
+    # Exhaustive scan additions — pure English in textile domain
+    "collar", "actual", "cancel", "pocket", "problem", "side",
+    "tiruppur", "tirupur",
+    "absorb", "bamboo", "based", "biowashed", "bleach", "code",
+    "colorfastness", "connection", "costly", "crop", "cuff", "dead",
+    "direct", "direction", "effect", "export", "exports", "imports",
+    "hand", "hem", "henley", "high", "imported", "instantly", "judge",
+    "kangaroo", "know", "length", "lustre", "manage", "mercerized",
+    "mockup", "must", "next", "open-end", "organic", "over",
+    "peeling", "pilling", "pique", "plastisol", "ring-spun", "rubbing",
+    "save", "scene", "scope", "seasonal", "seller", "sharp",
+    "sizing", "smooth", "softness", "stain", "style", "sweat",
+    "sweet", "talk", "technique", "tubular", "volume", "water",
+    "width", "women's", "men's", "world", "yellow", "all",
+    "spun", "carded", "ringspun", "twill", "satin",
+    "ggsm", "kiosk",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",
