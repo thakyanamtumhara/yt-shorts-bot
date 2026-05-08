@@ -76,13 +76,26 @@ jobs:
               timeout=60,
           )
           r.raise_for_status()
-          with open("sample_audio.mp3", "wb") as f:
+          with open("sample_audio_raw.mp3", "wb") as f:
               f.write(r.content)
-          print(f"✅ Generated sample_audio.mp3 ({len(r.content)} bytes)")
+          print(f"✅ Generated sample_audio_raw.mp3 ({len(r.content)} bytes)")
 
-          # Save the script texts alongside for reference
+          # Apply same atempo slowdown as production daily_short.py uses
+          import subprocess
+          tempo = os.environ.get("VOICE_TEMPO", "0.95")
+          try:
+              tempo_val = max(0.5, min(2.0, float(tempo)))
+          except ValueError:
+              tempo_val = 0.95
+          subprocess.run([
+              "ffmpeg", "-i", "sample_audio_raw.mp3",
+              "-af", f"atempo={tempo_val:.3f},loudnorm=I=-14:TP=-1.5:LRA=11",
+              "-y", "sample_audio.mp3",
+          ], check=True, capture_output=True)
+          print(f"🔊 Applied tempo={tempo_val} + loudnorm")
+
           with open("sample_meta.txt", "w") as f:
-              f.write(f"ORIGINAL:\n{text}\n\nAFTER PREPROCESSOR:\n{processed}\n")
+              f.write(f"ORIGINAL:\n{text}\n\nAFTER PREPROCESSOR:\n{processed}\n\nTEMPO: {tempo_val}\n")
           PY
 
       - name: Upload audio sample artifact

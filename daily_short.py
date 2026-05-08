@@ -4467,8 +4467,10 @@ def normalize_for_tts(text: str) -> str:
     for word, deva in _TTS_HINGLISH_DEVANAGARI.items():
         s = _re.sub(rf"\b{word}\b", deva, s, flags=_re.IGNORECASE)
 
-    # Remove ellipses that TTS reads as long pauses
-    s = s.replace("…", ", ").replace("...", ", ")
+    # Preserve ellipses — ElevenLabs reads "..." as a natural trail-off pause,
+    # which is exactly the prosody our prompt requests for ending sentences.
+    # (Earlier we stripped ellipses for Sarvam, but ElevenLabs handles them well.)
+    s = s.replace("…", "...")  # normalize unicode ellipsis to three dots
     s = _re.sub(r",\s*,", ",", s)
     s = _re.sub(r"\s+", " ", s).strip()
     return s
@@ -7266,8 +7268,10 @@ def main():
             raise RuntimeError(f"All {SCRIPT_MAX_ATTEMPTS} script generation attempts failed (JSON parse errors). Topic: {fresh_topic}")
 
     script_voice = data["script_voice"]
-    # Sanitize script for TTS: strip ellipsis and elongated sounds that cause distortion
-    script_voice = script_voice.replace("...", ",").replace("..", ",")
+    # Sanitize script for TTS: collapse 4+ dots to 3 (preserve "..." as prosody hint)
+    # and clamp elongated sounds. ElevenLabs reads "..." as a natural trail-off pause,
+    # which is exactly the prosody our prompt requests for endings — DON'T strip it.
+    script_voice = re.sub(r'\.{4,}', '...', script_voice)  # 4+ dots → 3
     script_voice = re.sub(r'(\w)\1{3,}', lambda m: m.group(0)[:2], script_voice)  # "aaaaaa" → "aa"
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
 
@@ -7386,11 +7390,21 @@ def main():
     try:
         import subprocess
         tightened_path = audio_path.replace(".mp3", "_tight.mp3")
+        # User feedback: voice felt slightly fast. Default to ~5% slowdown
+        # (atempo=0.95). atempo preserves pitch — only timing slows.
+        # Override with VOICE_TEMPO env var (e.g. 1.0 = no change, 0.90 = 10% slower).
+        tempo = os.environ.get("VOICE_TEMPO", "0.95").strip() or "0.95"
+        try:
+            tempo_val = float(tempo)
+            tempo_val = max(0.5, min(2.0, tempo_val))  # ffmpeg atempo range
+        except ValueError:
+            tempo_val = 0.95
+        tempo_filter = f"atempo={tempo_val:.3f},"
         if os.environ.get("TIGHTEN_SILENCES", "").strip() in ("1", "true", "yes"):
             # Gentle: only kill silences > 1.5s (clearly intro/outro pauses, not prosody)
-            af = "silenceremove=stop_periods=-1:stop_duration=1.5:stop_threshold=-32dB:stop_silence=0.6,loudnorm=I=-14:TP=-1.5:LRA=11"
+            af = f"{tempo_filter}silenceremove=stop_periods=-1:stop_duration=1.5:stop_threshold=-32dB:stop_silence=0.6,loudnorm=I=-14:TP=-1.5:LRA=11"
         else:
-            af = "loudnorm=I=-14:TP=-1.5:LRA=11"
+            af = f"{tempo_filter}loudnorm=I=-14:TP=-1.5:LRA=11"
         subprocess.run([
             "ffmpeg", "-i", audio_path, "-af", af, "-y", tightened_path,
         ], capture_output=True, timeout=60)
