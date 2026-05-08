@@ -4263,6 +4263,35 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "yahaan": "यहाँ",  # alt of yahan
     "zor": "ज़ोर",
     "fas": "फँस", "phans": "फँस",
+    # Round 4 long-tail Hindi
+    "jaake": "जाके",
+    "badhiya": "बढ़िया",
+    "aani": "आनी", "aayengi": "आएँगी",
+    "acha": "अच्छा",  # alt
+    "atkega": "अटकेगा",
+    "bataata": "बताता",  # alt
+    "bheje": "भेजे",
+    "chipakta": "चिपकता", "chipakna": "चिपकना",
+    "dalo": "डालो",  # alt of daalo
+    "dhoop": "धूप", "chhaaon": "छाँव",
+    "dikhne": "दिखने",
+    "dubara": "दुबारा", "dobara": "दोबारा",
+    "hoke": "होके",
+    "humari": "हमारी",
+    "konsa": "कौनसा",  # alt of kaunsa
+    "maan": "मान",
+    "maar": "मार", "mariyega": "मारियेगा",
+    "mangwani": "मँगवानी",
+    "mast": "मस्त",
+    "nikalne": "निकलने", "nikalti": "निकलती",
+    "pakke": "पक्के",  # already pakka
+    "rakhoge": "रखोगे",
+    "rakkho": "रखो",  # alt
+    "rehne": "रहने",
+    "sookne": "सूखने", "sukha": "सूखा",
+    "tarah": "तरह", "tarahein": "तरहें",
+    "tikkega": "टिकेगा",  # alt of tikta
+    "uspe": "उसपे",
 })
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
