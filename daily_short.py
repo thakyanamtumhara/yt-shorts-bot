@@ -4157,6 +4157,67 @@ _TTS_HINGLISH_DEVANAGARI = {
 # common. Map cautiously.
 _TTS_HINGLISH_DEVANAGARI["teen"] = "तीन"
 
+# Full-script QA round 2 — 164 more candidates from 20 fresh production scripts.
+_TTS_HINGLISH_DEVANAGARI.update({
+    # High-freq Hindi from round 2
+    "wo": "वो", "poocha": "पूछा",
+    "beech": "बीच",
+    "jati": "जाती", "jate": "जाते",
+    "udhar": "उधर", "idhar": "इधर",
+    "usmein": "उसमें", "ismein": "इसमें",
+    "uss": "उस",
+    # Verbs
+    "achha": "अच्छा", "achhi": "अच्छी",
+    "bacha": "बचा", "bacho": "बचो", "bachna": "बचना",
+    "banenge": "बनेंगे", "banegi": "बनेगी", "banega": "बनेगा",
+    "barbaad": "बर्बाद",
+    "bechke": "बेचके", "bechoge": "बेचोगे",
+    "bekaar": "बेकार",
+    "bhejo": "भेजो",
+    "bolunga": "बोलूँगा", "bolungi": "बोलूँगी",
+    "chahta": "चाहता",
+    "chhapwaega": "छपवाएगा", "chhapwana": "छपवाना",
+    "chote": "छोटे",
+    "chuki": "चुकी", "chuka": "चुका",
+    "dedo": "दे दो", "lelo_": "ले लो",
+    "dhundhne": "ढूँढ़ने",
+    "dhyaan": "ध्यान",
+    "dikhte": "दिखते",
+    "doob": "डूब", "dooba": "डूबा",
+    "dum": "दम",
+    "dusra": "दूसरा", "dusri": "दूसरी", "dusre": "दूसरे",
+    "gaddein": "गद्दे",
+    "hafto": "हफ़्तों", "haftein": "हफ़्तें",
+    "halka": "हल्का", "halki": "हल्की", "halke": "हल्के",
+    "hisaab": "हिसाब",
+    "jaaoge": "जाओगे",
+    "kaafi": "काफ़ी",
+    "kaat": "काट", "kaata": "काटा",
+    "karwaana": "करवाना", "karwaaya": "करवाया",
+    "kisi": "किसी",
+    "leli": "ले ली", "liya_": "लिया",  # already
+    "lunga": "लूँगा", "lungi": "लूँगी",
+    "maana": "माना",
+    "maang": "माँग", "maange": "माँगे",
+    "naraz": "नाराज़",
+    "pachhtaoge": "पछताओगे", "pachhtana": "पछताना",
+    "pakad": "पकड़", "pakda": "पकड़ा",
+    "poochho": "पूछो",
+    "pura": "पूरा",
+    "rukja": "रुक जा", "rukjao": "रुक जाओ",
+    "rupee": "रुपये",  # singular form
+    "samjh": "समझ",
+    "sapna": "सपना", "sapne": "सपने",
+    "savaal": "सवाल", "javaab": "जवाब", "jawaab": "जवाब",
+    "sikho": "सीखो",
+    "taaki": "ताकि",
+    "tera": "तेरा", "teri": "तेरी", "tere": "तेरे",
+    "waisa": "वैसा", "waisi": "वैसी", "waise": "वैसे",
+    "waqt": "वक़्त",
+    "lakhs": "लाख",  # plural alt of lakh
+    "mehenga": "महँगा",  # alt of mehnga
+})
+
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
 # theory — in our scripts it's always Hindi. Conditional add.
 _TTS_HINGLISH_DEVANAGARI["hi"] = "ही"
