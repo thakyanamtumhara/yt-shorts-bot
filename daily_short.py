@@ -4352,6 +4352,19 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "hogaye": "हो गए", "hogayi": "हो गई",
     "hume": "हमें",
     "inka": "इनका", "inki": "इनकी", "inke": "इनके",
+    # Today's production-feedback fixes (post-launch)
+    # User caught these in the published Instagram Reel.
+    "utar": "उतर", "utri": "उतरी", "utra": "उतरा",
+    "utarna": "उतरना", "utarne": "उतरने", "utrega": "उतरेगा",
+    "utri_": "उतरी", "utre": "उतरे",
+    "chhap": "छप", "chhapna": "छपना", "chhapa": "छपा", "chhapi": "छपी",
+    "lagao_2": "लगाओ",  # already mapped
+    "wash_": "वॉश",  # leave English for "wash"
+    # Common verbs around "uthna/utarna" family
+    "uthwana": "उठवाना", "uthwa": "उठवा",
+    "girna": "गिरना", "gira": "गिरा", "girti": "गिरती",
+    "ghisna": "घिसना", "ghisa": "घिसा",
+    "phatna": "फटना", "phata": "फटा", "phati": "फटी",
 })
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
