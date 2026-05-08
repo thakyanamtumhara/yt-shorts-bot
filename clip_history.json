@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Heat transfer vinyl aur DTF mein fark — kaunsa business ke liye better",
-    "prompts": [
-      "Close-up of Indian man's hands peeling a cracked and flaking white heat transfer vinyl design off a navy blue round-neck cotton t-shirt laid flat on a wooden work table, showing visible cracks and lifted edges in bright daylight from a nearby window, camera slowly zooms in on the damaged print area, vertical 9:16 format.",
-      "Medium close-up of a heat press machine in a small Indian printing workshop with its top plate raised, a plain maroon cotton t-shirt with a freshly placed vinyl sheet positioned on it ready for pressing, rolls of colored heat transfer vinyl visible on shelves in the soft background, warm overhead tube light, slight camera pan right to left, vertical 9:16 format.",
-      "Top-down overhead shot of a split comparison on a clean white table — left side shows a sheet of solid-color heat transfer vinyl with a weeded single-color design cut out, right side shows a printed DTF film with a vibrant multi-color photographic design with white powder visible on its surface, bright even lighting, camera slowly dollies downward for closer detail, vertical 9:16 format.",
-      "Close-up of Indian man's hands carefully placing a colorful DTF printed film onto a plain white cotton round-neck t-shirt on a heat press platen, the film showing a detailed multi-color graphic, the heat press handle visible above, warm workshop lighting with slight steam wisps in the air, camera holds steady then slowly pushes in, vertical 9:16 format.",
-      "Close-up of Indian man's hands holding up a finished plain black cotton round-neck t-shirt with a vibrant smooth multi-color DTF print on the chest area, gently flexing the fabric to show the print's flexibility and soft feel without cracking, natural daylight streaming from the left side, camera slowly dollies forward, vertical 9:16 format."
-    ],
-    "date": "2026-04-02T12:55:25.552190"
-  },
-  {
     "topic": "Ek startup ne 10 piece se shuru kiya — ab apna brand hai 50K monthly",
     "prompts": [
       "Close-up of Indian man's hands carefully counting a very small stack of plain white round-neck cotton t-shirts on a wooden table, only about 10 pieces visible, warm yellow indoor lighting from a small room setup, camera slowly dollying in to emphasize how few pieces there are, slight shadow on the table surface, 9:16 vertical format.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Harsh midday natural sunlight streaming through open factory shutters, high contrast with deep shadows, neutral whites and raw concrete tones, shallow DOF 50mm lens feel, slight handheld sway, Indian textile workshop setting. Scene: Slow camera dolly across a neatly arranged row of freshly printed 100% cotton round-neck t-shirts in multiple colors - black, white, navy, maroon, olive - laid out on a long packing table, prints looking crisp and vibrant, a hand gently picks up one shirt and holds it toward the sunlight streaming through the shutter showing the smooth bio-washed texture, cardboard shipping boxes stacked in the soft-focus background."
     ],
     "date": "2026-05-07T13:48:37.178243"
+  },
+  {
+    "topic": "Usne 500 T-Shirts Pe Screen Print Karaya — Aur Pehli Dhulai Mein Sab Utar Gaya 😱 | Ye Mistake Mat Karna",
+    "prompts": [
+      "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Close-up of Indian man's hands pulling a black cotton t-shirt out of a steel bucket of soapy water, the screen-printed white graphic visibly smearing and peeling off onto his wet fingers, water dripping, frustration implied by the tense grip, droplets catching the warm overhead light.",
+      "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Medium shot of a cluttered worktable with a stack of roughly 20 folded plain white t-shirts next to a crumpled Indian currency note bundle (500 rupee notes visible), a hand reaches in and picks up one t-shirt stretching it between two hands showing thin see-through fabric, camera slowly dollies closer to reveal the loose weave texture.",
+      "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Close-up tabletop comparison — left side a thin patla off-white t-shirt fabric swatch labeled nothing, right side a thick premium white t-shirt fabric swatch, Indian man's hand presses thumb into each fabric showing the difference in density and thickness, camera racks focus slowly from thin to thick swatch, warm light catches cotton texture.",
+      "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Close-up of a heat press machine clamping down on a black t-shirt with a fresh white screen print design, steam rising from the edges, an Indian hand adjusts a small digital thermometer showing 160 on its screen placed near the press plate, camera slowly pans from the thermometer reading to the press surface, warm amber highlights on the metal.",
+      "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Satisfying reveal — Indian man's hands hold up a properly cured black round-neck cotton t-shirt with a crisp bright white screen print, hands gently tug at the print area to show it's firmly bonded, camera slowly pushes in, the fabric looks thick and premium with visible combed cotton texture, warm overhead light gives the print a clean sharp contrast."
+    ],
+    "date": "2026-05-08T13:14:39.184806"
   }
 ]

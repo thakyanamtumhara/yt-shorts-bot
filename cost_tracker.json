@@ -1252,5 +1252,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1753
     }
+  },
+  {
+    "date": "2026-05-08T13:40:22.359412",
+    "topic": "Usne 500 T-Shirts Pe Screen Print Karaya \u2014 Aur Pehli Dhulai Mein Sab Utar Gaya \ud83d\ude31 | Ye Mistake Mat Karna",
+    "title": "500 T-Shirts Ruined in First Wash \u2014 This GSM Mistake Cost \u20b940K",
+    "total_usd": 7.7527,
+    "duration_min": 27.3,
+    "breakdown": {
+      "claude_opus": 0.3315,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0281,
+      "veo_clips": 7.04,
+      "whisper": 0.0059,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1772
+    }
   }
 ]
