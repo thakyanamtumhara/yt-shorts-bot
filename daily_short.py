@@ -4058,7 +4058,104 @@ _TTS_HINGLISH_DEVANAGARI = {
     "lagti_": "लगती", "lagne": "लगने",  # lagti already
     "milte": "मिलते", "milti_": "मिलती",  # milta/i/e
     "uthte": "उठते", "uthti": "उठती",
+    # Full-script QA findings — Claude-generated production scripts have
+    # MUCH richer vocabulary than topic headlines.
+    # Pronouns + determiners
+    "usko": "उसको", "isko": "इसको", "tumko": "तुमको", "humko": "हमको", "mujhko": "मुझको",
+    "voh": "वह", "wohi": "वही", "yahi": "यही",
+    "humara": "हमारा",  # alt of hamara
+    "tumhare": "तुम्हारे",  # also covered above
+    # Quantity / comparison
+    "itna": "इतना", "itni": "इतनी", "itne": "इतने",
+    "utna": "उतना", "utni": "उतनी", "utne": "उतने",
+    "jitna": "जितना", "jitni": "जितनी", "jitne": "जितने",
+    "kitna_": "कितना",  # already mapped
+    "baaki": "बाक़ी", "bohot": "बहुत",  # alt of bahut
+    "zara": "ज़रा", "thoda_2": "थोड़ा",  # already mapped
+    # Verbs (lots of inflections from Claude scripts)
+    "kaha": "कहा", "kahta": "कहता", "kahti": "कहती", "kahna": "कहना", "kahein": "कहें", "kahein_": "कहें",
+    "samjhaya": "समझाया",  # alt of samjhaaya
+    "ban": "बन", "banna": "बनना", "bante": "बनते", "bani_": "बनी",  # already
+    "dikhaya": "दिखाया", "dikhe": "दिखे",
+    "chahe": "चाहे", "chahte": "चाहते", "chahti": "चाहती",
+    "chalta": "चलता", "chalte": "चलते",
+    "de": "दे", "le_": "ले",  # already
+    "jahan": "जहाँ",
+    "jayenge": "जाएँगे", "jayengi": "जाएँगी", "jayega_": "जाएगा",  # already as jaayega
+    "mil": "मिल", "milne_": "मिलने",  # already as milne
+    "payega": "पाएगा", "payegi": "पाएगी", "payenge": "पाएँगे",
+    "ruko": "रुको", "ruke": "रुके",
+    "sabko": "सबको", "sabse_": "सबसे",  # already mapped
+    "yaad": "याद", "yaadein": "यादें",
+    # 1-occurrence Hindi from full scripts
+    "achi": "अच्छी",
+    "ankhein": "आँखें", "ankh": "आँख", "aankh": "आँख",
+    "atka": "अटका", "atki": "अटकी", "atke": "अटके",
+    "badhaao": "बढ़ाओ", "ghatao": "घटाओ",
+    "balki": "बल्कि",
+    "batata": "बताता", "batati": "बताती", "bataate": "बताते",
+    "batau": "बताऊँ", "bataya": "बताया",
+    "bech": "बेच", "becho_": "बेचो",  # already
+    "bheji": "भेजी",
+    "bhago": "भागो", "bhagna": "भागना",
+    "bistar": "बिस्तर",
+    "chaadar": "चादर",
+    "chale": "चले",
+    "dhundho": "ढूँढो", "dhundha": "ढूँढ़ा",
+    "dhyan": "ध्यान",
+    "dikh": "दिख", "dikhna": "दिखना",
+    "dunga": "दूँगा", "dungi": "दूँगी",
+    "jaao": "जाओ",
+    "jabhi": "जभी", "jabki": "जबकि",
+    "jagah": "जगह",
+    "jayegi": "जाएगी",  # alt
+    "jismein": "जिसमें", "jisme": "जिसमें",
+    "kamse": "कमसे", "kamsekam": "कमसेकम",
+    "karaoge": "कराओगे", "karaya": "कराया",
+    "karoge": "करोगे", "karogi": "करोगी",
+    "karwani": "करवानी", "karwaya": "करवाया", "karwati": "करवाती", "karwate": "करवाते",
+    "khel": "खेल",
+    "khich": "खींच",
+    "lagein": "लगें", "lagenge": "लगेंगे",
+    "lekar": "लेकर", "dekar": "देकर",
+    "lelo": "ले लो", "lelena": "ले लेना",
+    "manga": "मँगा", "mangwa": "मँगवा",
+    "niklenge": "निकलेंगे", "niklega_": "निकलेगा",  # already
+    "pad": "पड़",
+    "pehnega": "पहनेगा", "pehnegi": "पहनेगी", "pehne": "पहने", "pehna": "पहना", "pehni": "पहनी",
+    "raho": "रहो",
+    "rahta": "रहता",  # alt of rehta
+    "rupay": "रुपये", "rupees": "रुपये",  # add explicit handling of "rupees" English word
+    "sambhalo": "सँभालो", "sambhal": "सँभाल",
+    "socha": "सोचा",
+    "tabhi": "तभी",
+    "teesra": "तीसरा", "teesri": "तीसरी",
+    "turant": "तुरंत",
+    "ulta": "उल्टा", "ulti": "उल्टी",
+    "yani": "यानी",
+    "zarurat": "ज़रूरत",  # alt of zaroorat
+    # Last gaps caught by full-script QA
+    "tumne": "तुमने", "humne_": "हमने",  # already mapped
+    "wahi": "वही",
+    "teen_word": "तीन",  # spelled-out "teen" (3); numerals already converted via regex
+    "bik": "बिक", "bikk": "बिक",  # alt of bika/bikega root
+    # Spelled-out Hindi numbers (Claude sometimes writes "teen" instead of "3"):
+    "ek_word": "एक",  # ek already mapped via "ek": "एक"
+    "do_word": "दो",  # avoid English "do"; "do": "दो" already exists in main map
+    "char_word": "चार", "chaar": "चार",
+    "paanch_word": "पाँच", "panch": "पाँच",
+    "chah": "छह", "chha": "छह",  # 6
+    "saat_word": "सात",  # saat = 7, but "saat" looks like English "sat" — risky
+    "aath_word": "आठ", "aath": "आठ",
+    "nau_word": "नौ", "nau": "नौ",
+    "das_word": "दस", "das": "दस",
 }
+
+# 'teen' is the romanization of तीन (3) but collides with English "teen"
+# (teenager). In our textile B2B context, English "teen" essentially never
+# appears, while "teen mahine" / "teen saal" / "teen piece" are extremely
+# common. Map cautiously.
+_TTS_HINGLISH_DEVANAGARI["teen"] = "तीन"
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
 # theory — in our scripts it's always Hindi. Conditional add.
