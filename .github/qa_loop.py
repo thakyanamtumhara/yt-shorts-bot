@@ -354,6 +354,21 @@ EXPECTED_ENGLISH = {
     "timing", "tone", "treat", "why", "wicking", "willingly",
     "winters", "wise", "yellowish", "young", "youngsters",
     "heatpe",  # typo of "heat pe"
+    # Round 5 English
+    "htv", "bottom", "circular", "completely", "head", "acceptable",
+    "according", "adjusted", "allowance", "answer", "bargain",
+    "batches", "biggest", "billing", "bills", "buffer", "cheating",
+    "circle", "collars", "combing", "complicated", "considered",
+    "consuming", "cure", "defects", "differentiate", "discuss",
+    "documentation", "doubt", "dry", "electronic", "epson", "equals",
+    "fancy", "finishing", "firmly", "flexibility", "garment",
+    "honeycomb", "ideal", "informing", "initial", "law", "maintenance",
+    "manually", "measure", "needle", "pending", "plan", "polybag",
+    "practice", "pre-washed", "precise", "reason", "risky", "rub",
+    "sections", "serve", "short", "shortcut", "smoothly",
+    "specification", "speed", "spread", "sq", "stretchable",
+    "suddenly", "suited", "tabs", "term", "third", "tricky",
+    "verification", "weed", "wet", "within", "wrinkles",
     # Single letters / particles Whisper may emit
     "a", "an", "the", "i", "is", "it", "of", "to", "in", "on", "at", "by", "for",
     "and", "or", "but", "if", "so", "as", "be", "do", "go",

@@ -4292,6 +4292,49 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "tarah": "तरह", "tarahein": "तरहें",
     "tikkega": "टिकेगा",  # alt of tikta
     "uspe": "उसपे",
+    # Round 5 additions
+    "waali": "वाली", "waala": "वाला",
+    "dosto": "दोस्तो",
+    "maangta": "माँगता", "maangti": "माँगती",
+    "ayegi": "आएगी",
+    "badho": "बढ़ो",
+    "bane": "बने",
+    "banwa": "बनवा",
+    "bhoolna": "भूलना", "bhool": "भूल", "bhoolega": "भूलेगा",
+    "bhot": "बहुत",  # alt of bahut
+    "bigad": "बिगड़", "bigda": "बिगड़ा", "bigdi": "बिगड़ी",
+    "bol": "बोल", "boli_": "बोली",  # already mapped
+    "chalo": "चलो",
+    "dekhiye": "देखिये",
+    "dekhta": "देखता",
+    "dhila": "ढीला", "dhili": "ढीली",
+    "dibbe": "डिब्बे", "dibba": "डिब्बा",
+    "dobaara": "दुबारा",  # alt
+    "fasoge": "फँसोगे", "fasega": "फँसेगा",
+    "gusse": "ग़ुस्से", "gussa": "ग़ुस्सा",
+    "hazaaron": "हज़ारों",
+    "humaare": "हमारे",  # alt
+    "jaaenge": "जाएँगे",
+    "jor": "ज़ोर",  # alt of zor
+    "kaatna": "काटना", "kaato": "काटो",
+    "kaisa": "कैसा", "kaisi": "कैसी",
+    "karu": "करूँ",
+    "kehte": "कहते", "kehta": "कहता",  # alt
+    "lagake": "लगाके",
+    "nikalni": "निकालनी",
+    "paanch": "पाँच",  # word form of 5
+    "pahunchega": "पहुँचेगा", "pahunchegi": "पहुँचेगी",
+    "rakhke": "रखके",
+    "rakhta": "रखता",
+    "reh": "रह", "rehna": "रहना",
+    "rok": "रोक", "rokna": "रोकना",
+    "rukh": "रुख़",
+    "saala": "साला",
+    "saamne": "सामने",
+    "samajhke": "समझके", "samjhke": "समझके",
+    "samjhata": "समझाता",
+    "tabse": "तबसे", "jabse": "जबसे",
+    "teeno": "तीनों",
 })
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
