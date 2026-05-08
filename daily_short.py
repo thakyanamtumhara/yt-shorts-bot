@@ -4216,6 +4216,53 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "waqt": "वक़्त",
     "lakhs": "लाख",  # plural alt of lakh
     "mehenga": "महँगा",  # alt of mehnga
+    # Round 3 — alt spellings + long-tail Hindi
+    "pichle": "पिछले",  # alt of pichhle
+    "yehi": "यही",  # alt of yahi
+    "jao": "जाओ",  # alt of jaao
+    "pahunch": "पहुँच", "pahuncha": "पहुँचा", "pahunchi": "पहुँची",
+    "seekh": "सीख", "sikha_": "सीखा",  # already mapped
+    "toot": "टूट", "toot_": "टूटा",  # already mapped
+    "aage": "आगे", "peeche": "पीछे",
+    "asar": "असर", "prabhav": "प्रभाव",
+    "bach": "बच", "bachane": "बचाने", "bachani": "बचानी",
+    "baithe": "बैठे", "baitha": "बैठा", "baithi": "बैठी", "baith": "बैठ",
+    "bataunga": "बताऊँगा", "bataungi": "बताऊँगी",
+    "bees": "बीस",  # 20 word form
+    "bhejenge": "भेजेंगे",
+    "chaiye": "चाहिए",  # alt of chahiye
+    "chakkar": "चक्कर",
+    "chuna": "चुना", "chunna": "चुनना", "chunte": "चुनते",
+    "daalo": "डालो",
+    "dhang": "ढंग",
+    "dikhai": "दिखाई", "dikhega": "दिखेगा", "dikhegi": "दिखेगी",
+    "doobega": "डूबेगा",
+    "hokar": "होकर", "lekar_": "लेकर",  # already
+    "isiliye": "इसीलिए",
+    "jhanjhat": "झंझट", "jhamela": "झमेला",
+    "jhuk": "झुक", "jhukna": "झुकना",
+    "jyada": "ज़्यादा",  # alt of zyada
+    "kamaao": "कमाओ", "kamaayi": "कमाई",
+    "khulne": "खुलने", "khula": "खुला", "khuli": "खुली",
+    "lagaya": "लगाया",
+    "lene": "लेने",
+    "loon": "लूँ", "len": "लें",  # alt of lein
+    "mangaoge": "मँगाओगे", "mangao_": "मँगाओ",  # already
+    "mili": "मिली",
+    "nuksan": "नुकसान",  # alt of nuksaan
+    "pade": "पड़े", "padi_": "पड़ी",  # already
+    "pooche": "पूछे",
+    "rakhni": "रखनी",
+    "ruk": "रुक",
+    "samajhta": "समझता",  # alt of samjhta
+    "taki": "ताकि",  # alt of taaki
+    "tumse": "तुमसे", "humse_": "हमसे",  # already
+    "unhone": "उन्होंने", "humne": "हमने", "tumne_": "तुमने",  # already
+    "unka": "उनका", "unki": "उनकी", "unke": "उनके",
+    "vapas": "वापस",  # alt of wapas
+    "yahaan": "यहाँ",  # alt of yahan
+    "zor": "ज़ोर",
+    "fas": "फँस", "phans": "फँस",
 })
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
