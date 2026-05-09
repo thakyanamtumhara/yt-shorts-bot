@@ -3191,7 +3191,7 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
     "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
     "script_voice": "The ROMAN HINGLISH script. 8-12 sentences for 45-55 seconds. NO website. NO selling. Pure knowledge with storytelling.",
-    "script_english": "Clean English translation for on-screen subtitles",
+    "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
     "hook_text": "Max 4 words, UPPERCASE, punchy curiosity-driven text for on-screen hook overlay",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
     "video_prompt_1": "HOOK scene — the problem or dramatic moment. 40-80 words.",
@@ -7681,49 +7681,77 @@ def main():
             print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
-    # ── 6. Subtitles (Whisper) ──
-    # Use script_voice (Hinglish) instead of script_english so captions MATCH the audio.
-    # Audio is Hindi; Whisper transcribes Hindi; chunks built from same Hindi words
-    # = perfect 1:1 alignment, no proportional-mapping drift, no English/Hindi mismatch.
-    # Indian audience (B2B tshirt buyers) reads Hinglish natively — better retention too.
+    # ── 6. Subtitles (Whisper-synced English captions) ──
+    # Use script_english (simple paraphrased English) so subtitles are accessible
+    # to non-Hindi viewers + deaf/HoH. Claude generates script_english with the
+    # SAME NUMBER OF SENTENCES as script_voice, so sentence-level alignment is clean:
+    #   - Whisper segments the Hindi audio into N sentences (start/end timestamps)
+    #   - Each English sentence inherits its Hindi counterpart's timing
+    #   - Long English sentences split into smaller subtitle pieces by MAX_SUBTITLE_DURATION
     subtitle_segments = []
-    chunks = []
-    sub_source = script_voice if script_voice else script_english
-    words = sub_source.split()
-    for k in range(0, len(words), WORDS_PER_SUBTITLE):
-        chunks.append(" ".join(words[k:k+WORDS_PER_SUBTITLE]))
-
+    sub_source = script_english if script_english else script_voice
     audio_clip_dur = AudioFileClip(audio_path).duration
-    seg_dur = audio_clip_dur / max(len(chunks), 1)
-    for idx, ct in enumerate(chunks):
-        subtitle_segments.append({
-            "text": ct,
-            "start": idx * seg_dur,
-            "end": (idx + 1) * seg_dur
-        })
+
+    # Split English into sentences (use simple punctuation split — Claude follows
+    # period/question-mark conventions). Filter empties.
+    import re as _re_subs
+    eng_sentences = [s.strip() for s in _re_subs.split(r'(?<=[.!?])\s+', sub_source.strip()) if s.strip()]
+    if not eng_sentences:
+        eng_sentences = [sub_source.strip()]
+
+    # Safe fallback before Whisper attempt: equal-time slicing.
+    # Whisper sync below will overwrite with synced timing if successful.
+    _fallback_seg_dur = audio_clip_dur / max(len(eng_sentences), 1)
+    subtitle_segments = [
+        {"text": eng, "start": idx * _fallback_seg_dur, "end": (idx + 1) * _fallback_seg_dur}
+        for idx, eng in enumerate(eng_sentences)
+    ]
 
     try:
         import whisper
         wmodel = whisper.load_model("small")
         result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
-        all_words = []
-        for seg in result.get("segments", []):
-            for w in seg.get("words", []):
-                all_words.append({"start": w["start"], "end": w["end"]})
-        if len(all_words) >= 5 and chunks:
-            new_segs = []
-            wpc = len(all_words) / len(chunks)
-            for k, ct in enumerate(chunks):
-                si = int(k * wpc)
-                ei = min(int((k + 1) * wpc) - 1, len(all_words) - 1)
-                si = min(si, len(all_words) - 1)
-                st = all_words[si]["start"]
-                et = all_words[ei]["end"]
-                if et - st < 0.2: et = st + 0.6
-                new_segs.append({"text": ct, "start": st, "end": et})
-            subtitle_segments = new_segs
-            cost.track_whisper(audio_clip_dur)
-            print("   ✅ Whisper synced!")
+        # Whisper returns segments — typically sentence-ish. Use those for timing.
+        whisper_segs = [
+            {"start": float(s["start"]), "end": float(s["end"])}
+            for s in result.get("segments", [])
+            if s.get("end", 0) > s.get("start", 0)
+        ]
+        cost.track_whisper(audio_clip_dur)
+
+        if whisper_segs and eng_sentences:
+            # Match English sentence count to Whisper segment count by proportional bucketing
+            n_eng = len(eng_sentences)
+            n_wh = len(whisper_segs)
+            if n_eng == n_wh:
+                # Clean 1:1 mapping
+                for k, eng in enumerate(eng_sentences):
+                    subtitle_segments.append({
+                        "text": eng,
+                        "start": whisper_segs[k]["start"],
+                        "end": whisper_segs[k]["end"],
+                    })
+            else:
+                # Proportional: bucket Whisper segments to match English count
+                ratio = n_wh / n_eng
+                for k, eng in enumerate(eng_sentences):
+                    si = int(k * ratio)
+                    ei = min(int((k + 1) * ratio) - 1, n_wh - 1)
+                    if ei < si: ei = si
+                    si = min(si, n_wh - 1)
+                    subtitle_segments.append({
+                        "text": eng,
+                        "start": whisper_segs[si]["start"],
+                        "end": whisper_segs[ei]["end"],
+                    })
+            print(f"   ✅ Whisper synced! ({n_eng} English sentences ↔ {n_wh} Hindi audio segments)")
+        else:
+            # Fallback: equal-time slicing
+            seg_dur = audio_clip_dur / max(len(eng_sentences), 1)
+            for idx, eng in enumerate(eng_sentences):
+                subtitle_segments.append({
+                    "text": eng, "start": idx * seg_dur, "end": (idx + 1) * seg_dur
+                })
 
         # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
         try:
