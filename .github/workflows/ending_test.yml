@@ -1,0 +1,138 @@
+name: Ending Prosody A/B Test
+
+# Generates the SAME Hinglish script with 4 different ending treatments
+# so we can pick which "feels" most like a real ending. The body is the
+# same in all 4 — only the last sentence handling differs.
+#
+# variants:
+#   A — current (5% slow throughout, normal period)
+#   B — last sentence 15% slower than rest (extra deliberate trail-off)
+#   C — explicit 1.5s silent pause inserted before last sentence
+#   D — no atempo at all (raw ElevenLabs, period only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      body_text:
+        description: 'Body sentences (everything except final)'
+        required: true
+        type: string
+        default: 'Ek customer ne 500 white tshirts pe DTG print karaya, white ink layer remove nahin ki. Pehli dhulai mein print non-noticeable ho gaya, ₹1.5 lakh ka ink bill aa gaya bina kisi result ke. Galti choti si thi, RIP software mein ek click ka kaam.'
+      ending_text:
+        description: 'Final sentence (3-7 words)'
+        required: true
+        type: string
+        default: 'Bas itna dhyaan rakhna.'
+
+jobs:
+  endings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Install python deps
+        run: pip install -q requests
+      - name: Generate 4 variants
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          BODY: ${{ inputs.body_text }}
+          ENDING: ${{ inputs.ending_text }}
+        run: |
+          python3 - << 'PY'
+          import os, subprocess, requests
+          src = open("daily_short.py").read()
+          start = src.index("# ╔══════════════════════════════════════════════════════════════════════╗\n# ║                   TTS PRE-PROCESSING")
+          end = src.index("def sarvam_tts_to_mp3")
+          ns = {}; exec(src[start:end], ns)
+          normalize = ns["normalize_for_tts"]
+
+          BODY = os.environ["BODY"]
+          ENDING = os.environ["ENDING"]
+          KEY = os.environ["ELEVENLABS_API_KEY"]
+
+          VOICE = "cejtKjfE9sHUZ1FnUYEV"
+
+          def tts(text, out_path, settings=None):
+              s = settings or {"stability": 0.50, "similarity_boost": 0.75, "style": 0.00, "use_speaker_boost": True}
+              r = requests.post(
+                  f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE}",
+                  headers={"xi-api-key": KEY, "Content-Type": "application/json", "Accept": "audio/mpeg"},
+                  json={"text": text, "model_id": "eleven_multilingual_v2", "voice_settings": s},
+                  timeout=120,
+              )
+              r.raise_for_status()
+              open(out_path, "wb").write(r.content)
+
+          # Preprocess once — body and ending separately so we can manipulate
+          body_pre = normalize(BODY)
+          ending_pre = normalize(ENDING)
+          full_pre = normalize(BODY + " " + ENDING)
+
+          print(f"BODY  : {body_pre}")
+          print(f"END   : {ending_pre}")
+
+          # ── Variant A: current behavior (5% slow throughout, single TTS call) ──
+          tts(full_pre, "raw_A.mp3")
+          subprocess.run(["ffmpeg", "-y", "-i", "raw_A.mp3", "-af",
+                          "atempo=0.95,loudnorm=I=-14:TP=-1.5:LRA=11", "variant_A.mp3"],
+                         check=True, capture_output=True)
+
+          # ── Variant B: body at 0.95, ending at 0.85 (15% slower) ──
+          tts(body_pre, "raw_B_body.mp3")
+          tts(ending_pre, "raw_B_end.mp3")
+          # Slow body 5%
+          subprocess.run(["ffmpeg", "-y", "-i", "raw_B_body.mp3", "-af",
+                          "atempo=0.95,loudnorm=I=-14:TP=-1.5:LRA=11", "B_body.mp3"],
+                         check=True, capture_output=True)
+          # Slow ending 15% (extra deliberate)
+          subprocess.run(["ffmpeg", "-y", "-i", "raw_B_end.mp3", "-af",
+                          "atempo=0.85,loudnorm=I=-14:TP=-1.5:LRA=11", "B_end.mp3"],
+                         check=True, capture_output=True)
+          # Concat
+          with open("concat_B.txt", "w") as f:
+              f.write("file 'B_body.mp3'\nfile 'B_end.mp3'\n")
+          subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "concat_B.txt",
+                          "-c", "copy", "variant_B.mp3"], check=True, capture_output=True)
+
+          # ── Variant C: 5% slow + 1.5s silent pause before ending ──
+          # Generate 1.5s silence
+          subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=cl=mono:r=44100",
+                          "-t", "1.5", "-q:a", "9", "silence.mp3"],
+                         check=True, capture_output=True)
+          # Use already-generated B_body.mp3 (5% slow body) + silence + B_end.mp3 (also 5% slow this time)
+          subprocess.run(["ffmpeg", "-y", "-i", "raw_B_end.mp3", "-af",
+                          "atempo=0.95,loudnorm=I=-14:TP=-1.5:LRA=11", "C_end.mp3"],
+                         check=True, capture_output=True)
+          with open("concat_C.txt", "w") as f:
+              f.write("file 'B_body.mp3'\nfile 'silence.mp3'\nfile 'C_end.mp3'\n")
+          subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "concat_C.txt",
+                          "-c", "copy", "variant_C.mp3"], check=True, capture_output=True)
+
+          # ── Variant D: no atempo, raw ElevenLabs (1.0x speed throughout) ──
+          subprocess.run(["ffmpeg", "-y", "-i", "raw_A.mp3", "-af",
+                          "loudnorm=I=-14:TP=-1.5:LRA=11", "variant_D.mp3"],
+                         check=True, capture_output=True)
+
+          with open("variants_meta.txt", "w") as f:
+              f.write(f"BODY: {BODY}\n\nENDING: {ENDING}\n\n")
+              f.write("Variant A: 5% slow throughout (current default)\n")
+              f.write("Variant B: body 5% slow, ending 15% slow (extra deliberate)\n")
+              f.write("Variant C: 5% slow + 1.5s silence pause before ending\n")
+              f.write("Variant D: no slowdown, raw 1.0x speed\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ending-variants
+          path: |
+            variant_A.mp3
+            variant_B.mp3
+            variant_C.mp3
+            variant_D.mp3
+            variants_meta.txt
+          retention-days: 14
