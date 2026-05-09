@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       max_videos:
-        description: 'Cap on most-recent videos to process (Whisper cost ~$0.04/video)'
+        description: 'Cap on most-recent videos (default 9999 = all)'
         required: false
-        default: '50'
+        default: '9999'
 
 jobs:
   extract:
@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
 
       - name: Install Python deps
-        run: pip install -q yt-dlp requests
+        run: pip install -q youtube-transcript-api requests
 
       - name: Run vocab extraction
         env:
