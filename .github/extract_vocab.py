@@ -109,35 +109,41 @@ def list_videos(playlist_id: str, max_videos: int) -> list:
 
 def fetch_transcript(video_id: str) -> str | None:
     """Fetch caption text for a video via youtube-transcript-api.
-    Tries Hindi first (better for Devanagari), falls back to English (auto)."""
+    Tries Hindi first (better for Devanagari), falls back to English."""
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        from youtube_transcript_api._errors import (
-            TranscriptsDisabled, NoTranscriptFound, VideoUnavailable,
-        )
     except ImportError:
         print("    !! youtube-transcript-api not installed", flush=True)
         return None
 
-    try:
-        # Try Hindi first
+    # Try the modern instance API first; fall back to legacy classmethod.
+    entries = None
+    last_err = None
+    for langs in (["hi", "hi-IN", "en", "en-IN"], ["en", "en-IN"], ["hi"]):
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            # New API (>= 1.0): instance method .fetch()
+            api = YouTubeTranscriptApi()
+            fetched = api.fetch(video_id, languages=langs)
+            entries = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else list(fetched)
+            break
+        except Exception as e1:
+            last_err = e1
             try:
-                t = transcript_list.find_transcript(["hi", "hi-IN"])
-            except NoTranscriptFound:
-                # Hindi unavailable — try any auto-generated, then translate to hi
-                t = transcript_list.find_generated_transcript(["hi", "en"])
-            entries = t.fetch()
-        except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable) as e:
-            return None
+                # Legacy API: classmethod .get_transcript()
+                entries = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
+                break
+            except Exception as e2:
+                last_err = e2
+                continue
 
-        # entries is a list of {text, start, duration}
-        text = " ".join(entry["text"] for entry in entries if entry.get("text"))
-        return text.strip() or None
-    except Exception as e:
-        print(f"    !! transcript fetch failed: {str(e)[:120]}", flush=True)
+    if not entries:
+        if last_err:
+            print(f"    !! transcript fetch failed: {str(last_err)[:120]}", flush=True)
         return None
+
+    # entries is a list of {text, start, duration}
+    text = " ".join(e.get("text", "") for e in entries if e.get("text"))
+    return text.strip() or None
 
 
 def main() -> int:
