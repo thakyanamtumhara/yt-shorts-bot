@@ -3058,30 +3058,56 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 
 ━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
 
-When a real person finishes talking, they naturally slow down and trail off.
-The listener can SENSE the sentence is ending BEFORE the last word.
-Your script MUST end this way — NOT like it was cut mid-thought.
+When a real Indian factory owner finishes a story, the LAST SENTENCE is
+SHORT, PUNCHY, and FINAL. Volume reduction alone does NOT make an ending
+feel like an ending — the WORDS themselves must signal closure.
 
-GOOD endings (trailing, conclusive — listener feels the wrap-up):
-- "...toh wahi hota hai, simple hai."
-- "...isi ko bolte hai... bas."
-- "...wo jyada theek rahega."
-- "...bas yehi hai, kuch aur nahi."
-- "...toh bas... yehi galti mat karna, aur kuch nahi."
-- "...itna kar lo, complaint kabhi nahi aayegi."
-- "...try karke dekh lo, samajh aa jayega."
-- "...bas yehi tha, kuch aur nahi."
+REQUIRED STRUCTURE for the last 1-2 sentences:
 
-BAD endings (feel abrupt — like more was coming):
-- "Aur ye 200 GSM hota hai." (sounds like next point is coming)
-- "Print karke dekh lo." (too commanding, no sense of conclusion)
+(a) ALWAYS write a separate VERY SHORT (3-6 word) FINAL sentence after
+    the longer wrap-up. This short sentence is the actual "ending feel".
 
-RULES for ending:
-- Last sentence MUST use a CONCLUSIVE phrase: "bas", "simple hai", "bas yehi hai", "ho jayega", "complaint nahi aayegi", "try karke dekh lo"
-- IMPORTANT: Use a DIFFERENT ending phrase every video. NEVER default to the same phrase repeatedly.
-- The last 3-4 words should feel like they're naturally trailing off
-- Add "..." before the final phrase for a natural pause feel
-- The ending should make the listener think "haan, baat khatam hui" — NOT "aur kya?"
+(b) Final sentence patterns that WORK (the ":" is for clarity, don't include it):
+    - DECLARATIVE PERIOD: "Bas itna yaad rakho." / "Yehi sab kuch hai."
+    - PERSONAL ADDRESS: "Bhai ye galti mat karna." / "Yaar simple hai."
+    - PUNCHY CONCLUSION: "Khel khatam." / "Story over."
+    - CALL-OUT: "Itna hi." / "Bas."
+
+(c) The final sentence MUST end with a STRONG period (.). NEVER a comma,
+    NEVER trailing into silence. The period IS the prosody cue.
+
+(d) Do NOT use formal vocabulary like "दशमलव" (decimal). Always say
+    "डेढ़ लाख" not "एक दशमलव पाँच लाख", "ढाई करोड़" not "दो दशमलव पाँच करोड़".
+    Or write "1.5 lakh" / "2.5 crore" in Latin and let the model say it
+    naturally as "one-point-five lakh".
+
+EXAMPLE STRUCTURE (correct):
+    [longer wrap sentence]: "Bas itna check karke order karo, har baar
+    quality consistent rahegi."
+    [SHORT FINAL SENTENCE]:  "Yehi sab kuch hai."
+
+WRONG (today's video had this — feels mid-thought):
+    "Bas itna dhyaan rakh lo, ye galti kabhi nahi hogi."
+    (15 words for the ending. Listener doesn't FEEL the close even
+     though volume drops — too long, too narrative.)
+
+GOOD endings catalog — pick a DIFFERENT one each time:
+- "Yehi sab kuch hai."
+- "Bas itna yaad rakho."
+- "Bhai ye galti mat karna."
+- "Story over, simple."
+- "Itna hi, bas."
+- "Yaar yehi best hai."
+- "Bas. Galti khatam."
+- "Ho gayi baat."
+- "Aur kya bolun, sab keh diya."
+- "Khel khatam, bas."
+
+RULES:
+1. Last sentence: 3-6 words MAX.
+2. Ends with strong period.
+3. Use a DIFFERENT one every video (rotate).
+4. NEVER default to "complaint kabhi nahi aayegi" or "ye galti kabhi nahi hogi" — those are mid-narrative phrases, not endings.
 
 ━━━ NATURAL SPEECH FILLERS (for human feel) ━━━
 
@@ -4246,7 +4272,9 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "jyada": "ज़्यादा",  # alt of zyada
     "kamaao": "कमाओ", "kamaayi": "कमाई",
     "khulne": "खुलने", "khula": "खुला", "khuli": "खुली",
-    "lagaya": "लगाया",
+    "lagaya": "लगाया", "lagai": "लगाई", "lagaye": "लगाए",
+    "lagana": "लगाना", "lagaane": "लगाने", "lagaan": "लगान",
+    "lagaayega": "लगाएगा", "lagaayegi": "लगाएगी",
     "lene": "लेने",
     "loon": "लूँ", "len": "लें",  # alt of lein
     "mangaoge": "मँगाओगे", "mangao_": "मँगाओ",  # already
@@ -4396,9 +4424,38 @@ def normalize_for_tts(text: str) -> str:
 
     _MULT_WORDS = {1_000: "हज़ार", 100_000: "लाख", 10_000_000: "करोड़"}
 
-    def _spell_decimals(dec_part: str) -> str:
-        """'5' → 'पाँच'; '50' → 'पाँच शून्य'. Digit-by-digit Devanagari."""
-        return " ".join(_HINDI_NUMBER_BELOW_100.get(int(d), d) for d in dec_part)
+    # Natural Hindi fractions — much more idiomatic than "दशमलव" (which sounds
+    # like a textbook). User explicitly said: "I never say दशमलव. I say
+    # डेढ़ लाख रुपये / ढाई लाख रुपये." — so use these natural forms.
+    _HINDI_HALF_WORDS = {
+        # X.5 forms
+        (0, "5"): "आधा",            # 0.5
+        (1, "5"): "डेढ़",            # 1.5
+        (2, "5"): "ढाई",             # 2.5
+    }
+
+    def _natural_decimal(int_n: int, dec_part: str) -> str | None:
+        """Return natural Hindi fraction for (int, decimal) pair or None.
+        Handles: 0.5/1.5/2.5 specially; X.5 for X>=3 → 'साढ़े X'; X.25 → 'सवा X';
+        X.75 → 'पौने (X+1)'. Returns None for unsupported fractions (caller falls
+        back to digit-by-digit OR keeps Latin)."""
+        if not dec_part:
+            return None
+        # Normalize: trailing zeros (1.50 → 1.5)
+        dec_clean = dec_part.rstrip("0") or "0"
+        key = (int_n, dec_clean)
+        if key in _HINDI_HALF_WORDS:
+            return _HINDI_HALF_WORDS[key]
+        if dec_clean == "5" and int_n >= 3:
+            # 3.5 → साढ़े तीन, 4.5 → साढ़े चार ...
+            return f"साढ़े {_hindi_number(int_n)}"
+        if dec_clean == "25":
+            # 1.25 → सवा एक, 2.25 → सवा दो (less common but supported)
+            return f"सवा {_hindi_number(int_n)}"
+        if dec_clean == "75":
+            # 1.75 → पौने दो, 2.75 → पौने तीन
+            return f"पौने {_hindi_number(int_n + 1)}"
+        return None
 
     def _rupee_repl(m):
         int_part = m.group(1).replace(",", "")
@@ -4409,12 +4466,23 @@ def normalize_for_tts(text: str) -> str:
         except ValueError:
             return m.group(0)
         if suffix in _MULT:
-            head = _hindi_number(int_n)
+            mult_word = _MULT_WORDS[_MULT[suffix]]
             if dec_part:
-                head = f"{head} दशमलव {_spell_decimals(dec_part)}"
-            return f"{head} {_MULT_WORDS[_MULT[suffix]]} रुपये"
+                # Try natural Hindi fraction first (डेढ़/ढाई/साढ़े/सवा/पौने)
+                natural = _natural_decimal(int_n, dec_part)
+                if natural:
+                    return f"{natural} {mult_word} रुपये"
+                # Fallback: keep as Latin "X.Y" digits — ElevenLabs reads
+                # "1.5 लाख" as "one-point-five लाख" which sounds more natural
+                # than "एक दशमलव पाँच लाख".
+                return f"{int_part}.{dec_part} {mult_word} रुपये"
+            return f"{_hindi_number(int_n)} {mult_word} रुपये"
+        # No multiplier (e.g. ₹49.50)
         if dec_part:
-            return f"{_hindi_number(int_n)} दशमलव {_spell_decimals(dec_part)} रुपये"
+            natural = _natural_decimal(int_n, dec_part)
+            if natural:
+                return f"{natural} रुपये"
+            return f"{int_part}.{dec_part} रुपये"
         return f"{_hindi_number(int_n)} रुपये"
 
     # ₹140 / ₹ 1,000 / ₹2 lakh / ₹50K / ₹2.5 crore / Rs.140 / Rs 10,000 / Rs 2L
@@ -4425,16 +4493,26 @@ def normalize_for_tts(text: str) -> str:
     rs_pat = rf"\bRs\.?\s*([\d,]+)(?:\.(\d+))?(?:\s*{suffix_re})?\b"
     s = _re.sub(rs_pat, _rupee_repl, s, flags=_re.IGNORECASE)
 
-    # Bare "2 lakh" / "50K" / "2 crore" without ₹ prefix — also normalize these
+    # Bare "2 lakh" / "1.5 lakh" / "50K" / "2 crore" without ₹ prefix — same
+    # natural Hindi treatment as ₹X.Y suffix above.
     def _bare_mult_repl(m):
-        digits = m.group(1).replace(",", "")
-        suffix = m.group(2).strip().lower()
+        int_part = m.group(1).replace(",", "")
+        dec_part = m.group(2)  # may be None
+        suffix = m.group(3).strip().lower()
         try:
-            n = int(digits) * _MULT[suffix]
-        except (ValueError, KeyError):
+            int_n = int(int_part)
+            if suffix not in _MULT:
+                return m.group(0)
+        except ValueError:
             return m.group(0)
-        return _hindi_number(n)
-    bare_mult_pat = r"\b(\d{1,4})\s*(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)\b"
+        mult_word = _MULT_WORDS[_MULT[suffix]]
+        if dec_part:
+            natural = _natural_decimal(int_n, dec_part)
+            if natural:
+                return f"{natural} {mult_word}"
+            return f"{int_part}.{dec_part} {mult_word}"
+        return f"{_hindi_number(int_n)} {mult_word}"
+    bare_mult_pat = r"\b(\d{1,4})(?:\.(\d+))?\s*(K|L|Cr|thousand|hazaar|hazar|lakh|lac|lacs|lakhs|crore|crores)\b"
     s = _re.sub(bare_mult_pat, _bare_mult_repl, s, flags=_re.IGNORECASE)
 
     # Standalone numbers — convert numbers ≥10 to Hinglish ("80" → "assi", "200" → "do sau").
