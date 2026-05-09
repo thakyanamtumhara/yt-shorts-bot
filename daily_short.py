@@ -3762,8 +3762,10 @@ _TTS_HINGLISH_DEVANAGARI = {
     "galti": "गलती", "loss": "loss",  # leave 'loss' English on purpose
     "rupaye": "रुपये", "rupiya": "रुपया", "rupaiye": "रुपये",
     "hazaar": "हज़ार", "hazar": "हज़ार",
+    "hazaron": "हज़ारों", "hazaron_": "हज़ारों",
     "lakh": "लाख", "laakh": "लाख",
-    "crore": "करोड़",
+    "lakhon": "लाखों", "laakhon": "लाखों",
+    "crore": "करोड़", "croron": "करोड़ों", "crorono": "करोड़ों",
     # Function words / postpositions — almost never English in our scripts.
     "ek": "एक", "ne": "ने", "ka": "का", "ki": "की", "ke": "के",
     "ko": "को", "mein": "में", "pe": "पे", "par": "पर", "se": "से",
