@@ -423,7 +423,15 @@
     "title": "180 GSM vs 220 GSM in Summer? 600 Pieces UNSOLD 😱",
     "topic": "Summer Mein 180 GSM vs 220 GSM — Kaun Sa Cotton T-Shirt Zyada Bikta Hai? Real Data 🔥",
     "published_at": "2026-05-06T19:41:35.588992+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-05-09T18:51:06.917135+05:30",
+    "hours_since_publish": 71.2,
+    "views": 0,
+    "reach": 0,
+    "likes": 9,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "18088721894021290",
@@ -437,6 +445,13 @@
     "title": "500 T-Shirts Ruined in First Wash — This GSM Mistake Cost ₹40K",
     "topic": "Usne 500 T-Shirts Pe Screen Print Karaya — Aur Pehli Dhulai Mein Sab Utar Gaya 😱 | Ye Mistake Mat Karna",
     "published_at": "2026-05-08T19:06:55.840904+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17905668354241293",
+    "title": "₹1.5 Lakh Gone! This DTG Printing Mistake Ruined 500 Tees",
+    "topic": "Usne 500 White T-Shirts Pe White Ink DTG Lagaya — Aur ₹1.5 Lakh Duba Diya 😬 Real Customer Story",
+    "published_at": "2026-05-09T18:53:19.906089+05:30",
     "checked": false
   }
 ]

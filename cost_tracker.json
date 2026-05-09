@@ -1269,5 +1269,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1772
     }
+  },
+  {
+    "date": "2026-05-09T13:26:38.484784",
+    "topic": "Usne 500 White T-Shirts Pe White Ink DTG Lagaya \u2014 Aur \u20b91.5 Lakh Duba Diya \ud83d\ude2c Real Customer Story",
+    "title": "\u20b91.5 Lakh Gone! This DTG Printing Mistake Ruined 500 Tees",
+    "total_usd": 7.7534,
+    "duration_min": 28.1,
+    "breakdown": {
+      "claude_opus": 0.3267,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0325,
+      "veo_clips": 7.04,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1767
+    }
   }
 ]

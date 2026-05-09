@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Ek startup ne 10 piece se shuru kiya — ab apna brand hai 50K monthly",
-    "prompts": [
-      "Close-up of Indian man's hands carefully counting a very small stack of plain white round-neck cotton t-shirts on a wooden table, only about 10 pieces visible, warm yellow indoor lighting from a small room setup, camera slowly dollying in to emphasize how few pieces there are, slight shadow on the table surface, 9:16 vertical format.",
-      "Medium shot of Indian man's hands holding a phone showing an Instagram profile with t-shirt product photos on screen, the phone is angled toward camera, behind the phone a single folded navy blue plain t-shirt sits on a desk, bright natural daylight from a window, shallow depth of field, camera static with slight handheld movement, 9:16 vertical format.",
-      "Wide overhead bird's eye shot of a growing arrangement of neatly folded plain cotton t-shirts in multiple colors — black, white, navy, maroon, olive — being arranged in rows on a large grey table by Indian hands, starting from a small group on the left expanding to a large group on the right showing scale progression, bright even studio lighting, 9:16 vertical format.",
-      "Close-up of Indian man's hands stretching and feeling the fabric of a thick 200 GSM plain white cotton t-shirt, fingers pressing into the dense weave to show the weight and premium feel, then flipping it to reveal smooth bio-washed interior surface, warm workshop lighting with fabric rolls blurred in background, slow deliberate movements, camera at 45 degree angle, 9:16 vertical format.",
-      "Medium wide shot of a busy small Indian warehouse with tall shelving stacked floor to ceiling with hundreds of poly-packed plain t-shirts in various colors, Indian worker's hands placing a fresh bundle onto a shelf, cardboard shipping boxes stacked near the foreground ready for dispatch, bright overhead fluorescent warehouse lighting, camera slowly panning upward to reveal the full scale of inventory, 9:16 vertical format."
-    ],
-    "date": "2026-04-03T12:44:30.002156"
-  },
-  {
     "topic": "180 GSM aur 220 GSM mein kya farq hai — printing ke baad dikta hai",
     "prompts": [
       "Close-up of Indian man's hands holding a light-colored round-neck cotton t-shirt up against warm workshop lighting, tilting it at an angle to reveal a dark printed design where the fabric texture is visibly showing through the ink, slight camera push-in, shallow depth of field, realistic small Indian printing workshop background with rolls of fabric blurred behind.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Dim amber-toned single overhead bulb with faint green fluorescent fill, small Indian textile workshop feel, raw plastered walls with fabric rolls in background, shallow DOF 50mm lens, slight handheld shake. Scene: Satisfying reveal — Indian man's hands hold up a properly cured black round-neck cotton t-shirt with a crisp bright white screen print, hands gently tug at the print area to show it's firmly bonded, camera slowly pushes in, the fabric looks thick and premium with visible combed cotton texture, warm overhead light gives the print a clean sharp contrast."
     ],
     "date": "2026-05-08T13:14:39.184806"
+  },
+  {
+    "topic": "Usne 500 White T-Shirts Pe White Ink DTG Lagaya — Aur ₹1.5 Lakh Duba Diya 😬 Real Customer Story",
+    "prompts": [
+      "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Close-up of Indian man's hands pulling a freshly DTG-printed white round-neck t-shirt off a DTG printer flatbed, camera slowly dollies in, the print on the white shirt is barely visible — almost ghostly — warm golden light catches the wet ink sheen on the fabric surface, stacks of white blank t-shirts visible in soft background blur.",
+      "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Wide medium shot of a small Indian DTG printing workshop table covered with neatly stacked bundles of plain white cotton t-shirts, roughly 500 pieces in poly-wrapped stacks of 10, a DTG flatbed printer sits to the right with its platen extended, ink cartridge bank visible showing large white ink bottles nearly empty, camera slowly pans left to right across the workspace.",
+      "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Close-up of a laptop screen showing RIP software interface with a colorful t-shirt design open, an Indian man's hand moves the mouse cursor to highlight the white ink layer toggle which is switched ON and glowing, camera slowly pushes in on the screen, the design preview shows white underbase covering the entire print area, ambient warm light reflects softly on the laptop surface.",
+      "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Split comparison shot — left side shows Indian man's hands holding a white t-shirt with invisible white-on-white DTG print under the golden light, right side shows hands holding a black t-shirt with a vivid colorful DTG print with clear white underbase, both shirts held at chest level, camera static with gentle rack focus shifting from left shirt to right shirt, demonstrating why white ink matters on dark but not on white.",
+      "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Close-up of Indian man's hands confidently placing a white t-shirt on a DTG printer platen, then a slow camera tilt up to reveal a perfectly printed colorful design emerging from the DTG printhead onto the white fabric — no white ink layer this time — vibrant colors directly on white cotton, slight steam or mist from fresh ink, satisfying smooth printing motion, golden light catching the fresh print detail."
+    ],
+    "date": "2026-05-09T13:00:03.226218"
   }
 ]
