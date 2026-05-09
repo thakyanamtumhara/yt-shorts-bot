@@ -7720,7 +7720,10 @@ def main():
         cost.track_whisper(audio_clip_dur)
 
         if whisper_segs and eng_sentences:
-            # Match English sentence count to Whisper segment count by proportional bucketing
+            # Whisper sync REPLACES the fallback equal-time slicing, doesn't add to it.
+            # (Earlier bug: appending instead of clearing caused 2× subtitles in the
+            # rendered video — both fallback and synced versions overlaid.)
+            subtitle_segments = []
             n_eng = len(eng_sentences)
             n_wh = len(whisper_segs)
             if n_eng == n_wh:
