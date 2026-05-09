@@ -3091,23 +3091,54 @@ WRONG (today's video had this — feels mid-thought):
     (15 words for the ending. Listener doesn't FEEL the close even
      though volume drops — too long, too narrative.)
 
-GOOD endings catalog — pick a DIFFERENT one each time:
-- "Yehi sab kuch hai."
-- "Bas itna yaad rakho."
-- "Bhai ye galti mat karna."
-- "Story over, simple."
-- "Itna hi, bas."
-- "Yaar yehi best hai."
-- "Bas. Galti khatam."
-- "Ho gayi baat."
-- "Aur kya bolun, sab keh diya."
-- "Khel khatam, bas."
+GOOD endings catalog — these are the ACTUAL ending patterns Ketu uses
+in his real YouTube videos (extracted by Whisper-transcribing the last
+30 seconds of 8 videos from his @bulkplaintshirt_com channel). Use
+these patterns, NOT made-up ones:
+
+PATTERN A — "Theek hai." + signoff (very frequent in real videos):
+- "Theek hai."
+- "Theek hai bhai."
+- "Bas. Theek hai."
+
+PATTERN B — Action command (do this):
+- "X kar lo." → "Sample order kar lo." / "Check kar lo bhai."
+- "X karo." → "Utilize karo." / "Try kar ke dekh lo."
+- "Aap khud try karo."
+
+PATTERN C — Dhyaan rakhna (keep in mind — soft warning):
+- "Bas itna dhyaan rakhna."
+- "Dhyaan rakhna bhai."
+- "Itna khayal kar lo."
+
+PATTERN D — Pre-plan / preparation:
+- "Achha pre-plan kar lo."
+- "Pehle se taiyari kar lo."
+- "Soch ke decision lo."
+
+PATTERN E — Direct conclusion:
+- "Bas itna hi."
+- "Yehi tha bhai."
+- "Sab keh diya."
+- "Story khatam."
+
+EXAMPLES from his REAL videos (verbatim from Whisper transcripts):
+- "Achha pre-plan karna." (dm-3wqKPkic)
+- "Theek hai." (E1B-HKoek5Y, multiple times)
+- "Unko utilize karo." (J5g_DfyxxW8)
+- "Dhyaan rakhna website mein." (Ic16Ms2vqaY)
+- "Apne dhang se ji lo." (j71qiNc-qio)
 
 RULES:
-1. Last sentence: 3-6 words MAX.
+1. Last sentence: 3-7 words MAX.
 2. Ends with strong period.
-3. Use a DIFFERENT one every video (rotate).
-4. NEVER default to "complaint kabhi nahi aayegi" or "ye galti kabhi nahi hogi" — those are mid-narrative phrases, not endings.
+3. Use a DIFFERENT pattern every video (rotate A/B/C/D/E).
+4. NEVER use long narrative phrases like "complaint kabhi nahi aayegi"
+   or "ye galti kabhi nahi hogi" as the FINAL sentence — those are
+   mid-narrative phrases. Use them in the wrap-up sentence BEFORE the
+   final short closer if you want.
+5. The ending should match Ketu's actual speaking style — direct,
+   action-oriented, sometimes with "theek hai" closer.
 
 ━━━ NATURAL SPEECH FILLERS (for human feel) ━━━
 
