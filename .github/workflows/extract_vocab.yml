@@ -10,6 +10,11 @@ name: Extract Source Vocab
 
 on:
   workflow_dispatch:
+    inputs:
+      max_videos:
+        description: 'Cap on most-recent videos to process (Whisper cost ~$0.04/video)'
+        required: false
+        default: '50'
 
 jobs:
   extract:
@@ -34,6 +39,9 @@ jobs:
       - name: Run vocab extraction
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
+          MAX_VIDEOS: ${{ inputs.max_videos }}
         run: python3 .github/extract_vocab.py
 
       - name: Upload artifacts
