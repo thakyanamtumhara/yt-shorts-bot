@@ -7615,6 +7615,18 @@ def main():
     ig_title = titles["ig"]
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
+
+    # Pre-compute the blog URL from the YT title — slug generation is deterministic.
+    # Embedding the URL in the YT description gives the new blog a backlink from
+    # youtube.com (one of the highest-authority domains on the web). This is the
+    # single biggest external indexing signal we can send Google for free, and it
+    # also drives organic clicks from Shorts viewers to the blog.
+    blog_slug_preview = generate_blog_slug(yt_title)
+    blog_url_preview = f"{BLOG_BASE_URL}/p/{blog_slug_preview}.html"
+    yt_description = (
+        yt_description.rstrip()
+        + f"\n\n📖 Full guide (with FAQs + photos): {blog_url_preview}"
+    )
     music_mood = data.get("music_mood", "calm")
     hook_text_from_claude = data.get("hook_text", "")
     video_prompts = [data.get(f"video_prompt_{i}","") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
@@ -8583,7 +8595,15 @@ def main():
 
                         print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                         time.sleep(30)
-                        pin_comment(youtube, vid_id)
+                        # Custom pinned comment includes the blog URL — gives the blog
+                        # a second backlink from this YouTube video (description + comment),
+                        # AND drives Shorts viewers to click through to the article.
+                        custom_pin = (
+                            f"📖 Full guide with photos & FAQs: {blog_url_preview}\n\n"
+                            f"📦 Order plain t-shirts (MOQ 10): https://sale91.com\n\n"
+                            f"🤔 Aapka next question kya hai? Comment mein puchho 👇"
+                        )
+                        pin_comment(youtube, vid_id, comment_text=custom_pin)
 
                         # Restore scheduled/private status
                         if switched_to_unlisted and original_publish_at:
