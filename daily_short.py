@@ -197,7 +197,7 @@ KLING_MAX_RETRIES = 3
 KLING_NEGATIVE_PROMPT = "blur, distort, low quality, text, watermark, face, human face"
 
 # Subtitles
-ADD_SUBTITLES = True
+ADD_SUBTITLES = os.environ.get("ADD_SUBTITLES", "0").strip() in ("1", "true", "yes")
 SUBTITLE_FONT = "Noto-Sans-Bold"
 SUBTITLE_FONTSIZE = 62
 SUBTITLE_COLOR = "white"
