@@ -3044,6 +3044,26 @@ collar ki complaint kabhi nahi aayegi... simple hai."
     can use ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). Bury one
     surprising number in the middle that makes them want to remember/share.
 
+14b. ₹ AMOUNTS MUST BE NATURAL ROUND NUMBERS THAT INDIANS ACTUALLY SAY.
+    Real businessmen in conversation NEVER use awkward decimals like ₹1.2 lakh
+    or ₹3.4 lakh — these sound robotic / like a calculator. They use:
+
+    ✅ ALLOWED:
+      - Whole lakhs/crores: ₹1 lakh, ₹2 lakh, ₹5 lakh, ₹10 lakh, ₹50 lakh, ₹1 crore
+      - Half multiples ONLY: ₹1.5 lakh, ₹2.5 lakh, ₹3.5 lakh, ₹4.5 lakh,
+        ₹0.5 lakh, ₹1.5 crore, ₹2.5 crore (these become डेढ़/ढाई/साढ़े/आधा naturally)
+      - Round thousands: ₹40,000, ₹50,000, ₹80,000, ₹2,00,000 (= 2 lakh)
+      - Specific small prices: ₹49, ₹65, ₹140, ₹185, ₹385 (per-piece rates fine)
+
+    ❌ NEVER USE:
+      - ₹1.2 lakh, ₹1.3 lakh, ₹1.7 lakh, ₹2.3 lakh, ₹3.4 lakh — sound artificial
+      - ₹1.25 lakh, ₹2.75 crore — too precise for casual speech
+      - Anything with .1/.2/.3/.4/.6/.7/.8/.9 decimals on lakh/crore amounts
+
+    If the story needs a precise loss/profit, ROUND to the nearest natural number.
+    A ₹1.2 lakh loss → make it "₹1.5 lakh" or "₹1 lakh" in the script.
+    A ₹3.4 crore turnover → "₹3.5 crore" or "₹3 crore".
+
 15. STRUCTURE FOR REELS GRID DISCOVERY — a viewer scrolling Explore/Reels feed sees
     your video next to 30 others. The first 1.5 seconds must look DIFFERENT from
     a generic talking-head Short. The hook visual + bold caption do this — script's
@@ -4488,7 +4508,40 @@ def normalize_for_tts(text: str) -> str:
         if dec_clean == "75":
             # 1.75 → पौने दो, 2.75 → पौने तीन
             return f"पौने {_hindi_number(int_n + 1)}"
-        return None
+        # SAFETY NET: awkward decimal like 1.2 / 1.3 / 1.7 / 3.4 — these are
+        # banned in the script-gen prompt but if Claude slips up, round to
+        # nearest natural form rather than reading "एक दशमलव दो" / "1.2".
+        try:
+            d_int = int(dec_clean)
+        except ValueError:
+            return None
+        # 0.X with X<=2 → आधा (round down), X>=3 → next integer
+        # X.0 → just whole number (handled at caller, but safe here)
+        # X.<5 → just whole X (round down)
+        # X.>5 → साढ़े X / next half (round to nearest half)
+        if d_int == 0:
+            return _hindi_number(int_n)
+        # Round to nearest .0 or .5
+        # 1.1, 1.2 → 1 (round down to whole)
+        # 1.3, 1.4 → 1.5 (डेढ़)
+        # 1.6, 1.7 → 1.5 (round down to half)
+        # 1.8, 1.9 → 2 (round up to next whole)
+        # Decimal as fraction (e.g. "2" = .2, "23" = .23)
+        decimal_value = float(f"0.{dec_clean}")
+        # Round to nearest 0.5 step
+        nearest_half = round(decimal_value * 2) / 2
+        new_int = int_n + int(nearest_half)
+        new_frac = nearest_half - int(nearest_half)
+        if new_frac == 0:
+            return _hindi_number(new_int)
+        # nearest_half ended in .5
+        if new_int == 0:
+            return "आधा"
+        if new_int == 1:
+            return "डेढ़"
+        if new_int == 2:
+            return "ढाई"
+        return f"साढ़े {_hindi_number(new_int)}"
 
     def _rupee_repl(m):
         int_part = m.group(1).replace(",", "")
