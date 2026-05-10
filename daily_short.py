@@ -2390,28 +2390,40 @@ def check_instagram_engagement():
                     print(f"   ⚠️ IG insights failed for {media_id}: {media_data['error'].get('message', '')}")
                     continue
 
-                # Fetch Reels-specific insights (views, reach, shares, saves)
-                insights_resp = requests.get(
-                    f"https://graph.facebook.com/{IG_API_VERSION}/{media_id}/insights",
-                    params={
-                        "metric": "plays,reach,saved,shares",
-                        "access_token": ig_token,
-                    },
-                    timeout=15,
-                )
-                insights_data = insights_resp.json()
-
-                # Parse insights
+                # Fetch Reels-specific insights.
+                # NOTE: Meta deprecated `plays` for Reels in API v18+ (mid-2023).
+                # Reels published after that date return 0 for `plays`; must use `views`.
+                # We try `views` first (current); fall back to `plays` for older Reels.
                 ig_views = 0
                 ig_reach = 0
                 ig_saves = 0
                 ig_shares = 0
 
-                for metric in insights_data.get("data", []):
+                def _fetch_metrics(metric_csv):
+                    return requests.get(
+                        f"https://graph.facebook.com/{IG_API_VERSION}/{media_id}/insights",
+                        params={"metric": metric_csv, "access_token": ig_token},
+                        timeout=15,
+                    )
+
+                # Primary: views (Reels-current metric)
+                primary = _fetch_metrics("views,reach,saved,shares")
+                primary_data = primary.json()
+                if "error" in primary_data:
+                    err = primary_data["error"].get("message", "")
+                    # If `views` not supported on this media (old account/Reel), retry with plays
+                    if "metric" in err.lower() or "views" in err.lower():
+                        fallback = _fetch_metrics("plays,reach,saved,shares")
+                        primary_data = fallback.json()
+                    else:
+                        print(f"   ⚠️ IG insights API error for {media_id}: {err[:140]}")
+
+                for metric in primary_data.get("data", []):
                     name = metric.get("name", "")
                     values = metric.get("values", [{}])
                     val = values[0].get("value", 0) if values else 0
-                    if name == "plays":
+                    # Both names map to ig_views (whichever the API returned)
+                    if name in ("views", "plays"):
                         ig_views = val
                     elif name == "reach":
                         ig_reach = val
@@ -2419,6 +2431,11 @@ def check_instagram_engagement():
                         ig_saves = val
                     elif name == "shares":
                         ig_shares = val
+
+                # If still zero views after both attempts AND it's been >24h since publish,
+                # log a debug dump so future runs can see what Meta is returning.
+                if ig_views == 0 and hours_since > 24:
+                    print(f"   🔎 IG insights debug for {media_id}: {json.dumps(primary_data)[:300]}")
 
                 ig_likes = media_data.get("like_count", 0)
                 ig_comments = media_data.get("comments_count", 0)
@@ -2932,6 +2949,52 @@ def _get_recent_clip_prompts():
 
 
 
+def _own_channel_performance_signal():
+    """Build a feedback-loop signal showing what's worked / failed on OUR
+    own bot-uploaded videos so far. Pulls top + bottom from both YouTube
+    (engagement_history.json) and Instagram (ig_engagement_history.json).
+    Returns a string ready to drop into the script-gen prompt."""
+    parts = []
+    # YouTube own-channel
+    try:
+        if os.path.exists(ENGAGEMENT_FILE):
+            data = json.load(open(ENGAGEMENT_FILE))
+            latest = {}
+            for x in data:
+                vid = x.get("video_id")
+                if not vid: continue
+                if vid not in latest or x.get("checked_at", "") > latest[vid].get("checked_at", ""):
+                    latest[vid] = x
+            vids = [v for v in latest.values() if v.get("views") is not None]
+            if len(vids) >= 5:
+                top = sorted(vids, key=lambda v: -(v.get("views") or 0))[:5]
+                bottom = sorted(vids, key=lambda v: (v.get("views") or 0))[:5]
+                parts.append("YOUTUBE OWN-CHANNEL DATA — what works for OUR bot's uploads:")
+                parts.append("Top 5 (best performers, mimic these patterns):")
+                for v in top:
+                    parts.append(f"  ✅ {v.get('views', 0)}v {v.get('likes', 0)}❤  | {v.get('title', '')[:80]}")
+                parts.append("Bottom 5 (FLOPPED — AVOID these patterns):")
+                for v in bottom:
+                    parts.append(f"  ❌ {v.get('views', 0)}v {v.get('likes', 0)}❤  | {v.get('title', '')[:80]}")
+    except Exception:
+        pass
+    # Instagram own-channel
+    try:
+        if os.path.exists(IG_ENGAGEMENT_FILE):
+            data = json.load(open(IG_ENGAGEMENT_FILE))
+            checked = [r for r in data if r.get("checked")]
+            if len(checked) >= 3:
+                top = sorted(checked, key=lambda v: -(v.get("views") or v.get("likes", 0)))[:5]
+                parts.append("\nINSTAGRAM OWN-CHANNEL DATA — what works on Reels:")
+                for v in top:
+                    parts.append(f"  📸 {v.get('views', 0)}v {v.get('likes', 0)}❤ {v.get('shares', 0)}↗  | {v.get('title', '')[:80]}")
+    except Exception:
+        pass
+    if not parts:
+        return "(no own-channel performance data yet — first ~10 videos)"
+    return "\n".join(parts)
+
+
 def get_script_prompt(topic):
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
@@ -2947,6 +3010,11 @@ TOPIC: {topic}
 These are PROVEN top-performing video titles from our existing audience — use this to understand
 what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
 {json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
+
+━━━ OWN-CHANNEL PERFORMANCE FEEDBACK ━━━
+This is what's actually worked (and failed) on the bot's recent uploads.
+Mimic the patterns of TOP performers; AVOID the patterns of FLOPS.
+{_own_channel_performance_signal()}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -5341,86 +5409,119 @@ RULES:
 
 
 def optimize_title(claude_client, original_title, script_english, topic):
-    """Generate 3 title variants and pick the best one for CTR.
-    Uses source channel's top titles as reference."""
-    print(f"   🏷️ Title optimization: generating A/B variants...")
+    """Generate platform-specific titles for YouTube + Instagram.
+    Returns a dict {'yt': str, 'ig': str} — different optimizations per platform,
+    informed by each platform's own engagement history.
+
+    YouTube audience signal (from engagement_history.json): personal vulnerability
+    stories + Hindi-script titles + numerical specificity.
+    Instagram audience signal (from ig_engagement_history.json): cost/disaster
+    framing + third-person founder stories + comparison hooks.
+
+    Backward compatibility: also exposes a top-level 'best' string for callers
+    that only want one title (defaults to YT version).
+    """
+    print(f"   🏷️ Title optimization: per-platform variants...")
 
     source_titles = get_source_channel_top_topics(5)
     source_context = ""
     if source_titles:
         source_context = f"""
-REFERENCE: These titles got the MOST views on our main channel (50K subs):
+REFERENCE — these titles got the MOST views on our main channel (50K subs):
 {json.dumps(source_titles, ensure_ascii=False)}
-Study their patterns — length, keywords, emotional hooks — and apply similar patterns."""
+Study their patterns — length, keywords, emotional hooks."""
 
-    prompt = f"""You are a YouTube Shorts + Instagram Reels title optimizer and JUDGE for an Indian B2B t-shirt brand.
+    # Pull each platform's own engagement signal
+    ig_summary = get_ig_engagement_summary()
+    ig_context = ""
+    if ig_summary.get("total_reels_analyzed", 0) > 0:
+        top_ig = ig_summary.get("top_reels", [])[:5]
+        viral = ig_summary.get("viral_titles", [])[:5]
+        ig_context = f"""
+INSTAGRAM AUDIENCE SIGNAL (top performers from our own Reels — DIFFERENT from YouTube):
+Top by views: {json.dumps([t['title'] for t in top_ig], ensure_ascii=False)}
+Above-average share rate: {json.dumps(viral[:5], ensure_ascii=False)}
+IG averages: {json.dumps(ig_summary.get('avg_metrics', {}))}
+
+OBSERVED IG PATTERNS (from our data):
+- Cost/disaster framing engages: "Cost Trap", "Shut Down", "Cost Lakhs"
+- Third-person founder stories work: "He Bought X & Shut Down"
+- Comparison + cost: "Spot Color vs CMYK – Ye Galti Margin Kha Gayi"
+- Mixed Hindi-English titles work fine on IG"""
+    else:
+        ig_context = """
+INSTAGRAM AUDIENCE SIGNAL: not enough data yet — use these defaults:
+- Cost/disaster framing
+- Third-person founder stories ("He Bought X")
+- Comparison + cost framing"""
+
+    prompt = f"""You are a Shorts/Reels title optimizer for an Indian B2B t-shirt brand
+(Sale91.com — wholesale plain t-shirts, printing services, 50K-sub source channel).
 
 CURRENT TITLE: {original_title}
 TOPIC: {topic}
 SCRIPT SUMMARY: {script_english[:200]}
 {source_context}
+{ig_context}
 
-Generate 3 alternative titles. Each must be:
-- Max 70 characters (YouTube Shorts limit for mobile visibility)
-- SEO optimized (include searchable keywords like "GSM", "DTG", "t-shirt", "printing")
-- Curiosity-driven (make viewer NEED to watch)
-- English (for broader reach + SEO, but Hinglish words OK if they add punch)
-- Work on BOTH YouTube Shorts AND Instagram Reels (same title used on both platforms)
+YOUTUBE AUDIENCE SIGNAL (from our 110-video history):
+- Personal vulnerability stories outperform: "Paise Nahi The — Aur Wo Sabse Achi Baat Thi"
+- Hindi-script titles do well: "कम मार्जिन, बड़ा खेल"
+- Specific numbers + dramatic framing: "₹40 DTF Film vs ₹100"
+- AVOID: generic textile-tech with English titles ("180 GSM vs 200 GSM") — these die at <10 views
 
-PLATFORM TIPS:
-- YouTube: Search discoverability matters — include keywords people search for
-- Instagram: Explore page + hashtag reach — emotional hooks, curiosity, trending phrases
-- BOTH: Mobile-first (70 char max), number/price reveals get clicks, controversy/mistakes format works
+YOUR TASK: Generate TWO titles, each platform-tuned:
 
-TITLE STYLES TO TRY:
-1. QUESTION style — "Why Does Your DTG Print Fade After 2 Washes?"
-2. SHOCK/NUMBER style — "Rs 45 T-shirt vs Rs 90: The Print Quality Difference"
-3. MISTAKE/WARNING style — "Stop Making This GSM Mistake (Most Printers Do)"
+1. YOUTUBE title — optimized for YouTube Shorts:
+   - Max 70 chars
+   - Search-discoverable keywords (GSM, DTG, printing, t-shirt etc.)
+   - Personal angle / vulnerability or dramatic comparison
+   - Hindi script (Devanagari) is OK and even encouraged when title is Hindi-heavy
 
-YOUR JOB AS JUDGE: Pick the ONE title that will get the MOST views across BOTH YouTube and Instagram combined.
+2. INSTAGRAM title — optimized for Reels Explore page:
+   - Max 70 chars
+   - Cost/disaster/loss framing OR third-person founder story
+   - Comparison + cost ("X vs Y – the trap" pattern)
+   - Latin script preferred; mixed Hindi-English fine
+   - Curiosity hook — make them stop scrolling
 
 OUTPUT THIS JSON ONLY (no markdown):
-{{"titles": ["title1", "title2", "title3"], "best": 0, "reason": "why this title will get most clicks on both YouTube and Instagram"}}
-
-"best" = index (0, 1, or 2) of the title you'd bet money on for highest CTR across both platforms."""
+{{"yt_title": "title for YouTube", "ig_title": "title for Instagram", "rationale": "brief why each was tuned this way"}}"""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-opus-4-6", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=400,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = resp.content[0].text.strip()
-        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
         result = json.loads(raw)
 
-        titles = result.get("titles", [])
-        best_idx = result.get("best", 0)
-        reason = result.get("reason", "")
+        yt_t = (result.get("yt_title") or "").strip()
+        ig_t = (result.get("ig_title") or "").strip()
+        rationale = result.get("rationale", "")
 
-        if not titles:
-            return original_title
+        # Fallbacks if anything missing
+        if not yt_t:
+            yt_t = original_title
+        if not ig_t:
+            ig_t = yt_t
 
-        # Validate best_idx
-        if best_idx < 0 or best_idx >= len(titles):
-            best_idx = 0
+        # Truncate safely
+        if len(yt_t) > 100: yt_t = yt_t[:97] + "..."
+        if len(ig_t) > 100: ig_t = ig_t[:97] + "..."
 
-        best_title = titles[best_idx]
+        print(f"   🏷️ YouTube title : {yt_t}")
+        print(f"   📸 Instagram title: {ig_t}")
+        if rationale:
+            print(f"      Rationale: {rationale[:200]}")
 
-        # Ensure it's not too long
-        if len(best_title) > 100:
-            best_title = best_title[:97] + "..."
-
-        print(f"   🏷️ Title variants:")
-        for i, t in enumerate(titles):
-            marker = " ← PICKED" if i == best_idx else ""
-            print(f"      {i+1}. {t}{marker}")
-        print(f"      Reason: {reason}")
-
-        return best_title
+        return {"yt": yt_t, "ig": ig_t, "best": yt_t}
 
     except Exception as e:
-        print(f"   ⚠️ Title optimization failed ({e}), using original")
-        return original_title
+        print(f"   ⚠️ Title optimization failed ({e}), using original for both")
+        return {"yt": original_title, "ig": original_title, "best": original_title}
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -7440,7 +7541,10 @@ def main():
     script_voice = re.sub(r',\s*,', ',', script_voice)  # clean double commas
 
     script_english = data["script_english"]
-    yt_title = optimize_title(claude, data["title"], script_english, fresh_topic)
+    titles = optimize_title(claude, data["title"], script_english, fresh_topic)
+    # titles is a dict {'yt': ..., 'ig': ..., 'best': ...}
+    yt_title = titles["yt"]
+    ig_title = titles["ig"]
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
     music_mood = data.get("music_mood", "calm")
@@ -8460,9 +8564,10 @@ def main():
         if CROSS_POST_INSTAGRAM and os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
             print("\n📸 Instagram Token Check...")
             refresh_instagram_token_if_needed()
-        ig_media_id = cross_post_to_instagram(output_path, yt_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
+        # Use IG-specific title (different patterns work on Reels Explore vs YT search)
+        ig_media_id = cross_post_to_instagram(output_path, ig_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
         if ig_media_id and not str(ig_media_id).startswith("test:"):
-            save_ig_upload_record(ig_media_id, yt_title, fresh_topic)
+            save_ig_upload_record(ig_media_id, ig_title, fresh_topic)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST and not upload_failed and vid_id:
