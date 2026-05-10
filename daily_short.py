@@ -5707,7 +5707,14 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
     slug = generate_blog_slug(title)
     blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
-    yt_embed_url = f"https://www.youtube.com/embed/{vid_id}"
+    # The bot's published Shorts return "Forbidden" from oEmbed → iframe
+    # embeds render as "Video unavailable / Playback on other websites has been
+    # disabled" on every blog. Cause is per-video / Shorts-specific (other
+    # videos on different channels embed fine via oEmbed). Replacing the iframe
+    # with a clickable thumbnail card kills the broken-embed error, keeps a
+    # backlink to YouTube, and drives click traffic into the Short feed.
+    yt_short_url = f"https://youtube.com/shorts/{vid_id}"
+    yt_thumbnail_url = f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
 
     image_instructions = ""
     og_image_url = "https://www.bulkplaintshirt.com/catalog/img/logo.png"
@@ -5803,11 +5810,15 @@ REQUIREMENTS:
    - Include practical tips, comparisons, and real-world examples from Indian textile industry
    - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
    - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
-   - MANDATORY: Include a "Watch the Video" section with this EXACT YouTube embed code:
-     <div class="video-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:20px 0;border-radius:12px;">
-       <iframe src="{yt_embed_url}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen loading="lazy"></iframe>
-     </div>
-     Place this video embed BEFORE the FAQ section. Do NOT skip the video embed — it is required.
+   - MANDATORY: Include a "Watch the Video" section BEFORE the FAQ section with this EXACT clickable thumbnail card (NOT an iframe — Shorts can't be embedded reliably and showed "Video unavailable" on every blog):
+     <a href="{yt_short_url}" target="_blank" rel="noopener" style="display:block;max-width:360px;margin:30px auto;text-decoration:none;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:#000;position:relative;">
+       <img src="{yt_thumbnail_url}" alt="Watch on YouTube — {title}" loading="lazy" style="width:100%;height:auto;display:block;">
+       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:rgba(255,0,0,0.9);border-radius:14px;display:flex;align-items:center;justify-content:center;">
+         <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg>
+       </div>
+       <div style="background:#1a1a1a;color:#fff;padding:12px 16px;font-size:14px;font-weight:600;">▶ Watch on YouTube Shorts</div>
+     </a>
+     Do NOT use an <iframe> — it WILL break. The clickable thumbnail above is the ONLY acceptable video element.
    - End with a strong CTA section linking to Sale91.com
 
 2. FAQ SECTION (5-8 Q&As):
