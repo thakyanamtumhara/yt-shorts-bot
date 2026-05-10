@@ -1,16 +1,5 @@
 [
   {
-    "topic": "180 GSM aur 220 GSM mein kya farq hai — printing ke baad dikta hai",
-    "prompts": [
-      "Close-up of Indian man's hands holding a light-colored round-neck cotton t-shirt up against warm workshop lighting, tilting it at an angle to reveal a dark printed design where the fabric texture is visibly showing through the ink, slight camera push-in, shallow depth of field, realistic small Indian printing workshop background with rolls of fabric blurred behind.",
-      "Medium close-up of two plain white round-neck cotton t-shirts laid flat side by side on a clean wooden table, one visibly thinner and one noticeably thicker, Indian man's hands pressing down on each one to show the thickness difference, overhead camera angle, bright natural daylight from a window, 9:16 vertical format.",
-      "Close-up shot of a DTF transfer being heat-pressed onto a thin white cotton t-shirt on a flat heat press machine, steam rising gently, camera at 45 degrees showing the press closing down, warm amber workshop lighting, various plain t-shirts stacked in the blurred background, realistic Indian garment workshop setting.",
-      "Extreme close-up of Indian man's hands holding two printed round-neck t-shirts after washing, one thin fabric where the print looks rough and textured, one thicker fabric where the print looks smooth and vibrant, hands turning them slowly to compare, soft diffused indoor lighting, camera slowly dollying right to reveal both samples clearly, no faces visible.",
-      "Close-up of Indian man's hands neatly folding a thick premium white cotton round-neck t-shirt with a clean vibrant print on it, placing it on a stack of similar quality printed t-shirts on a wooden shelf, satisfying and organized, warm golden hour lighting from the side, slight camera pull-back revealing a tidy garment storage area, 9:16 vertical."
-    ],
-    "date": "2026-04-04T12:38:18.146919"
-  },
-  {
     "topic": "Drop shoulder vs regular shoulder — fit mein fark dikhta hai",
     "prompts": [
       "Close-up of Indian man's hands pulling a plain white oversized t-shirt out of a brown shipping box on a wooden table, the hands hold it up by the shoulders looking slightly disappointed, warm natural daylight from a window, camera static at chest level, 9:16 vertical format, no text or faces visible.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Golden-hour side light from a single high industrial window, dust particles visible in air, muted ochre and white palette, small Indian print shop with concrete walls and ink-stained tables, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Close-up of Indian man's hands confidently placing a white t-shirt on a DTG printer platen, then a slow camera tilt up to reveal a perfectly printed colorful design emerging from the DTG printhead onto the white fabric — no white ink layer this time — vibrant colors directly on white cotton, slight steam or mist from fresh ink, satisfying smooth printing motion, golden light catching the fresh print detail."
     ],
     "date": "2026-05-09T13:00:03.226218"
+  },
+  {
+    "topic": "Usne 5000 T-Shirts Order Kiye Bina GSM Check Kiye — ₹1.2 Lakh Ka Nuksaan Hua 😢 Real Customer Story",
+    "prompts": [
+      "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Close-up of Indian man's hands ripping open a brown cardboard carton box revealing tightly packed plain white t-shirts inside, hands pull one t-shirt out and hold it up — the fabric is visibly thin and almost see-through under the warm light, slight camera push-in, stacks of similar cartons visible in soft background blur, 9:16 vertical frame.",
+      "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Medium shot of a wooden desk surface covered with a few thin white plain t-shirts laid flat, an Indian hand lifts one t-shirt and holds it against light coming from the side window — the fabric is so thin that the hand behind it is clearly visible through the fabric, camera slowly dollies right, a small Indian-style digital weighing scale sits on the desk corner, 9:16 vertical frame.",
+      "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Top-down overhead shot of two plain white round-neck t-shirts placed side by side on a rough wooden table — left one is visibly thinner and limp, right one is thicker and holds its shape better, an Indian man's hand presses down on each one alternately to show the fabric density difference, slight handheld camera wobble, warm tungsten lighting casting soft shadows, 9:16 vertical frame.",
+      "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Close-up of Indian hands placing a small square-cut piece of white cotton fabric onto a compact silver digital weighing scale on a desk, the scale display shows a number clearly, hands adjust the fabric piece flat on the scale platform, camera slowly pushes in toward the scale reading, background shows blurred stacks of folded t-shirts on shelves, warm lighting, 9:16 vertical frame.",
+      "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Medium close-up of Indian hands confidently holding a thick premium white cotton round-neck t-shirt, stretching the fabric slightly to show its dense weave and smooth bio-washed texture, camera slowly tilts upward along the t-shirt body showing quality stitching at the collar, the fabric is opaque and substantial under the warm light, neatly stacked colorful plain t-shirts visible on shelves in the blurred background, 9:16 vertical frame."
+    ],
+    "date": "2026-05-10T13:01:20.974590"
   }
 ]

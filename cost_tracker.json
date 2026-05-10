@@ -1286,5 +1286,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1767
     }
+  },
+  {
+    "date": "2026-05-10T13:25:38.130766",
+    "topic": "Usne 5000 T-Shirts Order Kiye Bina GSM Check Kiye \u2014 \u20b91.2 Lakh Ka Nuksaan Hua \ud83d\ude22 Real Customer Story",
+    "title": "5000 T-Shirts Ordered Without Checking GSM \u2014 \u20b91.2 Lakh Lost \ud83d\ude31",
+    "total_usd": 7.7584,
+    "duration_min": 26.0,
+    "breakdown": {
+      "claude_opus": 0.3528,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0307,
+      "veo_clips": 7.04,
+      "whisper": 0.0071,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1579
+    }
   }
 ]

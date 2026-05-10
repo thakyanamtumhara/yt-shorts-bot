@@ -438,7 +438,15 @@
     "title": "40 Returns in 1 Week! DTG on Polyester in Summer? 🥵",
     "topic": "Cotton vs Polyester in Garmi ☀️ — Summer Mein Kaunsa Fabric Print Business Ke Liye Best Hai?",
     "published_at": "2026-05-07T19:39:36.680186+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-05-10T18:50:39.993179+05:30",
+    "hours_since_publish": 71.2,
+    "views": 0,
+    "reach": 0,
+    "likes": 7,
+    "comments": 0,
+    "shares": 0,
+    "saves": 0
   },
   {
     "media_id": "17882459007560509",
@@ -452,6 +460,13 @@
     "title": "₹1.5 Lakh Gone! This DTG Printing Mistake Ruined 500 Tees",
     "topic": "Usne 500 White T-Shirts Pe White Ink DTG Lagaya — Aur ₹1.5 Lakh Duba Diya 😬 Real Customer Story",
     "published_at": "2026-05-09T18:53:19.906089+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18150844342474600",
+    "title": "5000 T-Shirts Ordered Without Checking GSM — ₹1.2 Lakh Lost 😱",
+    "topic": "Usne 5000 T-Shirts Order Kiye Bina GSM Check Kiye — ₹1.2 Lakh Ka Nuksaan Hua 😢 Real Customer Story",
+    "published_at": "2026-05-10T18:52:46.221217+05:30",
     "checked": false
   }
 ]
