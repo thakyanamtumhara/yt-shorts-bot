@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Drop shoulder vs regular shoulder — fit mein fark dikhta hai",
-    "prompts": [
-      "Close-up of Indian man's hands pulling a plain white oversized t-shirt out of a brown shipping box on a wooden table, the hands hold it up by the shoulders looking slightly disappointed, warm natural daylight from a window, camera static at chest level, 9:16 vertical format, no text or faces visible.",
-      "Medium shot of two plain olive green cotton round-neck t-shirts laid flat on a clean white cutting table in an Indian garment workshop — one regular fit and one oversized drop shoulder, both placed side by side showing clearly different shoulder widths and overall shapes, bright overhead fluorescent lighting, camera slowly dollies in from above, 9:16 vertical, no faces.",
-      "Close-up of Indian man's hand pointing with index finger at the shoulder seam area of a plain grey cotton t-shirt draped over a dress form mannequin torso, the finger traces along the seam from the neck to the shoulder edge, warm workshop lighting with fabric rolls blurred in background, slight camera pan following the hand movement, 9:16 vertical, no face visible.",
-      "Top-down overhead shot of Indian man's hands placing a plain black drop shoulder t-shirt flat on a steel cutting table next to a measuring tape, one hand stretches the sleeve outward to show the wide boxy shape while the other hand holds the body flat, bright white workshop lighting, camera static directly above, 9:16 vertical format, no text or faces.",
-      "Medium close-up of a plain mustard yellow drop shoulder oversized t-shirt on a headless mannequin torso in a clean well-lit showroom setting, camera slowly orbits around the mannequin showing the relaxed boxy silhouette and dropped shoulder seam placement, soft diffused lighting, neat stacks of colorful folded plain t-shirts visible on shelves in blurred background, 9:16 vertical, no faces."
-    ],
-    "date": "2026-04-05T12:40:31.980452"
-  },
-  {
     "topic": "Freight cost calculate karo — door delivery mein margin khata hai",
     "prompts": [
       "Close-up of Indian man's hands holding a printed courier shipping bill with highlighted total amount, the bill resting on a cluttered office desk with a calculator, pen, and a few folded plain white t-shirts visible beside it, warm yellow indoor lighting, slight camera push-in, vertical 9:16 format, realistic Indian small business office setting.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Warm late-afternoon tungsten bulbs mixed with faint daylight from a small side window, muted earthy tones with desaturated greens and browns, small Indian textile warehouse with stacked carton boxes, shallow DOF 35mm cinematic slight handheld feel. SCENE: Medium close-up of Indian hands confidently holding a thick premium white cotton round-neck t-shirt, stretching the fabric slightly to show its dense weave and smooth bio-washed texture, camera slowly tilts upward along the t-shirt body showing quality stitching at the collar, the fabric is opaque and substantial under the warm light, neatly stacked colorful plain t-shirts visible on shelves in the blurred background, 9:16 vertical frame."
     ],
     "date": "2026-05-10T13:01:20.974590"
+  },
+  {
+    "topic": "Customer Ne 500 T-Shirts Return Kiye — Kyunki Yeh Ek Galti Ho Gayi Thi 😰 | Quality Check Lesson",
+    "prompts": [
+      "STYLE LOCK: Cool white LED tube lights on low concrete ceiling, small Indian textile godown feel, muted grey-green walls with stacked cartons, shallow DOF 35mm cinematic slight handheld. Scene: Close-up of Indian man's hands opening a large brown corrugated carton overflowing with neatly folded white plain round-neck t-shirts, he pulls one out and holds it up with a confused frustrated gesture, camera pushes in slowly, 9:16 vertical format, action starts from frame one.",
+      "STYLE LOCK: Cool white LED tube lights on low concrete ceiling, small Indian textile godown feel, muted grey-green walls with stacked cartons, shallow DOF 35mm cinematic slight handheld. Scene: Medium shot of a cluttered packing table with multiple stacks of plain white t-shirts in polybags, a handwritten Indian-style delivery challan paper visible beside them, hands sorting through the polybags quickly, slight camera pan left to right revealing more mixed-up stacks, 9:16 vertical.",
+      "STYLE LOCK: Cool white LED tube lights on low concrete ceiling, small Indian textile godown feel, muted grey-green walls with stacked cartons, shallow DOF 35mm cinematic slight handheld. Scene: Close-up of two plain white t-shirts laid flat side by side on a dark wooden table, one visibly smaller than the other showing obvious size difference, Indian man's hands spread both shirts open at the chest area to highlight the mismatch, camera slowly dollies forward, 9:16 vertical.",
+      "STYLE LOCK: Cool white LED tube lights on low concrete ceiling, small Indian textile godown feel, muted grey-green walls with stacked cartons, shallow DOF 35mm cinematic slight handheld. Scene: Top-down overhead shot of Indian man's hands using a yellow fabric measuring tape across the chest of a folded plain white t-shirt on a steel table, a small notebook with handwritten size numbers visible at the edge, hands pull tape taut and pause to read measurement, steady camera, 9:16 vertical.",
+      "STYLE LOCK: Cool white LED tube lights on low concrete ceiling, small Indian textile godown feel, muted grey-green walls with stacked cartons, shallow DOF 35mm cinematic slight handheld. Scene: Wide shot of neatly organized transparent polybags of plain t-shirts stacked in separate labelled piles on metal shelving, each pile grouped by size with handwritten size tags on cardboard strips, Indian man's hand places the final polybag on the correct pile with a satisfied pat, warm practical lighting, 9:16 vertical."
+    ],
+    "date": "2026-05-11T14:32:39.829891"
   }
 ]

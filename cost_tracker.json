@@ -1303,5 +1303,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1579
     }
+  },
+  {
+    "date": "2026-05-11T15:00:15.811077",
+    "topic": "Customer Ne 500 T-Shirts Return Kiye \u2014 Kyunki Yeh Ek Galti Ho Gayi Thi \ud83d\ude30 | Quality Check Lesson",
+    "title": "500 T-Shirts \u0935\u093e\u092a\u0938 \u0906 \u0917\u0908\u0902 \u2014 \u090f\u0915 \u091b\u094b\u091f\u0940 \u0917\u0932\u0924\u0940 \u0928\u0947 \u0938\u092c \u092c\u0930\u094d\u092c\u093e\u0926 \u0915\u0930 \u0926\u093f\u092f\u093e \ud83d\ude30",
+    "total_usd": 7.5844,
+    "duration_min": 29.2,
+    "breakdown": {
+      "claude_opus": 0.3387,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0291,
+      "veo_clips": 7.04,
+      "whisper": 0.0067,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075
+    }
   }
 ]
