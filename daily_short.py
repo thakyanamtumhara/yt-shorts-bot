@@ -5796,7 +5796,8 @@ HOOK TEXT: {hook_text}
 TAGS: {', '.join(tags) if tags else 'none'}
 
 BLOG URL: {blog_url}
-YOUTUBE EMBED: {yt_embed_url}
+YOUTUBE SHORT: {yt_short_url}
+THUMBNAIL: {yt_thumbnail_url}
 DATE: {today}
 
 OUTPUT FORMAT: Return ONLY the complete HTML document (from <!DOCTYPE html> to </html>). No markdown code fences. No explanation.
