@@ -6151,66 +6151,123 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 # drafts page. Edit if monitoring should go to a different number.
 REDDIT_MANAGER_WHATSAPP = "919336695049"
 
+# Reddit drafts are published to a dedicated GitHub Pages repo (NOT the
+# customer-facing bulkplaintshirt.com website) — keeps internal tooling
+# separate from production SEO content.
+REDDIT_DRAFTS_REPO = "thakyanamtumhara/reddit-drafts"
+REDDIT_DRAFTS_PAGE_URL = "https://thakyanamtumhara.github.io/reddit-drafts/"
+
 # Retention window for Reddit draft archives. We keep the last N days of
 # dated archives (both S3 HTML files and local JSON files) and delete older.
 # 30 = roughly 1 month of historical posts for audit / re-use.
 REDDIT_RETENTION_DAYS = 30
 
 
-def _cleanup_old_reddit_drafts(s3_client, keep_days=REDDIT_RETENTION_DAYS):
-    """Delete Reddit draft archives older than keep_days. Idempotent.
+def _publish_reddit_to_github_pages(draft: dict, today: str, keep_days: int = REDDIT_RETENTION_DAYS):
+    """Push today's Reddit draft to the GitHub Pages repo and prune archives
+    older than keep_days. Returns the public page URL on success, None on failure.
 
-    Targets:
-    - S3: p/reddit-drafts/YYYY-MM-DD.html files
-    - Local: reddit_drafts/YYYY-MM-DD.json files (committed to git)
+    Strategy:
+    1. Shallow-clone the reddit-drafts repo to /tmp using GH_PAT.
+    2. Write today's archive/YYYY-MM-DD.html.
+    3. Delete archive/*.html older than keep_days.
+    4. List remaining archives (excluding today), render index.html with a
+       "Previous posts" section linking to them.
+    5. Commit + push. If no changes (idempotent re-run), silently no-op.
 
-    Failures are non-fatal — partial cleanup is fine, next run picks up
-    whatever was missed.
+    GH_PAT must have `Contents: write` on the reddit-drafts repo. Failures
+    are non-fatal — the daily pipeline continues regardless.
     """
-    cutoff = (datetime.now(pytz.timezone(TIMEZONE)) - timedelta(days=keep_days)).strftime("%Y-%m-%d")
-    _DATE_RE = re.compile(r'(\d{4}-\d{2}-\d{2})')
+    gh_pat = os.environ.get("GH_PAT", "")
+    if not gh_pat:
+        print("   ⚠️ Reddit: GH_PAT not set — skipping GitHub Pages publish")
+        return None
 
-    # 1. S3 dated archives
+    import subprocess
+    import shutil
+    repo_dir = "/tmp/reddit-drafts-repo"
+    shutil.rmtree(repo_dir, ignore_errors=True)
+
+    clone_url = f"https://x-access-token:{gh_pat}@github.com/{REDDIT_DRAFTS_REPO}.git"
     try:
-        resp = s3_client.list_objects_v2(Bucket=BLOG_S3_BUCKET, Prefix='p/reddit-drafts/')
-        to_delete = []
-        for obj in resp.get('Contents', []):
-            m = _DATE_RE.search(obj['Key'])
+        subprocess.run(
+            ["git", "clone", "--depth=1", "--quiet", clone_url, repo_dir],
+            check=True, capture_output=True
+        )
+
+        archive_dir = os.path.join(repo_dir, "archive")
+        os.makedirs(archive_dir, exist_ok=True)
+
+        # 1. Prune old archives first (so they don't show up in the index list)
+        cutoff = (datetime.now(pytz.timezone(TIMEZONE)) - timedelta(days=keep_days)).strftime("%Y-%m-%d")
+        _DATE_RE = re.compile(r'^(\d{4}-\d{2}-\d{2})\.html$')
+        pruned = 0
+        for fname in os.listdir(archive_dir):
+            m = _DATE_RE.match(fname)
             if m and m.group(1) < cutoff:
-                to_delete.append({'Key': obj['Key']})
-        if to_delete:
-            # delete_objects supports up to 1000 keys per call
-            s3_client.delete_objects(
-                Bucket=BLOG_S3_BUCKET,
-                Delete={'Objects': to_delete, 'Quiet': True}
-            )
-            print(f"   🧹 Reddit: Pruned {len(to_delete)} S3 archive(s) older than {cutoff}")
+                try:
+                    os.remove(os.path.join(archive_dir, fname))
+                    pruned += 1
+                except Exception:
+                    pass
+        if pruned:
+            print(f"   🧹 Reddit: Pruned {pruned} archive(s) older than {cutoff}")
+
+        # 2. Write today's archive — render WITHOUT archive list (each dated
+        #    page is just that day's content, no recursive "previous" list)
+        today_archive_html = _render_reddit_html(draft, today, archive_dates=None)
+        archive_path = os.path.join(archive_dir, f"{today}.html")
+        with open(archive_path, "w") as f:
+            f.write(today_archive_html)
+
+        # 3. Collect remaining archive dates (excluding today), newest-first
+        archive_dates = []
+        for fname in sorted(os.listdir(archive_dir), reverse=True):
+            m = _DATE_RE.match(fname)
+            if m and m.group(1) != today:
+                archive_dates.append(m.group(1))
+
+        # 4. Re-render index.html (today's draft + archive links at bottom)
+        index_html = _render_reddit_html(draft, today, archive_dates=archive_dates)
+        with open(os.path.join(repo_dir, "index.html"), "w") as f:
+            f.write(index_html)
+
+        # 5. Commit + push
+        subprocess.run(["git", "-C", repo_dir, "add", "-A"], check=True, capture_output=True)
+        commit = subprocess.run(
+            ["git", "-C", repo_dir,
+             "-c", "user.email=bot@sale91.com",
+             "-c", "user.name=Reddit Drafts Bot",
+             "commit", "-q", "-m", f"Daily draft: {today}"],
+            capture_output=True
+        )
+        if commit.returncode == 0:
+            subprocess.run(["git", "-C", repo_dir, "push", "--quiet"], check=True, capture_output=True)
+            print(f"   ✅ Reddit: Pushed to {REDDIT_DRAFTS_PAGE_URL}")
+        else:
+            # No diff to commit (idempotent re-run on same day) — also OK
+            print(f"   ℹ️ Reddit: No archive changes to push")
+
+        return REDDIT_DRAFTS_PAGE_URL
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or b'').decode(errors='replace')[:300]
+        print(f"   ⚠️ Reddit: git operation failed: {stderr}")
+        return None
     except Exception as e:
-        print(f"   ⚠️ Reddit: S3 cleanup skipped: {e}")
-
-    # 2. Local JSON archives (so the git repo doesn't accumulate forever)
-    try:
-        if os.path.isdir(REDDIT_DRAFTS_DIR):
-            pruned = 0
-            for fname in os.listdir(REDDIT_DRAFTS_DIR):
-                m = _DATE_RE.match(fname)
-                if m and m.group(1) < cutoff:
-                    try:
-                        os.remove(os.path.join(REDDIT_DRAFTS_DIR, fname))
-                        pruned += 1
-                    except Exception:
-                        pass
-            if pruned:
-                print(f"   🧹 Reddit: Pruned {pruned} local JSON archive(s) older than {cutoff}")
-    except Exception as e:
-        print(f"   ⚠️ Reddit: Local cleanup skipped: {e}")
+        print(f"   ⚠️ Reddit: GitHub Pages publish failed: {e}")
+        return None
+    finally:
+        shutil.rmtree(repo_dir, ignore_errors=True)
 
 
-def _render_reddit_html(draft: dict, today: str) -> str:
+def _render_reddit_html(draft: dict, today: str, archive_dates: list = None) -> str:
     """Render the mobile-first HTML page from a parsed Reddit draft.
 
     Self-contained — inline CSS + JS only. localStorage persists the "done"
     checkbox state per-device so the employee can see today's progress.
+
+    archive_dates: list of YYYY-MM-DD strings (excluding today) — renders a
+    "Previous posts" section linking to archive/YYYY-MM-DD.html files.
     """
     import html as _html
     title = _html.escape(draft.get('title', ''))
@@ -6237,6 +6294,21 @@ def _render_reddit_html(draft: dict, today: str) -> str:
         f'style="width:100%;border-radius:10px;display:block;margin-bottom:12px;">'
         f'<a href="{hero}" download class="btn-secondary">⬇ Download image</a>'
     ) if hero else '<p style="color:#888;font-size:14px;">No hero image — post as text-only or attach your own.</p>'
+
+    # Archive section — links to past posts within the 30-day retention window
+    archive_html = ""
+    if archive_dates:
+        items = "\n".join(
+            f'<li><a href="archive/{_html.escape(d)}.html">{_html.escape(d)}</a></li>'
+            for d in archive_dates
+        )
+        archive_html = f'''
+  <div class="card archive-card">
+    <div class="label">Previous posts (last {len(archive_dates)} days)</div>
+    <ul class="archive-list">
+{items}
+    </ul>
+  </div>'''
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -6265,6 +6337,9 @@ header .date{{font-size:14px;opacity:.95}}
 ul.engagement{{padding-left:20px;color:#444}}
 ul.engagement li{{margin-bottom:8px;font-size:15px}}
 .posting-time{{background:#fffbe6;padding:10px 12px;border-radius:8px;border-left:3px solid #d4a832;font-size:15px;color:#5d4a00}}
+.archive-list{{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}}
+.archive-list li a{{display:block;padding:10px 8px;background:#f7f5ee;border-radius:8px;text-align:center;color:#555;font-size:13px;text-decoration:none;font-family:Menlo,Monaco,monospace}}
+.archive-list li a:hover{{background:#ede9d5;color:#222}}
 .sticky-bottom{{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;padding:14px 16px;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.08)}}
 .sticky-inner{{max-width:560px;margin:0 auto;display:flex;gap:10px;align-items:center}}
 .checkbox-wrap{{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;user-select:none}}
@@ -6317,7 +6392,7 @@ ul.engagement li{{margin-bottom:8px;font-size:15px}}
     <div class="label">After posting — engagement (important!)</div>
     <ul class="engagement">{engagement_html}</ul>
   </div>
-
+{archive_html}
   <div class="done-stamp" id="done-stamp"></div>
 </div>
 
@@ -6475,55 +6550,17 @@ Return ONLY the JSON object."""
         if cost_tracker and hasattr(cost_tracker, 'track_claude_call'):
             cost_tracker.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
 
-        # Archive JSON locally (committed to git)
+        # Archive JSON locally (committed to git on the yt-shorts-bot repo
+        # for raw data history); the rendered HTML is published separately
+        # to the reddit-drafts GitHub Pages repo by _publish_reddit_to_github_pages.
         json_path = os.path.join(REDDIT_DRAFTS_DIR, f"{today}.json")
         with open(json_path, "w") as f:
             json.dump(draft, f, ensure_ascii=False, indent=2)
 
-        # Render HTML page
-        html = _render_reddit_html(draft, today)
-
-        # Upload to S3 (two paths: today's stable URL + dated archive)
-        aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
-        aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
-        if not aws_key or not aws_secret:
-            print("   ⚠️ Reddit: AWS credentials missing — JSON saved locally only")
-            return json_path
-
-        s3 = boto3.client('s3', region_name='ap-south-1',
-                           aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
-        cloudfront = boto3.client('cloudfront', region_name='ap-south-1',
-                                   aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
-
-        body_bytes = html.encode('utf-8')
-        for key in (f"p/reddit-today.html", f"p/reddit-drafts/{today}.html"):
-            s3.put_object(
-                Bucket=BLOG_S3_BUCKET,
-                Key=key,
-                Body=body_bytes,
-                ContentType='text/html; charset=utf-8',
-                CacheControl='no-cache, no-store, must-revalidate',
-            )
-        page_url = f"{BLOG_BASE_URL}/p/reddit-today.html"
-        print(f"   ✅ Reddit: Page live → {page_url}")
-
-        # Invalidate CloudFront so employee sees fresh content immediately
-        try:
-            cloudfront.create_invalidation(
-                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
-                InvalidationBatch={
-                    'Paths': {'Quantity': 1, 'Items': ['/p/reddit-today.html']},
-                    'CallerReference': f"reddit-{today}-{int(time.time())}",
-                }
-            )
-        except Exception as e:
-            print(f"   ⚠️ Reddit: CloudFront invalidation skipped: {e}")
-
-        # Prune anything older than REDDIT_RETENTION_DAYS — keeps last 30 days
-        # of dated archives in S3 + the git repo, drops older.
-        _cleanup_old_reddit_drafts(s3)
-
-        return page_url
+        # Publish to GitHub Pages (separate from bulkplaintshirt.com website).
+        # Handles archive write + 30-day pruning + index rebuild internally.
+        page_url = _publish_reddit_to_github_pages(draft, today)
+        return page_url or json_path
     except Exception as e:
         print(f"   ⚠️ Reddit: Draft generation failed (non-fatal): {e}")
         return None
