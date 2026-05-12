@@ -5862,6 +5862,39 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         ]
     }
 
+    # Person schema (E-E-A-T — Experience, Expertise, Authoritativeness, Trustworthiness).
+    # Google and AI search engines reward content authored by named, credentialed experts
+    # over content from a faceless brand. Linking author → business → sameAs (social
+    # accounts) builds an identity graph search engines can verify.
+    person_ld = {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://www.bulkplaintshirt.com/#ketu-r",
+        "name": "Ketu R",
+        "jobTitle": "Founder & B2B Textile Manufacturing Expert",
+        "description": "17+ years in B2B plain t-shirt manufacturing. Founder of Own Knitted Blank Wears (Sale91.com / BulkPlainTshirt.com), a Delhi-based manufacturer that knits its own fabric and ships PAN-India.",
+        "image": "https://www.bulkplaintshirt.com/imges/ketu-author.webp",
+        "url": "https://www.bulkplaintshirt.com/",
+        "worksFor": {
+            "@type": "Organization",
+            "name": "Own Knitted Blank Wears",
+            "alternateName": ["Sale91.com", "BulkPlainTshirt.com"],
+            "url": "https://www.bulkplaintshirt.com/"
+        },
+        "knowsAbout": [
+            "Plain t-shirt manufacturing",
+            "GSM fabric selection",
+            "DTG / DTF / screen printing",
+            "Bulk textile wholesale",
+            "B2B printing business"
+        ],
+        "sameAs": [
+            "https://www.youtube.com/@BulkPlainTshirt_com",
+            "https://www.instagram.com/bulkplaintshirt_com/",
+            "https://www.facebook.com/ownknitted/"
+        ]
+    }
+
     article_ld = {
         "@context": "https://schema.org",
         "@type": "Article",
@@ -5870,7 +5903,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         "url": blog_url,
         "datePublished": today,
         "dateModified": today,
-        "author": {"@type": "Organization", "name": "Sale91.com", "url": "https://sale91.com"},
+        "author": {"@id": "https://www.bulkplaintshirt.com/#ketu-r"},  # → Person above
         "publisher": {
             "@type": "Organization",
             "name": "BulkPlainTshirt.com",
@@ -5878,6 +5911,20 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         },
         "image": og_image_url or "https://www.bulkplaintshirt.com/catalog/img/logo.png",
         "mainEntityOfPage": {"@type": "WebPage", "@id": blog_url}
+    }
+
+    # Speakable schema — tells voice assistants (Google Assistant, Alexa, Siri) which
+    # parts of the page to read aloud when a user asks a related voice query. The FAQ
+    # section is ideal — it's already Q&A format and reads naturally.
+    speakable_ld = {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": blog_url + "#webpage",
+        "url": blog_url,
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".faq-question", ".faq-answer", "h1"]
+        }
     }
 
     product_ld = {
@@ -5904,7 +5951,31 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         }
     }
 
-    ld_blocks = [organization_ld, breadcrumb_ld, article_ld, product_ld]
+    ld_blocks = [organization_ld, person_ld, breadcrumb_ld, article_ld, speakable_ld, product_ld]
+
+    # HowTo schema — best-effort detection. If the blog contains step-style headings
+    # (h2/h3 starting with "Step", or 3+ ordered-list <li> items inside the main
+    # content), emit a HowTo block. Google rewards HowTo with rich results.
+    step_heading_pattern = _re.compile(r'<h[23][^>]*>\s*(?:Step\s+\d+[:.]|\d+\.\s+)([^<]+)</h[23]>', _re.IGNORECASE)
+    step_matches = step_heading_pattern.findall(html_content)
+    if len(step_matches) >= 3:
+        howto_ld = {
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": title,
+            "description": description[:160] if description else title,
+            "image": og_image_url or "https://www.bulkplaintshirt.com/catalog/img/logo.png",
+            "step": [
+                {
+                    "@type": "HowToStep",
+                    "position": i + 1,
+                    "name": _re.sub(r'<[^>]+>', '', step).strip()[:120],
+                    "url": f"{blog_url}#step-{i+1}",
+                }
+                for i, step in enumerate(step_matches[:10])  # cap at 10 steps
+            ]
+        }
+        ld_blocks.append(howto_ld)
 
     # FAQPage schema (only if FAQs were found)
     if faq_pairs:
@@ -5926,6 +5997,36 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     ld_scripts = "\n".join(
         f'<script type="application/ld+json">{_json.dumps(ld, ensure_ascii=False)}</script>'
         for ld in ld_blocks
+    )
+
+    # ── 2b. Author E-E-A-T card (HTML) ──
+    # Injected before the sticky bottom bar so it sits at the end of every blog
+    # body. Mirrors the Person JSON-LD above so search engines see consistency
+    # between visible content and structured data. Image path is overrideable —
+    # if /imges/ketu-author.webp doesn't resolve, the alt text + name still
+    # provides full E-E-A-T value.
+    author_card = (
+        '<section class="author-card" itemscope itemtype="https://schema.org/Person" '
+        'style="max-width:800px;margin:40px auto;padding:24px;background:#fff;border-radius:14px;'
+        'border:1px solid #e8e8e0;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;'
+        'gap:20px;align-items:center;flex-wrap:wrap;">'
+        '<img src="https://www.bulkplaintshirt.com/imges/ketu-author.webp" '
+        'onerror="this.src=\'https://www.bulkplaintshirt.com/catalog/img/logo.png\';this.style.padding=\'12px\';this.style.background=\'#fffbe6\';" '
+        'alt="Ketu R — Founder, BulkPlainTshirt.com / Sale91.com" '
+        'itemprop="image" '
+        'style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #d4a832;flex-shrink:0;">'
+        '<div style="flex:1;min-width:200px;">'
+        '<div style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600;margin-bottom:4px;">About the Author</div>'
+        '<div itemprop="name" style="font-size:18px;font-weight:700;color:#0f3460;">Ketu R</div>'
+        '<div itemprop="jobTitle" style="font-size:14px;color:#555;margin-bottom:8px;">Founder, Own Knitted Blank Wears</div>'
+        '<div itemprop="description" style="font-size:14px;color:#444;line-height:1.55;">'
+        '17+ years in B2B plain t-shirt manufacturing. We knit our own fabric in Delhi and ship '
+        'to printing businesses across India. Featured on our '
+        '<a href="https://www.youtube.com/@BulkPlainTshirt_com" rel="author noopener" target="_blank" '
+        'style="color:#007bff;text-decoration:underline;">YouTube channel</a> with 40K+ subscribers.'
+        '</div>'
+        '</div>'
+        '</section>'
     )
 
     # ── 3. Sticky bottom bar HTML ──
@@ -5953,13 +6054,17 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     else:
         html_content = html_content.replace('</body>', f'{ld_scripts}\n</body>', 1)
 
-    # ── 6. Inject bottom bar before </body> (only if not already present) ──
+    # ── 6. Inject author card + bottom bar before </body> ──
+    # Author card goes BEFORE bottom bar (so it's visible above the sticky footer).
+    if 'class="author-card"' not in html_content:
+        html_content = html_content.replace('</body>', f'{author_card}\n</body>', 1)
     if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
         html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
 
     faq_count = len(faq_pairs)
     ld_count = len(ld_blocks)
-    print(f"   📊 Blog SEO: Injected {ld_count} JSON-LD schemas ({faq_count} FAQs) + sticky bottom bar")
+    howto_note = " (incl. HowTo)" if len(step_matches) >= 3 else ""
+    print(f"   📊 Blog SEO: Injected {ld_count} JSON-LD schemas ({faq_count} FAQs{howto_note}) + author card + sticky bar")
     return html_content
 
 
@@ -6948,9 +7053,11 @@ def process_main_channel_recap():
         _write_phase_status(1, "failed", "s3-publish-failed", msg)
         return False
 
+    sunday_excerpt = _extract_blog_excerpt(blog_html, max_words=200)
     save_blog_history(video["title"], blog_title, blog_slug, blog_url, video["vid_url"],
                       tags=blog_tags, description=video["description"][:200],
-                      word_count=len(blog_html.split()))
+                      word_count=len(blog_html.split()),
+                      excerpt=sunday_excerpt)
     print(f"   ✅ Blog published: {blog_url}")
 
     # ── Step 7: Reddit draft ──
@@ -7833,6 +7940,144 @@ def build_blog_widget_html(max_posts=3):
 </div>'''
 
 
+def _extract_blog_excerpt(html_content, max_words=200):
+    """Pull a clean text excerpt from a generated blog HTML.
+
+    Strategy: take the first <p> inside the main container that isn't the
+    breadcrumb or hero caption. Strip HTML, collapse whitespace, truncate at
+    word boundary. Used for llms-full.txt so AI bots get content without
+    fetching the full page.
+    """
+    import re as _re
+    # Strip <head>, <style>, <script> first — only want body text
+    body_only = _re.sub(r'<head\b[^>]*>.*?</head>', '', html_content, flags=_re.DOTALL | _re.IGNORECASE)
+    body_only = _re.sub(r'<(style|script)\b[^>]*>.*?</\1>', '', body_only, flags=_re.DOTALL | _re.IGNORECASE)
+    body_only = _re.sub(r'<header\b[^>]*>.*?</header>', '', body_only, flags=_re.DOTALL | _re.IGNORECASE)
+
+    # Collect all <p> texts
+    paragraphs = _re.findall(r'<p[^>]*>(.+?)</p>', body_only, flags=_re.DOTALL | _re.IGNORECASE)
+    text_chunks = []
+    for p in paragraphs:
+        clean = _re.sub(r'<[^>]+>', '', p)
+        clean = _re.sub(r'\s+', ' ', clean).strip()
+        # Skip breadcrumbs / very short fluff / video captions
+        if len(clean) < 60:
+            continue
+        if 'Home' in clean and '›' in clean:
+            continue
+        text_chunks.append(clean)
+        if sum(len(c.split()) for c in text_chunks) >= max_words:
+            break
+
+    if not text_chunks:
+        return ""
+    joined = " ".join(text_chunks)
+    words = joined.split()
+    if len(words) > max_words:
+        joined = " ".join(words[:max_words]) + "..."
+    return joined
+
+
+def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url, latest_date,
+                                 max_articles=30):
+    """Build and upload /p/llms-full.txt — the rich AI-search variant of llms.txt
+    (per llmstxt.org spec). Includes recent article excerpts so AI bots can cite
+    content without crawling each URL individually.
+
+    Cap at max_articles entries — full llms-full.txt can grow large; AI bots
+    fetch the whole file each time, so keep payload reasonable.
+    """
+    posts = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                posts = json.load(f)
+        except Exception:
+            posts = []
+    posts.sort(key=lambda p: p.get('date', ''), reverse=True)
+
+    # Build the latest entry's excerpt fresh from the HTML we just published
+    latest_excerpt = _extract_blog_excerpt(latest_html, max_words=250)
+
+    sections = []
+    # ── Header ──
+    sections.append(
+        "# BulkPlainTshirt.com / Sale91.com — Full LLM Content Index\n\n"
+        "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Delhi, "
+        "manufacture 20+ blank-apparel categories, and famously ship within minutes. "
+        "Plain tees, hoodies, dropshoulder, sweatshirts in 180/210/240/320/430 GSM.\n\n"
+        "## About This File\n\n"
+        "This is the **llms-full.txt** version (per llmstxt.org spec) — includes recent "
+        f"blog article excerpts so AI assistants (ChatGPT, Claude, Perplexity, Gemini) can "
+        f"reference our content without crawling individual pages. Last updated: {latest_date}.\n\n"
+        "- Brand: Own Knitted Blank Wears\n"
+        "- Founded: 2017 in Delhi\n"
+        "- Author of all blog content: Ketu R (Founder)\n"
+        "- Main site: https://www.bulkplaintshirt.com/\n"
+        "- B2B order site: https://sale91.com/\n"
+        "- YouTube: https://www.youtube.com/@BulkPlainTshirt_com (40K+ subs)\n\n"
+        "## Topics Covered\n\n"
+        "- GSM fabric weight selection (180/200/240+) for different print methods\n"
+        "- DTG, DTF, screen, vinyl printing — when each works/fails\n"
+        "- Bulk wholesale ordering mistakes that cost ₹40K–₹15L\n"
+        "- Fabric quality testing (seam strength, shrinkage, color-fastness)\n"
+        "- Indian B2B textile pricing + dispatch logistics\n"
+        "- T-shirt printing business setup + scaling\n\n"
+        "---\n\n"
+        "## Recent Articles (most recent first)\n"
+    )
+
+    # ── Most recent (the one we just published — full fresh excerpt) ──
+    if latest_excerpt:
+        sections.append(
+            f"\n### {latest_title}\n\n"
+            f"- URL: {latest_url}\n"
+            f"- Date: {latest_date}\n\n"
+            f"{latest_excerpt}\n\n---\n"
+        )
+
+    # ── Older articles from blog_history (excerpts from previously-cached field
+    #    if present; otherwise just title + URL). New blogs will accumulate
+    #    excerpts over time as they get re-processed. ──
+    seen_urls = {latest_url}
+    count = 1
+    for post in posts:
+        if count >= max_articles:
+            break
+        post_url = post.get('url', '')
+        if not post_url or post_url in seen_urls:
+            continue
+        seen_urls.add(post_url)
+        post_title = post.get('title', '')
+        post_date = (post.get('date') or '')[:10]
+        excerpt = post.get('excerpt', '')  # filled in by save_blog_history starting tonight
+        if excerpt:
+            sections.append(
+                f"\n### {post_title}\n\n"
+                f"- URL: {post_url}\n"
+                f"- Date: {post_date}\n\n"
+                f"{excerpt}\n\n---\n"
+            )
+        else:
+            sections.append(
+                f"\n### {post_title}\n\n"
+                f"- URL: {post_url}\n"
+                f"- Date: {post_date}\n"
+            )
+        count += 1
+
+    body = "".join(sections)
+    s3_client.put_object(
+        Bucket=BLOG_S3_BUCKET,
+        Key='p/llms-full.txt',
+        Body=body.encode('utf-8'),
+        ContentType='text/plain; charset=utf-8',
+        CacheControl='no-cache'
+    )
+    size_kb = len(body) // 1024
+    print(f"   📤 Blog S3: Built p/llms-full.txt ({count} articles, {size_kb}KB)")
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -7946,6 +8191,17 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         except Exception as e:
             print(f"   ⚠️ Blog S3: Could not update llms.txt: {e}")
 
+        # ── 4b. Rebuild /p/llms-full.txt ──
+        # Rich AI-search version of llms.txt: includes article excerpts so AI bots
+        # (ChatGPT, Claude, Perplexity, Gemini) can cite content WITHOUT crawling
+        # each URL. Per llmstxt.org spec. Built from blog_history.json metadata
+        # plus a fresh excerpt extracted from the new blog's body.
+        try:
+            _build_and_upload_llms_full(s3, html_content, title, blog_url, today)
+            invalidation_paths.append('/p/llms-full.txt')
+        except Exception as e:
+            print(f"   ⚠️ Blog S3: llms-full.txt skipped: {e}")
+
         # ── 5. Upload RSS feed ──
         try:
             today_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
@@ -8008,8 +8264,12 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
 
 def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
-                      description="", word_count=0):
-    """Save blog post metadata to blog_history.json for tracking."""
+                      description="", word_count=0, excerpt=""):
+    """Save blog post metadata to blog_history.json for tracking.
+
+    excerpt: 200-word plain-text excerpt extracted from the blog body — used
+    by llms-full.txt builder to give AI bots citable content without crawling.
+    """
     try:
         history = []
         if os.path.exists(BLOG_HISTORY_FILE):
@@ -8026,6 +8286,7 @@ def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
             "tags": list(tags)[:10] if tags else [],
             "description": (description or "")[:200],
             "word_count": word_count or 0,
+            "excerpt": (excerpt or "")[:1500],  # cached for llms-full.txt
         })
 
         with open(BLOG_HISTORY_FILE, "w") as f:
@@ -9672,9 +9933,11 @@ def main():
 
             if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
                 if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url, blog_images, vid_id=vid_id):
+                    excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
                     save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url,
                                       tags=yt_tags, description=yt_description,
-                                      word_count=len(blog_html.split()) if blog_html else 0)
+                                      word_count=len(blog_html.split()) if blog_html else 0,
+                                      excerpt=excerpt)
                     print(f"   ✅ Blog published: {blog_url}")
 
                     # Generate Reddit post draft for the employee to paste manually.
