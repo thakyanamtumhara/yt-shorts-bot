@@ -2794,48 +2794,90 @@ def fetch_latest_main_channel_long_form(within_hours=48):
         return None
 
 
-def fetch_youtube_captions(video_id, api_key=None):
-    """Phase 2: best-effort caption fetch via YouTube Data API.
+def fetch_youtube_captions(video_id):
+    """Phase 2: fetch caption transcript via authenticated YouTube Data API.
 
-    Returns the caption text as a single string, or None if unavailable.
+    Uses the existing OAuth token (force-ssl scope is already granted in
+    generate_token.py) — no re-auth needed. The caller must be the video
+    owner; since this is invoked against SOURCE_CHANNEL_ID (the user's own
+    channel) by an OAuth token issued for that channel, ownership is met.
 
-    Note: the captions.download endpoint requires OAuth (not just an API key)
-    AND the video owner's consent for third-party download. For now we try
-    the captions.list endpoint to detect track availability, then attempt
-    download with the user's OAuth token. If neither works, the Sunday
-    recap falls back to description-only mode.
+    Returns the plain-text transcript (timestamps stripped) or None if:
+    - YouTube auth fails / token missing
+    - The video has no caption tracks
+    - The download endpoint denies access (rare on owned videos)
+
+    Caption selection: prefers Hindi/English manual ("standard"), then any
+    manual track, then auto-generated ("ASR"). Hinglish videos usually only
+    have ASR — that's fine, ASR captures actual spoken words.
     """
-    api_key = api_key or SOURCE_CHANNEL_API_KEY
-    if not api_key:
-        return None
     try:
-        # List available caption tracks
-        list_resp = requests.get(
-            "https://www.googleapis.com/youtube/v3/captions",
-            params={"key": api_key, "videoId": video_id, "part": "snippet"},
-            timeout=15,
-        )
-        if list_resp.status_code != 200:
+        youtube = get_youtube_service()
+        if youtube is None:
+            print("   📝 Captions: YouTube auth unavailable — skipping")
             return None
-        tracks = list_resp.json().get("items", [])
-        if not tracks:
-            return None
-        # Prefer Hindi/English manual captions; fall back to auto-generated
-        preferred = None
-        for t in tracks:
-            lang = t.get("snippet", {}).get("language", "")
-            kind = t.get("snippet", {}).get("trackKind", "")
-            if lang in ("hi", "en") and kind != "ASR":
-                preferred = t
-                break
-        track = preferred or tracks[0]
-        track_id = track.get("id")
 
-        # Attempt download — requires OAuth (will fail with API key only)
-        # NOT implemented here without OAuth wiring; returning track-id as
-        # an availability signal. Phase 2 full implementation will use OAuth.
-        return None  # placeholder — Phase 2 will return real text
-    except Exception:
+        # 1. List caption tracks for the video
+        try:
+            list_resp = youtube.captions().list(part="snippet", videoId=video_id).execute()
+        except Exception as e:
+            print(f"   📝 Captions: list failed: {str(e)[:120]}")
+            return None
+        tracks = list_resp.get("items", [])
+        if not tracks:
+            print("   📝 Captions: no tracks available on this video")
+            return None
+
+        # 2. Pick best track
+        manual_priority = []
+        asr_fallback = []
+        for t in tracks:
+            snip = t.get("snippet", {})
+            lang = snip.get("language", "")
+            kind = snip.get("trackKind", "")
+            if kind == "ASR":
+                asr_fallback.append(t)
+            elif lang in ("hi", "en"):
+                manual_priority.insert(0, t)  # Hindi/English first
+            else:
+                manual_priority.append(t)
+        track = (manual_priority + asr_fallback + tracks)[0]
+        track_id = track["id"]
+        track_kind = track.get("snippet", {}).get("trackKind", "standard")
+        track_lang = track.get("snippet", {}).get("language", "?")
+        print(f"   📝 Captions: selected track ({track_lang}/{track_kind})")
+
+        # 3. Download the caption file (SRT format = easy to parse)
+        try:
+            raw = youtube.captions().download(id=track_id, tfmt="srt").execute()
+        except Exception as e:
+            print(f"   📝 Captions: download failed: {str(e)[:120]}")
+            return None
+
+        srt = raw.decode("utf-8") if isinstance(raw, bytes) else str(raw)
+
+        # 4. Strip SRT formatting → keep only spoken text
+        import re as _re
+        lines = []
+        for block in srt.strip().split("\n\n"):
+            block_lines = block.strip().split("\n")
+            if len(block_lines) < 3:
+                continue
+            # block_lines[0] = index, [1] = timestamp range, [2:] = text
+            text = " ".join(block_lines[2:])
+            text = _re.sub(r'<[^>]+>', '', text)  # strip <i>, <b>, <c.colorBBBBBB>
+            text = _re.sub(r'\{[^}]+\}', '', text)  # strip {\an8} style position tags
+            text = text.strip()
+            if text:
+                lines.append(text)
+
+        transcript = " ".join(lines).strip()
+        if not transcript:
+            return None
+        print(f"   📝 Captions: extracted {len(transcript)} chars from {len(lines)} caption blocks")
+        return transcript
+    except Exception as e:
+        print(f"   ⚠️ Captions: unexpected error: {str(e)[:120]}")
         return None
 
 
