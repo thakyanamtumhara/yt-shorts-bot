@@ -7221,9 +7221,11 @@ Disallow: /disclaimer.html
 
 Sitemap: {BLOG_BASE_URL}/p/map.xml
 
-# LLM-friendly content index
-# See https://llmstxt.org
-LLMs.txt: {BLOG_BASE_URL}/p/llms.txt
+# LLM-friendly content index hosted at /llms.txt per llmstxt.org spec.
+# AI crawlers (GPTBot, ClaudeBot, PerplexityBot etc.) auto-discover it at
+# the conventional root path — NO robots.txt directive needed. Adding one
+# (e.g. "LLMs.txt:" or "Llms-txt:") is not in the robots.txt grammar and
+# Google flags it as a syntax error in Search Console.
 
 # AI Crawlers welcome
 User-agent: GPTBot
