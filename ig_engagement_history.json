@@ -483,13 +483,28 @@
     "title": "5000 T-Shirts Ordered Without Checking GSM — ₹1.2 Lakh Lost 😱",
     "topic": "Usne 5000 T-Shirts Order Kiye Bina GSM Check Kiye — ₹1.2 Lakh Ka Nuksaan Hua 😢 Real Customer Story",
     "published_at": "2026-05-10T18:52:46.221217+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-05-12T19:53:16.202130+05:30",
+    "hours_since_publish": 49.0,
+    "views": 435,
+    "reach": 353,
+    "likes": 4,
+    "comments": 0,
+    "shares": 0,
+    "saves": 1
   },
   {
     "media_id": "18073917116644366",
     "title": "He Lost ₹1 Lakh Because of 1 Packing Mistake — 500 T-Shirts Returned 😰",
     "topic": "Customer Ne 500 T-Shirts Return Kiye — Kyunki Yeh Ek Galti Ho Gayi Thi 😰 | Quality Check Lesson",
     "published_at": "2026-05-11T20:30:09.331463+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18099902860913425",
+    "title": "240 GSM Trap Cost Him ₹50K — Royal Blue Oversized Mistake!",
+    "topic": "240 GSM Oversized Royal Blue T-Shirt — Yeh GSM Trap Samajh Lo Pehle 🎯 | Real Buyer Question Answered",
+    "published_at": "2026-05-12T19:55:23.298643+05:30",
     "checked": false
   }
 ]

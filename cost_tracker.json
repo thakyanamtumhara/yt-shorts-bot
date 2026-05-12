@@ -1319,5 +1319,22 @@
       "gemini_thumbnail": 0.045,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-05-12T14:28:55.951737",
+    "topic": "240 GSM Oversized Royal Blue T-Shirt \u2014 Yeh GSM Trap Samajh Lo Pehle \ud83c\udfaf | Real Buyer Question Answered",
+    "title": "240 GSM \u0915\u093e \u091d\u093e\u0902\u0938\u093e \u2014 \u0905\u0938\u0932\u0940 Quality \u092f\u0939\u093e\u0901 \u091b\u0941\u092a\u0940 \u0939\u0948 \ud83c\udfaf",
+    "total_usd": 7.7955,
+    "duration_min": 26.8,
+    "breakdown": {
+      "claude_opus": 0.3614,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0319,
+      "veo_clips": 7.04,
+      "whisper": 0.0072,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1849
+    }
   }
 ]
