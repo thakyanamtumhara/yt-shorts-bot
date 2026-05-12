@@ -5714,7 +5714,18 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     # with a clickable thumbnail card kills the broken-embed error, keeps a
     # backlink to YouTube, and drives click traffic into the Short feed.
     yt_short_url = f"https://youtube.com/shorts/{vid_id}"
-    yt_thumbnail_url = f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
+    # Primary thumbnail: the blog's AI-generated hero image (always available on
+    # S3 immediately the blog is published). YouTube's Shorts thumbnails take
+    # 1-24h to generate — using them as the primary source means the video card
+    # shows a gray YT placeholder for the first 24h on every newly-published
+    # blog. Hero image is topical, on-brand, and always loads. Fallback chain
+    # via onerror: hero → YT hqdefault → solid dark background.
+    if image_urls:
+        primary_thumb = image_urls[0]  # blog hero, e.g. https://.../p/{slug}-hero.webp
+    else:
+        primary_thumb = f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
+    yt_thumbnail_url = primary_thumb
+    yt_thumbnail_fallback = f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
 
     image_instructions = ""
     og_image_url = "https://www.bulkplaintshirt.com/catalog/img/logo.png"
@@ -5813,7 +5824,7 @@ REQUIREMENTS:
    - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
    - MANDATORY: Include a "Watch the Video" section BEFORE the FAQ section with this EXACT clickable thumbnail card (NOT an iframe — Shorts can't be embedded reliably and showed "Video unavailable" on every blog):
      <a href="{yt_short_url}" target="_blank" rel="noopener" style="display:block;max-width:360px;margin:30px auto;text-decoration:none;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:#000;position:relative;">
-       <img src="{yt_thumbnail_url}" alt="Watch on YouTube — {title}" loading="lazy" style="width:100%;height:auto;display:block;">
+       <img src="{yt_thumbnail_url}" alt="Watch on YouTube — {title}" loading="lazy" onerror="if(this.src!='{yt_thumbnail_fallback}'){{this.src='{yt_thumbnail_fallback}';}}else{{this.style.display='none';this.parentNode.style.background='linear-gradient(135deg,#1a1a1a 0%,#3d3d3d 100%)';this.parentNode.style.minHeight='200px';}}" style="width:100%;height:auto;display:block;">
        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:rgba(255,0,0,0.9);border-radius:14px;display:flex;align-items:center;justify-content:center;">
          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg>
        </div>
