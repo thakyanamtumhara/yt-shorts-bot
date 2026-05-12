@@ -2,7 +2,11 @@ name: Daily YouTube Short
 
 on:
   schedule:
-    - cron: '0 12 * * *'
+    # Mon-Sat 12:00 UTC = 5:30 PM IST. Sunday is intentionally skipped — the
+    # sunday_recap.yml workflow takes over on Sundays, recapping the user's
+    # Saturday main-channel upload as that day's content instead of running
+    # the autonomous Veo pipeline (saves ~$7.58/Sun in Veo costs).
+    - cron: '0 12 * * 1-6'
   workflow_dispatch:
     inputs:
       test_mode:

@@ -2716,6 +2716,216 @@ def fetch_source_channel_insights():
         return []
 
 
+def fetch_latest_main_channel_long_form(within_hours=48):
+    """Fetch the most recent LONG-FORM (>60s) video from SOURCE_CHANNEL_ID.
+
+    Used by the Sunday recap flow to pick up the user's Saturday upload on
+    their main 40K-subs channel. Returns dict with:
+      video_id, title, description, tags, published_at, vid_url, hours_old
+    or None if no qualifying video found in `within_hours` window.
+
+    The 48h default catches anything posted from Friday onwards in IST when
+    the Sunday workflow fires at 19:00 IST Sunday.
+    """
+    if not SOURCE_CHANNEL_ID or not SOURCE_CHANNEL_API_KEY:
+        print("   📺 Main channel: CHANNEL_ID_2 or YOUTUBE_API_KEY_1 missing — cannot fetch")
+        return None
+
+    base_url = "https://www.googleapis.com/youtube/v3"
+    try:
+        # Step 1: Search latest videos by date (cheaper than fetching all)
+        search_resp = requests.get(f"{base_url}/search", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "channelId": SOURCE_CHANNEL_ID,
+            "part": "id",
+            "order": "date",
+            "maxResults": 10,
+            "type": "video",
+        }, timeout=15)
+        search_resp.raise_for_status()
+        video_ids = [i["id"]["videoId"] for i in search_resp.json().get("items", []) if i["id"].get("videoId")]
+        if not video_ids:
+            print("   📺 Main channel: no recent videos found")
+            return None
+
+        # Step 2: Get full details (snippet + duration)
+        videos_resp = requests.get(f"{base_url}/videos", params={
+            "key": SOURCE_CHANNEL_API_KEY,
+            "id": ",".join(video_ids),
+            "part": "snippet,contentDetails",
+        }, timeout=15)
+        videos_resp.raise_for_status()
+
+        import re as _re
+        now = datetime.now(pytz.timezone(TIMEZONE))
+        for item in videos_resp.json().get("items", []):
+            snippet = item.get("snippet", {})
+            duration_str = item.get("contentDetails", {}).get("duration", "PT0S")
+            m = _re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration_str)
+            if not m:
+                continue
+            total_s = int(m.group(1) or 0) * 3600 + int(m.group(2) or 0) * 60 + int(m.group(3) or 0)
+            # Long-form = >60s (Shorts cutoff)
+            if total_s <= 60:
+                continue
+            published_str = snippet.get("publishedAt", "")
+            try:
+                published = datetime.fromisoformat(published_str.replace("Z", "+00:00"))
+                hours_old = (now - published.astimezone(pytz.timezone(TIMEZONE))).total_seconds() / 3600
+            except Exception:
+                hours_old = 999
+            if hours_old > within_hours:
+                continue
+            vid_id = item.get("id", "")
+            return {
+                "video_id": vid_id,
+                "title": snippet.get("title", ""),
+                "description": snippet.get("description", ""),
+                "tags": snippet.get("tags", []) or [],
+                "published_at": published_str,
+                "duration_seconds": total_s,
+                "vid_url": f"https://www.youtube.com/watch?v={vid_id}",
+                "hours_old": round(hours_old, 1),
+            }
+        print(f"   📺 Main channel: no long-form video uploaded in last {within_hours}h")
+        return None
+    except Exception as e:
+        print(f"   ⚠️ Main channel: fetch failed: {e}")
+        return None
+
+
+def fetch_youtube_captions(video_id, api_key=None):
+    """Phase 2: best-effort caption fetch via YouTube Data API.
+
+    Returns the caption text as a single string, or None if unavailable.
+
+    Note: the captions.download endpoint requires OAuth (not just an API key)
+    AND the video owner's consent for third-party download. For now we try
+    the captions.list endpoint to detect track availability, then attempt
+    download with the user's OAuth token. If neither works, the Sunday
+    recap falls back to description-only mode.
+    """
+    api_key = api_key or SOURCE_CHANNEL_API_KEY
+    if not api_key:
+        return None
+    try:
+        # List available caption tracks
+        list_resp = requests.get(
+            "https://www.googleapis.com/youtube/v3/captions",
+            params={"key": api_key, "videoId": video_id, "part": "snippet"},
+            timeout=15,
+        )
+        if list_resp.status_code != 200:
+            return None
+        tracks = list_resp.json().get("items", [])
+        if not tracks:
+            return None
+        # Prefer Hindi/English manual captions; fall back to auto-generated
+        preferred = None
+        for t in tracks:
+            lang = t.get("snippet", {}).get("language", "")
+            kind = t.get("snippet", {}).get("trackKind", "")
+            if lang in ("hi", "en") and kind != "ASR":
+                preferred = t
+                break
+        track = preferred or tracks[0]
+        track_id = track.get("id")
+
+        # Attempt download — requires OAuth (will fail with API key only)
+        # NOT implemented here without OAuth wiring; returning track-id as
+        # an availability signal. Phase 2 full implementation will use OAuth.
+        return None  # placeholder — Phase 2 will return real text
+    except Exception:
+        return None
+
+
+# Voice corpus — Phase 3 saves transcripts (or descriptions as fallback) of
+# the user's main-channel videos here. Phase 4 reads this directory to
+# extract style hints (vocabulary, ending patterns) for the daily script gen.
+VOICE_CORPUS_DIR = "voice_corpus"
+PHASE_STATUS_FILE = "phase_status.json"
+
+
+def _write_phase_status(phase_id: int, status: str, result: str, details: str = ""):
+    """Update a single phase's status in phase_status.json. Read-modify-write.
+
+    status: 'active' | 'best-effort' | 'pending' | 'failed'
+    result: short token like 'success' | 'fallback-used' | 'no-data-yet'
+    details: human-readable details shown on the status tab
+    """
+    now_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
+    try:
+        if os.path.exists(PHASE_STATUS_FILE):
+            with open(PHASE_STATUS_FILE) as f:
+                data = json.load(f)
+        else:
+            data = {"phases": {}}
+        data.setdefault("phases", {})
+        data["phases"][str(phase_id)] = {
+            "id": phase_id,
+            "status": status,
+            "last_run": now_iso,
+            "last_result": result,
+            "details": details,
+        }
+        data["last_update"] = now_iso
+        with open(PHASE_STATUS_FILE, "w") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"   ⚠️ Phase status write failed: {e}")
+
+
+def _read_phase_status():
+    """Load phase_status.json or return default skeleton."""
+    if os.path.exists(PHASE_STATUS_FILE):
+        try:
+            with open(PHASE_STATUS_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"phases": {}, "last_update": None}
+
+
+def extract_voice_corpus_style_hints(max_entries=12):
+    """Phase 4: read accumulated voice_corpus/*.txt and extract style hints
+    for inclusion in the daily script-generation prompt.
+
+    Returns a string of style guidance, or '' if corpus is too sparse (<4 weeks).
+    Style guidance includes the user's high-frequency vocabulary and 5 example
+    ending sentences so the daily-generated script matches the user's voice.
+    """
+    if not os.path.isdir(VOICE_CORPUS_DIR):
+        return ""
+    files = sorted(os.listdir(VOICE_CORPUS_DIR), reverse=True)[:max_entries]
+    if len(files) < 4:
+        # Not enough corpus yet — Phase 4 activates after 4 weeks of data
+        return ""
+    samples = []
+    for fname in files:
+        if not fname.endswith(".txt"):
+            continue
+        try:
+            with open(os.path.join(VOICE_CORPUS_DIR, fname)) as f:
+                samples.append(f.read()[:3000])
+        except Exception:
+            continue
+    if not samples:
+        return ""
+    # Extract last 1-2 sentences from each sample as ending-pattern examples
+    import re as _re
+    endings = []
+    for sample in samples:
+        sentences = _re.split(r'[।.!?]\s+', sample.strip())
+        if len(sentences) >= 2:
+            endings.append(sentences[-2][:120])
+    endings_text = "\n".join(f"   - {e}" for e in endings[:5])
+    return (
+        f"\n\nUSER VOICE STYLE (from {len(samples)} recent main-channel video transcripts):\n"
+        f"Example ending sentences the user actually uses — match this energy + register:\n"
+        f"{endings_text}\n"
+    )
+
+
 def get_source_channel_top_topics(n=10):
     """Return top N video titles from source channel, ranked by views."""
     videos = fetch_source_channel_insights()
@@ -3015,6 +3225,7 @@ what TONE, ANGLE, and DEPTH works. Your script should match this audience's expe
 This is what's actually worked (and failed) on the bot's recent uploads.
 Mimic the patterns of TOP performers; AVOID the patterns of FLOPS.
 {_own_channel_performance_signal()}
+{extract_voice_corpus_style_hints()}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -5724,7 +5935,7 @@ def generate_blog_slug(title):
     return slug
 
 
-def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls=None, related_posts=None, prev_post=None):
+def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls=None, related_posts=None, prev_post=None, vid_url=None):
     """Build the Claude prompt for generating a full SEO blog post HTML."""
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
     slug = generate_blog_slug(title)
@@ -5735,7 +5946,11 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
     # videos on different channels embed fine via oEmbed). Replacing the iframe
     # with a clickable thumbnail card kills the broken-embed error, keeps a
     # backlink to YouTube, and drives click traffic into the Short feed.
-    yt_short_url = f"https://youtube.com/shorts/{vid_id}"
+    #
+    # vid_url is passed for long-form videos (Sunday recap from main channel)
+    # — those use https://www.youtube.com/watch?v=... and CAN actually be
+    # embedded, but we use the same thumbnail card for visual consistency.
+    yt_short_url = vid_url or f"https://youtube.com/shorts/{vid_id}"
     # Primary thumbnail: the blog's AI-generated hero image (always available on
     # S3 immediately the blog is published). YouTube's Shorts thumbnails take
     # 1-24h to generate — using them as the primary source means the video card
@@ -5850,7 +6065,7 @@ REQUIREMENTS:
        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:rgba(255,0,0,0.9);border-radius:14px;display:flex;align-items:center;justify-content:center;">
          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg>
        </div>
-       <div style="background:#1a1a1a;color:#fff;padding:12px 16px;font-size:14px;font-weight:600;">▶ Watch on YouTube Shorts</div>
+       <div style="background:#1a1a1a;color:#fff;padding:12px 16px;font-size:14px;font-weight:600;">▶ Watch on YouTube</div>
      </a>
      Do NOT use an <iframe> — it WILL break. The clickable thumbnail above is the ONLY acceptable video element.
    - End with a strong CTA section linking to Sale91.com
@@ -6107,7 +6322,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
         print(f"   ⚠️ Blog: related_posts selection error: {e}")
 
     # Step 3: Generate blog HTML with image URLs + related posts embedded
-    prompt = get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls, related_posts, prev_post=prev_post)
+    prompt = get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls, related_posts, prev_post=prev_post, vid_url=vid_url)
 
     try:
         resp = claude_client.messages.create(
@@ -6260,6 +6475,67 @@ def _publish_reddit_to_github_pages(draft: dict, today: str, keep_days: int = RE
         shutil.rmtree(repo_dir, ignore_errors=True)
 
 
+def _build_phases_tab_html() -> str:
+    """Build the System Status tab content from phase_status.json.
+
+    Shows all 4 phases as cards with last-run time, status badge, and
+    human-readable details. Updates as the bot writes phase_status.json
+    on each Sunday (or daily) run.
+    """
+    import html as _html
+    PHASE_NAMES = {
+        1: ("Phase 1: Sunday Saturday-recap blog",
+            "Every Sunday, fetches your Saturday upload from the main 40K-sub channel and turns it into a blog post + Reddit draft. Replaces Sunday's autonomous Veo run (saves ~$7.58/Sunday)."),
+        2: ("Phase 2: Caption transcript fetch",
+            "Best-effort: tries to grab the video's caption track via the YouTube Data API. If captions aren't accessible (most cases without OAuth), falls back to using the video description as the source."),
+        3: ("Phase 3: Voice corpus accumulation",
+            "Saves each week's source text (transcript or description) into voice_corpus/YYYY-MM-DD.txt. Builds a multi-week sample of your voice and vocabulary."),
+        4: ("Phase 4: Voice style injection (daily script gen)",
+            "Once 4+ weekly corpus entries exist, daily script generation reads voice_corpus/ and includes your real ending-sentence patterns as style guidance. Bot's voice gets closer to yours over time."),
+    }
+    status_data = _read_phase_status()
+    phases = status_data.get("phases", {})
+    last_update = status_data.get("last_update", "—")
+
+    badge_color = {
+        "active":      ("#1a5c2e", "#e8f5ed", "✅ Active"),
+        "best-effort": ("#9c6500", "#fffbe6", "⚠️ Best-effort"),
+        "pending":     ("#666",    "#f0f0eb", "⏳ Pending"),
+        "failed":      ("#8b1a1a", "#ffe5e5", "❌ Failed"),
+    }
+
+    cards = []
+    for pid in (1, 2, 3, 4):
+        name, blurb = PHASE_NAMES[pid]
+        info = phases.get(str(pid), {})
+        st = info.get("status", "pending")
+        fg, bg, label = badge_color.get(st, badge_color["pending"])
+        last_run = info.get("last_run", "—") or "—"
+        if last_run != "—":
+            last_run = last_run[:19].replace("T", " ")
+        details = _html.escape(info.get("details", "Not yet run."))
+        cards.append(f'''
+    <div class="phase-card">
+      <div class="phase-head">
+        <span class="phase-name">{_html.escape(name)}</span>
+        <span class="phase-badge" style="color:{fg};background:{bg}">{label}</span>
+      </div>
+      <p class="phase-blurb">{_html.escape(blurb)}</p>
+      <div class="phase-meta">
+        <span><strong>Last run:</strong> {_html.escape(last_run)}</span>
+        <span><strong>Result:</strong> {_html.escape(info.get("last_result", "—"))}</span>
+      </div>
+      <div class="phase-details">{details}</div>
+    </div>''')
+
+    return f'''<div class="phases-wrap" id="phases-tab" style="display:none">
+  <div class="phases-summary">
+    <strong>System status</strong> · last update: {_html.escape(last_update or "—")}
+  </div>
+  {"".join(cards)}
+</div>'''
+
+
 def _render_reddit_html(draft: dict, today: str, archive_dates: list = None) -> str:
     """Render the mobile-first HTML page from a parsed Reddit draft.
 
@@ -6295,6 +6571,8 @@ def _render_reddit_html(draft: dict, today: str, archive_dates: list = None) -> 
         f'<a href="{hero}" download class="btn-secondary">⬇ Download image</a>'
     ) if hero else '<p style="color:#888;font-size:14px;">No hero image — post as text-only or attach your own.</p>'
 
+    # System Status tab content
+    phases_tab_html = _build_phases_tab_html()
     # Archive section — links to past posts within the 30-day retention window
     archive_html = ""
     if archive_dates:
@@ -6340,6 +6618,17 @@ ul.engagement li{{margin-bottom:8px;font-size:15px}}
 .archive-list{{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}}
 .archive-list li a{{display:block;padding:10px 8px;background:#f7f5ee;border-radius:8px;text-align:center;color:#555;font-size:13px;text-decoration:none;font-family:Menlo,Monaco,monospace}}
 .archive-list li a:hover{{background:#ede9d5;color:#222}}
+.tabs{{display:flex;gap:4px;margin:-4px 0 14px;background:#fff;padding:4px;border-radius:12px;border:1px solid #eee}}
+.tab-btn{{flex:1;padding:10px 8px;font-size:14px;font-weight:600;background:transparent;border:none;border-radius:8px;color:#888;cursor:pointer;transition:.15s}}
+.tab-btn.active{{background:#0f3460;color:#fff}}
+.phases-summary{{font-size:13px;color:#666;padding:10px 12px;background:#fff;border-radius:10px;margin-bottom:14px;border:1px solid #eee}}
+.phase-card{{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid #eee;box-shadow:0 1px 4px rgba(0,0,0,.04)}}
+.phase-head{{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}}
+.phase-name{{font-weight:700;font-size:15px;color:#0f3460}}
+.phase-badge{{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}}
+.phase-blurb{{font-size:13px;color:#555;margin-bottom:10px;line-height:1.5}}
+.phase-meta{{display:flex;gap:14px;font-size:12px;color:#666;margin-bottom:8px;flex-wrap:wrap}}
+.phase-details{{font-size:13px;color:#333;background:#f7f5ee;padding:10px;border-radius:8px;font-family:Menlo,Monaco,monospace;word-break:break-word}}
 .sticky-bottom{{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;padding:14px 16px;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.08)}}
 .sticky-inner{{max-width:560px;margin:0 auto;display:flex;gap:10px;align-items:center}}
 .checkbox-wrap{{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;user-select:none}}
@@ -6359,6 +6648,15 @@ ul.engagement li{{margin-bottom:8px;font-size:15px}}
     <h1>📋 Today's Reddit Post</h1>
     <div class="date">{today}</div>
   </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="post-tab">📝 Today's post</button>
+    <button class="tab-btn" data-tab="phases-tab">⚙️ System status</button>
+  </div>
+
+  {phases_tab_html}
+
+  <div id="post-tab">
 
   <div class="card">
     <div class="label">Target subreddit</div>
@@ -6394,6 +6692,7 @@ ul.engagement li{{margin-bottom:8px;font-size:15px}}
   </div>
 {archive_html}
   <div class="done-stamp" id="done-stamp"></div>
+  </div><!-- /#post-tab -->
 </div>
 
 <div class="sticky-bottom">
@@ -6435,6 +6734,18 @@ const label = document.getElementById('check-label');
 const stamp = document.getElementById('done-stamp');
 const notify = document.getElementById('notify-btn');
 
+// Tab switching — Today's post / System status
+document.querySelectorAll('.tab-btn').forEach(btn => {{
+  btn.addEventListener('click', () => {{
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.getAttribute('data-tab');
+    document.getElementById('post-tab').style.display = (target === 'post-tab') ? 'block' : 'none';
+    const phasesEl = document.getElementById('phases-tab');
+    if (phasesEl) phasesEl.style.display = (target === 'phases-tab') ? 'block' : 'none';
+  }});
+}});
+
 function refreshState() {{
   const saved = localStorage.getItem(KEY);
   if (saved) {{
@@ -6464,6 +6775,183 @@ refreshState();
 </script>
 </body>
 </html>"""
+
+
+def process_main_channel_recap():
+    """Sunday recap pipeline: fetch user's latest Saturday main-channel video
+    and generate a blog post + Reddit draft based on it.
+
+    Flow:
+    1. Fetch latest long-form video from SOURCE_CHANNEL_ID (last 48h window).
+    2. Phase 2: try to fetch captions; fall back to description-only.
+    3. Phase 3: save corpus text to voice_corpus/YYYY-MM-DD.txt.
+    4. Generate blog images + blog HTML (no Veo prompts; topical fallback prompts).
+    5. Publish blog to S3 with the long-form watch URL embedded.
+    6. Update sitemap + blog_history + invalidate CloudFront.
+    7. Generate Reddit draft for the Sunday page.
+    8. Write phase status JSON for the status tab.
+
+    This is called when daily_short.py is invoked with --mode=sunday-recap.
+    Sunday's autonomous daily-bot run is skipped at the workflow cron level
+    (daily_short.yml cron is `0 12 * * 1-6` — Mon-Sat only).
+    """
+    print("\n" + "=" * 60)
+    print("  🌅 SUNDAY RECAP — main channel weekly long-form pipeline")
+    print("=" * 60)
+
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+
+    # ── Step 1: Fetch Saturday's main-channel upload ──
+    video = fetch_latest_main_channel_long_form(within_hours=48)
+    if not video:
+        msg = "No long-form video uploaded by main channel in last 48h — skipping recap"
+        print(f"   ⚠️ {msg}")
+        _write_phase_status(1, "active", "no-saturday-upload", msg)
+        return False
+
+    print(f"   📺 Found: {video['title']}")
+    print(f"   📺 Uploaded {video['hours_old']}h ago · duration {video['duration_seconds']}s")
+    print(f"   📺 URL: {video['vid_url']}")
+
+    # ── Step 2: Phase 2 — best-effort caption fetch ──
+    transcript = fetch_youtube_captions(video["video_id"])
+    if transcript:
+        print(f"   📝 Phase 2: Got transcript ({len(transcript)} chars)")
+        script_source = transcript
+        _write_phase_status(2, "active", "transcript-fetched",
+                            f"Got {len(transcript)} char transcript for {video['title'][:50]}")
+    else:
+        print(f"   📝 Phase 2: No transcript (captions API needs OAuth) — using description")
+        script_source = video["description"]
+        _write_phase_status(2, "best-effort", "fallback-to-description",
+                            "Captions API requires OAuth; falling back to video description. "
+                            "Will be upgraded when OAuth caption scope is added.")
+
+    # ── Step 3: Save to voice corpus for Phase 4 learning ──
+    os.makedirs(VOICE_CORPUS_DIR, exist_ok=True)
+    corpus_path = os.path.join(VOICE_CORPUS_DIR, f"{today}.txt")
+    try:
+        with open(corpus_path, "w") as f:
+            f.write(f"# {video['title']}\n# {video['vid_url']}\n# Uploaded: {video['published_at']}\n\n")
+            f.write(script_source)
+        corpus_count = len([f for f in os.listdir(VOICE_CORPUS_DIR) if f.endswith(".txt")])
+        print(f"   💾 Phase 3: Saved to voice_corpus/ ({corpus_count} entries total)")
+        weeks = corpus_count // 1  # roughly weekly entries
+        _write_phase_status(3, "active", "saved",
+                            f"{corpus_count} corpus entries · target 4+ for Phase 4 activation")
+    except Exception as e:
+        print(f"   ⚠️ Phase 3: corpus save failed: {e}")
+        _write_phase_status(3, "failed", str(e), "Corpus save error")
+
+    # ── Step 4-6: Generate blog + publish to S3 ──
+    try:
+        from anthropic import Anthropic
+        claude = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    except Exception as e:
+        print(f"   ❌ Cannot init Claude: {e}")
+        _write_phase_status(1, "failed", str(e), "Claude init failed")
+        return False
+
+    cost = CostTracker() if 'CostTracker' in globals() else None
+
+    # Optimize the blog title (different from YT title — SEO-keyword version)
+    try:
+        titles = optimize_title(claude, video["title"], script_source[:1500], video["title"])
+        blog_title = titles.get("best", video["title"])
+    except Exception:
+        blog_title = video["title"]
+
+    print(f"   ✍️ Blog title: {blog_title}")
+
+    # The actual blog content uses description + transcript as the source.
+    # Hook = first line of description (or first 80 chars).
+    hook = (video["description"].split("\n", 1)[0] or video["title"])[:140]
+    blog_tags = video.get("tags", [])[:10] or [
+        "plain tshirt wholesale", "tshirt manufacturer india",
+        "bulk tshirt order", "printing business"
+    ]
+
+    blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
+        claude_client=claude,
+        cost_tracker=cost,
+        topic=video["title"],
+        title=blog_title,
+        description=video["description"][:500] or video["title"],
+        script_english=script_source[:3000],
+        tags=blog_tags,
+        hook_text=hook,
+        vid_id=video["video_id"],
+        vid_url=video["vid_url"],  # long-form watch URL
+        video_prompts=None,  # No Veo prompts — generate_blog_images falls back to topical
+    )
+
+    if not blog_html:
+        msg = "Blog HTML generation returned empty"
+        print(f"   ❌ {msg}")
+        _write_phase_status(1, "failed", "blog-gen-empty", msg)
+        return False
+
+    # Publish to S3
+    if not os.environ.get("AWS_ACCESS_KEY_ID"):
+        msg = "AWS credentials missing"
+        print(f"   ❌ {msg}")
+        _write_phase_status(1, "failed", "no-aws", msg)
+        return False
+
+    publish_ok = publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url,
+                                    blog_images, vid_id=video["video_id"])
+    if not publish_ok:
+        msg = "publish_blog_to_s3 returned False"
+        print(f"   ❌ {msg}")
+        _write_phase_status(1, "failed", "s3-publish-failed", msg)
+        return False
+
+    save_blog_history(video["title"], blog_title, blog_slug, blog_url, video["vid_url"],
+                      tags=blog_tags, description=video["description"][:200],
+                      word_count=len(blog_html.split()))
+    print(f"   ✅ Blog published: {blog_url}")
+
+    # ── Step 7: Reddit draft ──
+    hero_url = None
+    for img_bytes, fname in (blog_images or []):
+        if fname == "hero.webp":
+            hero_url = f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp"
+            break
+    try:
+        generate_reddit_post(
+            claude_client=claude,
+            cost_tracker=cost,
+            topic=video["title"],
+            blog_title=blog_title,
+            blog_url=blog_url,
+            script_english=script_source[:1500],
+            tags=blog_tags,
+            hero_image_url=hero_url,
+        )
+    except Exception as e:
+        print(f"   ⚠️ Reddit draft non-fatal failure: {e}")
+
+    # ── Phase 1 success status ──
+    _write_phase_status(1, "active", "success",
+                        f"Recap blog published: {blog_url} · source: '{video['title'][:60]}'")
+
+    # ── Phase 4 status check ──
+    corpus_count = len([f for f in os.listdir(VOICE_CORPUS_DIR) if f.endswith(".txt")]) \
+        if os.path.isdir(VOICE_CORPUS_DIR) else 0
+    if corpus_count >= 4:
+        _write_phase_status(4, "active", "ready",
+                            f"Voice style hints active in daily script gen ({corpus_count} corpus entries)")
+    else:
+        _write_phase_status(4, "pending", "waiting-for-corpus",
+                            f"Need {4 - corpus_count} more weekly corpus entries before activation "
+                            f"(currently {corpus_count})")
+
+    print("\n" + "=" * 60)
+    print(f"  ✅ SUNDAY RECAP COMPLETE")
+    print(f"  📰 Blog: {blog_url}")
+    print(f"  📺 Source: {video['vid_url']}")
+    print("=" * 60)
+    return True
 
 
 def generate_reddit_post(claude_client, cost_tracker, topic, blog_title, blog_url,
@@ -9303,6 +9791,11 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None, base_
 
 if __name__ == "__main__":
     import sys
+    # Sunday recap mode — fetch user's Saturday main-channel upload, generate
+    # blog + Reddit (no Veo). Triggered by .github/workflows/sunday_recap.yml
+    if "--mode=sunday-recap" in sys.argv or "--sunday-recap" in sys.argv:
+        ok = process_main_channel_recap()
+        sys.exit(0 if ok else 1)
     if "--test-thumbnail" in sys.argv:
         _topic = None
         _script = None

@@ -1,0 +1,68 @@
+name: Sunday Recap (Main Channel)
+
+# Sunday 13:30 UTC = 7:00 PM IST. Picks up the user's Saturday upload on
+# their main 40K-subs channel (CHANNEL_ID_2) and generates a blog post +
+# Reddit draft from it. Replaces Sunday's autonomous Veo daily-bot run
+# (daily_short.yml cron is `0 12 * * 1-6` — Mon-Sat only, no Sunday).
+#
+# Why Sunday evening (not morning):
+#   The user uploads original content Saturday evening (sometimes as late as
+#   10 PM IST). Sunday 7 PM IST gives 21+ hours buffer for the video to be
+#   available + indexed in YouTube Data API.
+
+on:
+  schedule:
+    - cron: '30 13 * * 0'   # Sunday 13:30 UTC = 19:00 IST
+  workflow_dispatch:
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Install Python packages
+        run: pip install -q -r requirements.txt
+
+      - name: Run Sunday recap
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'ap-south-1'
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python3 daily_short.py --mode=sunday-recap
+
+      - name: Save updated tracking files
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add blog_history.json || true
+          git add reddit_drafts/ || true
+          git add voice_corpus/ || true
+          git add phase_status.json || true
+          git commit -m "Sunday recap [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }}
