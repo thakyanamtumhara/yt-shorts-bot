@@ -5539,6 +5539,24 @@ BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
 BLOG_HISTORY_FILE = "blog_history.json"
 INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
 
+# Reddit drafts — daily content for manual posting by employee. We auto-generate
+# one ready-to-paste Reddit post per blog (title + body + target sub + image)
+# and commit it to reddit_drafts/YYYY-MM-DD.md. The employee opens the file,
+# copies the content into Reddit, attaches the hero image, hits submit.
+REDDIT_DRAFTS_DIR = "reddit_drafts"
+# Whitelist of subreddits that tolerate value-first self-promo with a track
+# record of community engagement. DO NOT add subs to this list without
+# checking their rules — most subreddits ban any self-promotion entirely.
+REDDIT_SUBS_WHITELIST = [
+    "r/PrintOnDemand",        # POD sellers — DTG/DTF/blanks topics
+    "r/screenprinting",       # screen printing technique focus
+    "r/streetwearstartup",    # startup brands ordering blanks
+    "r/Entrepreneur",         # ONLY via Sunday weekly self-promo thread
+    "r/IndianEntrepreneur",   # India-specific B2B
+    "r/SmallBusinessIndia",   # India-specific small biz
+    "r/etsy",                 # resellers using blanks for prints
+]
+
 
 def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=None):
     """Inject JSON-LD structured data and sticky bottom bar into blog HTML.
@@ -6127,6 +6145,330 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     except Exception as e:
         print(f"   ⚠️ Blog generation failed: {e}")
         return None, None, None, []
+
+
+# Manager WhatsApp number used in the "Notify Manager" link on the Reddit
+# drafts page. Edit if monitoring should go to a different number.
+REDDIT_MANAGER_WHATSAPP = "919336695049"
+
+
+def _render_reddit_html(draft: dict, today: str) -> str:
+    """Render the mobile-first HTML page from a parsed Reddit draft.
+
+    Self-contained — inline CSS + JS only. localStorage persists the "done"
+    checkbox state per-device so the employee can see today's progress.
+    """
+    import html as _html
+    title = _html.escape(draft.get('title', ''))
+    body = draft.get('body', '')
+    sub = _html.escape(draft.get('target_sub', ''))
+    posting_time = _html.escape(draft.get('posting_time', 'Weekday morning, 9-11 AM IST'))
+    hero = _html.escape(draft.get('hero_image_url') or '')
+    blog_url = _html.escape(draft.get('blog_url', ''))
+    engagement = draft.get('engagement_plan') or [
+        "Reply to every comment within 12 hours.",
+        "Spend 10 minutes commenting helpfully on other posts in the same sub (no links).",
+        "Do NOT cross-post to another subreddit today.",
+    ]
+    engagement_html = "\n".join(f"<li>{_html.escape(item)}</li>" for item in engagement)
+    # JS-safe versions (used inside template literals — escape backticks/backslashes)
+    def js_str(s):
+        return (s or '').replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
+    title_js = js_str(draft.get('title', ''))
+    body_js = js_str(body)
+    sub_js = js_str(draft.get('target_sub', ''))
+    body_html = _html.escape(body).replace('\n', '<br>')
+    hero_block = (
+        f'<img src="{hero}" alt="Hero image for the post" '
+        f'style="width:100%;border-radius:10px;display:block;margin-bottom:12px;">'
+        f'<a href="{hero}" download class="btn-secondary">⬇ Download image</a>'
+    ) if hero else '<p style="color:#888;font-size:14px;">No hero image — post as text-only or attach your own.</p>'
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Reddit Post — {today}</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f0;color:#222;padding:16px 12px 140px;line-height:1.5;font-size:16px}}
+.wrap{{max-width:560px;margin:0 auto}}
+header{{background:linear-gradient(135deg,#d4a832,#b8860b);color:#fff;padding:18px 16px;border-radius:14px;margin-bottom:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.1)}}
+header h1{{font-size:22px;margin-bottom:4px}}
+header .date{{font-size:14px;opacity:.95}}
+.card{{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);border:1px solid #eee}}
+.label{{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;font-weight:600;margin-bottom:8px}}
+.content{{font-size:16px;color:#1a1a1a;word-wrap:break-word}}
+.content.title{{font-size:18px;font-weight:600;color:#0f3460}}
+.content.body{{line-height:1.65;white-space:pre-wrap}}
+.subreddit{{font-size:22px;font-weight:700;color:#ff4500;font-family:Menlo,Monaco,monospace}}
+.btn{{width:100%;padding:14px;font-size:15px;font-weight:600;border:none;border-radius:10px;cursor:pointer;margin-top:10px;background:#0f3460;color:#fff;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}}
+.btn:active{{transform:scale(.98)}}
+.btn.copied{{background:#1a5c2e}}
+.btn-secondary{{display:inline-block;padding:10px 14px;background:#f0f0eb;color:#333;border-radius:8px;text-decoration:none;font-weight:500;font-size:14px;margin-top:8px}}
+ul.engagement{{padding-left:20px;color:#444}}
+ul.engagement li{{margin-bottom:8px;font-size:15px}}
+.posting-time{{background:#fffbe6;padding:10px 12px;border-radius:8px;border-left:3px solid #d4a832;font-size:15px;color:#5d4a00}}
+.sticky-bottom{{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;padding:14px 16px;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.08)}}
+.sticky-inner{{max-width:560px;margin:0 auto;display:flex;gap:10px;align-items:center}}
+.checkbox-wrap{{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;user-select:none}}
+.checkbox-wrap input{{width:24px;height:24px;cursor:pointer;accent-color:#1a5c2e}}
+.checkbox-wrap span{{font-weight:600;font-size:15px;color:#222}}
+.checkbox-wrap.done span{{color:#1a5c2e;text-decoration:line-through;opacity:.7}}
+.notify-btn{{background:#25d366;color:#fff;padding:12px 14px;border:none;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;display:none;align-items:center;gap:6px}}
+.notify-btn.show{{display:inline-flex}}
+.done-stamp{{font-size:13px;color:#1a5c2e;font-weight:600;margin-top:6px;display:none}}
+.done-stamp.show{{display:block}}
+@media (min-width:640px){{body{{padding-bottom:120px}}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📋 Today's Reddit Post</h1>
+    <div class="date">{today}</div>
+  </header>
+
+  <div class="card">
+    <div class="label">Target subreddit</div>
+    <div class="subreddit" id="sub-text">{sub}</div>
+    <button class="btn" onclick="copyText(`{sub_js}`, this)">📋 Copy subreddit name</button>
+  </div>
+
+  <div class="card">
+    <div class="label">Post title</div>
+    <div class="content title">{title}</div>
+    <button class="btn" onclick="copyText(`{title_js}`, this)">📋 Copy title</button>
+  </div>
+
+  <div class="card">
+    <div class="label">Post body</div>
+    <div class="content body">{body_html}</div>
+    <button class="btn" onclick="copyText(`{body_js}`, this)">📋 Copy body</button>
+  </div>
+
+  <div class="card">
+    <div class="label">Hero image</div>
+    {hero_block}
+  </div>
+
+  <div class="card">
+    <div class="label">Best time to post</div>
+    <div class="posting-time">⏰ {posting_time}</div>
+  </div>
+
+  <div class="card">
+    <div class="label">After posting — engagement (important!)</div>
+    <ul class="engagement">{engagement_html}</ul>
+  </div>
+
+  <div class="done-stamp" id="done-stamp"></div>
+</div>
+
+<div class="sticky-bottom">
+  <div class="sticky-inner">
+    <label class="checkbox-wrap" id="check-wrap">
+      <input type="checkbox" id="done-check">
+      <span id="check-label">Mark as posted</span>
+    </label>
+    <a id="notify-btn" class="notify-btn" href="#" target="_blank" rel="noopener">📱 Notify</a>
+  </div>
+</div>
+
+<script>
+const KEY = 'reddit-posted-{today}';
+const sub = `{sub_js}`;
+const date = '{today}';
+const managerPhone = '{REDDIT_MANAGER_WHATSAPP}';
+
+function copyText(text, btn) {{
+  if (navigator.clipboard) {{
+    navigator.clipboard.writeText(text).then(() => flashCopied(btn));
+  }} else {{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try {{ document.execCommand('copy'); flashCopied(btn); }} catch(e) {{}}
+    document.body.removeChild(ta);
+  }}
+}}
+function flashCopied(btn) {{
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  btn.classList.add('copied');
+  setTimeout(() => {{ btn.textContent = orig; btn.classList.remove('copied'); }}, 1500);
+}}
+
+const check = document.getElementById('done-check');
+const wrap = document.getElementById('check-wrap');
+const label = document.getElementById('check-label');
+const stamp = document.getElementById('done-stamp');
+const notify = document.getElementById('notify-btn');
+
+function refreshState() {{
+  const saved = localStorage.getItem(KEY);
+  if (saved) {{
+    check.checked = true;
+    wrap.classList.add('done');
+    label.textContent = 'Posted ✓';
+    stamp.textContent = '✓ Marked as posted at ' + saved;
+    stamp.classList.add('show');
+    const msg = encodeURIComponent('✅ Reddit post done for ' + date + ' — posted to ' + sub + ' at ' + saved + '.');
+    notify.href = 'https://wa.me/' + managerPhone + '?text=' + msg;
+    notify.classList.add('show');
+  }}
+}}
+check.addEventListener('change', () => {{
+  if (check.checked) {{
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const stampTxt = hh+':'+mm+' IST';
+    localStorage.setItem(KEY, stampTxt);
+  }} else {{
+    localStorage.removeItem(KEY);
+  }}
+  refreshState();
+}});
+refreshState();
+</script>
+</body>
+</html>"""
+
+
+def generate_reddit_post(claude_client, cost_tracker, topic, blog_title, blog_url,
+                         script_english, tags, hero_image_url):
+    """Generate ONE ready-to-paste Reddit post and publish it to a mobile-
+    friendly hosted page. The employee bookmarks one URL:
+        https://www.bulkplaintshirt.com/p/reddit-today.html
+    and gets a fresh post every day with copy buttons + a "posted" checkbox.
+
+    Side effects:
+    - Saves JSON archive to reddit_drafts/YYYY-MM-DD.json (committed to git).
+    - Uploads HTML to S3 at p/reddit-today.html.
+    - Uploads HTML to S3 at p/reddit-drafts/YYYY-MM-DD.html (history).
+    - Invalidates CloudFront on /p/reddit-today.html.
+
+    Non-fatal on any failure — daily pipeline continues regardless.
+    """
+    print("   📝 Reddit: Drafting daily post...")
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+    os.makedirs(REDDIT_DRAFTS_DIR, exist_ok=True)
+
+    subs_list = "\n".join(f"   - {s}" for s in REDDIT_SUBS_WHITELIST)
+    tags_str = ", ".join(tags) if tags else "none"
+
+    prompt = f"""You are writing ONE Reddit post for a small Indian B2B textile manufacturer (Sale91.com / bulkplaintshirt.com — plain t-shirts, hoodies, blanks for printing businesses).
+
+CONTEXT:
+- Today's blog post: "{blog_title}"
+- Blog URL: {blog_url}
+- Hero image (already on S3): {hero_image_url or 'none'}
+- Topic angle: {topic}
+- Source video script (English): {script_english}
+- Tags: {tags_str}
+
+GOAL: Write a Reddit post that drives readers to the blog WITHOUT looking promotional. Reddit users hate "buy now" tone — they reward "I made this mistake" stories that share real insight, with the link as a "see photos + full breakdown" add-on at the end.
+
+OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences, no explanation). Exactly this schema:
+
+{{
+  "target_sub": "<one subreddit from the whitelist below — pick the SINGLE most relevant for the topic>",
+  "posting_time": "<e.g. 'Weekday morning, 9-11 AM IST' or 'Sunday — r/Entrepreneur weekly self-promo thread only'>",
+  "title": "<ONE catchy title, 70 chars max, no emojis, Reddit-native style, with specific numbers if possible>",
+  "body": "<150-200 words. Story-first opening. Specific numbers and real insight. End with: 'Full breakdown with photos: {blog_url}' on its own line. Then ONE engagement question on the next line like 'Happy to answer specific GSM questions if anyone's stuck on an order.' Use plain text with \\n for line breaks — Reddit markdown like **bold** is OK.>",
+  "engagement_plan": [
+    "Reply to every comment within 12 hours.",
+    "Spend 10 minutes commenting helpfully on other posts in r/X today (no links).",
+    "Do NOT cross-post to another subreddit today."
+  ]
+}}
+
+SUBREDDIT WHITELIST — pick ONE that genuinely fits the topic:
+{subs_list}
+
+WRITING RULES:
+- NO emojis in title (Reddit hates emoji-titles).
+- 1-2 emojis MAX in body, only if naturally placed.
+- Use Reddit markdown in body: **bold**, bullet lists with -, ##H2 sparingly.
+- Forbidden words: amazing, incredible, discover, unleash, revolutionary, transform (sound like ads).
+- Use specific numbers, real ₹ amounts, real fabric/GSM specs from the topic.
+- Mention "Sale91" or "BulkPlainTshirt" ONLY inside the link URL — never in the body text.
+- Replace "r/X" placeholder in engagement_plan with the actual chosen sub.
+
+Return ONLY the JSON object."""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=1500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        # Some models prefix with "json" tag
+        if raw.lower().startswith("json"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[4:]
+
+        draft = json.loads(raw)
+        # Attach context fields used by the HTML renderer
+        draft['hero_image_url'] = hero_image_url
+        draft['blog_url'] = blog_url
+
+        # Track cost
+        if cost_tracker and hasattr(cost_tracker, 'track_claude_call'):
+            cost_tracker.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
+
+        # Archive JSON locally (committed to git)
+        json_path = os.path.join(REDDIT_DRAFTS_DIR, f"{today}.json")
+        with open(json_path, "w") as f:
+            json.dump(draft, f, ensure_ascii=False, indent=2)
+
+        # Render HTML page
+        html = _render_reddit_html(draft, today)
+
+        # Upload to S3 (two paths: today's stable URL + dated archive)
+        aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        if not aws_key or not aws_secret:
+            print("   ⚠️ Reddit: AWS credentials missing — JSON saved locally only")
+            return json_path
+
+        s3 = boto3.client('s3', region_name='ap-south-1',
+                           aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
+        cloudfront = boto3.client('cloudfront', region_name='ap-south-1',
+                                   aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
+
+        body_bytes = html.encode('utf-8')
+        for key in (f"p/reddit-today.html", f"p/reddit-drafts/{today}.html"):
+            s3.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=key,
+                Body=body_bytes,
+                ContentType='text/html; charset=utf-8',
+                CacheControl='no-cache, no-store, must-revalidate',
+            )
+        page_url = f"{BLOG_BASE_URL}/p/reddit-today.html"
+        print(f"   ✅ Reddit: Page live → {page_url}")
+
+        # Invalidate CloudFront so employee sees fresh content immediately
+        try:
+            cloudfront.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    'Paths': {'Quantity': 1, 'Items': ['/p/reddit-today.html']},
+                    'CallerReference': f"reddit-{today}-{int(time.time())}",
+                }
+            )
+        except Exception as e:
+            print(f"   ⚠️ Reddit: CloudFront invalidation skipped: {e}")
+
+        return page_url
+    except Exception as e:
+        print(f"   ⚠️ Reddit: Draft generation failed (non-fatal): {e}")
+        return None
 
 
 def repair_existing_blog_posts(s3_client, cloudfront_client):
@@ -8709,6 +9051,27 @@ def main():
                                       tags=yt_tags, description=yt_description,
                                       word_count=len(blog_html.split()) if blog_html else 0)
                     print(f"   ✅ Blog published: {blog_url}")
+
+                    # Generate Reddit post draft for the employee to paste manually.
+                    # Non-fatal — if this fails, the daily pipeline doesn't break.
+                    hero_url = None
+                    for img_bytes, fname in (blog_images or []):
+                        if fname == "hero.webp":
+                            hero_url = f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp"
+                            break
+                    try:
+                        generate_reddit_post(
+                            claude_client=claude,
+                            cost_tracker=cost,
+                            topic=fresh_topic,
+                            blog_title=yt_title,
+                            blog_url=blog_url,
+                            script_english=script_english,
+                            tags=yt_tags,
+                            hero_image_url=hero_url,
+                        )
+                    except Exception as e:
+                        print(f"   ⚠️ Reddit draft failed (non-fatal): {e}")
             elif blog_html:
                 print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
             # else: generate_blog_post already printed its warning
