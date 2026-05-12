@@ -3919,6 +3919,7 @@ _TTS_HINGLISH_DEVANAGARI = {
     "lag": "लग", "lagta": "लगता", "lagti": "लगती", "lagte": "लगते", "laga": "लगा",
     "lage": "लगे", "lagi": "लगी",
     "soch": "सोच", "sochta": "सोचता", "sochti": "सोचती", "sochna": "सोचना",
+    "sochke": "सोचके", "sochkar": "सोचकर", "sochkr": "सोचकर",
     "dekho": "देखो", "dekhi": "देखी", "dekhe": "देखे",
     "daal": "डाल", "daala": "डाला", "daali": "डाली", "daalna": "डालना",
     "pi": "पी", "piya": "पिया", "piyo": "पियो",
@@ -4065,6 +4066,7 @@ _TTS_HINGLISH_DEVANAGARI = {
     "chalana": "चलाना", "chal": "चल", "chalna": "चलना",
     "cheez": "चीज़",
     "dhula": "धुला", "dhuli": "धुली", "dhona": "धोना",
+    "dhoke": "धोके", "dhokar": "धोकर", "dhokr": "धोकर", "dhoye": "धोए", "dhoya": "धोया",
     "dikhane": "दिखाने", "dikhayi": "दिखाई", "dikhaye": "दिखाए",
     "honi": "होनी",
     "jaa": "जा",
@@ -4141,7 +4143,7 @@ _TTS_HINGLISH_DEVANAGARI = {
     "phenkna": "फेंकना", "phenka": "फेंका", "phenk": "फेंक",
     # Cycle 10 final additions
     "badhenge": "बढ़ेंगे", "ghatenge": "घटेंगे",
-    "galat": "ग़लत", "sahihe": "सहीहै",
+    "galat": "गलत", "sahihe": "सहीहै",  # गलत without nukta — ElevenLabs reads "ग़" as a non-Hindi consonant ("ghalat" with kh sound); modern Hindi spelling is plain "ग"
     "jeetega": "जीतेगा", "harega": "हारेगा", "jeetegi": "जीतेगी",
     "kitna": "कितना", "kitni": "कितनी", "kitne": "कितने",
     "pucha": "पूछा", "puchhi": "पूछी", "puchhna": "पूछना", "puch": "पूछ",
@@ -4272,6 +4274,8 @@ _TTS_HINGLISH_DEVANAGARI = {
     "niklenge": "निकलेंगे", "niklega_": "निकलेगा",  # already
     "pad": "पड़",
     "pehnega": "पहनेगा", "pehnegi": "पहनेगी", "pehne": "पहने", "pehna": "पहना", "pehni": "पहनी",
+    "pehnke": "पहनके", "pehanke": "पहनके", "pehnkar": "पहनकर", "pehankar": "पहनकर",
+    "pehnna": "पहनना", "pehnenge": "पहनेंगे", "pehnegi_": "पहनेगी",
     "raho": "रहो",
     "rahta": "रहता",  # alt of rehta
     "rupay": "रुपये", "rupees": "रुपये",  # add explicit handling of "rupees" English word
