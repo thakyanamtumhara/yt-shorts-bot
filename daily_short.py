@@ -6151,6 +6151,60 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 # drafts page. Edit if monitoring should go to a different number.
 REDDIT_MANAGER_WHATSAPP = "919336695049"
 
+# Retention window for Reddit draft archives. We keep the last N days of
+# dated archives (both S3 HTML files and local JSON files) and delete older.
+# 30 = roughly 1 month of historical posts for audit / re-use.
+REDDIT_RETENTION_DAYS = 30
+
+
+def _cleanup_old_reddit_drafts(s3_client, keep_days=REDDIT_RETENTION_DAYS):
+    """Delete Reddit draft archives older than keep_days. Idempotent.
+
+    Targets:
+    - S3: p/reddit-drafts/YYYY-MM-DD.html files
+    - Local: reddit_drafts/YYYY-MM-DD.json files (committed to git)
+
+    Failures are non-fatal — partial cleanup is fine, next run picks up
+    whatever was missed.
+    """
+    cutoff = (datetime.now(pytz.timezone(TIMEZONE)) - timedelta(days=keep_days)).strftime("%Y-%m-%d")
+    _DATE_RE = re.compile(r'(\d{4}-\d{2}-\d{2})')
+
+    # 1. S3 dated archives
+    try:
+        resp = s3_client.list_objects_v2(Bucket=BLOG_S3_BUCKET, Prefix='p/reddit-drafts/')
+        to_delete = []
+        for obj in resp.get('Contents', []):
+            m = _DATE_RE.search(obj['Key'])
+            if m and m.group(1) < cutoff:
+                to_delete.append({'Key': obj['Key']})
+        if to_delete:
+            # delete_objects supports up to 1000 keys per call
+            s3_client.delete_objects(
+                Bucket=BLOG_S3_BUCKET,
+                Delete={'Objects': to_delete, 'Quiet': True}
+            )
+            print(f"   🧹 Reddit: Pruned {len(to_delete)} S3 archive(s) older than {cutoff}")
+    except Exception as e:
+        print(f"   ⚠️ Reddit: S3 cleanup skipped: {e}")
+
+    # 2. Local JSON archives (so the git repo doesn't accumulate forever)
+    try:
+        if os.path.isdir(REDDIT_DRAFTS_DIR):
+            pruned = 0
+            for fname in os.listdir(REDDIT_DRAFTS_DIR):
+                m = _DATE_RE.match(fname)
+                if m and m.group(1) < cutoff:
+                    try:
+                        os.remove(os.path.join(REDDIT_DRAFTS_DIR, fname))
+                        pruned += 1
+                    except Exception:
+                        pass
+            if pruned:
+                print(f"   🧹 Reddit: Pruned {pruned} local JSON archive(s) older than {cutoff}")
+    except Exception as e:
+        print(f"   ⚠️ Reddit: Local cleanup skipped: {e}")
+
 
 def _render_reddit_html(draft: dict, today: str) -> str:
     """Render the mobile-first HTML page from a parsed Reddit draft.
@@ -6464,6 +6518,10 @@ Return ONLY the JSON object."""
             )
         except Exception as e:
             print(f"   ⚠️ Reddit: CloudFront invalidation skipped: {e}")
+
+        # Prune anything older than REDDIT_RETENTION_DAYS — keeps last 30 days
+        # of dated archives in S3 + the git repo, drops older.
+        _cleanup_old_reddit_drafts(s3)
 
         return page_url
     except Exception as e:
