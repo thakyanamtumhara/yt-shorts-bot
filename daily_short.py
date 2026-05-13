@@ -7148,7 +7148,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences,
   "target_sub": "<one subreddit from the whitelist below — pick the SINGLE most relevant for the topic>",
   "posting_time": "<e.g. 'Weekday morning, 9-11 AM IST' or 'Sunday — r/Entrepreneur weekly self-promo thread only'>",
   "title": "<ONE Reddit-native title, 70 chars max, no emojis. See TITLE RULES below — must sound like a real person posting, not a press release>",
-  "body": "<150-200 words. Story-first opening. Specific numbers and real insight. End with: 'Full breakdown with photos: {blog_url}' on its own line. Then ONE engagement question on the next line like 'Happy to answer specific GSM questions if anyone's stuck on an order.' Use plain text with \\n for line breaks — Reddit markdown like **bold** is OK.>",
+  "body": "<150-220 words. FIRST-PERSON HUMAN VOICE — see BODY VOICE RULES below. End with: 'Full breakdown with photos: {blog_url}' on its own line. Then ONE peer question on the next line. Use plain text with \\n for line breaks — Reddit markdown like **bold** is OK.>",
   "engagement_plan": [
     "Reply to every comment within 12 hours.",
     "Spend 10 minutes commenting helpfully on other posts in r/X today (no links).",
@@ -7201,10 +7201,57 @@ ADDITIONAL TITLE RULES:
 - 60-90 chars ideal range. Longer if a complete thought needs it.
 - The title must read like something one of your blog post readers would themselves post after experiencing the problem — not like a headline you'd put on the blog.
 
+BODY VOICE RULES — same priority as the title. User flagged that today's body sounds like a case study, not a human posting.
+
+Today's actual body (DO NOT WRITE LIKE THIS):
+   ❌ "A client ordered 500 pieces last month — 200 embroidered polos..."
+   ❌ "We used whatever blanks we had..."
+   ❌ "The fix: one consistent blank across all three techniques."
+   ❌ "If you're running multi-technique orders, this one change will save you from expensive mistakes."
+
+   Problems: third-person framing ("A client...", "We used..."), distant
+   professional tone, marketing-pitch ending. Reads like a brand blog
+   excerpt. People scroll past this on Reddit.
+
+How a real printer would write the same story (WRITE LIKE THIS):
+
+   ✅ "Got burned hard last month, want to share so you don't repeat my dumb mistake.
+
+   Client ordered 500 pieces — 200 embroidered polos, 200 DTF, 100 screen prints. I figured I'd just use whatever blanks I had in stock: 160 GSM for embroidery, 180 for DTF, 200 for screen. Different blanks, different prices, why not?
+
+   Whole batch rejected. Side-by-side, the pieces looked like they came from three different companies — one was thin and floppy, one was stiff, one was heavy. Same brand, same campaign, totally inconsistent feel.
+
+   Took me a week to figure out the fix. Now I just use ONE blank for the entire order — 200 GSM combed cotton across all three print methods. Embroidery still runs smooth, DTF bonds clean, screen absorbs evenly. Zero returns since.
+
+   ₹40k down the drain before I figured this out. Wish I'd known.
+
+   Full breakdown with photos: <url>
+
+   Anyone else got bitten by mixing blanks across print methods?"
+
+Notice the human elements:
+- "I" voice throughout ("I figured", "I just use", "Wish I'd known")
+- Self-deprecation ("dumb mistake", "Why not?", "Took me a week")
+- Sensory description ("thin and floppy", "stiff", "heavy")
+- Conversational connectors ("Got burned hard", "Sounds simple enough", "Took me a week", "Now I just")
+- ₹ amount at the END, organic — not a marketing lead
+- Peer-to-peer closing question ("Anyone else got bitten by...")
+
+BODY VOICE RULES (apply ALL of these):
+1. **First-person mandatory.** "I" / "me" / "my" throughout. Never "we" (sounds corporate). Never "A client ordered..." — use "Client called me last week..." or "Got a job last week for 500 pieces..."
+2. **Open with vulnerability** — "Got burned for ₹40k..." / "Made the dumbest mistake last week..." / "Still kicking myself about this one." Real humans admit fault; brands hide it.
+3. **Self-deprecation OK** — "I should have known", "Stupid of me", "Was being lazy", "Thought I was being smart" all read as authentic.
+4. **Sensory detail beats abstract** — instead of "felt completely different" write "one was thin and floppy, one had stiffness, one was heavy". Help the reader SEE the problem.
+5. **Conversational connectors** — "Turns out", "Long story short", "Spoiler:", "ok so", "yeah", "tbh", "basically". Sprinkle 2-3 of these.
+6. **No marketing-pitch endings** — never "this one change will save you" / "expert tip" / "pro insight". Just describe what worked and stop.
+7. **The ₹ amount goes near the end as a punchline**, not a headline. "₹40k down the drain" hits harder than "I lost ₹40k because..."
+8. **End with a peer question** that invites comments — "Anyone else..." / "How do you handle..." / "What would you have done?"
+
 OTHER WRITING RULES:
+- NO emojis in title (Reddit hates emoji-titles).
 - 1-2 emojis MAX in body, only if naturally placed.
-- Use Reddit markdown in body: **bold**, bullet lists with -, ##H2 sparingly.
-- Forbidden words: amazing, incredible, discover, unleash, revolutionary, transform (sound like ads).
+- Use Reddit markdown in body: **bold** for the punchline only, bullet lists for actual lists, no ##H2.
+- Forbidden words: amazing, incredible, discover, unleash, revolutionary, transform, premium, journey (sound like ads).
 - Use specific numbers, real ₹ amounts, real fabric/GSM specs from the topic.
 - Mention "Sale91" or "BulkPlainTshirt" ONLY inside the link URL — never in the body text.
 - Replace "r/X" placeholder in engagement_plan with the actual chosen sub.
