@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Seam strength kaise check karo — haath se kheench ke dekho",
-    "prompts": [
-      "Close-up of a plain white cotton round-neck t-shirt lying on a wooden table with a visible ripped side seam, fabric clearly separated along the stitch line, warm overhead lighting, slight camera zoom-in toward the torn seam area, vertical 9:16 format, realistic textile workshop background with blurred fabric rolls behind.",
-      "Medium close-up of Indian man's hands holding a plain black cotton t-shirt turned inside out, fingers pointing at the side seam stitching line, showing the thread pattern clearly under bright warm workshop lighting, camera slowly panning along the seam from bottom hem upward, clean cutting table surface visible, vertical 9:16 format.",
-      "Close-up comparison shot of two seam sections of plain cotton t-shirt fabric laid side by side on a light grey surface — left side showing loose wide stitching with visible gaps between threads, right side showing tight dense stitching with no gaps, bright even top-down lighting, camera slowly dollying forward, vertical 9:16 format.",
-      "Close-up of Indian man's hands gripping a plain maroon cotton t-shirt on both sides of the side seam, pulling the fabric firmly in opposite directions to test seam strength, knuckles visible with effort, seam holding tight without opening, bright natural daylight from a nearby window, slight camera shake for realism, vertical 9:16 format.",
-      "Close-up of Indian man's hands holding a plain navy blue cotton round-neck t-shirt turned inside out, fingers running smoothly along a perfectly stitched shoulder seam showing dense even stitches, warm golden workshop lighting, camera slowly tracking the finger movement along the seam, neat stack of folded colorful plain t-shirts softly blurred in background, vertical 9:16 format."
-    ],
-    "date": "2026-04-07T13:03:17.080986"
-  },
-  {
     "topic": "All over print kaise hota hai — sublimation ya screen dono se ho sakta hai",
     "prompts": [
       "Close-up of a fully all-over printed t-shirt with a vibrant tropical pattern spread flat on a dark cutting table, camera slowly panning across the seam-to-seam print coverage, warm overhead fluorescent factory lighting, Indian textile workshop setting, scissors and measuring tape visible at the edge, vertical 9:16 format, 8 seconds.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Soft diffused overcast daylight from a large open warehouse door, muted blue-grey tones with pops of royal blue fabric, shallow DOF 35mm cinematic lens, slight handheld drift, Indian textile warehouse setting with stacked cartons. SCENE: A neatly folded stack of royal blue oversized t-shirts on a clean wooden table, a hand picks up the top one and lets it drape naturally showing soft fluid movement of the fabric, the t-shirt hangs beautifully with a premium relaxed drape, camera slowly orbits around the hanging fabric capturing the smooth bio-washed texture in soft light."
     ],
     "date": "2026-05-12T14:03:34.660122"
+  },
+  {
+    "topic": "Embroidery + DTF + Screen Print — Ek Hi Order Mein Teeno Kaise Handle Karein? 🔥 Multi-Technique Business Model",
+    "prompts": [
+      "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Close-up of Indian man's hands laying out three plain round-neck t-shirts side by side on a cluttered wooden work table — one visibly thinner, one medium, one thicker — fingers pressing down on each to show the thickness difference, slight camera push-in, fabric textures clearly visible under the stark overhead light.",
+      "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Medium shot of a messy Indian workshop desk from above showing a handwritten order sheet with numbers scribbled in pen, a calculator, a phone, and three small fabric swatches pinned next to each other, the camera slowly dollies down revealing the disorganized planning, emphasizing the chaos of handling multiple techniques in one order.",
+      "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Close-up of Indian man's hands holding a white cotton t-shirt while an embroidery needle punches through the fabric on a small tabletop embroidery machine, camera at 45-degree angle showing the needle action and fabric tension, thread pulling taut, the fabric lying flat without puckering, a stack of identical blank tshirts visible in soft focus behind.",
+      "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Close-up of a heat press machine clamping down on a white t-shirt with a DTF transfer film, steam rising slightly as the press closes, Indian man's hands adjusting the shirt collar before pressing, camera slowly tracking from the press handle down to the fabric surface, warm metallic reflections on the press plate visible.",
+      "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Slow dolly shot across a neatly arranged row of finished white t-shirts on a packing table — some with embroidery, some with colorful DTF prints, some with bold screen prints — all on identical looking blanks, Indian man's hands picking one up and placing it into a polythene pack, the uniformity of the blank fabric clearly visible across all pieces."
+    ],
+    "date": "2026-05-13T14:46:19.947353"
   }
 ]

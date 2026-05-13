@@ -1336,5 +1336,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1849
     }
+  },
+  {
+    "date": "2026-05-13T15:11:35.669819",
+    "topic": "Embroidery + DTF + Screen Print \u2014 Ek Hi Order Mein Teeno Kaise Handle Karein? \ud83d\udd25 Multi-Technique Business Model",
+    "title": "\u090f\u0915 Order \u092e\u0947\u0902 Embroidery + DTF + Screen Print? \u20b940K \u0915\u093e \u0928\u0941\u0915\u0938\u093e\u0928 \ud83d\ude30",
+    "total_usd": 7.7893,
+    "duration_min": 26.7,
+    "breakdown": {
+      "claude_opus": 0.3537,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.028,
+      "veo_clips": 7.04,
+      "whisper": 0.0064,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1912
+    }
   }
 ]

@@ -498,13 +498,28 @@
     "title": "He Lost ₹1 Lakh Because of 1 Packing Mistake — 500 T-Shirts Returned 😰",
     "topic": "Customer Ne 500 T-Shirts Return Kiye — Kyunki Yeh Ek Galti Ho Gayi Thi 😰 | Quality Check Lesson",
     "published_at": "2026-05-11T20:30:09.331463+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-05-13T20:35:50.354277+05:30",
+    "hours_since_publish": 48.1,
+    "views": 2611,
+    "reach": 2187,
+    "likes": 47,
+    "comments": 0,
+    "shares": 5,
+    "saves": 3
   },
   {
     "media_id": "18099902860913425",
     "title": "240 GSM Trap Cost Him ₹50K — Royal Blue Oversized Mistake!",
     "topic": "240 GSM Oversized Royal Blue T-Shirt — Yeh GSM Trap Samajh Lo Pehle 🎯 | Real Buyer Question Answered",
     "published_at": "2026-05-12T19:55:23.298643+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18119590804636991",
+    "title": "3 Techniques, 1 Order — Wrong Blanks Cost Him ₹40K 😰",
+    "topic": "Embroidery + DTF + Screen Print — Ek Hi Order Mein Teeno Kaise Handle Karein? 🔥 Multi-Technique Business Model",
+    "published_at": "2026-05-13T20:38:02.107618+05:30",
     "checked": false
   }
 ]
