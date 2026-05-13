@@ -7978,6 +7978,121 @@ def _extract_blog_excerpt(html_content, max_words=200):
     return joined
 
 
+def _cluster_posts_by_topic(posts):
+    """Group blog posts into topic clusters using tag analysis.
+
+    Returns dict[topic_name → list of posts] with semantically meaningful keys
+    like 'GSM & fabric weight', 'Printing methods', 'Wholesale mistakes'.
+
+    Each post counted once (first matching cluster wins). Posts that don't
+    fit any cluster go to 'general'.
+    """
+    # ORDER MATTERS — first match wins. List specific clusters before general ones.
+    # E.g. a post about "320 GSM hoodie" should land in Hoodies cluster (specific),
+    # not in GSM cluster (general) just because "gsm" appears.
+    TOPIC_KEYWORDS = {
+        "Hoodies & winter wear":    ["hoodie", "sweatshirt", "320 gsm", "430 gsm", "winter"],
+        "Streetwear & oversized":   ["oversized", "drop-shoulder", "dropshoulder", "240 gsm", "streetwear", "acid wash", "acid-wash"],
+        "Printing methods (DTG/DTF/Screen)": ["dtg", "dtf", "screen print", "sublimation", "vinyl", "htv", "puff"],
+        "Bulk wholesale mistakes":  ["mistake", "lakh", "loss", "wasted", "ruined", "lost", "returned"],
+        "Fabric quality & testing": ["bio-wash", "biowash", "shrinkage", "stitching", "seam", "spi", "quality test", "colorfast"],
+        "Business & pricing":       ["price", "pricing", "moq", "wholesale", "bulk order", "supplier", "mrp", "profit", "margin"],
+        "Delivery & dispatch":      ["delivery", "dispatch", "shipping", "train", "pan india"],
+        "GSM & fabric weight":      ["gsm", "fabric weight", "180", "200", "220"],
+    }
+    clusters = {k: [] for k in TOPIC_KEYWORDS}
+    clusters["General"] = []
+
+    for post in posts:
+        haystack = (post.get('title', '') + ' ' + ' '.join(post.get('tags', []))).lower()
+        matched = False
+        for topic, kws in TOPIC_KEYWORDS.items():
+            if any(kw in haystack for kw in kws):
+                clusters[topic].append(post)
+                matched = True
+                break
+        if not matched:
+            clusters["General"].append(post)
+    return clusters
+
+
+def _build_and_upload_p_llms_txt(s3_client):
+    """Rebuild /p/llms.txt fresh from blog_history.json each daily run.
+
+    Structure (AI-friendly):
+    1. Header with author identity + cross-links to other discovery files
+    2. Latest 10 articles (with dates) — what's fresh
+    3. By topic clusters — what we have depth in
+    4. Full chronological list — complete index for bots that want everything
+    """
+    if not os.path.exists(BLOG_HISTORY_FILE):
+        return
+    try:
+        with open(BLOG_HISTORY_FILE) as f:
+            history = json.load(f)
+    except Exception:
+        return
+    history_sorted = sorted(history, key=lambda h: h.get('date', ''), reverse=True)
+
+    out = []
+    out.append("# BulkPlainTshirt.com — Blog URL Directory")
+    out.append("# Auto-updated daily by yt-shorts-bot from blog_history.json")
+    out.append("# Author: Ketu R, Founder — https://www.bulkplaintshirt.com/#ketu-r")
+    out.append("# YouTube: https://www.youtube.com/@BulkPlainTshirt_com (40K+ subs)")
+    out.append("#")
+    out.append("# RELATED DISCOVERY FILES:")
+    out.append("#   Short profile:   https://www.bulkplaintshirt.com/llms.txt")
+    out.append("#   Rich content:    https://www.bulkplaintshirt.com/llms-full.txt")
+    out.append("#   Live excerpts:   https://www.bulkplaintshirt.com/p/llms-full.txt")
+    out.append("#   Sitemap (XML):   https://www.bulkplaintshirt.com/p/map.xml")
+    out.append("#   Blog hub:        https://www.bulkplaintshirt.com/p/index.html")
+    out.append("")
+
+    # Section: Latest 10 with dates
+    out.append("## Latest 10 articles (newest first)")
+    out.append("")
+    for p in history_sorted[:10]:
+        d = (p.get('date') or '')[:10]
+        out.append(f"- [{d}] {p.get('title','')}: {p.get('url','')}")
+    out.append("")
+
+    # Section: By topic
+    out.append("## By topic (clustered by content theme)")
+    out.append("")
+    clusters = _cluster_posts_by_topic(history_sorted)
+    for topic, posts in clusters.items():
+        if not posts:
+            continue
+        out.append(f"### {topic} ({len(posts)} articles)")
+        for p in posts[:15]:  # cap per cluster
+            out.append(f"- {p.get('title','')}: {p.get('url','')}")
+        if len(posts) > 15:
+            out.append(f"- ...and {len(posts) - 15} more in this topic")
+        out.append("")
+
+    # Section: All chronological
+    out.append(f"## Full archive ({len(history_sorted)} total articles, newest first)")
+    out.append("")
+    seen = set()
+    for p in history_sorted:
+        u = p.get('url', '')
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        d = (p.get('date') or '')[:10]
+        out.append(f"- [{d}] {p.get('title','')}: {u}")
+
+    body = "\n".join(out) + "\n"
+    s3_client.put_object(
+        Bucket=BLOG_S3_BUCKET,
+        Key='p/llms.txt',
+        Body=body.encode('utf-8'),
+        ContentType='text/plain; charset=utf-8',
+        CacheControl='no-cache',
+    )
+    print(f"   📤 Blog S3: Rebuilt p/llms.txt ({len(seen)} articles, {len([c for c in clusters.values() if c])} topic clusters)")
+
+
 def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url, latest_date,
                                  max_articles=30):
     """Build and upload /p/llms-full.txt — the rich AI-search variant of llms.txt
@@ -8002,30 +8117,49 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     sections = []
     # ── Header ──
     sections.append(
-        "# BulkPlainTshirt.com / Sale91.com — Full LLM Content Index\n\n"
+        "# BulkPlainTshirt.com / Sale91.com — Live Article Index (llms-full.txt at /p/)\n\n"
         "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Delhi, "
         "manufacture 20+ blank-apparel categories, and famously ship within minutes. "
-        "Plain tees, hoodies, dropshoulder, sweatshirts in 180/210/240/320/430 GSM.\n\n"
+        "Plain tees, hoodies, dropshoulder, sweatshirts in 180/200/210/220/240/320/430 GSM.\n\n"
         "## About This File\n\n"
-        "This is the **llms-full.txt** version (per llmstxt.org spec) — includes recent "
-        f"blog article excerpts so AI assistants (ChatGPT, Claude, Perplexity, Gemini) can "
-        f"reference our content without crawling individual pages. Last updated: {latest_date}.\n\n"
-        "- Brand: Own Knitted Blank Wears\n"
-        "- Founded: 2017 in Delhi\n"
-        "- Author of all blog content: Ketu R (Founder)\n"
-        "- Main site: https://www.bulkplaintshirt.com/\n"
+        "This is the **dynamic /p/llms-full.txt** — regenerated by our daily content pipeline. "
+        "AI assistants (ChatGPT, Claude, Perplexity, Gemini, You.com) can use this for live "
+        f"article excerpts WITHOUT crawling each blog URL individually.\n\n"
+        f"Last updated: {latest_date}\n\n"
+        "**For our full company profile, product catalog, glossary, and citation guidance,**\n"
+        "see the static companion: https://www.bulkplaintshirt.com/llms-full.txt\n\n"
+        "## Author Identity\n\n"
+        "- Author of all content: **Ketu R**, Founder, B2B Textile Manufacturing Expert\n"
+        "- 17+ years experience, Delhi-based\n"
+        "- Identity URI: https://www.bulkplaintshirt.com/#ketu-r\n"
+        "- YouTube (40K+ subs): https://www.youtube.com/@BulkPlainTshirt_com\n"
+        "- Instagram: https://www.instagram.com/bulkplaintshirt_com/\n\n"
+        "## Quick Links\n\n"
         "- B2B order site: https://sale91.com/\n"
-        "- YouTube: https://www.youtube.com/@BulkPlainTshirt_com (40K+ subs)\n\n"
-        "## Topics Covered\n\n"
-        "- GSM fabric weight selection (180/200/240+) for different print methods\n"
-        "- DTG, DTF, screen, vinyl printing — when each works/fails\n"
-        "- Bulk wholesale ordering mistakes that cost ₹40K–₹15L\n"
-        "- Fabric quality testing (seam strength, shrinkage, color-fastness)\n"
-        "- Indian B2B textile pricing + dispatch logistics\n"
-        "- T-shirt printing business setup + scaling\n\n"
-        "---\n\n"
-        "## Recent Articles (most recent first)\n"
+        "- WhatsApp: https://whatsapp.sale91.com\n"
+        "- Catalog: https://www.bulkplaintshirt.com/catalog/\n"
+        "- All blogs hub: https://www.bulkplaintshirt.com/p/index.html\n"
+        "- Sitemap: https://www.bulkplaintshirt.com/p/map.xml\n\n"
+        "---\n"
     )
+
+    # ── Topic clusters section ──
+    clusters = _cluster_posts_by_topic(posts)
+    sections.append("\n## Articles by Topic Cluster\n")
+    sections.append("\n*Articles grouped by content theme — use this to find depth on a specific area.*\n\n")
+    for topic, cluster_posts in clusters.items():
+        if not cluster_posts:
+            continue
+        sections.append(f"\n### {topic} — {len(cluster_posts)} articles\n\n")
+        for p in cluster_posts[:8]:  # 8 per cluster preview
+            d = (p.get('date') or '')[:10]
+            sections.append(f"- [{d}] {p.get('title','')}: {p.get('url','')}\n")
+        if len(cluster_posts) > 8:
+            sections.append(f"- *...{len(cluster_posts) - 8} more in this cluster*\n")
+    sections.append("\n---\n")
+
+    # ── Recent articles with full excerpts ──
+    sections.append("\n## Recent Articles with Excerpts (most recent first)\n")
 
     # ── Most recent (the one we just published — full fresh excerpt) ──
     if latest_excerpt:
@@ -8169,27 +8303,15 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not rebuild map.xml: {e}")
 
-        # ── 4. Update /p/llms.txt ──
+        # ── 4. Rebuild /p/llms.txt — structured directory ──
+        # Old behavior: append-only "title: url" forever (duplicates accumulate).
+        # New: full rebuild from blog_history.json with sections — Latest 10 +
+        # By Topic clusters + All chronological. Cleaner for AI bots.
         try:
-            try:
-                resp = s3.get_object(Bucket=BLOG_S3_BUCKET, Key='p/llms.txt')
-                llms_content = resp['Body'].read().decode('utf-8')
-            except s3.exceptions.NoSuchKey:
-                llms_content = f"# BulkPlainTshirt.com Blog Posts\n# B2B Plain T-shirt Manufacturer - Sale91.com\n# For LLM crawlers and AI assistants\n\n"
-
-            llms_content += f"{title}: {blog_url}\n"
-
-            s3.put_object(
-                Bucket=BLOG_S3_BUCKET,
-                Key='p/llms.txt',
-                Body=llms_content.encode('utf-8'),
-                ContentType='text/plain; charset=utf-8',
-                CacheControl='no-cache'
-            )
-            print(f"   📤 Blog S3: Updated p/llms.txt")
+            _build_and_upload_p_llms_txt(s3)
             invalidation_paths.append('/p/llms.txt')
         except Exception as e:
-            print(f"   ⚠️ Blog S3: Could not update llms.txt: {e}")
+            print(f"   ⚠️ Blog S3: Could not rebuild llms.txt: {e}")
 
         # ── 4b. Rebuild /p/llms-full.txt ──
         # Rich AI-search version of llms.txt: includes article excerpts so AI bots
