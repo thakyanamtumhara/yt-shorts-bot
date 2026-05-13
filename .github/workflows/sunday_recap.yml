@@ -52,6 +52,7 @@ jobs:
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          REDDIT_DRAFTS_PAT: ${{ secrets.REDDIT_DRAFTS_PAT }}
         run: python3 daily_short.py --mode=sunday-recap
 
       - name: Save updated tracking files

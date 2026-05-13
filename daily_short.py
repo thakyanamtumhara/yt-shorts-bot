@@ -6540,9 +6540,14 @@ def _publish_reddit_to_github_pages(draft: dict, today: str, keep_days: int = RE
     GH_PAT must have `Contents: write` on the reddit-drafts repo. Failures
     are non-fatal — the daily pipeline continues regardless.
     """
-    gh_pat = os.environ.get("GH_PAT", "")
+    # REDDIT_DRAFTS_PAT is preferred — a fine-grained PAT scoped specifically to
+    # the reddit-drafts repo. Falls back to GH_PAT if the dedicated one isn't set
+    # (e.g. local dev runs). The old GH_PAT was created before the reddit-drafts
+    # repo existed and didn't have write access to it, so the dedicated secret
+    # fixes the 403 errors we saw in production.
+    gh_pat = os.environ.get("REDDIT_DRAFTS_PAT", "") or os.environ.get("GH_PAT", "")
     if not gh_pat:
-        print("   ⚠️ Reddit: GH_PAT not set — skipping GitHub Pages publish")
+        print("   ⚠️ Reddit: REDDIT_DRAFTS_PAT / GH_PAT not set — skipping GitHub Pages publish")
         return None
 
     import subprocess

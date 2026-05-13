@@ -107,6 +107,7 @@ jobs:
           FB_APP_ID: ${{ secrets.FB_APP_ID }}
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          REDDIT_DRAFTS_PAT: ${{ secrets.REDDIT_DRAFTS_PAT }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
