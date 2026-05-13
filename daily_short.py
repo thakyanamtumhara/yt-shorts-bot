@@ -8016,8 +8016,13 @@ def _cluster_posts_by_topic(posts):
     return clusters
 
 
-def _build_and_upload_p_llms_txt(s3_client):
+def _build_and_upload_p_llms_txt(s3_client, current_blog=None):
     """Rebuild /p/llms.txt fresh from blog_history.json each daily run.
+
+    current_blog: dict {title, url, date, tags} for the blog being published
+    RIGHT NOW. This is needed because save_blog_history runs AFTER publish_blog_to_s3,
+    so blog_history.json doesn't yet contain today's entry when this function fires.
+    We splice it in as the newest entry so the rebuild reflects current state.
 
     Structure (AI-friendly):
     1. Header with author identity + cross-links to other discovery files
@@ -8025,13 +8030,18 @@ def _build_and_upload_p_llms_txt(s3_client):
     3. By topic clusters — what we have depth in
     4. Full chronological list — complete index for bots that want everything
     """
-    if not os.path.exists(BLOG_HISTORY_FILE):
-        return
-    try:
-        with open(BLOG_HISTORY_FILE) as f:
-            history = json.load(f)
-    except Exception:
-        return
+    history = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                history = json.load(f)
+        except Exception:
+            history = []
+    # Splice in the current blog if not already in history (it usually isn't,
+    # since save_blog_history runs after this function)
+    if current_blog and current_blog.get('url'):
+        if not any(h.get('url') == current_blog['url'] for h in history):
+            history.append(current_blog)
     history_sorted = sorted(history, key=lambda h: h.get('date', ''), reverse=True)
 
     out = []
@@ -8216,6 +8226,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
 
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+
     aws_key = os.environ.get('AWS_ACCESS_KEY_ID')
     aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY')
     if not aws_key or not aws_secret:
@@ -8307,8 +8319,15 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
         # Old behavior: append-only "title: url" forever (duplicates accumulate).
         # New: full rebuild from blog_history.json with sections — Latest 10 +
         # By Topic clusters + All chronological. Cleaner for AI bots.
+        # current_blog passes today's blog explicitly because save_blog_history
+        # runs AFTER this function (so blog_history.json doesn't have it yet).
         try:
-            _build_and_upload_p_llms_txt(s3)
+            _build_and_upload_p_llms_txt(s3, current_blog={
+                "title": title,
+                "url": blog_url,
+                "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat(),
+                "tags": [],  # tags not available in this scope; ok — fallback to General cluster
+            })
             invalidation_paths.append('/p/llms.txt')
         except Exception as e:
             print(f"   ⚠️ Blog S3: Could not rebuild llms.txt: {e}")
