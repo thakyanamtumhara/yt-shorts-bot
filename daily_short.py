@@ -7147,7 +7147,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences,
 {{
   "target_sub": "<one subreddit from the whitelist below — pick the SINGLE most relevant for the topic>",
   "posting_time": "<e.g. 'Weekday morning, 9-11 AM IST' or 'Sunday — r/Entrepreneur weekly self-promo thread only'>",
-  "title": "<ONE catchy title, 70 chars max, no emojis, Reddit-native style, with specific numbers if possible>",
+  "title": "<ONE Reddit-native title, 70 chars max, no emojis. See TITLE RULES below — must sound like a real person posting, not a press release>",
   "body": "<150-200 words. Story-first opening. Specific numbers and real insight. End with: 'Full breakdown with photos: {blog_url}' on its own line. Then ONE engagement question on the next line like 'Happy to answer specific GSM questions if anyone's stuck on an order.' Use plain text with \\n for line breaks — Reddit markdown like **bold** is OK.>",
   "engagement_plan": [
     "Reply to every comment within 12 hours.",
@@ -7159,8 +7159,49 @@ OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences,
 SUBREDDIT WHITELIST — pick ONE that genuinely fits the topic:
 {subs_list}
 
-WRITING RULES:
-- NO emojis in title (Reddit hates emoji-titles).
+TITLE RULES — the title is THE thing that decides if anyone clicks. Get this right.
+
+The user explicitly flagged that earlier titles like:
+   ❌ "Lost ₹40K mixing blanks: embroidery, DTF, screen print same order"
+sound like a press release / SEO headline, not a human posting on Reddit.
+
+DO NOT use these title shapes — they all sound robotic:
+   ❌ "Lost ₹X [doing Y]:" / "X cost me ₹Y: [list of things]"
+   ❌ "How to avoid X mistake (₹Y lesson)"
+   ❌ "[Number] [thing] [verb-ed]:" with a colon and bullet-like list
+   ❌ Keyword-stuffed: "DTF DTG screen print embroidery comparison India wholesale"
+   ❌ Anything that ends with a truncated noun ("...screen print same") — looks AI-cut-off
+
+USE one of these title shapes (real Reddit voice):
+
+  1. **First-person story hook** — talk like a human venting/sharing:
+     ✅ "Tried to combine embroidery + DTF + screen on one order. Cost me ₹40k. Sharing what went wrong."
+     ✅ "Used 3 different GSM blanks in the same order. Client rejected everything. ₹40k lesson."
+     ✅ "Lost ₹40k last week — sharing the dumb mistake so you don't repeat it."
+
+  2. **Question / advice-seeking** — invites comments naturally:
+     ✅ "Anyone else struggle with combining embroidery + DTF on the same shirt?"
+     ✅ "Has anyone successfully run 3 print methods on one bulk order without quality issues?"
+     ✅ "Need advice — client wants embroidery, DTF, and screen on same blank. Is this even doable?"
+
+  3. **PSA / warning** — short and direct:
+     ✅ "PSA: don't mix GSM grades within the same order. Lost ₹40k learning this."
+     ✅ "Heads up — combining embroidery + DTF + screen on one shirt is a quality disaster."
+
+  4. **Specific scenario opening** — concrete, story-shaped:
+     ✅ "Client wanted embroidery + DTF + screen on one bulk order. Here's why I'd never do that again."
+     ✅ "500-piece order, 3 different GSMs, 3 different print methods. Big mistake."
+
+ADDITIONAL TITLE RULES:
+- Sound human. Use contractions ("don't", "can't", "I've"). Allow common casual phrases ("lost ₹40k", "big mistake", "lesson learned", "be smarter than me").
+- The ₹ amount is allowed but NOT required in the title. If included, weave it naturally ("Cost me ₹40k") not as a headline lead.
+- Avoid colons + keyword lists. Use one sentence (with a period) or two short sentences.
+- Avoid starting with the cost ("Lost ₹40K..." is overused — start with the scenario instead).
+- No emojis in title (Reddit hates emoji-titles).
+- 60-90 chars ideal range. Longer if a complete thought needs it.
+- The title must read like something one of your blog post readers would themselves post after experiencing the problem — not like a headline you'd put on the blog.
+
+OTHER WRITING RULES:
 - 1-2 emojis MAX in body, only if naturally placed.
 - Use Reddit markdown in body: **bold**, bullet lists with -, ##H2 sparingly.
 - Forbidden words: amazing, incredible, discover, unleash, revolutionary, transform (sound like ads).
