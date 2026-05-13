@@ -7372,25 +7372,23 @@ def build_sitemap_xml(new_post=None):
 
 
 def repair_sitemap(s3_client):
-    """Rebuild sitemap from blog_history.json + static pages (idempotent).
+    """Rebuild /p/map.xml from blog_history.json + static pages (idempotent).
 
-    Uploads the same content to TWO paths:
-      - /p/map.xml — referenced by robots.txt (Sitemap: directive)
-      - /sitemap.xml — conventional location some simpler crawlers check
-        first (older bots, AI ingestion services that don't read robots.txt)
+    The sitemap canonically lives at /p/map.xml (referenced by robots.txt
+    via Sitemap: directive, submitted to Google Search Console at this path).
+    No root-level /sitemap.xml — IAM blocks bucket-root writes anyway, and
+    /p/map.xml is the agreed canonical location.
     """
     try:
         map_xml = build_sitemap_xml()
-        body = map_xml.encode('utf-8')
-        for key in ('p/map.xml', 'sitemap.xml'):
-            s3_client.put_object(
-                Bucket=BLOG_S3_BUCKET,
-                Key=key,
-                Body=body,
-                ContentType='application/xml; charset=utf-8',
-                CacheControl='no-cache'
-            )
-        print(f"   \U0001f527 Sitemap: Rebuilt map.xml + sitemap.xml (root fallback) from blog_history")
+        s3_client.put_object(
+            Bucket=BLOG_S3_BUCKET,
+            Key='p/map.xml',
+            Body=map_xml.encode('utf-8'),
+            ContentType='application/xml; charset=utf-8',
+            CacheControl='no-cache',
+        )
+        print(f"   \U0001f527 Sitemap: Rebuilt /p/map.xml from blog_history")
     except Exception as e:
         print(f"   \u26a0\ufe0f Sitemap: Could not rebuild sitemap: {e}")
 
