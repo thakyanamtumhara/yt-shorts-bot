@@ -329,6 +329,11 @@ PLAYLIST_CACHE_FILE = f"{WORK_DIR}/playlist_cache.json"  # Cache playlist IDs
 CROSS_POST_INSTAGRAM = True
 IG_API_VERSION = "v21.0"  # v22.0 causes "Carousel item cannot be published standalone" error
 
+# Instagram Carousel — autonomous post of blog hero+img1+img2 to IG as a carousel.
+# Fires at 4:30 UTC (10 AM IST) next morning, 16h after the daily Reel — spacing
+# avoids IG flagging the account for two API posts in the same hour.
+IG_CAROUSEL_DRAFTS_DIR = "ig_drafts"
+
 # Cost Tracker — log per-video API costs
 COST_TRACKER_FILE = "cost_tracker.json"  # In repo root for git tracking
 DAILY_COST_LIMIT_USD = 10.0  # Circuit breaker: skip video if today's spend exceeds this
@@ -2319,6 +2324,261 @@ def save_ig_upload_record(ig_media_id, title, topic):
         print(f"   📝 Instagram media ID saved for engagement tracking")
     except Exception as e:
         print(f"   ⚠️ Failed to save IG upload record: {e}")
+
+
+def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url, blog_slug,
+                                topic, script_english, tags):
+    """Generate an IG carousel post draft for tomorrow morning's auto-publish.
+
+    Daily-bot already cross-posts the Veo Short as a Reel. This adds a SECOND
+    post format — a static carousel of the 3 AI blog images with a B2B-tuned
+    caption — published 16h later (next morning 10 AM IST) so the same
+    account doesn't fire two API posts in the same hour.
+
+    Returns the saved draft path, or None on failure. Failure is non-fatal.
+    """
+    print("   📷 IG carousel: Drafting next-morning post...")
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+    os.makedirs(IG_CAROUSEL_DRAFTS_DIR, exist_ok=True)
+    out_path = os.path.join(IG_CAROUSEL_DRAFTS_DIR, f"{today}.json")
+
+    # The 3 blog images live at predictable S3 URLs after publish_blog_to_s3
+    image_urls = [
+        f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp",   # 16:9 hero
+        f"{BLOG_BASE_URL}/p/{blog_slug}-img1.webp",   # 4:3 secondary
+        f"{BLOG_BASE_URL}/p/{blog_slug}-img2.webp",   # 4:3 third
+    ]
+
+    tags_str = ", ".join(tags) if tags else "none"
+    prompt = f"""You are writing an Instagram CAROUSEL caption for a B2B Indian textile manufacturer (Sale91.com / BulkPlainTshirt.com — plain t-shirts, hoodies, blanks for printing businesses).
+
+CONTEXT:
+- Today's blog: "{blog_title}"
+- Blog URL: {blog_url}
+- Topic: {topic}
+- Source script (English): {script_english}
+- Tags: {tags_str}
+
+GOAL: Write a carousel post caption (NOT a Reel caption — different format) that gets B2B printers + streetwear brand owners to STOP scrolling and read. The carousel has 3 images already (hero, secondary, takeaway). The caption is what makes them save the post.
+
+OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences):
+
+{{
+  "caption": "<60-80 word caption in this exact structure:\\n\\nLine 1: ONE-LINE HOOK with 1-2 emojis — pain point or surprising number ('Lost ₹40k on a 500-piece order. Here's why.' or 'This GSM mistake destroyed 1000 tees 😬')\\n\\nLines 2-4: 3-4 lines telling the story or lesson. Use specific numbers (₹ amounts, GSM grades, piece counts). Conversational tone, first-person OK ('We learned the hard way...').\\n\\nLine 5: ONE-LINE CTA — 'Save this post if you're sourcing for your next bulk order.' or 'Tag a printer who needs to see this 👇'\\n\\nUse \\\\n for line breaks. 1-2 emojis MAX. NO marketing-pitch words (premium, journey, transform, etc.).>",
+  "hashtags": [
+    "<list of 12-15 hashtags total>",
+    "<5 niche-specific to the topic — e.g. #240gsm #dtgprinting #screenprinting>",
+    "<5 mid-tier general B2B textile — e.g. #wholesaletshirts #plaintshirt #bulktshirt>",
+    "<5 broad Indian B2B — e.g. #indianmanufacturer #b2bindia #sale91 #bulkplaintshirt>"
+  ]
+}}
+
+CAPTION RULES:
+- 60-80 words total (Instagram carousels read better short than long).
+- First-person voice OK ('We made this mistake...').
+- Specific numbers (₹40k, 240 GSM, 500 pieces) — never vague claims.
+- 1-2 emojis MAX, placed naturally (😬 after a bad number, 👇 before a CTA).
+- End with ONE CTA: 'Save this post' / 'Tag a printer' / 'Share with your team'.
+- DO NOT include the blog URL in the caption — IG caption links aren't clickable; use the bio.
+- DO NOT mention "Sale91" or "BulkPlainTshirt" in the caption — let the profile + images speak.
+
+HASHTAG RULES:
+- Mix specific + general (Instagram rewards this distribution).
+- 12-15 total (sweet spot for IG reach without looking spammy).
+- Lowercase, no spaces.
+- Always include #bulkplaintshirt + #sale91 once (low-volume branded tags help with discovery).
+
+Return ONLY the JSON object."""
+
+    try:
+        resp = claude_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=900,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        if raw.lower().startswith("json"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[4:]
+        parsed = json.loads(raw)
+
+        if cost_tracker and hasattr(cost_tracker, 'track_claude_call'):
+            cost_tracker.track_claude_call("sonnet", resp.usage.input_tokens, resp.usage.output_tokens)
+
+        draft = {
+            "date": today,
+            "blog_title": blog_title,
+            "blog_url": blog_url,
+            "blog_slug": blog_slug,
+            "image_urls": image_urls,
+            "caption": parsed.get("caption", ""),
+            "hashtags": parsed.get("hashtags", []),
+            "posted": False,
+            "media_id": None,
+            "error": None,
+        }
+        with open(out_path, "w") as f:
+            json.dump(draft, f, ensure_ascii=False, indent=2)
+        print(f"   ✅ IG carousel: Draft saved → {out_path}")
+        return out_path
+    except Exception as e:
+        print(f"   ⚠️ IG carousel: Draft generation failed (non-fatal): {e}")
+        return None
+
+
+def publish_ig_carousel(image_urls, caption, hashtags=None):
+    """Publish an Instagram carousel via the IG Graph API.
+
+    3-step flow per Meta docs:
+    1. Create one child container per image (image_url + is_carousel_item=true)
+    2. Create one parent container (media_type=CAROUSEL, children=[...], caption=...)
+    3. POST /{ig-user-id}/media_publish with creation_id of the parent
+
+    Returns IG media_id on success, None on failure. Non-fatal — caller logs.
+    """
+    ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
+    ig_business_id = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
+
+    if not ig_token or not ig_business_id:
+        print("   ℹ️ IG carousel: skipped (no INSTAGRAM_ACCESS_TOKEN/INSTAGRAM_BUSINESS_ID)")
+        return None
+    if not image_urls or len(image_urls) < 2:
+        print(f"   ⚠️ IG carousel: need 2-10 images, got {len(image_urls) if image_urls else 0}")
+        return None
+
+    # Assemble the full caption (caption text + blank line + hashtags)
+    full_caption = caption.strip()
+    if hashtags:
+        hashtag_line = " ".join(h if h.startswith("#") else f"#{h}" for h in hashtags)
+        full_caption = f"{full_caption}\n\n{hashtag_line}"
+
+    base = f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}"
+    try:
+        # Step 1: Create child containers for each image
+        child_ids = []
+        for i, img_url in enumerate(image_urls[:10]):  # IG limit = 10 carousel items
+            resp = requests.post(
+                f"{base}/media",
+                data={
+                    "image_url": img_url,
+                    "is_carousel_item": "true",
+                    "access_token": ig_token,
+                },
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                err = resp.json().get("error", {})
+                print(f"   ❌ IG carousel: child {i+1} container failed: {err.get('message', resp.text[:200])}")
+                return None
+            cid = resp.json().get("id")
+            if not cid:
+                print(f"   ❌ IG carousel: child {i+1} returned no id: {resp.text[:200]}")
+                return None
+            child_ids.append(cid)
+            print(f"   📦 IG carousel: child container {i+1}/{len(image_urls)} → {cid}")
+
+        # Step 2: Create parent CAROUSEL container
+        parent_resp = requests.post(
+            f"{base}/media",
+            data={
+                "media_type": "CAROUSEL",
+                "children": ",".join(child_ids),
+                "caption": full_caption,
+                "access_token": ig_token,
+            },
+            timeout=30,
+        )
+        if parent_resp.status_code != 200:
+            err = parent_resp.json().get("error", {})
+            print(f"   ❌ IG carousel: parent container failed: {err.get('message', parent_resp.text[:200])}")
+            return None
+        parent_id = parent_resp.json().get("id")
+        if not parent_id:
+            print(f"   ❌ IG carousel: parent returned no id: {parent_resp.text[:200]}")
+            return None
+        print(f"   📦 IG carousel: parent CAROUSEL container → {parent_id}")
+
+        # Step 3: Publish
+        pub_resp = requests.post(
+            f"{base}/media_publish",
+            data={"creation_id": parent_id, "access_token": ig_token},
+            timeout=30,
+        )
+        if pub_resp.status_code != 200:
+            err = pub_resp.json().get("error", {})
+            print(f"   ❌ IG carousel: publish failed: {err.get('message', pub_resp.text[:200])}")
+            return None
+        media_id = pub_resp.json().get("id")
+        if media_id:
+            print(f"   ✅ IG carousel: PUBLISHED → media_id {media_id}")
+        return media_id
+    except Exception as e:
+        print(f"   ⚠️ IG carousel: unexpected error: {e}")
+        return None
+
+
+def post_latest_ig_carousel():
+    """Read the latest ig_drafts/*.json and publish it to IG.
+
+    Called by the ig_carousel.yml workflow each morning at 4:30 UTC (10 AM IST).
+    Marks the draft as posted=true and stores the media_id, then commits the
+    updated JSON so the auto-verifier can detect successful publish.
+    """
+    print("\n" + "=" * 60)
+    print("  📷 IG CAROUSEL POST — morning auto-publish")
+    print("=" * 60)
+
+    if not os.path.isdir(IG_CAROUSEL_DRAFTS_DIR):
+        print(f"   ℹ️ No {IG_CAROUSEL_DRAFTS_DIR}/ folder yet — nothing to post")
+        return False
+
+    # Find the most recent UNPOSTED draft (any date)
+    candidates = sorted(
+        [f for f in os.listdir(IG_CAROUSEL_DRAFTS_DIR) if f.endswith(".json")],
+        reverse=True,
+    )
+    target = None
+    target_data = None
+    for fname in candidates:
+        path = os.path.join(IG_CAROUSEL_DRAFTS_DIR, fname)
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            if not data.get("posted"):
+                target = path
+                target_data = data
+                break
+        except Exception:
+            continue
+
+    if not target_data:
+        print("   ℹ️ No unposted IG carousel draft found")
+        return False
+
+    print(f"   📰 Posting draft: {target}")
+    print(f"   📰 Blog: {target_data.get('blog_title', '')[:80]}")
+    print(f"   🖼️  Images: {len(target_data.get('image_urls', []))}")
+
+    # Auto-refresh IG token if it's expiring soon (existing helper)
+    if 'refresh_instagram_token_if_needed' in globals():
+        refresh_instagram_token_if_needed()
+
+    media_id = publish_ig_carousel(
+        image_urls=target_data["image_urls"],
+        caption=target_data.get("caption", ""),
+        hashtags=target_data.get("hashtags", []),
+    )
+
+    # Update the draft with the result
+    target_data["posted"] = bool(media_id)
+    target_data["media_id"] = media_id
+    target_data["posted_at"] = datetime.now(pytz.timezone(TIMEZONE)).isoformat() if media_id else None
+    target_data["error"] = None if media_id else "publish_ig_carousel returned None — check logs"
+    with open(target, "w") as f:
+        json.dump(target_data, f, ensure_ascii=False, indent=2)
+    print(f"   💾 Draft updated: posted={target_data['posted']}, media_id={media_id}")
+    return bool(media_id)
 
 
 def check_instagram_engagement():
@@ -7085,6 +7345,21 @@ def process_main_channel_recap():
     except Exception as e:
         print(f"   ⚠️ Reddit draft non-fatal failure: {e}")
 
+    # IG carousel draft for Monday morning post (10 AM IST)
+    try:
+        generate_ig_carousel_draft(
+            claude_client=claude,
+            cost_tracker=cost,
+            blog_title=blog_title,
+            blog_url=blog_url,
+            blog_slug=blog_slug,
+            topic=video["title"],
+            script_english=script_source[:1500],
+            tags=blog_tags,
+        )
+    except Exception as e:
+        print(f"   ⚠️ IG carousel draft non-fatal failure: {e}")
+
     # ── Phase 1 success status ──
     _write_phase_status(1, "active", "success",
                         f"Recap blog published: {blog_url} · source: '{video['title'][:60]}'")
@@ -10192,6 +10467,22 @@ def main():
                         )
                     except Exception as e:
                         print(f"   ⚠️ Reddit draft failed (non-fatal): {e}")
+
+                    # IG carousel draft — separate from the same-day Reel cross-post.
+                    # Published next morning at 10 AM IST by ig_carousel.yml workflow.
+                    try:
+                        generate_ig_carousel_draft(
+                            claude_client=claude,
+                            cost_tracker=cost,
+                            blog_title=yt_title,
+                            blog_url=blog_url,
+                            blog_slug=blog_slug,
+                            topic=fresh_topic,
+                            script_english=script_english,
+                            tags=yt_tags,
+                        )
+                    except Exception as e:
+                        print(f"   ⚠️ IG carousel draft failed (non-fatal): {e}")
             elif blog_html:
                 print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
             # else: generate_blog_post already printed its warning
@@ -10332,6 +10623,11 @@ if __name__ == "__main__":
     # blog + Reddit (no Veo). Triggered by .github/workflows/sunday_recap.yml
     if "--mode=sunday-recap" in sys.argv or "--sunday-recap" in sys.argv:
         ok = process_main_channel_recap()
+        sys.exit(0 if ok else 1)
+    # IG carousel post mode — read the latest ig_drafts JSON and publish to IG.
+    # Triggered by .github/workflows/ig_carousel.yml at 4:30 UTC (10 AM IST).
+    if "--mode=ig-carousel-post" in sys.argv or "--ig-carousel-post" in sys.argv:
+        ok = post_latest_ig_carousel()
         sys.exit(0 if ok else 1)
     if "--test-thumbnail" in sys.argv:
         _topic = None

@@ -1,0 +1,88 @@
+name: IG Carousel Post (next-morning auto-publish)
+
+# Fires daily at 4:30 UTC = 10:00 AM IST. Reads the latest unposted draft
+# from ig_drafts/*.json and publishes it as an Instagram carousel.
+#
+# Why 10 AM IST: previous evening's daily run cross-posts the Veo Short
+# at ~6 PM IST. Posting the carousel ~16h later spaces the two API posts
+# enough to avoid IG flagging the same account for back-to-back automated
+# uploads. 10 AM IST also matches when B2B Indian Instagram audiences are
+# most active (commute / morning browse).
+#
+# Pipeline:
+#   1. Read latest ig_drafts/*.json with `posted: false`
+#   2. Call IG Graph API: create 3 child containers → parent carousel → publish
+#   3. Update the JSON with posted=true + media_id
+#   4. Commit the change so the 8:30 PM auto-verifier sees success
+
+on:
+  schedule:
+    - cron: '30 4 * * *'   # 4:30 UTC = 10:00 AM IST every day
+  workflow_dispatch:
+
+jobs:
+  post-carousel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install minimum deps
+        # Only requests + pytz needed for the IG API call.
+        # No ffmpeg, no Veo, no boto3 — keeps runtime <30s.
+        run: pip install -q requests pytz
+
+      - name: Auto-refresh IG token if expiring
+        # If the long-lived IG token is <7 days from expiry, this refreshes
+        # it before the post so we don't fail mid-publish.
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        continue-on-error: true
+        run: |
+          python3 -c "
+          import os, sys
+          # Lightweight inline version of refresh_instagram_token_if_needed
+          # to avoid importing the whole daily_short module
+          import requests
+          tok = os.environ.get('INSTAGRAM_ACCESS_TOKEN','').strip()
+          if not tok or len(tok) < 20:
+              print('Token missing or malformed — skipping refresh')
+              sys.exit(0)
+          r = requests.get(f'https://graph.facebook.com/v21.0/debug_token',
+              params={'input_token': tok, 'access_token': tok}, timeout=10)
+          if r.status_code == 200:
+              data = r.json().get('data', {})
+              exp = data.get('expires_at', 0)
+              if exp:
+                  import time
+                  days = (exp - time.time()) / 86400
+                  print(f'IG token expires in {days:.1f} days')
+          "
+
+      - name: Publish IG carousel
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: python3 daily_short.py --mode=ig-carousel-post
+
+      - name: Commit posted-state update
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add ig_drafts/ || true
+          git commit -m "IG carousel: posted update [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }}
