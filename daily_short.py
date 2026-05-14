@@ -5987,7 +5987,7 @@ YOUTUBE AUDIENCE SIGNAL (from our 110-video history):
 - Specific numbers + dramatic framing: "₹40 DTF Film vs ₹100"
 - AVOID: generic textile-tech with English titles ("180 GSM vs 200 GSM") — these die at <10 views
 
-YOUR TASK: Generate TWO titles, each platform-tuned:
+YOUR TASK: Generate THREE titles, each platform-tuned:
 
 1. YOUTUBE title — optimized for YouTube Shorts:
    - Max 70 chars
@@ -6002,8 +6002,26 @@ YOUR TASK: Generate TWO titles, each platform-tuned:
    - Latin script preferred; mixed Hindi-English fine
    - Curiosity hook — make them stop scrolling
 
+3. BLOG title — optimized for Google Search + AI search engines (ChatGPT/Claude/Perplexity):
+   - Max 80 chars
+   - **STRICT: NO Devanagari / Hindi script anywhere — use Latin script ONLY.**
+     Hinglish (English-with-Hindi-words-in-Latin-letters) is fine. Pure English is also fine.
+     ✅ Allowed: "Lost ₹40K on Tri-blend Fabric — Why Indian Printers Avoid Cotton+Polyester+Rayon Mix"
+     ✅ Allowed: "240 GSM Ka Asli Trap — Why Heavier Doesn't Mean Better for Bulk Tshirts"
+     ❌ Banned:  "240 GSM का झांसा — असली Quality यहाँ छुपी है"
+   - **Front-load English keywords** that Indian B2B printers type into Google:
+     GSM, DTG, DTF, screen print, plain tshirt wholesale, manufacturer, bulk, MOQ, oversized,
+     drop shoulder, polo, hoodie, cotton, fabric, Delhi, India, Tiruppur, ₹, lakh.
+   - Include a NUMBER when possible (₹40K, 500 pieces, 240 GSM) — improves CTR + AI citation.
+   - Structure like "[Specific number/scenario] — [keyword phrase Indian buyers search for]"
+   - This title becomes the blog's <title>, <h1>, og:title — what Google's crawler indexes and
+     what ChatGPT/Claude show when citing the page. Optimize for SEARCH, not feed scroll.
+   - **WHY:** Google + AI search engines treat Devanagari titles as Hindi-language content and
+     only surface them for Hindi queries. Indian B2B printers search Google in English even
+     when they speak Hindi. The blog needs Latin-script titles to rank for English queries.
+
 OUTPUT THIS JSON ONLY (no markdown):
-{{"yt_title": "title for YouTube", "ig_title": "title for Instagram", "rationale": "brief why each was tuned this way"}}"""
+{{"yt_title": "title for YouTube (Hindi script OK)", "ig_title": "title for Instagram", "blog_title": "title for Google/AI search — LATIN SCRIPT ONLY", "rationale": "brief why each was tuned this way"}}"""
 
     try:
         resp = claude_client.messages.create(
@@ -6017,6 +6035,7 @@ OUTPUT THIS JSON ONLY (no markdown):
 
         yt_t = (result.get("yt_title") or "").strip()
         ig_t = (result.get("ig_title") or "").strip()
+        blog_t = (result.get("blog_title") or "").strip()
         rationale = result.get("rationale", "")
 
         # Fallbacks if anything missing
@@ -6024,21 +6043,40 @@ OUTPUT THIS JSON ONLY (no markdown):
             yt_t = original_title
         if not ig_t:
             ig_t = yt_t
+        # blog_t MUST be Latin-script for Google SEO. If empty OR contains Devanagari,
+        # we fall back to original_title only if THAT is Latin-script too; otherwise
+        # we strip Devanagari from yt_t as a last resort.
+        import re as _re
+        DEVANAGARI = _re.compile(r'[\u0900-\u097F]')
+        if not blog_t or DEVANAGARI.search(blog_t):
+            # Try original_title (often Latin-script)
+            if not DEVANAGARI.search(original_title or ""):
+                blog_t = original_title
+            else:
+                # Worst case: keep the Hindi yt_t but strip Devanagari letters (ugly but
+                # better than indexing Hindi-script titles in Google). User will see this
+                # in logs and can re-trigger if needed.
+                stripped = DEVANAGARI.sub('', yt_t).strip()
+                blog_t = stripped or original_title or "Bulk Plain T-Shirt Wholesale India"
 
         # Truncate safely
         if len(yt_t) > 100: yt_t = yt_t[:97] + "..."
         if len(ig_t) > 100: ig_t = ig_t[:97] + "..."
+        if len(blog_t) > 110: blog_t = blog_t[:107] + "..."
 
-        print(f"   🏷️ YouTube title : {yt_t}")
-        print(f"   📸 Instagram title: {ig_t}")
+        print(f"   🏷️ YouTube title  (Hindi OK)  : {yt_t}")
+        print(f"   📸 Instagram title (mixed OK) : {ig_t}")
+        print(f"   📰 Blog title      (Latin only): {blog_t}")
         if rationale:
             print(f"      Rationale: {rationale[:200]}")
 
-        return {"yt": yt_t, "ig": ig_t, "best": yt_t}
+        # 'best' returns the blog_title — the SEO-optimized one. Callers that want
+        # the YT version should read titles["yt"] explicitly.
+        return {"yt": yt_t, "ig": ig_t, "blog": blog_t, "best": blog_t}
 
     except Exception as e:
         print(f"   ⚠️ Title optimization failed ({e}), using original for both")
-        return {"yt": original_title, "ig": original_title, "best": original_title}
+        return {"yt": original_title, "ig": original_title, "blog": original_title, "best": original_title}
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -9375,8 +9413,9 @@ def main():
     script_english = data["script_english"]
     titles = optimize_title(claude, data["title"], script_english, fresh_topic)
     # titles is a dict {'yt': ..., 'ig': ..., 'best': ...}
-    yt_title = titles["yt"]
-    ig_title = titles["ig"]
+    yt_title = titles["yt"]    # Hindi OK — YouTube algo rewards
+    ig_title = titles["ig"]    # Mixed OK — Instagram algo rewards
+    blog_title = titles.get("blog") or titles.get("best") or yt_title  # Latin-only — Google + AI search optimized
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
 
@@ -10424,11 +10463,14 @@ def main():
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST and not upload_failed and vid_id:
         try:
+            # IMPORTANT: blog uses blog_title (Latin script — Google/AI search optimized),
+            # NOT yt_title (Hindi — YouTube algo optimized). yt_title and ig_title stay
+            # Hindi for their respective platforms. See optimize_title() docstring.
             blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
                 claude_client=claude,
                 cost_tracker=cost,
                 topic=fresh_topic,
-                title=yt_title,
+                title=blog_title,                       # ← Latin script for Google SEO
                 description=yt_description,
                 script_english=script_english,
                 tags=yt_tags,
@@ -10439,9 +10481,9 @@ def main():
             )
 
             if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
-                if publish_blog_to_s3(blog_html, blog_slug, yt_title, blog_url, blog_images, vid_id=vid_id):
+                if publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url, blog_images, vid_id=vid_id):
                     excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
-                    save_blog_history(fresh_topic, yt_title, blog_slug, blog_url, vid_url,
+                    save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
                                       tags=yt_tags, description=yt_description,
                                       word_count=len(blog_html.split()) if blog_html else 0,
                                       excerpt=excerpt)
@@ -10455,11 +10497,13 @@ def main():
                             hero_url = f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp"
                             break
                     try:
+                        # Reddit posts go to English-speaking subs (r/PrintOnDemand etc.) —
+                        # blog_title (Latin script) is what Reddit users want anyway.
                         generate_reddit_post(
                             claude_client=claude,
                             cost_tracker=cost,
                             topic=fresh_topic,
-                            blog_title=yt_title,
+                            blog_title=blog_title,    # ← Latin script
                             blog_url=blog_url,
                             script_english=script_english,
                             tags=yt_tags,
@@ -10469,12 +10513,13 @@ def main():
                         print(f"   ⚠️ Reddit draft failed (non-fatal): {e}")
 
                     # IG carousel draft — separate from the same-day Reel cross-post.
-                    # Published next morning at 10 AM IST by ig_carousel.yml workflow.
+                    # Published next day at 1 PM IST by ig_carousel.yml workflow.
+                    # Caption can mix scripts; the prompt handles Reels-style voice.
                     try:
                         generate_ig_carousel_draft(
                             claude_client=claude,
                             cost_tracker=cost,
-                            blog_title=yt_title,
+                            blog_title=blog_title,    # ← Latin script (caption gen handles mixing)
                             blog_url=blog_url,
                             blog_slug=blog_slug,
                             topic=fresh_topic,
