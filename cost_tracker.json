@@ -1353,5 +1353,23 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1912
     }
+  },
+  {
+    "date": "2026-05-14T14:55:59.841151",
+    "topic": "\u20b95 Bachaya Per Piece \u2014 Client Ne 1000 T-Shirts Return Kar Di \ud83d\ude30 Summer Fabric Galti! #wholesale #mistake",
+    "title": "\u20b95 \u092c\u091a\u093e\u0928\u0947 \u0915\u0947 \u091a\u0915\u094d\u0915\u0930 \u092e\u0947\u0902 1000 T-Shirts \u0935\u093e\u092a\u0938 \u0906 \u0917\u0908\u0902 \ud83d\ude30 Summer Fabric \u0917\u0932\u0924\u0940",
+    "total_usd": 7.1943,
+    "duration_min": 33.5,
+    "breakdown": {
+      "claude_opus": 0.3704,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0357,
+      "veo_clips": 6.08,
+      "kling_clips": 0.35,
+      "whisper": 0.0082,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.18
+    }
   }
 ]

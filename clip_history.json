@@ -1,16 +1,5 @@
 [
   {
-    "topic": "All over print kaise hota hai — sublimation ya screen dono se ho sakta hai",
-    "prompts": [
-      "Close-up of a fully all-over printed t-shirt with a vibrant tropical pattern spread flat on a dark cutting table, camera slowly panning across the seam-to-seam print coverage, warm overhead fluorescent factory lighting, Indian textile workshop setting, scissors and measuring tape visible at the edge, vertical 9:16 format, 8 seconds.",
-      "Medium shot of Indian man's hands holding up two plain unprinted t-shirts side by side — one white polyester with a slight sheen and one white cotton with a matte texture — against a fabric roll storage background in a Tiruppur textile unit, natural daylight from a window, camera slowly dollying in, vertical 9:16 format, 8 seconds.",
-      "Close-up of a large sublimation heat press machine opening with steam rising, revealing a polyester fabric sheet with a colorful all-over geometric pattern transferring from paper to fabric, bright industrial lighting, hands in work gloves pulling the fabric sheet, camera angle slightly from above looking down, vertical 9:16 format, 8 seconds.",
-      "Medium close-up of a rotary screen printing machine roller pressing ink onto a long continuous roll of white cotton fabric creating an all-over floral pattern, ink spreading evenly across the width, factory machinery humming in background, overhead industrial lights, camera tracking sideways following the fabric movement, vertical 9:16 format, 8 seconds.",
-      "Close-up of Indian man's hands holding a finished all-over printed cotton round-neck t-shirt with rich deep colors, gently rubbing the fabric surface to show the print quality and texture, then flipping it to show clean inside stitching, warm studio-style lighting on a clean wooden table, camera slowly pulling back, vertical 9:16 format, 8 seconds."
-    ],
-    "date": "2026-04-08T13:04:56.805601"
-  },
-  {
     "topic": "Supplier change karne se pehle soch lo — consistency matter karti hai",
     "prompts": [
       "Close-up of Indian man's hands placing a rejection stamp or red X mark sticker on a stack of freshly DTG-printed white cotton t-shirts spread on a worktable, some prints visibly darker and some faded on identical white shirts, warm fluorescent workshop lighting, camera slowly dollying in, vertical 9:16 format, scene begins fully lit and in action.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Harsh single cool-white CFL tube hanging low in a cramped Indian print workshop, faint blue-grey walls, shallow DOF 35mm cinematic, slight handheld sway. Scene: Slow dolly shot across a neatly arranged row of finished white t-shirts on a packing table — some with embroidery, some with colorful DTF prints, some with bold screen prints — all on identical looking blanks, Indian man's hands picking one up and placing it into a polythene pack, the uniformity of the blank fabric clearly visible across all pieces."
     ],
     "date": "2026-05-13T14:46:19.947353"
+  },
+  {
+    "topic": "₹5 Bachaya Per Piece — Client Ne 1000 T-Shirts Return Kar Di 😰 Summer Fabric Galti! #wholesale #mistake",
+    "prompts": [
+      "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Close-up of Indian man's hands pulling open a large brown cardboard carton overflowing with folded white plain t-shirts, some pieces crumpled and tossed loosely back in, suggesting returns. A printed invoice slip sits on top. Camera slowly dollies in toward the carton. No faces visible.",
+      "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Medium shot of two plain white round-neck t-shirts laid flat side by side on a wooden table — one visibly thinner (180 GSM) and one thicker (200 GSM). An Indian man's hand presses down on each one alternately, showing the difference in thickness. Stacks of folded colored t-shirts visible in background on metal shelving.",
+      "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Extreme close-up of a white t-shirt with a large colorful DTF print transfer on the chest area. Indian man's fingers pinch and lift the printed section, showing stiffness. Camera racks focus from the stiff print surface to the thin fabric behind it, revealing how the print layer dominates the thin material. Slight camera tilt upward.",
+      "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Side-by-side comparison on a flat table — left side shows a thin 180 GSM white t-shirt with a DTF print looking waxy and stiff under light, right side shows a thicker 200 GSM white t-shirt with similar print looking natural and draping well. Indian man's hand lifts each shirt by the shoulder seam to show drape difference. Camera slowly pans left to right.",
+      "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Close-up of Indian man's hands neatly folding a thick white 200 GSM printed t-shirt and placing it into a poly bag, then setting it into an open brown shipping box. Several already-packed poly-bagged t-shirts visible in the box. The gesture is confident and final. Camera holds steady with a gentle push-in toward the neatly packed box."
+    ],
+    "date": "2026-05-14T14:24:02.400201"
   }
 ]
