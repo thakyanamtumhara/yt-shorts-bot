@@ -1,23 +1,23 @@
-name: IG Carousel Post (next-morning auto-publish)
+name: IG Carousel Post (next-day lunch auto-publish)
 
-# Fires daily at 4:30 UTC = 10:00 AM IST. Reads the latest unposted draft
+# Fires daily at 7:30 UTC = 1:00 PM IST. Reads the latest unposted draft
 # from ig_drafts/*.json and publishes it as an Instagram carousel.
 #
-# Why 10 AM IST: previous evening's daily run cross-posts the Veo Short
-# at ~6 PM IST. Posting the carousel ~16h later spaces the two API posts
-# enough to avoid IG flagging the same account for back-to-back automated
-# uploads. 10 AM IST also matches when B2B Indian Instagram audiences are
-# most active (commute / morning browse).
+# Why 1 PM IST: user's existing evening stack is heavy — auto Reel cross-post
+# at 8:30 PM IST + Wizard Reel at ~10 PM IST. Posting the carousel at 1 PM
+# next day gives 15+h gap from the last evening post, sits in IG's peak
+# B2B engagement window (Indian lunch break, peak phone scroll time), and
+# diversifies daily posting cadence (algorithm rewards varied timing).
 #
 # Pipeline:
 #   1. Read latest ig_drafts/*.json with `posted: false`
 #   2. Call IG Graph API: create 3 child containers → parent carousel → publish
 #   3. Update the JSON with posted=true + media_id
-#   4. Commit the change so the 8:30 PM auto-verifier sees success
+#   4. Commit the change so the 1:45 PM IST + 8:30 PM IST verifiers see success
 
 on:
   schedule:
-    - cron: '30 4 * * *'   # 4:30 UTC = 10:00 AM IST every day
+    - cron: '30 7 * * *'   # 7:30 UTC = 1:00 PM IST every day
   workflow_dispatch:
 
 jobs:
