@@ -152,6 +152,7 @@ jobs:
           git add blog_history.json || true
           git add ig_engagement_history.json || true
           git add reddit_drafts/ || true
+          git add ig_drafts/ || true
           git commit -m "Update tracking files (topic + cost + engagement + clips + source insights + blog + IG + reddit) [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}
