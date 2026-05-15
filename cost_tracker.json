@@ -1371,5 +1371,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.18
     }
+  },
+  {
+    "date": "2026-05-15T14:43:02.496044",
+    "topic": "240 GSM Oversized Tee \u2014 Royal Blue Mein Kyu Nahi Milti? Asli Problem Yeh Hai \ud83c\udfa8",
+    "title": "Royal Blue \u091f\u0940 5 Suppliers \u0938\u0947 \u092e\u0902\u0917\u093e\u0908 \u2014 \u0938\u092c\u0928\u0947 \u0917\u0932\u0924 Shade \u0926\u093f\u092f\u093e \ud83d\ude24",
+    "total_usd": 7.8062,
+    "duration_min": 30.0,
+    "breakdown": {
+      "claude_opus": 0.3654,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0331,
+      "veo_clips": 7.04,
+      "whisper": 0.0071,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1905
+    }
   }
 ]

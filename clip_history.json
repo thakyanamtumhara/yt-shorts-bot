@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Supplier change karne se pehle soch lo — consistency matter karti hai",
-    "prompts": [
-      "Close-up of Indian man's hands placing a rejection stamp or red X mark sticker on a stack of freshly DTG-printed white cotton t-shirts spread on a worktable, some prints visibly darker and some faded on identical white shirts, warm fluorescent workshop lighting, camera slowly dollying in, vertical 9:16 format, scene begins fully lit and in action.",
-      "Medium shot of a busy Indian textile wholesale warehouse shelf stacked with hundreds of poly-packed plain white round-neck t-shirts in neat rows, a hand reaches in and pulls out one packet, soft overhead warehouse tube lighting, slight camera pan right revealing the depth of inventory, vertical 9:16 format, scene opens with a bright well-lit frame.",
-      "Top-down close-up of two plain white cotton t-shirts laid on a dark wooden surface, one slightly creamier and one brighter white, Indian man's hands pressing down on both fabrics simultaneously to show different thickness and texture, natural daylight from a nearby window, camera static with subtle zoom, vertical 9:16, immediately visible scene.",
-      "Close-up of Indian man's hands running a freshly DTG-printed multicolor design t-shirt under tap water in a steel sink, water running over the fabric showing ink holding vs slightly bleeding in patches, realistic Indian workshop sink with tiled wall background, overhead warm lighting, camera angle slightly above looking down, vertical 9:16, opens bright.",
-      "Medium close-up of Indian man's hands neatly stacking 5-6 perfectly printed plain round-neck cotton t-shirts in different colors (black, white, navy, maroon) into a corrugated shipping box, each shirt showing clean consistent vibrant prints, warm indoor packaging area lighting, gentle camera tilt down into the box, vertical 9:16 format, scene starts fully visible."
-    ],
-    "date": "2026-04-09T13:05:48.898731"
-  },
-  {
     "topic": "Printing business mein waste percentage rakho — 3 to 5% normal hai",
     "prompts": [
       "Close-up of Indian man's hands sorting through a small pile of freshly printed cotton t-shirts on a work table, pulling out one with a visibly smudged or misaligned print, setting it aside separately, warm fluorescent workshop lighting, camera slowly zooms in on the defective print area, vertical 9:16 format, 8 seconds.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Flat cool-white fluorescent strip lights on a grey plastered ceiling, small Indian garment warehouse with brown cardboard boxes stacked high, muted earth tones and whites, 50mm lens feel with moderate depth of field, slight handheld drift. Scene: Close-up of Indian man's hands neatly folding a thick white 200 GSM printed t-shirt and placing it into a poly bag, then setting it into an open brown shipping box. Several already-packed poly-bagged t-shirts visible in the box. The gesture is confident and final. Camera holds steady with a gentle push-in toward the neatly packed box."
     ],
     "date": "2026-05-14T14:24:02.400201"
+  },
+  {
+    "topic": "240 GSM Oversized Tee — Royal Blue Mein Kyu Nahi Milti? Asli Problem Yeh Hai 🎨",
+    "prompts": [
+      "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Close-up of Indian man's hands scrolling through a phone showing blue t-shirt color swatches, fingers tapping frustratedly, surrounded by stacked folded t-shirts on a metal shelf, a navy blue oversized tee held up briefly against a royal blue swatch card showing obvious shade mismatch, camera slowly pushes in, 9:16 vertical.",
+      "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Medium shot of a cluttered Indian fabric supplier's desk, hands placing three oversized t-shirts side by side — one navy, one dull faded blue, one slightly purple-toned blue — on a brown cardboard surface, camera slowly pans across the three showing how none match true royal blue, warm shadows on fabric folds, vertical 9:16.",
+      "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Close-up of two plain cotton t-shirts held side by side in Indian man's hands — one thin 180 GSM and one thick 240 GSM, both in the same blue shade but the thicker one appears visibly uneven and patchy in dye coverage, camera rocks gently as hands flip the fabric to reveal inside color difference, stacked fabric rolls blurred in background, vertical 9:16.",
+      "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Close-up of Indian man's hands holding a small square fabric swatch card with multiple blue shades pinned to it, comparing it against a thick royal blue oversized t-shirt laid flat on a cutting table, a tailor's measuring tape and scissors visible at edge of frame, fingers pointing at the matching shade, slow dolly forward, vertical 9:16.",
+      "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Satisfying overhead shot of neatly folded stack of thick royal blue oversized t-shirts being placed into a brown corrugated shipping box by Indian hands, rich consistent blue color visible across all pieces, a small approved swatch card sitting on top of the stack, camera slowly tilts down revealing the full box, warm highlights on fabric surface, vertical 9:16."
+    ],
+    "date": "2026-05-15T14:14:31.310509"
   }
 ]
