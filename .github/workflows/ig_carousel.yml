@@ -39,10 +39,13 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Install minimum deps
-        # Only requests + pytz needed for the IG API call.
-        # No ffmpeg, no Veo, no boto3 — keeps runtime <30s.
-        run: pip install -q requests pytz
+      - name: Install Python deps
+        # daily_short.py has module-level imports (anthropic, boto3, etc.) that
+        # fail on `python3 daily_short.py --mode=ig-carousel-post` if missing.
+        # Earlier "minimum deps" approach failed with ModuleNotFoundError.
+        # Installing full requirements.txt — adds ~60s to runtime but eliminates
+        # import-time crashes. Total run still ~90s, well within budget.
+        run: pip install -q -r requirements.txt
 
       - name: Auto-refresh IG token if expiring
         # If the long-lived IG token is <7 days from expiry, this refreshes
