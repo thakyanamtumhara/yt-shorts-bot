@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Printing business mein waste percentage rakho — 3 to 5% normal hai",
-    "prompts": [
-      "Close-up of Indian man's hands sorting through a small pile of freshly printed cotton t-shirts on a work table, pulling out one with a visibly smudged or misaligned print, setting it aside separately, warm fluorescent workshop lighting, camera slowly zooms in on the defective print area, vertical 9:16 format, 8 seconds.",
-      "Medium shot of a DTG printing machine mid-operation pressing ink onto a plain white cotton t-shirt stretched on a platen, slight steam rising, colorful ink visible on the print head, industrial Indian workshop setting with tools and fabric rolls in soft background blur, overhead angle slightly tilted, bright even lighting, vertical 9:16.",
-      "Close-up top-down shot of a clean wooden table with two groups of printed t-shirts separated clearly — a larger neat stack of 10-12 good printed tees on the left and 2-3 defective printed tees with visible misprints on the right, a small handwritten note card showing '3-5%' placed between them, natural daylight from a nearby window, camera holds steady then slowly dollies forward, vertical 9:16.",
-      "Close-up of Indian man's hands using a calculator placed next to a small counting tally sheet on a cluttered workshop desk, fingers pressing buttons, a few plain blank cotton t-shirts stacked nearby with a pen resting on the sheet, realistic Indian small business office environment with warm indoor lighting, slight camera pan from calculator to the blank tee stack, vertical 9:16.",
-      "Medium close-up of Indian man's hands neatly packing a full stack of perfectly printed cotton t-shirts into a brown corrugated shipping box on a packing table, placing the last folded tee on top completing the order, tape dispenser and poly bags visible beside the box, bright warehouse lighting, camera slowly pulls back to reveal the organized packing station, vertical 9:16."
-    ],
-    "date": "2026-04-10T12:52:55.577614"
-  },
-  {
     "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
     "prompts": [
       "Close-up of Indian man's hands lifting a dark green plain cotton round-neck t-shirt from a poly bag, bringing it close to nose level (face not visible, only chin and hands), slight recoil reaction suggesting bad smell, warm indoor warehouse lighting, vertical 9:16 format, camera static with slight zoom in, stack of folded dark-colored t-shirts visible in soft background.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Mixed warm-cool light from a single yellow incandescent bulb and bluish dusk light through a small grilled window, cramped Indian textile godown with stacked fabric bales, shallow DOF 35mm handheld feel, muted earthy tones with fabric color pops. SCENE: Satisfying overhead shot of neatly folded stack of thick royal blue oversized t-shirts being placed into a brown corrugated shipping box by Indian hands, rich consistent blue color visible across all pieces, a small approved swatch card sitting on top of the stack, camera slowly tilts down revealing the full box, warm highlights on fabric surface, vertical 9:16."
     ],
     "date": "2026-05-15T14:14:31.310509"
+  },
+  {
+    "topic": "DTF Printer Kaunsa Lein? ₹50K vs ₹2 Lakh — Real Difference Dikhata Hoon 🖨️ #dtfprinting #printbusiness",
+    "prompts": [
+      "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Close-up of Indian man's hands holding a small desktop DTF printer's detached print head unit, ink-stained fingers visible, the print head nozzles clogged with dried white ink residue, camera slowly dollies in to reveal the damage, cluttered workbench with ink bottles and tools in soft background blur.",
+      "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Medium shot of a small budget DTF printer sitting on a narrow wooden table, an Indian man's hand resting on it, next to it a stack of rupee notes fanned out showing ₹500 denominations, camera slowly pans from the printer to the money stack, ink bottles and plain white t-shirts visible in the soft background.",
+      "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Split-composition close-up showing two DTF print heads side by side on a clean cloth — left side a smaller modified consumer-grade head with visible wear, right side a larger industrial i3200-style head looking pristine and metallic, camera slowly racks focus from left to right, warm highlights catching the metal surfaces.",
+      "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Top-down overhead shot of a larger industrial DTF printer actively printing a colorful design onto DTF film, the carriage moving rapidly left to right, vibrant CMYK ink droplets visible on the translucent film, freshly printed sheets stacked neatly beside the machine, an Indian man's hand pulling out a finished print sheet.",
+      "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Close-up of Indian man's hands pressing a vibrant DTF transfer onto a plain black cotton round-neck t-shirt using a heat press, steam rising gently as the press opens to reveal a sharp colorful print, camera slowly tilts up showing a neat stack of freshly printed t-shirts in the warm background."
+    ],
+    "date": "2026-05-16T13:29:46.026304"
   }
 ]

@@ -1388,5 +1388,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1905
     }
+  },
+  {
+    "date": "2026-05-16T13:53:47.335470",
+    "topic": "DTF Printer Kaunsa Lein? \u20b950K vs \u20b92 Lakh \u2014 Real Difference Dikhata Hoon \ud83d\udda8\ufe0f #dtfprinting #printbusiness",
+    "title": "\u20b950K DTF Printer \u0928\u0947 3 \u092e\u0939\u0940\u0928\u0947 \u092e\u0947\u0902 \u091c\u093e\u0928 \u0926\u0947 \u0926\u0940 \u2014 \u20b92 Lakh \u0935\u093e\u0932\u0947 \u0915\u093e \u0938\u091a \ud83d\udda8\ufe0f",
+    "total_usd": 7.8202,
+    "duration_min": 25.6,
+    "breakdown": {
+      "claude_opus": 0.3656,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0284,
+      "veo_clips": 7.04,
+      "whisper": 0.0065,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2097
+    }
   }
 ]
