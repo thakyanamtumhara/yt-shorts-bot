@@ -29,7 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_PAT }}
+          # Use the built-in GITHUB_TOKEN (matches daily_short.yml). GH_PAT was
+          # a leftover from an earlier draft and fails with 403 on push because
+          # the PAT isn't authorized for this workflow's git push step.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
