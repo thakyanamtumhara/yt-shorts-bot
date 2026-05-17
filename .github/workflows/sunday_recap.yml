@@ -24,7 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_PAT }}
+          # Use built-in GITHUB_TOKEN (matches daily_short.yml and ig_carousel.yml).
+          # GH_PAT fails with 403 on push from workflow runtime — same issue
+          # that broke ig_carousel.yml on May 15-16 until fixed.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
