@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Tshirt mein smell aa rahi hai? Dyeing ke baad washing properly nahi hui",
-    "prompts": [
-      "Close-up of Indian man's hands lifting a dark green plain cotton round-neck t-shirt from a poly bag, bringing it close to nose level (face not visible, only chin and hands), slight recoil reaction suggesting bad smell, warm indoor warehouse lighting, vertical 9:16 format, camera static with slight zoom in, stack of folded dark-colored t-shirts visible in soft background.",
-      "Medium close-up of a large industrial fabric dyeing drum rotating slowly inside a textile dyeing unit in Tiruppur, dark navy blue liquid visible swirling inside the machine, steam rising from the top, overhead fluorescent factory lighting, pipes and valves visible in background, vertical 9:16 format, slight camera pan left to right revealing the scale of the machine.",
-      "Close-up top-down shot of Indian man's hands holding two identical plain cotton t-shirts side by side on a clean white surface — one dark maroon (properly washed, crisp looking) and one dark maroon with slight whitish residue patches visible on inner collar and seam areas, natural daylight from a nearby window, vertical 9:16 format, camera slowly dollies forward to reveal the residue detail.",
-      "Close-up of Indian man's hands submerging a dark navy blue plain cotton t-shirt into a transparent glass bowl filled with clean water on a wooden table, water slowly turning slightly bluish with tiny foam bubbles forming on the surface, warm indoor lighting, vertical 9:16 format, camera angle slightly above looking down at 45 degrees, hands pressing the fabric gently underwater.",
-      "Close-up of Indian man's hands squeezing out a freshly washed dark green plain cotton t-shirt over a steel bucket, water running clear and clean, then hands spreading the t-shirt flat on a clean white cotton cloth showing the smooth bio-washed texture with no residue, bright natural daylight, vertical 9:16 format, slow camera dolly forward ending on the clean fabric surface."
-    ],
-    "date": "2026-04-11T12:40:02.561474"
-  },
-  {
     "topic": "Instagram se customer aayega — par product quality se rukega",
     "prompts": [
       "Close-up of a smartphone screen showing an Instagram business profile with many followers and likes, the phone resting on a messy desk cluttered with crumpled plain t-shirts and packaging materials, warm overhead lighting, shallow depth of field, camera slowly pulling back to reveal the chaos around the phone, vertical 9:16 format, 8 seconds.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Warm golden single incandescent bulb plus faint blue daylight from a small window, cramped Indian print shop with cluttered shelves, shallow DOF 35mm cinematic, slight handheld feel, earthy browns and warm amber tones. Close-up of Indian man's hands pressing a vibrant DTF transfer onto a plain black cotton round-neck t-shirt using a heat press, steam rising gently as the press opens to reveal a sharp colorful print, camera slowly tilts up showing a neat stack of freshly printed t-shirts in the warm background."
     ],
     "date": "2026-05-16T13:29:46.026304"
+  },
+  {
+    "topic": "500 T-Shirts Pe Embroidery Karwai — Single Head vs Double Head Machine Ka Sach 🧵 Cost Breakdown",
+    "prompts": [
+      "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Close-up of a printed invoice paper on a cluttered wooden desk, Indian hand holding the paper edge, numbers and rows visible but blurred, camera slowly pushes in on the total amount area, a few white plain t-shirts stacked loosely beside the paper, embroidery thread spools scattered around, 9:16 vertical framing.",
+      "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Medium shot of a single-head embroidery machine running, needle moving rapidly stitching a small logo on a white cotton round-neck t-shirt clamped in a hoop, thread bobbin spinning, slight fabric vibration visible, camera slowly dollies sideways to reveal stacks of unfinished plain t-shirts waiting on a small metal rack beside the machine, Indian workshop setting.",
+      "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Side-by-side comparison framing — left side shows a single embroidery needle head mechanism close-up with one hoop holding one t-shirt, right side shows a double-head machine with two hoops each holding a white t-shirt running simultaneously, camera slowly tilts down from the machine heads to the fabric, coloured thread cones mounted above, slight machine vibration visible, 9:16 vertical.",
+      "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Overhead top-down shot of Indian hands arranging finished embroidered white t-shirts into two separate stacks on a wooden work table, one stack noticeably smaller than the other, a simple wall clock visible in the upper background showing time passage concept, colourful embroidery thread scattered around table edges, camera slowly pulls up to reveal both stacks fully.",
+      "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Close-up of Indian hands lifting a freshly embroidered white cotton t-shirt from a double-head machine hoop, fingers gently pressing the embroidered logo to show clean tight stitching, camera slowly racks focus from the hands to a large neat stack of 500 completed embroidered t-shirts packed in a clear poly bag bundle on a shelf behind, satisfying final reveal, warm tones."
+    ],
+    "date": "2026-05-19T15:31:56.613840"
   }
 ]
