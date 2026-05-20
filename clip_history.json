@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Instagram se customer aayega — par product quality se rukega",
-    "prompts": [
-      "Close-up of a smartphone screen showing an Instagram business profile with many followers and likes, the phone resting on a messy desk cluttered with crumpled plain t-shirts and packaging materials, warm overhead lighting, shallow depth of field, camera slowly pulling back to reveal the chaos around the phone, vertical 9:16 format, 8 seconds.",
-      "Medium close-up of Indian man's hands stretching a thin light-colored plain cotton t-shirt between both hands, the fabric visibly see-through under bright daylight near a window, showing the thinness and looseness of the material, camera steady with slight zoom in on the stretched fabric, vertical 9:16 format, 8 seconds.",
-      "Split-view style shot of two plain white round-neck t-shirts laid flat side by side on a clean grey surface — one visibly thinner and rougher textured on the left, one thicker and smoother on the right, a hand enters frame and presses down on each one alternately to show the thickness difference, bright even studio lighting, top-down camera angle, vertical 9:16 format, 8 seconds.",
-      "Close-up of Indian man's hands washing a printed cotton t-shirt under running tap water in a steel sink, gently rubbing the print area, water running clear showing the print holding strong, camera angle slightly above looking down into the sink, natural indoor lighting with water reflections, vertical 9:16 format, 8 seconds.",
-      "Medium shot of a neatly organized stack of thick premium plain cotton t-shirts in multiple colors — navy, white, black, maroon — arranged on a clean wooden shelf in a well-lit warehouse setting, a hand enters frame and confidently picks up the top t-shirt revealing the soft biowashed texture, camera dolly slowly forward, warm ambient lighting, vertical 9:16 format, 8 seconds."
-    ],
-    "date": "2026-04-12T12:43:36.279942"
-  },
-  {
     "topic": "B2B aur B2C pricing alag hoti hai — dono mat mix karo",
     "prompts": [
       "Close-up of Indian man's hands holding a basic calculator showing a low number, with a small stack of about 10 folded plain white t-shirts on one side and a large pile of 50+ folded plain t-shirts on the other side, both on a wooden desk. Warm indoor warehouse lighting, camera slowly zooms in on the calculator screen, slight head shake motion of the hands suggesting frustration. Vertical 9:16 format, bright from frame one.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Warm amber industrial pendant light mixed with faint green-tinted daylight from a frosted side window, muted earthy tones with aged cream walls and scattered thread spools, shallow DOF 35mm cinematic slight handheld sway. Scene: Close-up of Indian hands lifting a freshly embroidered white cotton t-shirt from a double-head machine hoop, fingers gently pressing the embroidered logo to show clean tight stitching, camera slowly racks focus from the hands to a large neat stack of 500 completed embroidered t-shirts packed in a clear poly bag bundle on a shelf behind, satisfying final reveal, warm tones."
     ],
     "date": "2026-05-19T15:31:56.613840"
+  },
+  {
+    "topic": "Summer Mein 180 GSM vs 220 GSM — Cotton T-Shirt Mein Kaunsa Chalega? ☀️ Real Feel Test",
+    "prompts": [
+      "STYLE LOCK: Soft diffused natural daylight from a large warehouse window, warm golden tones with pale concrete walls, shallow DOF 35mm cinematic handheld feel, Tiruppur textile warehouse with stacked fabric bales. Scene: Close-up of Indian man's hands pulling a thick white 220 GSM round-neck t-shirt from a cardboard box, placing it on a worn wooden table next to a phone showing a call screen, slight frustration in hand gestures, stacks of returned t-shirts in transparent polybags visible in soft background blur.",
+      "STYLE LOCK: Soft diffused natural daylight from a large warehouse window, warm golden tones with pale concrete walls, shallow DOF 35mm cinematic handheld feel, Tiruppur textile warehouse with stacked fabric bales. Scene: Medium close-up of a thick white cotton t-shirt draped over a mannequin torso in a bright Indian summer setting, visible heat haze effect outside a window, a small desk fan running nearby, camera slowly dollying in, sweat droplet condensation visible on a steel water bottle beside the mannequin.",
+      "STYLE LOCK: Soft diffused natural daylight from a large warehouse window, warm golden tones with pale concrete walls, shallow DOF 35mm cinematic handheld feel, Tiruppur textile warehouse with stacked fabric bales. Scene: Top-down flat lay on a pale wooden surface showing two plain white cotton t-shirts side by side, one labeled with a small handwritten tag reading 180 and other reading 220, Indian man's hands pressing down on each fabric alternately to show thickness difference, camera slowly panning left to right comparing the two, natural light casting soft shadows.",
+      "STYLE LOCK: Soft diffused natural daylight from a large warehouse window, warm golden tones with pale concrete walls, shallow DOF 35mm cinematic handheld feel, Tiruppur textile warehouse with stacked fabric bales. Scene: Close-up of Indian man's hands holding a lighter-weight white cotton t-shirt up against the warehouse window, sunlight softly passing through the thinner 180 GSM fabric showing slight translucency, then switching to a 200 GSM shirt where light barely passes through, camera racking focus between the two fabrics held in each hand.",
+      "STYLE LOCK: Soft diffused natural daylight from a large warehouse window, warm golden tones with pale concrete walls, shallow DOF 35mm cinematic handheld feel, Tiruppur textile warehouse with stacked fabric bales. Scene: Indian man's hands neatly folding a stack of white 200 GSM cotton t-shirts into a brown corrugated shipping box on the warehouse table, placing a printed invoice slip on top, camera slowly pulling back to reveal several sealed boxes ready for dispatch, satisfying orderly arrangement, warm golden light catching fabric edges."
+    ],
+    "date": "2026-05-20T15:29:30.243147"
   }
 ]
