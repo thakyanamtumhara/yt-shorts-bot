@@ -1,0 +1,33 @@
+{
+  "phases": {
+    "2": {
+      "id": 2,
+      "status": "best-effort",
+      "last_run": "2026-05-24T20:20:34.649367+05:30",
+      "last_result": "fallback-to-description",
+      "details": "Captions API requires OAuth; falling back to video description. Will be upgraded when OAuth caption scope is added."
+    },
+    "3": {
+      "id": 3,
+      "status": "active",
+      "last_run": "2026-05-24T20:20:34.649642+05:30",
+      "last_result": "saved",
+      "details": "1 corpus entries · target 4+ for Phase 4 activation"
+    },
+    "1": {
+      "id": 1,
+      "status": "active",
+      "last_run": "2026-05-24T20:24:43.321098+05:30",
+      "last_result": "success",
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/247-live-warehouse-tour-bulkplaintshirtcom-tiruppur-plain-t.html · source: '🔴 LIVE — BulkPlainTshirt.com Warehouse Delhi | 24/7 Plain T-'"
+    },
+    "4": {
+      "id": 4,
+      "status": "pending",
+      "last_run": "2026-05-24T20:24:43.321381+05:30",
+      "last_result": "waiting-for-corpus",
+      "details": "Need 3 more weekly corpus entries before activation (currently 1)"
+    }
+  },
+  "last_update": "2026-05-24T20:24:43.321381+05:30"
+}
