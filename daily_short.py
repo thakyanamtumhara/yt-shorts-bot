@@ -2392,7 +2392,7 @@ Return ONLY the JSON object."""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-haiku-4-5-20251001",
             max_tokens=900,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -2553,8 +2553,8 @@ def post_latest_ig_carousel():
             continue
 
     if not target_data:
-        print("   ℹ️ No unposted IG carousel draft found")
-        return False
+        print("   ℹ️ No unposted IG carousel draft found — nothing to post today")
+        return True  # no-op is not an error; exit 0 so workflow stays green
 
     print(f"   📰 Posting draft: {target}")
     print(f"   📰 Blog: {target_data.get('blog_title', '')[:80]}")
@@ -6771,7 +6771,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-sonnet-4-6",
             max_tokens=16000,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -7573,7 +7573,7 @@ Return ONLY the JSON object."""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-haiku-4-5-20251001",
             max_tokens=1500,
             messages=[{"role": "user", "content": prompt}]
         )
