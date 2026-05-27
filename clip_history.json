@@ -1,16 +1,5 @@
 [
   {
-    "topic": "DTF vs Screen Print vs DTG — ₹10,000 Budget Mein Kaun Jeetega? Printing Method Showdown 🔥",
-    "prompts": [
-      "Close-up of Indian man's hands fanning out three stacks of Indian currency notes (ten 1000-rupee bundles totaling roughly 10,000 rupees) on a wooden workshop table, with three plain white cotton t-shirts laid in a row behind the cash, warm tungsten workshop lighting, slight camera push-in, vertical 9:16 framing, scene starts bright and fully lit from frame one.",
-      "Medium shot of a busy Indian screen printing workshop, camera focuses on hands pulling a squeegee across a silk screen frame over a plain black t-shirt clamped on a rotary carousel, bright fluorescent overhead lights, ink colors visible in containers nearby, slight camera pan left to right, vertical 9:16, no faces visible, action from frame one.",
-      "Close-up of a DTF printer head moving rapidly across a PET film, printing a colorful multi-color design, vibrant CMYK ink droplets visible on the glossy film surface, the printer's LED guide lights glowing, camera slowly dollies forward, warm indoor lighting, vertical 9:16 format, bright and visible from the very first frame.",
-      "Close-up of Indian man's hands operating a heat press machine, pressing down the top platen onto a plain white cotton round-neck t-shirt with a DTF transfer film on it, steam rising as the press closes, timer display glowing on the machine panel, camera angle slightly from the side, warm workshop lighting, vertical 9:16, immediate action from frame one.",
-      "Close-up of three plain cotton t-shirts laid flat on a clean white surface — one with a screen-printed single-color logo, one with a DTG photo-quality print, one with a vibrant DTF multi-color transfer — Indian man's hands gently arranging them side by side for comparison, soft natural daylight from a nearby window, camera slowly pulls back to reveal all three, vertical 9:16, fully lit from first frame."
-    ],
-    "date": "2026-04-18T12:44:12.351169"
-  },
-  {
     "topic": "Usne ₹3 Ka Cotton Save Kiya — 500 Returns Aa Gaye 😰 | Fabric Quality Mistake Real Story",
     "prompts": [
       "Close-up of Indian man's hands sorting through a large pile of returned plain white cotton t-shirts dumped on a warehouse table, some shirts are crumpled with visible crack lines on faded prints, warm overhead fluorescent lighting, camera slowly dollies in revealing the scale of the pile, vertical 9:16 format, realistic Indian small business warehouse setting.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Warm golden incandescent bulbs overhead mixed with faint bluish evening light from a small window, muted earthy tones with pops of white fabric, shallow DOF 50mm lens feel, slight handheld drift, small Indian textile warehouse with brown cardboard boxes stacked high. SCENE: Wide medium shot of a large stack of sealed brown cardboard cartons piled high on a warehouse floor, a printed shipping label visible on the front box, Indian man's hand placing one final box on top of the tall stack, camera slowly dollies backward to reveal the scale of the shipment, warm golden light illuminating the scene from overhead bulbs."
     ],
     "date": "2026-05-26T15:40:37.234593"
+  },
+  {
+    "topic": "Embroidery + DTF + Screen Print — एक Order में तीनों कैसे Manage करें? Real Workflow",
+    "prompts": [
+      "STYLE LOCK: Warm yellowish sodium vapor–style overhead light mixed with faint cool daylight from a high window, muted earth tones and off-whites, cluttered Indian garment workshop feel with thread spools and fabric rolls visible, shallow DOF 40mm handheld feel. Scene: Close-up of Indian man's hands holding up a white cotton t-shirt with visible damage — peeling DTF transfer on the sleeve area with tiny needle puncture holes visible around it, fingers pointing at the peeling edge, slight camera push-in, fabric slightly crumpled showing the ruined print area clearly from frame one.",
+      "STYLE LOCK: Warm yellowish sodium vapor–style overhead light mixed with faint cool daylight from a high window, muted earth tones and off-whites, cluttered Indian garment workshop feel with thread spools and fabric rolls visible, shallow DOF 40mm handheld feel. Scene: Medium shot of a wooden workshop table with three plain white t-shirts laid flat side by side, each marked with a small sticky note — one near the chest area, one on the back, one on the sleeve. Indian man's hands arranging the shirts neatly, camera slowly panning left to right across all three shirts, stacks of blank tees visible in background.",
+      "STYLE LOCK: Warm yellowish sodium vapor–style overhead light mixed with faint cool daylight from a high window, muted earth tones and off-whites, cluttered Indian garment workshop feel with thread spools and fabric rolls visible, shallow DOF 40mm handheld feel. Scene: Close-up of an embroidery machine hoop clamped onto a white t-shirt chest area, needle mid-stitch creating a small geometric logo in dark thread, camera at 45-degree angle looking down at the hoop, thread tension visible, slight vibration from machine movement, colorful thread cones blurred in background.",
+      "STYLE LOCK: Warm yellowish sodium vapor–style overhead light mixed with faint cool daylight from a high window, muted earth tones and off-whites, cluttered Indian garment workshop feel with thread spools and fabric rolls visible, shallow DOF 40mm handheld feel. Scene: Overhead top-down shot of Indian hands operating a heat press machine, pressing down a DTF transfer film onto a t-shirt sleeve area, steam rising slightly as the press closes, timer display glowing faintly on the press edge, the shirt already shows embroidery on chest and screen print on back visible at shirt edges, camera static with slight zoom.",
+      "STYLE LOCK: Warm yellowish sodium vapor–style overhead light mixed with faint cool daylight from a high window, muted earth tones and off-whites, cluttered Indian garment workshop feel with thread spools and fabric rolls visible, shallow DOF 40mm handheld feel. Scene: Close-up of Indian hands holding up a finished white t-shirt showing all three decoration methods — neat embroidery on the chest, screen printed design on the back partially visible as shirt is turned, DTF graphic on the sleeve — hands slowly rotating the shirt to display each area, camera dolly forward slightly, warm satisfied lighting on the clean final product."
+    ],
+    "date": "2026-05-27T15:53:09.863918"
   }
 ]
