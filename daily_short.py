@@ -23,6 +23,7 @@ import requests
 import json
 import random
 import os
+import sys
 import glob
 import math
 import re
@@ -9818,7 +9819,7 @@ def main():
 
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
-        return
+        sys.exit(2)
 
     if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
