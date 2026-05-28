@@ -712,7 +712,7 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
             font_topic = ImageFont.load_default()
 
         # SAFE ZONE for 9:16 Reels: top 10% and bottom 20% are covered by YouTube UI
-        safe_top = int(THUMBNAIL_HEIGHT * 0.15)       # Start text at 15% from top
+        safe_top = int(THUMBNAIL_HEIGHT * 0.20)       # 20% buffer — IG profile grid crops top ~14.8%
         safe_bottom = int(THUMBNAIL_HEIGHT * 0.80)    # Nothing below 80%
         safe_left = int(THUMBNAIL_WIDTH * 0.10)       # 10% left margin
         safe_right = int(THUMBNAIL_WIDTH * 0.90)      # 10% right margin
@@ -1171,21 +1171,26 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "STYLE: Bold, high-contrast, attention-grabbing — typical top Indian YouTube channel style\n\n"
             f"{claude_brief}\n\n"
             "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
-            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid will crop this to 4:5 (~1080x1350)\n"
-            "  showing only the MIDDLE portion. YouTube Shorts UI also covers edges.\n"
-            "- TOP 12% of image: BLOCKED (platform UI / IG grid crop). NEVER place text here.\n"
+            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid crops this to 4:5 (~1080x1350)\n"
+            "  centered — meaning the TOP 285px (~15%) and BOTTOM 285px (~15%) are CUT OFF on the profile grid.\n"
+            "  YouTube Shorts UI also covers the bottom.\n"
+            "- TOP 20% of image: HARD-BLOCKED. NEVER place text, faces, or critical elements here. They will\n"
+            "  be cropped off on the Instagram profile grid. This is non-negotiable.\n"
             "- BOTTOM 25% of image: BLOCKED (YouTube Shorts UI + IG grid crop). NEVER place text here.\n"
             "- LEFT/RIGHT 8%: edge margin. Avoid text here.\n"
-            "- ALL critical text and the FACE must be within 25%-65% from the top — that is the\n"
+            "- ALL critical text and any face MUST sit fully within 22%-72% from the top — that is the\n"
             "  visible center band that survives both YT Shorts UI and IG profile-grid 4:5 crop.\n\n"
-            "FACE / EYES RULE (HIGHEST CTR LEVER — MUST FOLLOW):\n"
-            "- The cover MUST contain a clear human face making EYE CONTACT with the camera.\n"
-            "- Face should occupy 25-40% of the visible frame, positioned in the upper-center band.\n"
-            "- Expression: SHOCKED, surprised, or pointing-at-text — never neutral / closed-mouth.\n"
-            "- Eyes wide open, looking directly into the lens (parasocial scroll-stop trigger).\n"
-            "- If the reference image has no face, ADD a realistic Indian factory-owner / customer face\n"
-            "  in the upper-center band (men 30-45y, beard ok, simple shirt, warm skin tones).\n"
-            "- NEVER show the back of a head, blurry face, or face cropped at the eyes.\n\n"
+            "FACE RULE (CONDITIONAL — apply judgment based on the script content):\n"
+            "- IF the brief describes a customer-story / conversation / reaction video (someone said X, kisi ne\n"
+            "  bola, customer complained, etc.) → DO add a clear Indian male face (30-45y, factory-owner look)\n"
+            "  making eye contact with shocked/concerned expression. This is the parasocial scroll-stop.\n"
+            "- IF the brief describes a technical / specs / how-to / product-comparison video (GSM check, fabric\n"
+            "  difference, print quality, ironing tips, etc.) → DO NOT force a face. A bold product close-up\n"
+            "  (fabric texture, t-shirt detail, defect visible, comparison side-by-side) with strong text\n"
+            "  performs BETTER for B2B specs content than an unrelated AI face.\n"
+            "- When you DO use a face: occupy 25-40% of the visible center band, eyes wide, looking into lens.\n"
+            "- When you DON'T use a face: make the product/process the hero, with text as the second focal point.\n"
+            "- NEVER show the back of a head, blurry face, or a face cropped at the eyes.\n\n"
             "IMAGE RULES (NEVER BREAK THESE):\n"
             "- Output exactly 1080x1920 pixels (Reel 9:16)\n"
             "- The reference image is the BASE/BACKGROUND. You may zoom, recompose, or add a face\n"
@@ -5034,6 +5039,11 @@ _TTS_HINGLISH_DEVANAGARI.update({
     "girna": "गिरना", "gira": "गिरा", "girti": "गिरती",
     "ghisna": "घिसना", "ghisa": "घिसा",
     "phatna": "फटना", "phata": "फटा", "phati": "फटी",
+    # 2026-05-28 Ketu feedback on published Reel:
+    "chipakti": "चिपकती", "chipakte": "चिपकते", "chipakte_": "चिपकते",
+    "hissa": "हिस्सा", "hisse": "हिस्से", "hisson": "हिस्सों",
+    "sukhao": "सुखाओ", "sukhaao": "सुखाओ", "sukhaav": "सुखाओ",
+    "sukhana": "सुखाना", "sukhane": "सुखाने", "sukhaye": "सुखाए",
 })
 
 # 'hi' as a particle (emphatic "ही") collides with English greeting "Hi" in
@@ -5222,6 +5232,14 @@ def normalize_for_tts(text: str) -> str:
     # (Earlier we stripped ellipses for Sarvam, but ElevenLabs handles them well.)
     s = s.replace("…", "...")  # normalize unicode ellipsis to three dots
     s = _re.sub(r",\s*,", ",", s)
+    # Pre-quote pause: speech verb + comma + opening quote reads too fast on
+    # ElevenLabs. Em-dash gives a noticeably longer pause before the quote.
+    s = _re.sub(
+        r'\b(bolo|bola|boli|kaha|kehna|kehte|kehti|bata|batao|batata|batati|samjhao|samjhaya|pucha|poocha)\s*,\s*(?=["“])',
+        r'\1 — ',
+        s,
+        flags=_re.IGNORECASE,
+    )
     s = _re.sub(r"\s+", " ", s).strip()
     return s
 
