@@ -1422,5 +1422,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2044
     }
+  },
+  {
+    "date": "2026-05-28T16:42:28.942410",
+    "topic": "DTF vs Screen Print vs Sublimation \u2014 Summer Mein Kaun Sa Method Sabse Zyada Tikta Hai? \u2600\ufe0f Real Test",
+    "title": "DTF, Screen Print, Sublimation \u2014 \u0917\u0930\u094d\u092e\u0940 \u092e\u0947\u0902 \u0938\u092c Crack \u0939\u094b \u0917\u090f? \u2600\ufe0f\ud83d\ude30",
+    "total_usd": 7.8543,
+    "duration_min": 37.5,
+    "breakdown": {
+      "claude_opus": 0.3694,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0377,
+      "veo_clips": 7.04,
+      "whisper": 0.008,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2292
+    }
   }
 ]
