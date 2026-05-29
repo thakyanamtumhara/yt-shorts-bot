@@ -6328,7 +6328,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         'border:1px solid #e8e8e0;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;'
         'gap:20px;align-items:center;flex-wrap:wrap;">'
         '<img src="https://www.bulkplaintshirt.com/imges/ketu-author.webp" '
-        'onerror="this.src=\'https://www.bulkplaintshirt.com/catalog/img/logo.png\';this.style.padding=\'12px\';this.style.background=\'#fffbe6\';" '
+        'onerror="this.onerror=null;this.src=\'https://www.bulkplaintshirt.com/catalog/img/logo.png\';this.style.padding=\'12px\';this.style.background=\'#fffbe6\';" '
         'alt="Ketu R — Founder, BulkPlainTshirt.com / Sale91.com" '
         'itemprop="image" '
         'style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #d4a832;flex-shrink:0;">'
@@ -7651,13 +7651,27 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         try:
             resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key=key)
             html = resp['Body'].read().decode('utf-8')
+            original_html = html
+            fixes = []
 
-            # Skip if already has JSON-LD (already repaired)
-            if 'application/ld+json' in html:
+            # JSON-LD + bottom bar (only if missing)
+            if 'application/ld+json' not in html:
+                html = inject_blog_seo(html, title, "", blog_url, date, slug)
+                fixes.append("JSON-LD + bottom bar")
+
+            # Author-image onerror infinite-loop fix. The old handler set src to a
+            # fallback that also 403s; with no guard, onerror re-fired forever and
+            # the page never stopped loading. Add this.onerror=null so it fires once.
+            old_onerror = ("onerror=\"this.src='https://www.bulkplaintshirt.com/catalog/img/logo.png'"
+                           ";this.style.padding='12px';this.style.background='#fffbe6';\"")
+            new_onerror = ("onerror=\"this.onerror=null;this.src='https://www.bulkplaintshirt.com/catalog/img/logo.png'"
+                           ";this.style.padding='12px';this.style.background='#fffbe6';\"")
+            if old_onerror in html:
+                html = html.replace(old_onerror, new_onerror)
+                fixes.append("author-image loop")
+
+            if not fixes:
                 continue
-
-            # Inject JSON-LD + bottom bar
-            html = inject_blog_seo(html, title, "", blog_url, date, slug)
 
             s3_client.put_object(
                 Bucket=BLOG_S3_BUCKET,
@@ -7667,7 +7681,7 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
                 CacheControl='no-cache'
             )
             repaired.append(slug)
-            print(f"   🔧 Repair: Fixed {slug}.html (JSON-LD + bottom bar)")
+            print(f"   🔧 Repair: Fixed {slug}.html ({', '.join(fixes)})")
         except Exception as e:
             print(f"   ⚠️ Repair: Could not fix {slug}.html: {e}")
 
@@ -7686,7 +7700,7 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         except Exception as e:
             print(f"   ⚠️ Repair: CloudFront invalidation failed: {e}")
     else:
-        print(f"   ✅ Repair: All existing posts already have JSON-LD")
+        print(f"   ✅ Repair: All existing posts already clean")
 
 
 def build_sitemap_xml(new_post=None):
