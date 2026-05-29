@@ -7368,7 +7368,7 @@ def process_main_channel_recap():
         return False
 
     publish_ok = publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url,
-                                    blog_images, vid_id=video["video_id"])
+                                    blog_images, vid_id=video["video_id"], tags=blog_tags)
     if not publish_ok:
         msg = "publish_blog_to_s3 returned False"
         print(f"   ❌ {msg}")
@@ -8713,7 +8713,110 @@ def upload_brand_assets(s3_client, cloudfront_client):
             print(f"   ⚠️ Brand asset: CloudFront invalidation failed: {e}")
 
 
-def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
+def inject_backlinks_to_new_post(s3_client, new_slug, new_title, new_url, tags=None, max_targets=3):
+    """Add an inbound internal link to a freshly published post FROM its top
+    topically-related OLDER posts.
+
+    The generator only links new->old (a new post links to older ones), so the
+    newest posts arrive as near-orphans — only the index points at them — which
+    is a classic cause of 'Crawled, currently not indexed'. This closes the loop
+    by editing a few related older posts to link forward to the new one, so each
+    post accrues both forward and backward internal links over time.
+
+    Idempotent: skips a target that already links to new_url; the injected block
+    has a stable marker so re-runs update (dedupe + cap) instead of duplicating.
+    Returns the list of S3 paths it modified (for CloudFront invalidation)."""
+    if not os.path.exists(BLOG_HISTORY_FILE):
+        return []
+    try:
+        with open(BLOG_HISTORY_FILE) as f:
+            history = json.load(f)
+    except Exception:
+        return []
+
+    # Score older posts by tag + slug-word overlap (same heuristic as forward links).
+    cur_tags = set(t.lower().strip() for t in (tags or []) if t)
+    cur_words = set(re.findall(r'[a-z]{4,}', new_slug.lower()))
+    scored = []
+    for h in history:
+        h_slug = h.get('slug', '')
+        if not h_slug or h_slug == new_slug:
+            continue
+        h_tags = set(t.lower().strip() for t in h.get('tags', []) if t)
+        h_words = set(re.findall(r'[a-z]{4,}', h_slug.lower()))
+        score = len(cur_tags & h_tags) * 3 + len(cur_words & h_words)
+        if score > 0:
+            scored.append((score, h))
+    scored.sort(key=lambda x: -x[0])
+    targets = [h for _, h in scored[:max_targets]]
+    if not targets:  # no topical match — fall back to the 2 most recent older posts
+        recent = sorted(history, key=lambda h: h.get('date', ''), reverse=True)
+        targets = [h for h in recent if h.get('slug') and h.get('slug') != new_slug][:2]
+
+    def esc(s):
+        return (s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;'))
+
+    new_li = (f'<li style="margin:6px 0;"><a href="{new_url}" '
+              f'style="color:#007bff;text-decoration:underline;font-size:14px;">{esc(new_title)}</a></li>')
+    block_open = '<nav class="bpt-related-fresh" style="max-width:800px;margin:32px auto;padding:0 16px;">'
+    block_re = re.compile(r'<nav class="bpt-related-fresh".*?</nav>', re.DOTALL)
+    li_re = re.compile(r'<li style="margin:6px 0;"><a href="([^"]+)".*?</a></li>', re.DOTALL)
+
+    modified = []
+    for h in targets:
+        key = f"p/{h['slug']}.html"
+        try:
+            resp = s3_client.get_object(Bucket=BLOG_S3_BUCKET, Key=key)
+            html = resp['Body'].read().decode('utf-8')
+        except Exception as e:
+            print(f"   ⚠️ Backlink: could not read {key}: {e}")
+            continue
+
+        if new_url in html:
+            continue  # already links to the new post (forward link or prior run)
+
+        existing = block_re.search(html)
+        items = []
+        if existing:
+            items = [(u, m) for u, m in [(mm.group(1), mm.group(0)) for mm in li_re.finditer(existing.group(0))]]
+        # Prepend new link, dedupe by URL, cap at 5 newest.
+        ordered = [new_li] + [m for u, m in items if u != new_url]
+        seen, capped = set(), []
+        for li in ordered:
+            u = re.search(r'href="([^"]+)"', li)
+            u = u.group(1) if u else li
+            if u in seen:
+                continue
+            seen.add(u)
+            capped.append(li)
+            if len(capped) >= 5:
+                break
+        block = (f'{block_open}\n'
+                 f'<h3 style="font-size:16px;color:#0f3460;margin:0 0 10px;">Newer related guides</h3>\n'
+                 f'<ul style="list-style:none;padding:0;margin:0;">\n' + "\n".join(capped) + '\n</ul>\n</nav>')
+
+        if existing:
+            html = block_re.sub(lambda _: block, html, count=1)
+        elif '<section class="author-card"' in html:
+            html = html.replace('<section class="author-card"', f'{block}\n<section class="author-card"', 1)
+        elif '</body>' in html:
+            html = html.replace('</body>', f'{block}\n</body>', 1)
+        else:
+            continue
+
+        try:
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET, Key=key, Body=html.encode('utf-8'),
+                ContentType='text/html; charset=utf-8', CacheControl='public, max-age=86400')
+            modified.append(f"/p/{h['slug']}.html")
+            print(f"   🔗 Backlink: linked {h['slug']}.html -> {new_slug}")
+        except Exception as e:
+            print(f"   ⚠️ Backlink: could not update {key}: {e}")
+
+    return modified
+
+
+def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None, tags=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
 
@@ -8870,6 +8973,14 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                 invalidation_paths.append('/p/blog-widget.html')
         except Exception as e:
             print(f"   \u26a0\ufe0f Blog S3: Could not update blog-widget.html: {e}")
+
+        # ── 6c. Inject inbound internal links to this new post from related older
+        # posts (fixes new posts arriving as near-orphans → 'crawled, not indexed').
+        try:
+            back_paths = inject_backlinks_to_new_post(s3, slug, title, blog_url, tags=tags)
+            invalidation_paths.extend(back_paths)
+        except Exception as e:
+            print(f"   ⚠️ Blog S3: backlink injection failed: {e}")
 
         # ── 7. Invalidate CloudFront ──
         if invalidation_paths:
@@ -10571,7 +10682,7 @@ def main():
             )
 
             if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
-                if publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url, blog_images, vid_id=vid_id):
+                if publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url, blog_images, vid_id=vid_id, tags=yt_tags):
                     excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
                     save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
                                       tags=yt_tags, description=yt_description,
