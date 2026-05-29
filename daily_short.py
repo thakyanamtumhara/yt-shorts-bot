@@ -6327,7 +6327,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         'style="max-width:800px;margin:40px auto;padding:24px;background:#fff;border-radius:14px;'
         'border:1px solid #e8e8e0;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;'
         'gap:20px;align-items:center;flex-wrap:wrap;">'
-        '<img src="https://www.bulkplaintshirt.com/imges/ketu-author.webp" '
+        '<img src="https://www.bulkplaintshirt.com/catalog/img/ketu-author.webp" '
         'onerror="this.onerror=null;this.src=\'https://www.bulkplaintshirt.com/catalog/img/logo.png\';this.style.padding=\'12px\';this.style.background=\'#fffbe6\';" '
         'alt="Ketu R — Founder, BulkPlainTshirt.com / Sale91.com" '
         'itemprop="image" '
@@ -7670,6 +7670,14 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
                 html = html.replace(old_onerror, new_onerror)
                 fixes.append("author-image loop")
 
+            # Repoint the avatar primary src off the denied imges/ prefix (403) to
+            # the writable catalog/img/ copy, so existing posts stop 403-ing on it.
+            old_avatar = "https://www.bulkplaintshirt.com/imges/ketu-author.webp"
+            new_avatar = "https://www.bulkplaintshirt.com/catalog/img/ketu-author.webp"
+            if old_avatar in html:
+                html = html.replace(old_avatar, new_avatar)
+                fixes.append("avatar path")
+
             if not fixes:
                 continue
 
@@ -8665,8 +8673,10 @@ def upload_brand_assets(s3_client, cloudfront_client):
     These were 403 (missing), which broke the author avatar AND the og:image
     share-preview on every post. Idempotent: re-uploads from the repo copies each
     run (cheap, keeps S3 in sync if we change the source art)."""
+    # NOTE: the GitHub IAM user can only PutObject under catalog/img/* and p/* —
+    # the imges/ prefix is denied — so the avatar lives under catalog/img/.
     assets = [
-        ("assets/brand/ketu-author.webp", "imges/ketu-author.webp", "image/webp"),
+        ("assets/brand/ketu-author.webp", "catalog/img/ketu-author.webp", "image/webp"),
         ("assets/brand/logo.png", "catalog/img/logo.png", "image/png"),
     ]
     uploaded = []
