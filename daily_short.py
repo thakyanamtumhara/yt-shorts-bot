@@ -8659,6 +8659,50 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     print(f"   📤 Blog S3: Built p/llms-full.txt ({count} articles, {size_kb}KB)")
 
 
+def upload_brand_assets(s3_client, cloudfront_client):
+    """Upload the brand avatar + logo to the two S3 keys every blog references.
+
+    These were 403 (missing), which broke the author avatar AND the og:image
+    share-preview on every post. Idempotent: re-uploads from the repo copies each
+    run (cheap, keeps S3 in sync if we change the source art)."""
+    assets = [
+        ("assets/brand/ketu-author.webp", "imges/ketu-author.webp", "image/webp"),
+        ("assets/brand/logo.png", "catalog/img/logo.png", "image/png"),
+    ]
+    uploaded = []
+    for local_path, s3_key, content_type in assets:
+        if not os.path.exists(local_path):
+            print(f"   ⚠️ Brand asset missing in repo: {local_path}")
+            continue
+        try:
+            with open(local_path, "rb") as f:
+                body = f.read()
+            s3_client.put_object(
+                Bucket=BLOG_S3_BUCKET,
+                Key=s3_key,
+                Body=body,
+                ContentType=content_type,
+                CacheControl="public, max-age=604800",
+            )
+            uploaded.append("/" + s3_key)
+            print(f"   📤 Brand asset: {s3_key} ({len(body)//1024}KB)")
+        except Exception as e:
+            print(f"   ⚠️ Brand asset upload failed for {s3_key}: {e}")
+
+    if uploaded:
+        try:
+            cloudfront_client.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    "Paths": {"Quantity": len(uploaded), "Items": uploaded},
+                    "CallerReference": f"brand-{int(time.time())}",
+                },
+            )
+            print(f"   🔧 Brand asset: CloudFront invalidation for {len(uploaded)} files")
+        except Exception as e:
+            print(f"   ⚠️ Brand asset: CloudFront invalidation failed: {e}")
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -8686,6 +8730,9 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
     # Repair index.html: fix misplaced entries (one-time, idempotent)
     repair_index_html(s3)
+
+    # Upload brand avatar + logo (fixes 403 author image + og:image on all posts)
+    upload_brand_assets(s3, cloudfront)
 
     try:
         # ── 1. Upload blog HTML ──
