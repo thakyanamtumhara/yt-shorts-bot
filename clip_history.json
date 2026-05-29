@@ -1,16 +1,5 @@
 [
   {
-    "topic": "Embroidery + DTF Combo Business Model — Ek Machine Se Dono Kaam Kaise Chalayein? 🔥",
-    "prompts": [
-      "Close-up of Indian man's hands holding a smartphone showing a call screen, then camera pans left to reveal a single-head embroidery machine sitting idle with no garment loaded, thread spools visible but machine not running, warm fluorescent workshop lighting, slight camera tilt down to show empty work table beside the machine, vertical 9:16 format, 8 seconds.",
-      "Medium shot of Indian man's hands holding up a navy blue plain polo t-shirt with a small embroidered logo on the left chest, camera slowly rotates the garment to show the crisp stitching detail, background shows a rack of folded corporate uniforms in matching colors, bright daylight from a nearby window, clean organized textile workspace, vertical 9:16 format, 8 seconds.",
-      "Split-composition close-up: left side of frame shows Indian man's hand holding a polo collar with detailed embroidered monogram, right side shows the same hand holding a vibrant full-color DTF printed round-neck tshirt with a colorful graphic, camera slowly dollies backward to show both garments side by side on a clean white table, indoor LED panel lighting, vertical 9:16 format, 8 seconds.",
-      "Close-up of Indian man's hands pressing down a heat press machine onto a thick white plain cotton round-neck t-shirt with a DTF transfer film placed on it, steam rising slightly as the press closes, camera angle from the side showing the pressure handle being pushed down firmly, small A3 DTF printer visible in the soft background, warm workshop lighting with slight golden tone, vertical 9:16 format, 8 seconds.",
-      "Medium close-up of Indian man's hands proudly laying out four finished garments in a row on a long cutting table: two polos with embroidered chest logos and two round-neck tshirts with vibrant full-color DTF prints, camera slowly slides right along the row showing each piece, background shows organized shelves of folded plain tshirts in multiple colors, bright clean workshop lighting, vertical 9:16 format, 8 seconds."
-    ],
-    "date": "2026-04-21T13:07:15.427998"
-  },
-  {
     "topic": "Usne 500 T-Shirts Pe Embroidery Karwai Aur ₹2 Lakh Kama Liye — Small Setup Se Bada Business 🙏",
     "prompts": [
       "Close-up of a single-head embroidery machine needle rapidly stitching a corporate logo onto a plain white cotton t-shirt, thread tension visible, fabric held tight in the hoop, warm workshop lighting from overhead, camera slowly zooms in on the needle area, slight vibration visible on fabric, vertical 9:16 format, realistic Indian small workshop setting.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Diffused natural daylight from a high window mixed with warm incandescent bulb glow, muted earth tones and white fabric palette, small Indian garment workshop with painted brick walls and steel racks, shallow DOF 40mm cinematic slight handheld. Scene: Close-up of a freshly washed white cotton t-shirt with a crisp intact screen print being held up by Indian hands against the daylight window, fabric still slightly damp. The print colors look vibrant and uncracked. Camera slowly dollies forward focusing on the sharp print edges, warm light glowing through the fabric edges creating a satisfying backlit effect."
     ],
     "date": "2026-05-28T16:06:40.804127"
+  },
+  {
+    "topic": "DTF vs Screen Print vs Embroidery — ₹500 Mein Kaun Zyada Kamata Hai? Real Cost Breakdown 🤯",
+    "prompts": [
+      "STYLE LOCK: Warm overhead LED panel light with slight green-tinted industrial tint, small Indian workshop vibe with off-white plastered walls and steel shelving, shallow DOF 40mm lens, gentle handheld sway. Scene: Close-up of Indian man's hands placing three plain white round-neck cotton t-shirts side by side on a worn wooden worktable, each with a small handwritten price tag reading ₹500 in Hindi, camera slowly dollies in, fabric textures clearly visible under warm light, no faces shown.",
+      "STYLE LOCK: Warm overhead LED panel light with slight green-tinted industrial tint, small Indian workshop vibe with off-white plastered walls and steel shelving, shallow DOF 40mm lens, gentle handheld sway. Scene: Medium shot of a DTF printer in action inside a cramped Indian print shop, the transfer film rolling out with a colorful floral design, hands of a worker peeling a DTF transfer from the film, heat press machine visible in soft background blur, slight steam rising from the press, vibrant colors on the transfer catching the overhead light.",
+      "STYLE LOCK: Warm overhead LED panel light with slight green-tinted industrial tint, small Indian workshop vibe with off-white plastered walls and steel shelving, shallow DOF 40mm lens, gentle handheld sway. Scene: Close-up of a screen printing frame being positioned over a black plain t-shirt on a manual carousel printer, Indian worker's hands pushing a squeegee loaded with white ink across the screen in one smooth stroke, ink spreading evenly, camera tracks the squeegee movement from left to right, surplus ink visible on edges of the screen mesh.",
+      "STYLE LOCK: Warm overhead LED panel light with slight green-tinted industrial tint, small Indian workshop vibe with off-white plastered walls and steel shelving, shallow DOF 40mm lens, gentle handheld sway. Scene: Close-up of a computerized embroidery machine needle stitching a detailed logo onto a navy blue plain polo t-shirt stretched in a hoop, thread bobbing rapidly, camera slowly rotating around the hoop showing the intricate thread pattern forming, colorful thread spools visible on the machine rack behind, slight vibration from the machine visible.",
+      "STYLE LOCK: Warm overhead LED panel light with slight green-tinted industrial tint, small Indian workshop vibe with off-white plastered walls and steel shelving, shallow DOF 40mm lens, gentle handheld sway. Scene: Top-down overhead shot of a clean wooden desk with three finished t-shirts laid flat — one with DTF print, one with screen print design, one with embroidered logo — Indian man's hands placing small paper notes with rupee amounts written in marker next to each shirt showing profit per piece, a basic calculator sits beside them, camera slowly pulls upward revealing all three side by side."
+    ],
+    "date": "2026-05-29T15:42:33.211678"
   }
 ]

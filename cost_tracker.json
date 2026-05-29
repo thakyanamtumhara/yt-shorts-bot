@@ -1439,5 +1439,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2292
     }
+  },
+  {
+    "date": "2026-05-29T16:10:26.998015",
+    "topic": "DTF vs Screen Print vs Embroidery \u2014 \u20b9500 Mein Kaun Zyada Kamata Hai? Real Cost Breakdown \ud83e\udd2f",
+    "title": "\u20b9500 \u0915\u0940 T-Shirt \u092a\u0930 \u0938\u092c\u0938\u0947 \u091c\u093c\u094d\u092f\u093e\u0926\u093e \u0915\u092e\u093e\u0908 \u2014 DTF, Screen Print \u092f\u093e Embroidery?",
+    "total_usd": 7.8705,
+    "duration_min": 29.5,
+    "breakdown": {
+      "claude_opus": 0.3693,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0416,
+      "veo_clips": 7.04,
+      "whisper": 0.0095,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2402
+    }
   }
 ]
