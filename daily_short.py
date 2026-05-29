@@ -10754,6 +10754,21 @@ if __name__ == "__main__":
     if "--mode=ig-carousel-post" in sys.argv or "--ig-carousel-post" in sys.argv:
         ok = post_latest_ig_carousel()
         sys.exit(0 if ok else 1)
+    # Brand-asset upload mode — push avatar + logo to S3 without a full video run.
+    # Triggered manually by .github/workflows/upload_brand_assets.yml.
+    if "--mode=upload-brand-assets" in sys.argv:
+        import boto3
+        ak = os.environ.get("AWS_ACCESS_KEY_ID")
+        sk = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        if not ak or not sk:
+            print("❌ AWS credentials not found")
+            sys.exit(1)
+        _s3 = boto3.client("s3", region_name="ap-south-1",
+                           aws_access_key_id=ak, aws_secret_access_key=sk)
+        _cf = boto3.client("cloudfront", region_name="ap-south-1",
+                           aws_access_key_id=ak, aws_secret_access_key=sk)
+        upload_brand_assets(_s3, _cf)
+        sys.exit(0)
     if "--test-thumbnail" in sys.argv:
         _topic = None
         _script = None

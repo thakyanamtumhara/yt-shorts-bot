@@ -1,0 +1,30 @@
+name: Upload Brand Assets (avatar + logo to S3)
+
+# Manual one-shot: pushes assets/brand/ketu-author.webp + logo.png to the two
+# S3 keys every blog references (imges/ketu-author.webp, catalog/img/logo.png),
+# then invalidates CloudFront. Fixes the 403 author avatar + og:image on all
+# posts without waiting for (or paying for) a full daily video run.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Upload brand assets to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: python3 daily_short.py --mode=upload-brand-assets
