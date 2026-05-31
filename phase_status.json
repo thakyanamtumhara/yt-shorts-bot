@@ -3,31 +3,31 @@
     "2": {
       "id": 2,
       "status": "best-effort",
-      "last_run": "2026-05-24T20:20:34.649367+05:30",
+      "last_run": "2026-05-31T20:33:33.660505+05:30",
       "last_result": "fallback-to-description",
       "details": "Captions API requires OAuth; falling back to video description. Will be upgraded when OAuth caption scope is added."
     },
     "3": {
       "id": 3,
       "status": "active",
-      "last_run": "2026-05-24T20:20:34.649642+05:30",
+      "last_run": "2026-05-31T20:33:33.660981+05:30",
       "last_result": "saved",
-      "details": "1 corpus entries · target 4+ for Phase 4 activation"
+      "details": "2 corpus entries · target 4+ for Phase 4 activation"
     },
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-05-24T20:24:43.321098+05:30",
+      "last_run": "2026-05-31T20:38:03.446212+05:30",
       "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/247-live-warehouse-tour-bulkplaintshirtcom-tiruppur-plain-t.html · source: '🔴 LIVE — BulkPlainTshirt.com Warehouse Delhi | 24/7 Plain T-'"
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/earn-1-per-t-shirt-without-a-website-sale91-referral-vs.html · source: 'Website नहीं चाहिए? हर T-Shirt पर ₹1 कमाओ 💰 Zero Hassle Syst'"
     },
     "4": {
       "id": 4,
       "status": "pending",
-      "last_run": "2026-05-24T20:24:43.321381+05:30",
+      "last_run": "2026-05-31T20:38:03.446522+05:30",
       "last_result": "waiting-for-corpus",
-      "details": "Need 3 more weekly corpus entries before activation (currently 1)"
+      "details": "Need 2 more weekly corpus entries before activation (currently 2)"
     }
   },
-  "last_update": "2026-05-24T20:24:43.321381+05:30"
+  "last_update": "2026-05-31T20:38:03.446522+05:30"
 }
