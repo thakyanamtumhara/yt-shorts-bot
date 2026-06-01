@@ -26,8 +26,8 @@
     "#printshop",
     "#streetwearmanufacturing"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
-  "posted_at": null
+  "posted": true,
+  "media_id": "18132871435598226",
+  "error": null,
+  "posted_at": "2026-06-01T18:41:38.120229+05:30"
 }
