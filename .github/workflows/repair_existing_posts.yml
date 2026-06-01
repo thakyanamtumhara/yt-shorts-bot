@@ -1,0 +1,31 @@
+name: Repair Existing Posts (JSON-LD, fake rating, avatar)
+
+# Manual one-shot: runs repair_existing_blog_posts across every post in
+# blog_history.json — strips the fake aggregateRating, fixes the author-image
+# loop, repoints the avatar path, and injects JSON-LD where missing — then
+# invalidates CloudFront. Idempotent. Use to apply repairs immediately instead
+# of waiting for the next daily publish.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Repair existing posts
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: python3 daily_short.py --mode=repair-existing-posts

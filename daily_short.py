@@ -6259,13 +6259,10 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
             "priceCurrency": "INR",
             "availability": "https://schema.org/InStock",
             "seller": {"@type": "Organization", "name": "Sale91.com"}
-        },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.5",
-            "reviewCount": "1050",
-            "bestRating": "5"
         }
+        # NOTE: NO aggregateRating here. A hardcoded 4.5/1050-review rating with no
+        # real on-page reviews is a Google structured-data policy violation
+        # ("spammy structured markup") that risks a sitewide manual action.
     }
 
     ld_blocks = [organization_ld, person_ld, breadcrumb_ld, article_ld, speakable_ld, product_ld]
@@ -7677,6 +7674,14 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
             if old_avatar in html:
                 html = html.replace(old_avatar, new_avatar)
                 fixes.append("avatar path")
+
+            # Strip the fake Product aggregateRating (4.5/1050 reviews, no real
+            # on-page reviews) — a structured-data policy violation baked into
+            # every older post. The object has no nested braces, so this is exact.
+            fake_rating = re.compile(r',\s*"aggregateRating":\s*\{[^{}]*\}')
+            if fake_rating.search(html):
+                html = fake_rating.sub('', html)
+                fixes.append("fake rating")
 
             if not fixes:
                 continue
@@ -10946,6 +10951,22 @@ if __name__ == "__main__":
     # Triggered manually by .github/workflows/backfill_internal_links.yml.
     if "--mode=backfill-internal-links" in sys.argv:
         sys.exit(backfill_internal_links())
+    # Repair existing posts NOW (JSON-LD, author-image loop, avatar path, fake
+    # rating) without waiting for a daily publish. Triggered manually by
+    # .github/workflows/repair_existing_posts.yml.
+    if "--mode=repair-existing-posts" in sys.argv:
+        import boto3
+        ak = os.environ.get("AWS_ACCESS_KEY_ID")
+        sk = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        if not ak or not sk:
+            print("❌ AWS credentials not found")
+            sys.exit(1)
+        _s3 = boto3.client("s3", region_name="ap-south-1",
+                           aws_access_key_id=ak, aws_secret_access_key=sk)
+        _cf = boto3.client("cloudfront", region_name="ap-south-1",
+                           aws_access_key_id=ak, aws_secret_access_key=sk)
+        repair_existing_blog_posts(_s3, _cf)
+        sys.exit(0)
     if "--test-thumbnail" in sys.argv:
         _topic = None
         _script = None
