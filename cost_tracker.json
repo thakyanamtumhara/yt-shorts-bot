@@ -1473,5 +1473,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2454
     }
+  },
+  {
+    "date": "2026-06-01T18:47:08.806884",
+    "topic": "\u20b92 Ka Thread Difference = Embroidery Reject \ud83d\ude30 Machine Embroidery Business Mein Ye Galti Bohot Logo Ne Ki",
+    "title": "\u20b92 \u0915\u093e \u0927\u093e\u0917\u093e \u092c\u091a\u093e\u092f\u093e \u2014 200 \u092a\u0940\u0938 Embroidery Reject \ud83d\ude30",
+    "total_usd": 6.8744,
+    "duration_min": 61.1,
+    "breakdown": {
+      "claude_opus": 0.3621,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0297,
+      "veo_clips": 6.08,
+      "whisper": 0.0064,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2262
+    }
   }
 ]
