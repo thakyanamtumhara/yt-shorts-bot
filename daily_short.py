@@ -6032,7 +6032,13 @@ YOUR TASK: Generate THREE titles, each platform-tuned:
      GSM, DTG, DTF, screen print, plain tshirt wholesale, manufacturer, bulk, MOQ, oversized,
      drop shoulder, polo, hoodie, cotton, fabric, Delhi, India, Tiruppur, ₹, lakh.
    - Include a NUMBER when possible (₹40K, 500 pieces, 240 GSM) — improves CTR + AI citation.
-   - Structure like "[Specific number/scenario] — [keyword phrase Indian buyers search for]"
+   - **LEAD with the searchable keyword phrase, THEN the hook** — Google weighs the
+     first words of the <title>/<h1> most. Put the term Indian printers actually type
+     at the START, not buried after a story clause.
+     ✅ "DTF vs Screen Print Cost on a ₹500 T-Shirt — Real Breakdown for Indian Printers"
+     ✅ "240 GSM vs 180 GSM for Summer — Why 600 Pieces Went Unsold"
+     ❌ "He Lost ₹40K — The DTF Mistake Nobody Warns You About"  (keyword buried/absent)
+   - Structure: "[keyword phrase Indian buyers search for] — [specific number/scenario hook]"
    - This title becomes the blog's <title>, <h1>, og:title — what Google's crawler indexes and
      what ChatGPT/Claude show when citing the page. Optimize for SEARCH, not feed scroll.
    - **WHY:** Google + AI search engines treat Devanagari titles as Hindi-language content and
@@ -6189,8 +6195,8 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         "@id": "https://www.bulkplaintshirt.com/#ketu-r",
         "name": "Ketu R",
         "jobTitle": "Founder & B2B Textile Manufacturing Expert",
-        "description": "17+ years in B2B plain t-shirt manufacturing. Founder of Own Knitted Blank Wears (Sale91.com / BulkPlainTshirt.com), a Delhi-based manufacturer that knits its own fabric and ships PAN-India.",
-        "image": "https://www.bulkplaintshirt.com/imges/ketu-author.webp",
+        "description": "17+ years in B2B plain t-shirt manufacturing. Founder of Own Knitted Blank Wears (Sale91.com / BulkPlainTshirt.com), which knits its own fabric in Tiruppur and ships PAN-India from its Delhi warehouse.",
+        "image": "https://www.bulkplaintshirt.com/catalog/img/ketu-author.webp",
         "url": "https://www.bulkplaintshirt.com/",
         "worksFor": {
             "@type": "Organization",
@@ -6334,8 +6340,8 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         '<div itemprop="name" style="font-size:18px;font-weight:700;color:#0f3460;">Ketu R</div>'
         '<div itemprop="jobTitle" style="font-size:14px;color:#555;margin-bottom:8px;">Founder, Own Knitted Blank Wears</div>'
         '<div itemprop="description" style="font-size:14px;color:#444;line-height:1.55;">'
-        '17+ years in B2B plain t-shirt manufacturing. We knit our own fabric in Delhi and ship '
-        'to printing businesses across India. Featured on our '
+        '17+ years in B2B plain t-shirt manufacturing. We knit our own fabric in Tiruppur and ship '
+        'PAN-India from our Delhi warehouse to printing businesses across the country. Featured on our '
         '<a href="https://www.youtube.com/@BulkPlainTshirt_com" rel="author noopener" target="_blank" '
         'style="color:#007bff;text-decoration:underline;">YouTube channel</a> with 40K+ subscribers.'
         '</div>'
@@ -6374,6 +6380,23 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         html_content = html_content.replace('</body>', f'{author_card}\n</body>', 1)
     if 'whatsapp.sale91.com' not in html_content.lower() or 'Order Now' not in html_content:
         html_content = html_content.replace('</body>', f'{bottom_bar}\n</body>', 1)
+
+    # ── 7. Visible byline + date under the H1 (E-E-A-T: real author + freshness).
+    # Previously the date/author lived ONLY in JSON-LD; a human-visible byline is
+    # a stronger signal for Google's helpful-content system.
+    if 'class="bpt-byline"' not in html_content:
+        try:
+            _d = datetime.strptime((today or "")[:10], "%Y-%m-%d")
+            date_disp = _d.strftime("%B %-d, %Y")
+        except Exception:
+            date_disp = (today or "")[:10]
+        byline = (
+            '<div class="bpt-byline" style="font-size:13px;color:#666;margin:2px 0 18px;">'
+            'By <a href="https://www.bulkplaintshirt.com/#ketu-r" rel="author" '
+            'style="color:#0f3460;font-weight:600;text-decoration:none;">Ketu R</a>'
+            f'{" · Updated " + date_disp if date_disp else ""}</div>'
+        )
+        html_content = _re.sub(r'(</h1>)', r'\1\n' + byline, html_content, count=1)
 
     faq_count = len(faq_pairs)
     ld_count = len(ld_blocks)
@@ -7683,6 +7706,37 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
                 html = fake_rating.sub('', html)
                 fixes.append("fake rating")
 
+            # Location consistency: "knit in Delhi" was wrong (we knit in Tiruppur,
+            # ship from the Delhi warehouse). Fix the visible author-card text + the
+            # Person-schema description on existing posts.
+            loc_subs = [
+                ("We knit our own fabric in Delhi and ship to printing businesses across India.",
+                 "We knit our own fabric in Tiruppur and ship PAN-India from our Delhi warehouse to printing businesses across the country."),
+                ("a Delhi-based manufacturer that knits its own fabric and ships PAN-India.",
+                 "which knits its own fabric in Tiruppur and ships PAN-India from its Delhi warehouse."),
+            ]
+            for _old, _new in loc_subs:
+                if _old in html:
+                    html = html.replace(_old, _new)
+                    if "location" not in fixes:
+                        fixes.append("location")
+
+            # Visible byline + date under the H1 (E-E-A-T) for existing posts.
+            if 'class="bpt-byline"' not in html and '</h1>' in html:
+                try:
+                    _d = datetime.strptime((date or "")[:10], "%Y-%m-%d")
+                    _disp = _d.strftime("%B %-d, %Y")
+                except Exception:
+                    _disp = (date or "")[:10]
+                _byline = (
+                    '<div class="bpt-byline" style="font-size:13px;color:#666;margin:2px 0 18px;">'
+                    'By <a href="https://www.bulkplaintshirt.com/#ketu-r" rel="author" '
+                    'style="color:#0f3460;font-weight:600;text-decoration:none;">Ketu R</a>'
+                    f'{" · Updated " + _disp if _disp else ""}</div>'
+                )
+                html = re.sub(r'(</h1>)', r'\1\n' + _byline, html, count=1)
+                fixes.append("byline")
+
             if not fixes:
                 continue
 
@@ -7800,7 +7854,7 @@ def build_sitemap_xml(new_post=None):
         "fast-delivery-plain-t-shirts-maharashtra",
         "plain-t-shirt-wholesale-near-me-delhi-india",
         "dropshipping", "AcidWashTshirt",
-        "Price-Drop-240gsm-Dropshoulder-Tshirts", "Wholesale-Blanks",
+        "Wholesale-Blanks",
         "wholesale-blank-t-shirts", "Shipping-Method", "acid-wash-tshirts",
         "Dropshoulders", "plainhoodie", "430gsm-dropshoulder-hoodie",
         "b2b-dropshipping-guide", "next-day-train-delivery",
@@ -7989,7 +8043,6 @@ def build_blog_index_html(new_post=None):
         ("/p/plain-t-shirt-wholesale-near-me-delhi-india.html", "Top T Shirt Wholesalers in Delhi"),
         ("/p/dropshipping.html", "B2B Dropshipping Plain T shirt"),
         ("/p/AcidWashTshirt.html", "AcidWash Plain T shirts"),
-        ("/p/Price-Drop-240gsm-Dropshoulder-Tshirts.html", "Price Drop 240gsm Dropshoulder T shirt"),
         ("/p/Wholesale-Blanks.html", "Wholesale Blanks"),
         ("/p/wholesale-blank-t-shirts.html", "Wholesale Blank T-Shirts"),
         ("/p/Shipping-Method.html", "PAN India Fast Delivery for Wholesale Orders"),
@@ -8578,8 +8631,8 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     # ── Header ──
     sections.append(
         "# BulkPlainTshirt.com / Sale91.com — Live Article Index (llms-full.txt at /p/)\n\n"
-        "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Delhi, "
-        "manufacture 20+ blank-apparel categories, and famously ship within minutes. "
+        "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Tiruppur, "
+        "manufacture 20+ blank-apparel categories, and ship PAN-India from our Delhi warehouse. "
         "Plain tees, hoodies, dropshoulder, sweatshirts in 180/200/210/220/240/320/430 GSM.\n\n"
         "## About This File\n\n"
         "This is the **dynamic /p/llms-full.txt** — regenerated by our daily content pipeline. "
@@ -8590,7 +8643,7 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
         "see the static companion: https://www.bulkplaintshirt.com/llms-full.txt\n\n"
         "## Author Identity\n\n"
         "- Author of all content: **Ketu R**, Founder, B2B Textile Manufacturing Expert\n"
-        "- 17+ years experience, Delhi-based\n"
+        "- 17+ years experience; manufactures in Tiruppur, ships from Delhi warehouse\n"
         "- Identity URI: https://www.bulkplaintshirt.com/#ketu-r\n"
         "- YouTube (40K+ subs): https://www.youtube.com/@BulkPlainTshirt_com\n"
         "- Instagram: https://www.instagram.com/bulkplaintshirt_com/\n\n"
