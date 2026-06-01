@@ -8792,7 +8792,7 @@ def inject_backlinks_to_new_post(s3_client, new_slug, new_title, new_url, tags=N
             if len(capped) >= 5:
                 break
         block = (f'{block_open}\n'
-                 f'<h3 style="font-size:16px;color:#0f3460;margin:0 0 10px;">Newer related guides</h3>\n'
+                 f'<h3 style="font-size:16px;color:#0f3460;margin:0 0 10px;">Related guides</h3>\n'
                  f'<ul style="list-style:none;padding:0;margin:0;">\n' + "\n".join(capped) + '\n</ul>\n</nav>')
 
         if existing:
@@ -8814,6 +8814,58 @@ def inject_backlinks_to_new_post(s3_client, new_slug, new_title, new_url, tags=N
             print(f"   ⚠️ Backlink: could not update {key}: {e}")
 
     return modified
+
+
+def backfill_internal_links():
+    """One-time mesh builder: walk every post in blog_history and inject an inbound
+    link into each one's related posts. Fixes existing orphan posts (discovered
+    only via the sitemap → 'crawled, not indexed') that predate the per-publish
+    back-link injection. Idempotent — safe to re-run."""
+    import boto3
+    ak = os.environ.get("AWS_ACCESS_KEY_ID")
+    sk = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    if not ak or not sk:
+        print("❌ AWS credentials not found")
+        return 1
+    s3 = boto3.client("s3", region_name="ap-south-1",
+                      aws_access_key_id=ak, aws_secret_access_key=sk)
+    cf = boto3.client("cloudfront", region_name="ap-south-1",
+                      aws_access_key_id=ak, aws_secret_access_key=sk)
+    if not os.path.exists(BLOG_HISTORY_FILE):
+        print("❌ blog_history.json not found")
+        return 1
+    with open(BLOG_HISTORY_FILE) as f:
+        history = json.load(f)
+
+    print(f"🔗 Backfill: building internal-link mesh across {len(history)} posts...")
+    modified = set()
+    for i, p in enumerate(history, 1):
+        slug = p.get("slug")
+        title = p.get("title")
+        if not slug or not title:
+            continue
+        url = p.get("url") or f"{BLOG_BASE_URL}/p/{slug}.html"
+        try:
+            paths = inject_backlinks_to_new_post(s3, slug, title, url, tags=p.get("tags"))
+            modified.update(paths)
+            print(f"   [{i}/{len(history)}] {slug} → linked into {len(paths)} post(s)")
+        except Exception as e:
+            print(f"   [{i}/{len(history)}] {slug}: error {e}")
+
+    print(f"🔗 Backfill: modified {len(modified)} post file(s)")
+    if modified:
+        try:
+            cf.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    "Paths": {"Quantity": 1, "Items": ["/p/*"]},
+                    "CallerReference": f"backfill-{int(time.time())}",
+                },
+            )
+            print("   🔄 Backfill: CloudFront invalidation /p/* created")
+        except Exception as e:
+            print(f"   ⚠️ Backfill: CloudFront invalidation failed: {e}")
+    return 0
 
 
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None, tags=None):
@@ -10890,6 +10942,10 @@ if __name__ == "__main__":
                            aws_access_key_id=ak, aws_secret_access_key=sk)
         upload_brand_assets(_s3, _cf)
         sys.exit(0)
+    # Internal-link backfill — one-time mesh build across all existing posts.
+    # Triggered manually by .github/workflows/backfill_internal_links.yml.
+    if "--mode=backfill-internal-links" in sys.argv:
+        sys.exit(backfill_internal_links())
     if "--test-thumbnail" in sys.argv:
         _topic = None
         _script = None

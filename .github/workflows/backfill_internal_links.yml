@@ -1,0 +1,30 @@
+name: Backfill Internal Links (one-time mesh build)
+
+# Manual one-shot: walks every post in blog_history.json and injects an inbound
+# link into each one's related posts, so existing orphan posts (discovered only
+# via the sitemap → "crawled, currently not indexed") gain internal links.
+# Idempotent — safe to re-run.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Backfill internal links
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: python3 daily_short.py --mode=backfill-internal-links
