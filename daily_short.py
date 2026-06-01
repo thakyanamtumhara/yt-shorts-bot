@@ -6134,7 +6134,7 @@ REDDIT_SUBS_WHITELIST = [
 ]
 
 
-def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=None):
+def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=None, vid_id=None, vid_url=None):
     """Inject JSON-LD structured data and sticky bottom bar into blog HTML.
     This runs AFTER Claude generates the HTML, so it's 100% reliable."""
     import re as _re
@@ -6272,6 +6272,24 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     }
 
     ld_blocks = [organization_ld, person_ld, breadcrumb_ld, article_ld, speakable_ld, product_ld]
+
+    # VideoObject — the page embeds a YouTube video as a thumbnail card (no iframe,
+    # by design), so without this Google sees a bare link and can't read the video
+    # metadata. embedUrl is the correct/sufficient URL signal for a YouTube-hosted
+    # video (no contentUrl — YouTube exposes no raw file). uploadDate gets a fixed
+    # IST time only when `today` is a bare YYYY-MM-DD, so the repair path (which
+    # passes a full date) never double-appends. Guarded on vid_id: no id → no block.
+    if vid_id:
+        video_object_ld = {
+            "@context": "https://schema.org",
+            "@type": "VideoObject",
+            "name": title,
+            "description": (description[:200] if description else title),
+            "thumbnailUrl": [f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"],
+            "uploadDate": (f"{today}T09:00:00+05:30" if len(str(today)) == 10 else str(today)),
+            "embedUrl": f"https://www.youtube.com/embed/{vid_id}",
+        }
+        ld_blocks.append(video_object_ld)
 
     # HowTo schema — best-effort detection. If the blog contains step-style headings
     # (h2/h3 starting with "Step", or 3+ ordered-list <li> items inside the main
@@ -6832,7 +6850,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
         # Inject JSON-LD schemas + sticky bottom bar (reliable, not prompt-dependent)
         today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
         first_image_url = image_urls[0] if image_urls else None
-        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=first_image_url)
+        html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=first_image_url, vid_id=vid_id, vid_url=vid_url)
 
         word_count = len(html_content.split())
         print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
@@ -7666,6 +7684,10 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
         title = entry.get("title", "")
         blog_url = entry.get("url", "")
         date = entry.get("date", datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d"))
+        date10 = (date or "")[:10]
+        vid_url = entry.get("vid_url", "")
+        _vm = re.search(r'(?:shorts/|v=|embed/|/vi/)([A-Za-z0-9_-]{11})', vid_url)
+        vid_id = _vm.group(1) if _vm else None
         key = f"p/{slug}.html"
 
         try:
@@ -7676,8 +7698,27 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
 
             # JSON-LD + bottom bar (only if missing)
             if 'application/ld+json' not in html:
-                html = inject_blog_seo(html, title, "", blog_url, date, slug)
+                html = inject_blog_seo(html, title, "", blog_url, date10, slug, vid_id=vid_id, vid_url=vid_url)
                 fixes.append("JSON-LD + bottom bar")
+
+            # VideoObject backfill for posts that already have JSON-LD but no
+            # VideoObject (so Google can read the embedded YouTube video's metadata).
+            if vid_id and 'VideoObject' not in html:
+                _vo = {
+                    "@context": "https://schema.org",
+                    "@type": "VideoObject",
+                    "name": title,
+                    "description": (title or "")[:200],
+                    "thumbnailUrl": [f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"],
+                    "uploadDate": f"{date10}T09:00:00+05:30" if len(date10) == 10 else date10,
+                    "embedUrl": f"https://www.youtube.com/embed/{vid_id}",
+                }
+                _vo_script = f'<script type="application/ld+json">{json.dumps(_vo, ensure_ascii=False)}</script>'
+                if '</head>' in html:
+                    html = html.replace('</head>', _vo_script + '\n</head>', 1)
+                elif '</body>' in html:
+                    html = html.replace('</body>', _vo_script + '\n</body>', 1)
+                fixes.append("videoobject")
 
             # Author-image onerror infinite-loop fix. The old handler set src to a
             # fallback that also 403s; with no guard, onerror re-fired forever and
