@@ -6446,11 +6446,12 @@ def generate_blog_slug(title):
     return slug
 
 
-def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls=None, related_posts=None, prev_post=None, vid_url=None):
+def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls=None, related_posts=None, prev_post=None, vid_url=None, slug=None):
     """Build the Claude prompt for generating a full SEO blog post HTML."""
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
-    slug = generate_blog_slug(title)
+    slug = slug or generate_blog_slug(title)
     blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
+    has_video = bool(vid_id)
     # The bot's published Shorts return "Forbidden" from oEmbed → iframe
     # embeds render as "Video unavailable / Playback on other websites has been
     # disabled" on every blog. Cause is per-video / Shorts-specific (other
@@ -6540,37 +6541,19 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
    </nav>
 """
 
-    return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
-
-BUSINESS CONTEXT:
-{BUSINESS_CONTEXT}
-
-YOUR TASK: Write a comprehensive, 2000+ word SEO blog post based on this YouTube Shorts video topic.
-
-TOPIC: {topic}
-VIDEO TITLE: {title}
-VIDEO DESCRIPTION: {description}
-VIDEO SCRIPT (English): {script_english}
-HOOK TEXT: {hook_text}
-TAGS: {', '.join(tags) if tags else 'none'}
-
-BLOG URL: {blog_url}
-YOUTUBE SHORT: {yt_short_url}
-THUMBNAIL: {yt_thumbnail_url}
-DATE: {today}
-
-OUTPUT FORMAT: Return ONLY the complete HTML document (from <!DOCTYPE html> to </html>). No markdown code fences. No explanation.
-
-REQUIREMENTS:
-
-1. CONTENT (2000+ words):
-   - Expand the video script into a detailed, informative article
-   - Use H1 for main title, H2 for major sections, H3 for subsections
-   - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
-   - Include practical tips, comparisons, and real-world examples from Indian textile industry
-   - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
-   - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
-   - MANDATORY: Include a "Watch the Video" section BEFORE the FAQ section with this EXACT clickable thumbnail card (NOT an iframe — Shorts can't be embedded reliably and showed "Video unavailable" on every blog):
+    # Video references are conditional: legacy thin-page rewrites have no video,
+    # so we drop the video meta lines + the mandatory thumbnail card for those.
+    if has_video:
+        video_meta_lines = (
+            f"VIDEO TITLE: {title}\n"
+            f"VIDEO DESCRIPTION: {description}\n"
+            f"VIDEO SCRIPT (English): {script_english}\n"
+            f"HOOK TEXT: {hook_text}\n"
+        )
+        video_url_lines = f"YOUTUBE SHORT: {yt_short_url}\nTHUMBNAIL: {yt_thumbnail_url}\n"
+        task_source = "based on this YouTube Shorts video topic"
+        content_directive = "Expand the video script into a detailed, informative article"
+        video_card_req = f"""   - MANDATORY: Include a "Watch the Video" section BEFORE the FAQ section with this EXACT clickable thumbnail card (NOT an iframe — Shorts can't be embedded reliably and showed "Video unavailable" on every blog):
      <a href="{yt_short_url}" target="_blank" rel="noopener" style="display:block;max-width:360px;margin:30px auto;text-decoration:none;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:#000;position:relative;">
        <img src="{yt_thumbnail_url}" alt="Watch on YouTube — {title}" loading="lazy" onerror="if(this.src!='{yt_thumbnail_fallback}'){{this.src='{yt_thumbnail_fallback}';}}else{{this.style.display='none';this.parentNode.style.background='linear-gradient(135deg,#1a1a1a 0%,#3d3d3d 100%)';this.parentNode.style.minHeight='200px';}}" style="width:100%;height:auto;display:block;">
        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:rgba(255,0,0,0.9);border-radius:14px;display:flex;align-items:center;justify-content:center;">
@@ -6579,7 +6562,39 @@ REQUIREMENTS:
        <div style="background:#1a1a1a;color:#fff;padding:12px 16px;font-size:14px;font-weight:600;">▶ Watch on YouTube</div>
      </a>
      Do NOT use an <iframe> — it WILL break. The clickable thumbnail above is the ONLY acceptable video element.
-   - End with a strong CTA section linking to Sale91.com
+"""
+    else:
+        video_meta_lines = ""
+        video_url_lines = ""
+        task_source = "on this topic for India's B2B plain t-shirt buyers"
+        content_directive = "Write a detailed, original, genuinely useful article on this topic (no video to expand — build it from industry expertise)"
+        video_card_req = ""
+
+    return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
+
+BUSINESS CONTEXT:
+{BUSINESS_CONTEXT}
+
+YOUR TASK: Write a comprehensive, 2000+ word SEO blog post {task_source}.
+
+TOPIC: {topic}
+{video_meta_lines}TAGS: {', '.join(tags) if tags else 'none'}
+
+BLOG URL: {blog_url}
+{video_url_lines}DATE: {today}
+
+OUTPUT FORMAT: Return ONLY the complete HTML document (from <!DOCTYPE html> to </html>). No markdown code fences. No explanation.
+
+REQUIREMENTS:
+
+1. CONTENT (2000+ words):
+   - {content_directive}
+   - Use H1 for main title, H2 for major sections, H3 for subsections
+   - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
+   - Include practical tips, comparisons, and real-world examples from Indian textile industry
+   - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
+   - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
+{video_card_req}   - End with a strong CTA section linking to Sale91.com
 
 2. FAQ SECTION (5-8 Q&As):
    - Add an FAQ section with questions people actually search for
@@ -6773,12 +6788,13 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
 
 def generate_blog_post(claude_client, cost_tracker, topic, title, description,
                        script_english, tags, hook_text, vid_id, vid_url,
-                       video_prompts=None):
+                       video_prompts=None, force_slug=None):
     """Generate a full SEO blog post HTML using Claude Sonnet.
+    force_slug keeps a specific URL (used when rewriting a thin legacy page in place).
     Returns (html_content, slug, blog_url, blog_images) or (None, None, None, []) on failure."""
     print("   📝 Blog: Generating SEO article with images...")
 
-    slug = generate_blog_slug(title)
+    slug = force_slug or generate_blog_slug(title)
     blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
 
     # Step 1: Generate AI images for the blog (if Replicate available)
