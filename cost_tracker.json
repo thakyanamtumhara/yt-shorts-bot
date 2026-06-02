@@ -1490,5 +1490,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2262
     }
+  },
+  {
+    "date": "2026-06-02T16:59:39.310088",
+    "topic": "Barish Mein Polyester Bechna Goldmine Hai \ud83d\udcb0 \u2014 Monsoon Season Business Strategy Jo Koi Nahi Batata",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 Cotton Stock \u092b\u0901\u0938\u093e \u2014 Polyester Strategy \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e \ud83d\udcb0",
+    "total_usd": 7.835,
+    "duration_min": 28.8,
+    "breakdown": {
+      "claude_opus": 0.3608,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0279,
+      "veo_clips": 7.04,
+      "whisper": 0.0059,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2304
+    }
   }
 ]
