@@ -9045,14 +9045,26 @@ def rewrite_thin_posts(only_slug=None):
             print(f"   ⏭️  leave {slug}")
             continue
 
-        # Back up the original before overwriting (revertable).
+        # Back up the ORIGINAL once. If a backup already exists this page was
+        # processed before — skip it in batch mode (so re-runs don't re-bill or
+        # clobber the original backup with an already-rewritten copy).
+        backup_key = f"p/_backup/{slug}.html"
+        backup_exists = True
         try:
-            s3.copy_object(Bucket=BLOG_S3_BUCKET,
-                           CopySource={"Bucket": BLOG_S3_BUCKET, "Key": f"p/{slug}.html"},
-                           Key=f"p/_backup/{slug}.html")
-            print(f"   💾 backed up p/{slug}.html → p/_backup/{slug}.html")
-        except Exception as e:
-            print(f"   ⚠️ backup skipped for {slug}: {e}")
+            s3.head_object(Bucket=BLOG_S3_BUCKET, Key=backup_key)
+        except Exception:
+            backup_exists = False
+        if backup_exists and not only_slug:
+            print(f"   ⏭️  {slug} already processed (backup exists) — skipping")
+            continue
+        if not backup_exists:
+            try:
+                s3.copy_object(Bucket=BLOG_S3_BUCKET,
+                               CopySource={"Bucket": BLOG_S3_BUCKET, "Key": f"p/{slug}.html"},
+                               Key=backup_key)
+                print(f"   💾 backed up p/{slug}.html → {backup_key}")
+            except Exception as e:
+                print(f"   ⚠️ backup skipped for {slug}: {e}")
 
         if action == "redirect":
             target = f"{BLOG_BASE_URL}/p/{p['redirect_to_slug']}.html"
