@@ -6386,6 +6386,15 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     if '</head>' not in html_content and '<head' in html_content:
         html_content = html_content.replace('<body', '</head>\n<body', 1)
 
+    # ── 4b. Force a correct canonical (www). Claude writes the canonical in the
+    # prompt and occasionally drops the "www" — a canonical pointing at a URL that
+    # 301-redirects confuses Google's index selection. Own it here, don't trust it.
+    canon_tag = f'<link rel="canonical" href="{blog_url}">'
+    if _re.search(r'<link[^>]+rel=["\']canonical["\'][^>]*>', html_content, _re.I):
+        html_content = _re.sub(r'<link[^>]+rel=["\']canonical["\'][^>]*>', canon_tag, html_content, count=1, flags=_re.I)
+    elif '</head>' in html_content:
+        html_content = html_content.replace('</head>', f'{canon_tag}\n</head>', 1)
+
     # ── 5. Inject JSON-LD ──
     if '</head>' in html_content:
         html_content = html_content.replace('</head>', f'{ld_scripts}\n</head>', 1)
@@ -7719,6 +7728,18 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
                 elif '</body>' in html:
                     html = html.replace('</body>', _vo_script + '\n</body>', 1)
                 fixes.append("videoobject")
+
+            # Force canonical to the correct www URL — Claude wrote a non-www
+            # canonical on a couple posts, which 301-redirects and confuses index
+            # selection. Normalize to the self-referencing www canonical.
+            correct_canon = f'<link rel="canonical" href="{BLOG_BASE_URL}/p/{slug}.html">'
+            _cm = re.search(r'<link[^>]+rel=["\']canonical["\'][^>]*>', html, re.I)
+            if _cm and _cm.group(0) != correct_canon:
+                html = html.replace(_cm.group(0), correct_canon, 1)
+                fixes.append("canonical")
+            elif not _cm and '</head>' in html:
+                html = html.replace('</head>', correct_canon + '\n</head>', 1)
+                fixes.append("canonical")
 
             # Author-image onerror infinite-loop fix. The old handler set src to a
             # fallback that also 403s; with no guard, onerror re-fired forever and
