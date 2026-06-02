@@ -1,0 +1,58 @@
+name: Rewrite Thin Legacy Posts
+
+# Rewrites thin legacy pages in place per rewrite_plan.json (full article on the
+# same URL, no video) and redirects true duplicates. Originals are backed up to
+# p/_backup/ in S3 first. Optional 'slug' input processes a single page (test one
+# before the full run). Commits the updated blog_history.json back.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Single slug to rewrite (leave blank to process the whole plan)'
+        required: false
+        default: ''
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Rewrite thin posts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          HF_API_KEY: ${{ secrets.HF_API_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.slug }}" ]; then
+            python3 daily_short.py --mode=rewrite-thin --slug=${{ github.event.inputs.slug }}
+          else
+            python3 daily_short.py --mode=rewrite-thin
+          fi
+
+      - name: Commit updated blog_history
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add blog_history.json rewrite_plan.json || true
+          git commit -m "rewrite-thin: update tracking [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }}

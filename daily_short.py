@@ -9004,6 +9004,109 @@ def backfill_internal_links():
     return 0
 
 
+def rewrite_thin_posts(only_slug=None):
+    """Rewrite thin legacy pages in place per rewrite_plan.json. Each 'rewrite'
+    becomes a full article on its existing URL (forced slug, no video); each
+    'redirect' becomes a canonical+meta-refresh stub to its survivor; 'leave' is
+    skipped. Originals are backed up to p/_backup/ first. Reuses generate_blog_post
+    + publish_blog_to_s3 so SEO treatment matches real posts exactly."""
+    import boto3
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    ak = os.environ.get("AWS_ACCESS_KEY_ID")
+    sk = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    if not anthropic_key or not ak or not sk:
+        print("❌ Missing ANTHROPIC_API_KEY or AWS credentials")
+        return 1
+    if not os.path.exists("rewrite_plan.json"):
+        print("❌ rewrite_plan.json not found")
+        return 1
+
+    claude = anthropic.Anthropic(api_key=anthropic_key)
+    cost = CostTracker()
+    s3 = boto3.client("s3", region_name="ap-south-1", aws_access_key_id=ak, aws_secret_access_key=sk)
+    cf = boto3.client("cloudfront", region_name="ap-south-1", aws_access_key_id=ak, aws_secret_access_key=sk)
+    plan = json.load(open("rewrite_plan.json"))
+
+    # Load history so rewritten pages join the corpus (index, sitemap, link mesh).
+    history = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        history = json.load(open(BLOG_HISTORY_FILE))
+    hist_by_slug = {h.get("slug"): h for h in history}
+    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
+
+    redirect_invalidations = []
+    done = 0
+    for p in plan:
+        slug = p["slug"]
+        if only_slug and slug != only_slug:
+            continue
+        action = p["action"]
+        if action == "leave":
+            print(f"   ⏭️  leave {slug}")
+            continue
+
+        # Back up the original before overwriting (revertable).
+        try:
+            s3.copy_object(Bucket=BLOG_S3_BUCKET,
+                           CopySource={"Bucket": BLOG_S3_BUCKET, "Key": f"p/{slug}.html"},
+                           Key=f"p/_backup/{slug}.html")
+            print(f"   💾 backed up p/{slug}.html → p/_backup/{slug}.html")
+        except Exception as e:
+            print(f"   ⚠️ backup skipped for {slug}: {e}")
+
+        if action == "redirect":
+            target = f"{BLOG_BASE_URL}/p/{p['redirect_to_slug']}.html"
+            stub = (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+                    f'<title>Moved</title><link rel="canonical" href="{target}">'
+                    f'<meta http-equiv="refresh" content="0; url={target}">'
+                    f'<script>location.replace({json.dumps(target)})</script></head>'
+                    f'<body>This page has moved to <a href="{target}">{target}</a>.</body></html>')
+            s3.put_object(Bucket=BLOG_S3_BUCKET, Key=f"p/{slug}.html",
+                          Body=stub.encode("utf-8"), ContentType="text/html; charset=utf-8",
+                          CacheControl="public, max-age=86400")
+            history = [h for h in history if h.get("slug") != slug]  # drop from corpus
+            redirect_invalidations.append(f"/p/{slug}.html")
+            print(f"   ↪️  redirect {slug} → {p['redirect_to_slug']}")
+            done += 1
+            continue
+
+        # action == "rewrite": generate a full article at the SAME url.
+        print(f"   ✍️  rewriting {slug} …")
+        html, _, blog_url, blog_images = generate_blog_post(
+            claude_client=claude, cost_tracker=cost,
+            topic=p["topic"], title=p["new_title"], description=p["meta_description"],
+            script_english="", tags=p.get("tags", []), hook_text="",
+            vid_id=None, vid_url=None, video_prompts=None, force_slug=slug)
+        if not html:
+            print(f"   ❌ generation failed for {slug}")
+            continue
+        # Add/refresh the history entry BEFORE publish so index/sitemap include it.
+        entry = hist_by_slug.get(slug)
+        if entry:
+            entry.update({"title": p["new_title"], "url": blog_url})
+        else:
+            entry = {"date": today, "title": p["new_title"], "slug": slug,
+                     "url": blog_url, "topic": p["topic"][:80], "vid_url": ""}
+            history.append(entry); hist_by_slug[slug] = entry
+        # publish_blog_to_s3 reads BLOG_HISTORY_FILE for related links, so persist first.
+        json.dump(history, open(BLOG_HISTORY_FILE, "w"), ensure_ascii=False, indent=2)
+        ok = publish_blog_to_s3(html, slug, p["new_title"], blog_url, blog_images, vid_id=None, tags=p.get("tags", []))
+        print(f"   {'✅' if ok else '❌'} {slug}: {len(html.split())} words, published={ok}")
+        done += 1
+
+    json.dump(history, open(BLOG_HISTORY_FILE, "w"), ensure_ascii=False, indent=2)
+    if redirect_invalidations:
+        try:
+            cf.create_invalidation(DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={"Paths": {"Quantity": len(redirect_invalidations), "Items": redirect_invalidations},
+                                   "CallerReference": f"rewrite-redir-{int(time.time())}"})
+        except Exception as e:
+            print(f"   ⚠️ redirect invalidation failed: {e}")
+    print(f"\n🔁 rewrite-thin: processed {done} page(s)")
+    print(cost.summary())
+    return 0
+
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None, tags=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
     import boto3
@@ -11082,6 +11185,15 @@ if __name__ == "__main__":
     # Triggered manually by .github/workflows/backfill_internal_links.yml.
     if "--mode=backfill-internal-links" in sys.argv:
         sys.exit(backfill_internal_links())
+    # Rewrite thin legacy pages in place per rewrite_plan.json. Optional --slug=X
+    # to process a single page (test one before the full run). Triggered manually
+    # by .github/workflows/rewrite_thin_posts.yml.
+    if "--mode=rewrite-thin" in sys.argv:
+        only = None
+        for a in sys.argv:
+            if a.startswith("--slug="):
+                only = a.split("=", 1)[1]
+        sys.exit(rewrite_thin_posts(only_slug=only))
     # Repair existing posts NOW (JSON-LD, author-image loop, avatar path, fake
     # rating) without waiting for a daily publish. Triggered manually by
     # .github/workflows/repair_existing_posts.yml.
