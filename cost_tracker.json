@@ -1507,5 +1507,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2304
     }
+  },
+  {
+    "date": "2026-06-03T17:21:46.941301",
+    "topic": "\u20b940,000 Ka Loss Ek Embroidery Order Mein \u2014 Single Head vs Double Head Ka Sach \ud83e\uddf5 #embroidery",
+    "title": "\u20b940,000 \u0915\u093e \u0928\u0941\u0915\u0938\u093e\u0928 \u090f\u0915 Embroidery Order \u092e\u0947\u0902 \u2014 Single Head \u0915\u0940 \u0938\u091a\u094d\u091a\u093e\u0908 \ud83e\uddf5",
+    "total_usd": 7.85,
+    "duration_min": 27.1,
+    "breakdown": {
+      "claude_opus": 0.3664,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0308,
+      "veo_clips": 7.04,
+      "whisper": 0.0066,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2361
+    }
   }
 ]
