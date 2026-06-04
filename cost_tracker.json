@@ -1524,5 +1524,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2361
     }
+  },
+  {
+    "date": "2026-06-04T15:48:42.205095",
+    "topic": "Monsoon Mein T-Shirt Ka Color Bleed Ho Gaya? \ud83d\ude30 Ye Fabric Mistake 90% Log Karte Hain #shorts",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 200 T-Shirts \u0915\u093e Color \u0928\u093f\u0915\u0932 \u0917\u092f\u093e \ud83d\ude30 \u092f\u0947 Dye Mistake \u092e\u0924 \u0915\u0930\u0928\u093e",
+    "total_usd": 7.8453,
+    "duration_min": 27.0,
+    "breakdown": {
+      "claude_opus": 0.3736,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0323,
+      "veo_clips": 7.04,
+      "whisper": 0.0071,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2223
+    }
   }
 ]
