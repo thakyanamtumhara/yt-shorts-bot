@@ -26,7 +26,8 @@
     "#printingbusiness",
     "#bulkorders"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "17966679239920870",
+  "error": null,
+  "posted_at": "2026-06-05T16:28:54.832617+05:30"
 }
