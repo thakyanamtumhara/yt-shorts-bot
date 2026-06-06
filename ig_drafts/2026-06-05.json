@@ -26,7 +26,8 @@
     "#sale91",
     "#streetwearblank"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18122908009644487",
+  "error": null,
+  "posted_at": "2026-06-06T15:04:55.402024+05:30"
 }
