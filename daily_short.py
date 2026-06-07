@@ -9928,7 +9928,7 @@ def main():
     # youtube.com (one of the highest-authority domains on the web). This is the
     # single biggest external indexing signal we can send Google for free, and it
     # also drives organic clicks from Shorts viewers to the blog.
-    blog_slug_preview = generate_blog_slug(yt_title)
+    blog_slug_preview = generate_blog_slug(blog_title)
     blog_url_preview = f"{BLOG_BASE_URL}/p/{blog_slug_preview}.html"
     yt_description = (
         yt_description.rstrip()
