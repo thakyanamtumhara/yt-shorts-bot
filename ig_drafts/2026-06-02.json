@@ -26,8 +26,8 @@
     "#sale91",
     "#tshirtbusiness"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
-  "posted_at": null
+  "posted": true,
+  "media_id": "18102783491036749",
+  "error": null,
+  "posted_at": "2026-06-07T15:43:47.567356+05:30"
 }
