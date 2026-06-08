@@ -1574,5 +1574,22 @@
       "gemini_thumbnail": 0.045,
       "blog_images": 0.075
     }
+  },
+  {
+    "date": "2026-06-08T16:26:19.032216",
+    "topic": "Boxy Fit T-Shirts Kyun Hamesha Out of Stock Rehti Hain? \ud83e\udd2f Manufacturing Ka Wo Sach Jo Koi Nahi Batata",
+    "title": "Boxy Fit \u091f\u0940-\u0936\u0930\u094d\u091f \u0939\u092e\u0947\u0936\u093e Out of Stock \u0915\u094d\u092f\u094b\u0902? Manufacturing \u0915\u093e \u0938\u091a \ud83e\udd2f",
+    "total_usd": 7.8378,
+    "duration_min": 28.4,
+    "breakdown": {
+      "claude_opus": 0.3629,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0162,
+      "veo_clips": 7.04,
+      "whisper": 0.0091,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2396
+    }
   }
 ]
