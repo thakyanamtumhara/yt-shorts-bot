@@ -1591,5 +1591,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2396
     }
+  },
+  {
+    "date": "2026-06-11T16:33:16.465404",
+    "topic": "\u20b90 Marketing Se \u20b910 Lakh/Month \u2014 Meri T-Shirt Business Ki Real Kahani \ud83c\udfaf | 2017 to 2026",
+    "title": "\u20b90 \u092e\u093e\u0930\u094d\u0915\u0947\u091f\u093f\u0902\u0917 \u0938\u0947 \u20b910 Lakh/Month \u2014 \u092e\u0947\u0930\u0940 T-Shirt Business \u0915\u0940 \u0905\u0938\u0932\u0940 \u0915\u0939\u093e\u0928\u0940",
+    "total_usd": 7.8295,
+    "duration_min": 26.0,
+    "breakdown": {
+      "claude_opus": 0.3665,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0325,
+      "veo_clips": 7.04,
+      "whisper": 0.0076,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2129
+    }
   }
 ]
