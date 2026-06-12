@@ -1714,5 +1714,16 @@
     "likes": 0,
     "comments": 1,
     "publish_hour_ist": 19
+  },
+  {
+    "video_id": "BLVsFP8D0yQ",
+    "title": "Tirupur Wholesale T-Shirt Business Secrets Revealed",
+    "published_at": "2026-06-10T15:30:47Z",
+    "checked_at": "2026-06-12T21:13:28.166783+05:30",
+    "hours_since_publish": 48.2,
+    "views": 25,
+    "likes": 2,
+    "comments": 0,
+    "publish_hour_ist": 21
   }
 ]

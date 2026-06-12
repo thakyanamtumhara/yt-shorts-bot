@@ -1608,5 +1608,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2129
     }
+  },
+  {
+    "date": "2026-06-12T15:49:53.863245",
+    "topic": "\u20b9500 Ki T-Shirt Pe Kitna Margin? Screen Print vs DTF vs Embroidery \u2014 Monsoon Edition Calculator \ud83e\uddee",
+    "title": "\u20b9500 \u0915\u0940 \u091f\u0940-\u0936\u0930\u094d\u091f \u092a\u0930 \u092e\u093e\u0930\u094d\u091c\u093f\u0928 \u091c\u093c\u0940\u0930\u094b? DTF vs Screen Print \u0915\u093e \u0917\u0923\u093f\u0924 \u0917\u0932\u0924 \u0925\u093e",
+    "total_usd": 7.8184,
+    "duration_min": 29.0,
+    "breakdown": {
+      "claude_opus": 0.3751,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.037,
+      "veo_clips": 7.04,
+      "whisper": 0.0082,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2382
+    }
   }
 ]
