@@ -26,7 +26,8 @@
     "#textilemanufacturer",
     "#streetwearbrand"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "17903895519444515",
+  "error": null,
+  "posted_at": "2026-06-12T16:43:45.964049+05:30"
 }
