@@ -2333,7 +2333,7 @@ def save_ig_upload_record(ig_media_id, title, topic):
 
 
 def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url, blog_slug,
-                                topic, script_english, tags):
+                                topic, script_english, tags, uploaded_filenames=None):
     """Generate an IG carousel post draft for tomorrow morning's auto-publish.
 
     Daily-bot already cross-posts the Veo Short as a Reel. This adds a SECOND
@@ -2348,12 +2348,22 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
     os.makedirs(IG_CAROUSEL_DRAFTS_DIR, exist_ok=True)
     out_path = os.path.join(IG_CAROUSEL_DRAFTS_DIR, f"{today}.json")
 
-    # The 3 blog images live at predictable S3 URLs after publish_blog_to_s3
-    image_urls = [
-        f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp",   # 16:9 hero
-        f"{BLOG_BASE_URL}/p/{blog_slug}-img1.webp",   # 4:3 secondary
-        f"{BLOG_BASE_URL}/p/{blog_slug}-img2.webp",   # 4:3 third
-    ]
+    # Build image URLs only for images actually uploaded to S3.
+    # If a provider (Replicate/fal.ai) fails, those files are never uploaded and
+    # the IG API returns "Only photo or video can be accepted as media type" on the
+    # 403 S3 URL. IG carousel requires ≥2 images; skip the draft if we can't meet that.
+    if uploaded_filenames and len(uploaded_filenames) >= 2:
+        image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in uploaded_filenames]
+    elif uploaded_filenames and len(uploaded_filenames) == 1:
+        print("   ⚠️ IG carousel: Only 1 image generated — skipping draft (carousel needs ≥2)")
+        return None
+    else:
+        # Fallback when no image info is passed (pre-fix callers / all 3 generated)
+        image_urls = [
+            f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp",
+            f"{BLOG_BASE_URL}/p/{blog_slug}-img1.webp",
+            f"{BLOG_BASE_URL}/p/{blog_slug}-img2.webp",
+        ]
 
     tags_str = ", ".join(tags) if tags else "none"
     prompt = f"""You are writing an Instagram CAROUSEL caption for a B2B Indian textile manufacturer (Sale91.com / BulkPlainTshirt.com — plain t-shirts, hoodies, blanks for printing businesses).
@@ -11029,6 +11039,7 @@ def main():
                             topic=fresh_topic,
                             script_english=script_english,
                             tags=yt_tags,
+                            uploaded_filenames=[fn for _, fn in blog_images] if blog_images else None,
                         )
                     except Exception as e:
                         print(f"   ⚠️ IG carousel draft failed (non-fatal): {e}")
