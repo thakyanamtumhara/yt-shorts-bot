@@ -1625,5 +1625,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2382
     }
+  },
+  {
+    "date": "2026-06-13T14:33:15.849617",
+    "topic": "240 GSM Oversized Royal Blue Tee \u2014 Kya Sach Mein Premium Feel Aata Hai? Real Quality Check \ud83d\udd0d",
+    "title": "240 GSM \u0926\u094b\u0928\u094b\u0902 \u092e\u0947\u0902 \u2014 \u092b\u093f\u0930 \u090f\u0915 Cheap \u0915\u094d\u092f\u094b\u0902 \u0932\u0917\u0940? \ud83e\udd2f \u0905\u0938\u0932\u0940 \u092b\u0930\u094d\u0915\u093c",
+    "total_usd": 7.8051,
+    "duration_min": 27.7,
+    "breakdown": {
+      "claude_opus": 0.3743,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0335,
+      "veo_clips": 7.04,
+      "whisper": 0.0074,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2298
+    }
   }
 ]
