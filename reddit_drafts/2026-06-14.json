@@ -1,0 +1,13 @@
+{
+  "target_sub": "r/PrintOnDemand",
+  "posting_time": "Weekday morning, 9-11 AM IST",
+  "title": "My WhatsApp got blocked 15 times last month. Here's what actually fixed it.",
+  "body": "Got absolutely wrecked by WhatsApp blocks when orders started picking up. Every time I hit around 200+ inquiries a day, the account would just... die. No warning, no appeal — just locked out for hours or days.\n\nI was losing clients left and right. People would message, I couldn't respond fast enough because I'd be scrambling to recover my account. It was chaos.\n\nTurns out regular WhatsApp Business isn't built for high-volume bulk orders. It has limits on how many messages you can send per hour, and if you're managing 200+ inquiries daily for print orders, you're basically guaranteed to hit those limits and get flagged.\n\nSo I built a WhatsApp API — basically the same tech that Reliance and big companies use for automated, bulk messaging. Legal, totally legit, never gets blocked because it's not spamming. It's business infrastructure.\n\nNow I handle 300+ daily inquiries without a single block. Responses are instant, automated templates work, no more account lockouts.\n\nI'm giving it away free to bulk t-shirt and print-on-demand businesses because I remember how frustrating this was.\n\nFull breakdown with photos: https://www.bulkplaintshirt.com/p/free-whatsapp-api-for-bulk-t-shirt-business-stop-getting.html\n\nAnyone else dealing with constant blocks on regular WhatsApp?",
+  "engagement_plan": [
+    "Reply to every comment within 12 hours with honest context about the API setup.",
+    "Spend 10 minutes commenting helpfully on other r/PrintOnDemand posts about order management or vendor issues (no links).",
+    "Do NOT cross-post to another subreddit today."
+  ],
+  "hero_image_url": "https://www.bulkplaintshirt.com/p/free-whatsapp-api-for-bulk-t-shirt-business-stop-getting-hero.webp",
+  "blog_url": "https://www.bulkplaintshirt.com/p/free-whatsapp-api-for-bulk-t-shirt-business-stop-getting.html"
+}
