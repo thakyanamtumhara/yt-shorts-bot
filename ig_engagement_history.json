@@ -753,13 +753,36 @@
     "title": "₹0 Ads Budget to ₹10 Lakh/Month — He DM'd 30 Print Shops Daily 🎯",
     "topic": "₹0 Marketing Se ₹10 Lakh/Month — Meri T-Shirt Business Ki Real Kahani 🎯 | 2017 to 2026",
     "published_at": "2026-06-11T21:59:21.828879+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-15T23:07:33.688043+05:30",
+    "hours_since_publish": 97.1,
+    "views": 709,
+    "reach": 599,
+    "likes": 15,
+    "comments": 0,
+    "shares": 1,
+    "saves": 4
   },
   {
     "media_id": "18179417074402901",
     "title": "Same 240 GSM, One Feels Cheap — ₹15 Yarn Trap That Kills Your Brand",
     "topic": "240 GSM Oversized Royal Blue Tee — Kya Sach Mein Premium Feel Aata Hai? Real Quality Check 🔍",
     "published_at": "2026-06-13T19:59:12.014284+05:30",
+    "checked": true,
+    "checked_at": "2026-06-15T23:07:33.688043+05:30",
+    "hours_since_publish": 51.1,
+    "views": 3488,
+    "reach": 2871,
+    "likes": 62,
+    "comments": 0,
+    "shares": 34,
+    "saves": 49
+  },
+  {
+    "media_id": "18103432490117114",
+    "title": "200 T-Shirts Returned in Monsoon — Polyester vs Cotton Mistake Cost ₹40K 🌧️",
+    "topic": "Barish Mein T-Shirt Sukhi Nahi — Client Ne 200 Pcs Return Kiye 🌧️ Polyester vs Cotton Monsoon Mistake",
+    "published_at": "2026-06-15T23:09:44.829873+05:30",
     "checked": false
   }
 ]

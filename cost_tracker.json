@@ -1642,5 +1642,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2298
     }
+  },
+  {
+    "date": "2026-06-15T17:43:48.412107",
+    "topic": "Barish Mein T-Shirt Sukhi Nahi \u2014 Client Ne 200 Pcs Return Kiye \ud83c\udf27\ufe0f Polyester vs Cotton Monsoon Mistake",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 200 Pcs Return \u2014 Polyester \u0915\u0940 \u0938\u0938\u094d\u0924\u0940 \u0917\u0932\u0924\u0940 \u092a\u0921\u093c\u0940 \u092d\u093e\u0930\u0940 \ud83c\udf27\ufe0f",
+    "total_usd": 7.778,
+    "duration_min": 25.5,
+    "breakdown": {
+      "claude_opus": 0.3658,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0272,
+      "veo_clips": 7.04,
+      "whisper": 0.006,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2189
+    }
   }
 ]
