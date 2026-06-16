@@ -1659,5 +1659,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2189
     }
+  },
+  {
+    "date": "2026-06-16T17:26:31.414190",
+    "topic": "Girls Summer Hoodies Ka Business Kaise Kare? \u2014 \u20b90 Se Start Karne Ka Formula \ud83c\udfaf",
+    "title": "\u20b90 \u092e\u0947\u0902 Hoodies \u0915\u093e Business? \u0932\u0921\u093c\u0915\u0940 \u0928\u0947 \u092a\u0942\u091b\u093e \u2014 \u092f\u0947 \u0930\u0939\u093e \u0905\u0938\u0932\u0940 Formula \ud83c\udfaf",
+    "total_usd": 7.5661,
+    "duration_min": 27.8,
+    "breakdown": {
+      "claude_opus": 0.3627,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0356,
+      "veo_clips": 7.04,
+      "whisper": 0.0077,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025
+    }
   }
 ]
