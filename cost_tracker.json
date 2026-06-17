@@ -1675,5 +1675,22 @@
       "gemini_thumbnail": 0.045,
       "blog_images": 0.025
     }
+  },
+  {
+    "date": "2026-06-17T16:05:54.932311",
+    "topic": "Monsoon Mein T-Shirt Colour Bleed Ho Gayi? \u2014 Ye 3 Fabric Mistakes Check Karo Before Bulk Order \ud83c\udf27\ufe0f",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 Colour Bleed \u2014 \u20b940K \u0915\u093e \u092e\u093e\u0932 \u092c\u0930\u094d\u092c\u093e\u0926, 3 \u0917\u0932\u0924\u093f\u092f\u093e\u0901 \u091c\u094b \u0938\u092c \u0915\u0930\u0924\u0947 \u0939\u0948\u0902",
+    "total_usd": 7.8172,
+    "duration_min": 27.5,
+    "breakdown": {
+      "claude_opus": 0.3769,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0316,
+      "veo_clips": 7.04,
+      "whisper": 0.0072,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2415
+    }
   }
 ]
