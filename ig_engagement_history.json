@@ -783,7 +783,15 @@
     "title": "200 T-Shirts Returned in Monsoon — Polyester vs Cotton Mistake Cost ₹40K 🌧️",
     "topic": "Barish Mein T-Shirt Sukhi Nahi — Client Ne 200 Pcs Return Kiye 🌧️ Polyester vs Cotton Monsoon Mistake",
     "published_at": "2026-06-15T23:09:44.829873+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-18T21:25:06.347658+05:30",
+    "hours_since_publish": 70.3,
+    "views": 1911,
+    "reach": 1673,
+    "likes": 27,
+    "comments": 0,
+    "shares": 9,
+    "saves": 15
   },
   {
     "media_id": "17993543741986010",
@@ -797,6 +805,13 @@
     "title": "Monsoon Colour Bleed Destroyed 500 T-Shirts — 3 Fabric Mistakes That Cost ₹40K",
     "topic": "Monsoon Mein T-Shirt Colour Bleed Ho Gayi? — Ye 3 Fabric Mistakes Check Karo Before Bulk Order 🌧️",
     "published_at": "2026-06-17T21:31:28.060099+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17941956036247165",
+    "title": "He Wanted 50 Pcs Boxy Fit in Maroon — I Said No. Here's Why",
+    "topic": "Boxy Fit T-Shirts Kyun Nahi Milti Black-White Ke Alawa? Colour Production Ka Asli Problem | Factory Inside",
+    "published_at": "2026-06-18T21:27:23.364496+05:30",
     "checked": false
   }
 ]

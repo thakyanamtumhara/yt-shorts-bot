@@ -1692,5 +1692,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2415
     }
+  },
+  {
+    "date": "2026-06-18T16:01:14.122024",
+    "topic": "Boxy Fit T-Shirts Kyun Nahi Milti Black-White Ke Alawa? Colour Production Ka Asli Problem | Factory Inside",
+    "title": "Boxy Fit \u0938\u093f\u0930\u094d\u092b Black-White \u092e\u0947\u0902 \u0915\u094d\u092f\u094b\u0902? \u0930\u0902\u0917 \u0928\u0939\u0940\u0902 \u092e\u093f\u0932\u0947\u0917\u093e \u2014 \u0905\u0938\u0932\u0940 Problem",
+    "total_usd": 7.7995,
+    "duration_min": 29.5,
+    "breakdown": {
+      "claude_opus": 0.383,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0377,
+      "veo_clips": 7.04,
+      "whisper": 0.0082,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2107
+    }
   }
 ]
