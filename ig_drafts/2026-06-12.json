@@ -26,8 +26,8 @@
     "#sale91",
     "#tshirtmanufacturer"
   ],
-  "posted": false,
+  "posted": true,
   "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
+  "error": "image URLs inaccessible — img1/img2 return HTTP 403 on S3 (fal.ai balance exhausted on June 12 run, images never generated). Auto-skipped by verifier 2026-06-19.",
   "posted_at": null
 }
