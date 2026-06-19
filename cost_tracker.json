@@ -1709,5 +1709,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2107
     }
+  },
+  {
+    "date": "2026-06-19T15:52:33.924448",
+    "topic": "240 GSM Royal Blue Oversized \u2014 Printing Ke Baad Kaisa Dikhta Hai? Live Comparison DTF vs Screen Print",
+    "title": "DTF vs Screen Print \u2014 240 GSM \u092a\u0930 \u0926\u094b\u0928\u094b\u0902 \u0932\u0917\u093e\u090f, \u092b\u0930\u094d\u0915 \u0926\u0947\u0916 \u0932\u094b \u0916\u0941\u0926 \ud83d\udd25",
+    "total_usd": 7.8475,
+    "duration_min": 28.2,
+    "breakdown": {
+      "claude_opus": 0.3687,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0337,
+      "veo_clips": 7.04,
+      "whisper": 0.0076,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2275
+    }
   }
 ]
