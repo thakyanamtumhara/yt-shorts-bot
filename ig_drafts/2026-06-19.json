@@ -26,7 +26,8 @@
     "#bulkorders",
     "#indiabtob"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18106714696795672",
+  "error": null,
+  "posted_at": "2026-06-20T15:48:35.888634+05:30"
 }
