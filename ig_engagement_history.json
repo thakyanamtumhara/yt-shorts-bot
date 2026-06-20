@@ -813,7 +813,15 @@
     "title": "Monsoon Colour Bleed Destroyed 500 T-Shirts — 3 Fabric Mistakes That Cost ₹40K",
     "topic": "Monsoon Mein T-Shirt Colour Bleed Ho Gayi? — Ye 3 Fabric Mistakes Check Karo Before Bulk Order 🌧️",
     "published_at": "2026-06-17T21:31:28.060099+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-20T20:01:55.581080+05:30",
+    "hours_since_publish": 70.5,
+    "views": 2452,
+    "reach": 2152,
+    "likes": 28,
+    "comments": 0,
+    "shares": 15,
+    "saves": 20
   },
   {
     "media_id": "17941956036247165",
@@ -827,6 +835,13 @@
     "title": "DTF vs Screen Print on Same Shirt — One Looks Cheap After Wash 💀",
     "topic": "240 GSM Royal Blue Oversized — Printing Ke Baad Kaisa Dikhta Hai? Live Comparison DTF vs Screen Print",
     "published_at": "2026-06-19T21:18:05.723735+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17866521177572730",
+    "title": "Boxy Fit Always Out of Stock — The Cutting Secret That Costs Brands Lakhs",
+    "topic": "Boxy Fit T-Shirt Kyu Out of Stock Rehti Hai? — Manufacturing Ka Wo Sach Jo Koi Nahi Batata 🔥",
+    "published_at": "2026-06-20T20:05:07.768708+05:30",
     "checked": false
   }
 ]

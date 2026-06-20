@@ -1726,5 +1726,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2275
     }
+  },
+  {
+    "date": "2026-06-20T14:39:29.184951",
+    "topic": "Boxy Fit T-Shirt Kyu Out of Stock Rehti Hai? \u2014 Manufacturing Ka Wo Sach Jo Koi Nahi Batata \ud83d\udd25",
+    "title": "Boxy Fit T-Shirt \u0939\u092e\u0947\u0936\u093e Out of Stock \u0915\u094d\u092f\u094b\u0902? \u2014 Manufacturing \u0915\u093e \u091b\u0941\u092a\u093e \u0938\u091a \ud83d\udd25",
+    "total_usd": 7.7955,
+    "duration_min": 29.7,
+    "breakdown": {
+      "claude_opus": 0.3679,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0313,
+      "veo_clips": 7.04,
+      "whisper": 0.0062,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.23
+    }
   }
 ]
