@@ -1,0 +1,13 @@
+{
+  "target_sub": "r/PrintOnDemand",
+  "posting_time": "Weekday morning, 9-11 AM IST",
+  "title": "Been manually messaging clients on WhatsApp for years. Just realized I could automate half my replies.",
+  "body": "Got tired of typing the same order confirmations, shipping updates, bulk inquiry responses over and over. So I finally set up WhatsApp API properly — not the sketchy bot stuff that gets your number flagged, the legit Meta API.\n\nSetup was simpler than I expected. Connect through Facebook (they handle the backend), add a card for paid template messages (you only pay when sending branded templates, not regular chats), test on a side number first, then move your main business number over.\n\nHere's the weird part though — I started training a local-style AI clone that responds to my chats when I'm not around. It learns from every message I send, picks up my tone, handles routine stuff like \"what's the MOQ?\" or \"when's delivery?\" without me touching it. Clients don't even realize they're talking to AI half the time because it's not robotic — it's literally trained on my own chat style.\n\nTaken me years to get this smooth. It's legal, never gets blocked (because it's the official API), and honestly should've set this up way earlier.\n\nFull breakdown with photos: https://www.bulkplaintshirt.com/p/whatsapp-bulk-messaging-for-t-shirt-business-without-ban.html\n\nAnyone else automating their client chat, or still grinding through messages manually?",
+  "engagement_plan": [
+    "Reply to every comment within 12 hours with genuine follow-up questions about their WhatsApp workflow.",
+    "Spend 10 minutes commenting helpfully on 2-3 other posts in r/PrintOnDemand today (no links, pure advice).",
+    "Do NOT cross-post to another subreddit today."
+  ],
+  "hero_image_url": "https://www.bulkplaintshirt.com/p/whatsapp-bulk-messaging-for-t-shirt-business-without-ban-hero.webp",
+  "blog_url": "https://www.bulkplaintshirt.com/p/whatsapp-bulk-messaging-for-t-shirt-business-without-ban.html"
+}

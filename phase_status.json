@@ -3,31 +3,31 @@
     "2": {
       "id": 2,
       "status": "best-effort",
-      "last_run": "2026-06-14T20:56:45.511420+05:30",
+      "last_run": "2026-06-21T20:56:51.664432+05:30",
       "last_result": "fallback-to-description",
       "details": "Captions API requires OAuth; falling back to video description. Will be upgraded when OAuth caption scope is added."
     },
     "3": {
       "id": 3,
       "status": "active",
-      "last_run": "2026-06-14T20:56:45.511904+05:30",
+      "last_run": "2026-06-21T20:56:51.664855+05:30",
       "last_result": "saved",
-      "details": "4 corpus entries · target 4+ for Phase 4 activation"
+      "details": "5 corpus entries · target 4+ for Phase 4 activation"
     },
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-06-14T21:01:02.187431+05:30",
+      "last_run": "2026-06-21T21:01:04.169147+05:30",
       "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/free-whatsapp-api-for-bulk-t-shirt-business-stop-getting.html · source: 'एक WhatsApp जो कभी Block नहीं होता 🔓 FREE दे रहा हूँ'"
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/whatsapp-bulk-messaging-for-t-shirt-business-without-ban.html · source: '5 साल का WhatsApp Secret — अब सबके लिए FREE 🔓'"
     },
     "4": {
       "id": 4,
       "status": "active",
-      "last_run": "2026-06-14T21:01:02.187791+05:30",
+      "last_run": "2026-06-21T21:01:04.169476+05:30",
       "last_result": "ready",
-      "details": "Voice style hints active in daily script gen (4 corpus entries)"
+      "details": "Voice style hints active in daily script gen (5 corpus entries)"
     }
   },
-  "last_update": "2026-06-14T21:01:02.187791+05:30"
+  "last_update": "2026-06-21T21:01:04.169476+05:30"
 }
