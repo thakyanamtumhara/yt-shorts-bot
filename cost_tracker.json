@@ -1760,5 +1760,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2255
     }
+  },
+  {
+    "date": "2026-06-23T15:20:21.343306",
+    "topic": "\"Same Colour, 2 Alag Vendors \u2014 Ek Premium Lagta Hai, Ek Sasta \ud83e\udd2f Dyeing Quality Kaise Check Kare Before Bulk Order\"",
+    "title": "Same Colour, 2 Vendors \u2014 One Looks Premium, One Cheap! Dyeing Check",
+    "total_usd": 7.6328,
+    "duration_min": 25.9,
+    "breakdown": {
+      "claude_opus": 0.2281,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0268,
+      "veo_clips": 7.04,
+      "whisper": 0.006,
+      "blog_images": 0.05,
+      "claude_sonnet": 0.2319
+    }
   }
 ]
