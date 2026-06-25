@@ -873,7 +873,15 @@
     "title": "He Ordered 300 Boys Hoodies, Skipped Girls — Lost 60% Sales 💀",
     "topic": "Girls Hoodies for Summer & Winter — India Mein Demand Kitni Hai? College Merch Business Ka Hidden Goldmine 🎯",
     "published_at": "2026-06-22T22:52:53.049771+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-25T20:28:40.894871+05:30",
+    "hours_since_publish": 69.6,
+    "views": 1498,
+    "reach": 1286,
+    "likes": 22,
+    "comments": 1,
+    "shares": 2,
+    "saves": 10
   },
   {
     "media_id": "17898389850327172",
@@ -887,6 +895,13 @@
     "title": "₹12 Savings Destroyed His Monsoon Stock — Polyester Blend vs Cotton Trap 🌧️",
     "topic": "₹12 Ka Fark — Polyester Blend vs Pure Cotton in Barish Season | Kaunsa Dry Hoga Faster? 🌧️",
     "published_at": "2026-06-24T20:28:50.278216+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "18065854124455616",
+    "title": "Same ₹80, Same GSM Range — One Felt Cheap. ₹15 Yarn Trap Exposed",
+    "topic": "240 GSM vs 200 GSM — Same Price Par Ek Cheap Lagti Hai, Yarn Ka Khel Samjho 💡 #GSMTrap",
+    "published_at": "2026-06-25T20:30:47.021131+05:30",
     "checked": false
   }
 ]
