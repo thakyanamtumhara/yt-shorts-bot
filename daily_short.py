@@ -2352,17 +2352,19 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
     # If a provider (Replicate/fal.ai) fails, those files are never uploaded and
     # the IG API returns "Only photo or video can be accepted as media type" on the
     # 403 S3 URL. IG carousel requires ≥2 images; skip the draft if we can't meet that.
+    # IG Graph API rejects .webp — use the .jpg copies uploaded alongside each .webp.
     if uploaded_filenames and len(uploaded_filenames) >= 2:
-        image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in uploaded_filenames]
+        ig_filenames = [fn.replace(".webp", ".jpg") for fn in uploaded_filenames]
+        image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in ig_filenames]
     elif uploaded_filenames and len(uploaded_filenames) == 1:
         print("   ⚠️ IG carousel: Only 1 image generated — skipping draft (carousel needs ≥2)")
         return None
     else:
         # Fallback when no image info is passed (pre-fix callers / all 3 generated)
         image_urls = [
-            f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp",
-            f"{BLOG_BASE_URL}/p/{blog_slug}-img1.webp",
-            f"{BLOG_BASE_URL}/p/{blog_slug}-img2.webp",
+            f"{BLOG_BASE_URL}/p/{blog_slug}-hero.jpg",
+            f"{BLOG_BASE_URL}/p/{blog_slug}-img1.jpg",
+            f"{BLOG_BASE_URL}/p/{blog_slug}-img2.jpg",
         ]
 
     tags_str = ", ".join(tags) if tags else "none"
@@ -9187,6 +9189,26 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
                         CacheControl='public, max-age=2592000'  # 30 days for images
                     )
                     print(f"   📤 Blog S3: Uploaded {img_key} ({len(img_bytes)//1024}KB)")
+                    # IG Graph API rejects .webp; upload a JPEG copy for carousel use
+                    if filename.endswith(".webp"):
+                        try:
+                            from PIL import Image
+                            import io as _io
+                            jpg_filename = filename.replace(".webp", ".jpg")
+                            jpg_key = f"p/{slug}-{jpg_filename}"
+                            img_pil = Image.open(_io.BytesIO(img_bytes)).convert("RGB")
+                            jpg_buf = _io.BytesIO()
+                            img_pil.save(jpg_buf, format="JPEG", quality=85)
+                            s3.put_object(
+                                Bucket=BLOG_S3_BUCKET,
+                                Key=jpg_key,
+                                Body=jpg_buf.getvalue(),
+                                ContentType="image/jpeg",
+                                CacheControl='public, max-age=2592000',
+                            )
+                            print(f"   📤 Blog S3: Uploaded {jpg_key} (JPEG copy for IG carousel)")
+                        except Exception as je:
+                            print(f"   ⚠️ Blog S3: JPEG copy failed for {filename}: {je}")
                 except Exception as e:
                     print(f"   ⚠️ Blog S3: Image upload failed for {filename}: {e}")
 
