@@ -888,20 +888,43 @@
     "title": "Same Colour, 2 Vendors — One Looks Premium, One Cheap! Dyeing Check",
     "topic": "\"Same Colour, 2 Alag Vendors — Ek Premium Lagta Hai, Ek Sasta 🤯 Dyeing Quality Kaise Check Kare Before Bulk Order\"",
     "published_at": "2026-06-23T20:46:00.430308+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-27T19:39:29.369862+05:30",
+    "hours_since_publish": 94.9,
+    "views": 1977,
+    "reach": 1762,
+    "likes": 29,
+    "comments": 0,
+    "shares": 2,
+    "saves": 9
   },
   {
     "media_id": "18101809790141317",
     "title": "₹12 Savings Destroyed His Monsoon Stock — Polyester Blend vs Cotton Trap 🌧️",
     "topic": "₹12 Ka Fark — Polyester Blend vs Pure Cotton in Barish Season | Kaunsa Dry Hoga Faster? 🌧️",
     "published_at": "2026-06-24T20:28:50.278216+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-06-27T19:39:29.369862+05:30",
+    "hours_since_publish": 71.2,
+    "views": 1935,
+    "reach": 1691,
+    "likes": 21,
+    "comments": 1,
+    "shares": 5,
+    "saves": 9
   },
   {
     "media_id": "18065854124455616",
     "title": "Same ₹80, Same GSM Range — One Felt Cheap. ₹15 Yarn Trap Exposed",
     "topic": "240 GSM vs 200 GSM — Same Price Par Ek Cheap Lagti Hai, Yarn Ka Khel Samjho 💡 #GSMTrap",
     "published_at": "2026-06-25T20:30:47.021131+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17944648440038721",
+    "title": "₹12 Thread Destroyed 500 T-Shirts in One Wash — Stitching Trap Nobody Checks",
+    "topic": "₹12 Ki Thread Ne 500 Pieces Barbaad Kar Diye — Stitching Quality Check Jo Koi Nahi Batata 🧵",
+    "published_at": "2026-06-27T19:41:39.846176+05:30",
     "checked": false
   }
 ]
