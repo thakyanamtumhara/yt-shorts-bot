@@ -3,31 +3,31 @@
     "2": {
       "id": 2,
       "status": "best-effort",
-      "last_run": "2026-06-21T20:56:51.664432+05:30",
+      "last_run": "2026-06-28T20:34:36.540331+05:30",
       "last_result": "fallback-to-description",
       "details": "Captions API requires OAuth; falling back to video description. Will be upgraded when OAuth caption scope is added."
     },
     "3": {
       "id": 3,
       "status": "active",
-      "last_run": "2026-06-21T20:56:51.664855+05:30",
+      "last_run": "2026-06-28T20:34:36.540758+05:30",
       "last_result": "saved",
-      "details": "5 corpus entries · target 4+ for Phase 4 activation"
+      "details": "6 corpus entries · target 4+ for Phase 4 activation"
     },
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-06-21T21:01:04.169147+05:30",
+      "last_run": "2026-06-28T20:38:53.672389+05:30",
       "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/whatsapp-bulk-messaging-for-t-shirt-business-without-ban.html · source: '5 साल का WhatsApp Secret — अब सबके लिए FREE 🔓'"
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/bulk-t-shirt-order-cod-in-india-cash-on-delivery-up-to-2.html · source: 'अब बड़े Bulk Order पर भी COD 💵 ₹2 लाख तक Cash on Delivery'"
     },
     "4": {
       "id": 4,
       "status": "active",
-      "last_run": "2026-06-21T21:01:04.169476+05:30",
+      "last_run": "2026-06-28T20:38:53.672714+05:30",
       "last_result": "ready",
-      "details": "Voice style hints active in daily script gen (5 corpus entries)"
+      "details": "Voice style hints active in daily script gen (6 corpus entries)"
     }
   },
-  "last_update": "2026-06-21T21:01:04.169476+05:30"
+  "last_update": "2026-06-28T20:38:53.672714+05:30"
 }
