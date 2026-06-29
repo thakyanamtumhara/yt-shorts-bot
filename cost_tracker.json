@@ -1825,5 +1825,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.2353
     }
+  },
+  {
+    "date": "2026-06-29T16:20:24.692934",
+    "topic": "Girls Hoodies Plain Wholesale \u2014 Ye Category Start Ki Toh Turnover 3X Ho Gaya \ud83d\ude80 Real Customer Story",
+    "title": "Girls Hoodies \u092c\u0947\u091a\u0928\u093e \u0936\u0941\u0930\u0942 \u0915\u093f\u092f\u093e \u2014 Turnover \u20b91.5L \u0938\u0947 4.5L \ud83d\ude80",
+    "total_usd": 7.8096,
+    "duration_min": 28.3,
+    "breakdown": {
+      "claude_opus": 0.3717,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0312,
+      "veo_clips": 7.04,
+      "whisper": 0.0071,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2396
+    }
   }
 ]
