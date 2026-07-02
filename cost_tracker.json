@@ -1876,5 +1876,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2224
     }
+  },
+  {
+    "date": "2026-07-02T14:33:46.673109",
+    "topic": "Girls Summer Hoodies Ka Business Kaise Start Karein? \u2014 \u20b90 Se \u20b95 Lakh Tak Ka Plan \ud83d\udc69\u200d\ud83d\udcbc",
+    "title": "\u0932\u0921\u093c\u0915\u0940 \u0928\u0947 \u0915\u0939\u093e Hoodie Summer \u092e\u0947\u0902 \u0928\u0939\u0940\u0902 \u092c\u093f\u0915\u0947\u0917\u0940 \u2014 \u20b90 \u0938\u0947 \u20b95 Lakh \u0915\u093e Plan \ud83d\udc69\u200d\ud83d\udcbc",
+    "total_usd": 7.7954,
+    "duration_min": 27.0,
+    "breakdown": {
+      "claude_opus": 0.3635,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0326,
+      "veo_clips": 7.04,
+      "whisper": 0.0067,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2326
+    }
   }
 ]
