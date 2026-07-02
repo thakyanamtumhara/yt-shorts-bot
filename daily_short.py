@@ -2357,8 +2357,11 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
         ig_filenames = [fn.replace(".webp", ".jpg") for fn in uploaded_filenames]
         image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in ig_filenames]
     elif uploaded_filenames and len(uploaded_filenames) == 1:
-        print("   ⚠️ IG carousel: Only 1 image generated — skipping draft (carousel needs ≥2)")
-        return None
+        # Only hero was generated (Replicate partial failure). Use it twice so IG's
+        # ≥2 image minimum is met and the draft is still created for next-morning post.
+        hero_jpg = f"{BLOG_BASE_URL}/p/{blog_slug}-{uploaded_filenames[0].replace('.webp', '.jpg')}"
+        image_urls = [hero_jpg, hero_jpg]
+        print("   ⚠️ IG carousel: Only 1 image uploaded — using hero twice (2-slide carousel)")
     else:
         # Fallback when no image info is passed (pre-fix callers / all 3 generated)
         image_urls = [
