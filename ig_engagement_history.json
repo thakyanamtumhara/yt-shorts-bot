@@ -963,7 +963,15 @@
     "title": "300 T-Shirts Ruined After One Monsoon Wash — ₹5 Test He Never Did",
     "topic": "Monsoon Mein T-Shirt Colour Bleed Ho Gayi? 😱 ₹5 Ka Ye Test Pehle Karo — Fabric Bleeding Check Every Printer Must Know",
     "published_at": "2026-06-30T20:17:11.929790+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-07-03T20:01:45.066689+05:30",
+    "hours_since_publish": 71.7,
+    "views": 2032,
+    "reach": 1842,
+    "likes": 28,
+    "comments": 1,
+    "shares": 8,
+    "saves": 9
   },
   {
     "media_id": "18107812918978976",
@@ -977,6 +985,13 @@
     "title": "She Said Hoodies Won't Sell in Summer — Lost ₹5 Lakh Opportunity 😱",
     "topic": "Girls Summer Hoodies Ka Business Kaise Start Karein? — ₹0 Se ₹5 Lakh Tak Ka Plan 👩‍💼",
     "published_at": "2026-07-02T19:59:33.387766+05:30",
+    "checked": false
+  },
+  {
+    "media_id": "17874156546653941",
+    "title": "DTF vs Screen Print vs Embroidery — ₹17 Savings Destroyed His Margins 💀",
+    "topic": "₹500 Ki T-Shirt Pe DTF vs Screen Print vs Embroidery — Kis Method Mein Sabse Zyada Kamaya? Real Numbers 💰",
+    "published_at": "2026-07-03T20:03:56.064822+05:30",
     "checked": false
   }
 ]

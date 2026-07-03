@@ -1893,5 +1893,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2326
     }
+  },
+  {
+    "date": "2026-07-03T14:38:17.439806",
+    "topic": "\u20b9500 Ki T-Shirt Pe DTF vs Screen Print vs Embroidery \u2014 Kis Method Mein Sabse Zyada Kamaya? Real Numbers \ud83d\udcb0",
+    "title": "\u20b9500 \u0915\u0940 T-Shirt \u2014 DTF vs Screen Print vs Embroidery \u092e\u0947\u0902 \u0915\u093f\u0938\u0928\u0947 \u0938\u092c\u0938\u0947 \u091c\u093c\u094d\u092f\u093e\u0926\u093e \u0915\u092e\u093e\u092f\u093e?",
+    "total_usd": 7.7978,
+    "duration_min": 27.4,
+    "breakdown": {
+      "claude_opus": 0.3566,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0329,
+      "veo_clips": 7.04,
+      "whisper": 0.0072,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2411
+    }
   }
 ]
