@@ -1910,5 +1910,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2411
     }
+  },
+  {
+    "date": "2026-07-04T14:07:16.775945",
+    "topic": "DTF Print 50 Wash Ke Baad Kaisa Dikhta Hai? \u2014 Cheap vs Premium Blank T-Shirt Comparison",
+    "title": "50 \u0927\u0941\u0932\u093e\u0908 \u0915\u0947 \u092c\u093e\u0926 DTF Print \u0909\u0921\u093c \u0917\u092f\u093e \u2014 \u0938\u0938\u094d\u0924\u0940 vs Premium Blank T-Shirt",
+    "total_usd": 7.7874,
+    "duration_min": 28.8,
+    "breakdown": {
+      "claude_opus": 0.3643,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.032,
+      "veo_clips": 7.04,
+      "whisper": 0.0075,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2236
+    }
   }
 ]
