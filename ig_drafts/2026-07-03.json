@@ -25,7 +25,8 @@
     "#printingprofitmargin",
     "#streetwearbrands"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18103452593115599",
+  "error": null,
+  "posted_at": "2026-07-04T15:06:14.002436+05:30"
 }
