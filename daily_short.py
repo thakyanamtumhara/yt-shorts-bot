@@ -37,7 +37,7 @@ import PIL.Image
 if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import (
-    VideoFileClip, AudioFileClip, TextClip,
+    VideoFileClip, AudioFileClip, TextClip, ImageClip,
     CompositeVideoClip, concatenate_videoclips, ColorClip,
     CompositeAudioClip, concatenate_audioclips
 )
@@ -209,6 +209,22 @@ SUBTITLE_BG_OPACITY = 0.7
 SUBTITLE_BG_PADDING = 16
 WORDS_PER_SUBTITLE = 3        # Punchy 3-word phrases (top-quartile Shorts pace)
 MAX_SUBTITLE_DURATION = 1.8   # Force caption swap at least every 1.8s
+# Karaoke captions — word-by-word highlight of the ACTUAL spoken Roman-Hinglish words.
+# KARAOKE_CAPTIONS=0 is the kill switch (falls back to old segment-level English captions).
+KARAOKE_CAPTIONS = os.environ.get("KARAOKE_CAPTIONS", "1").strip() in ("1", "true", "yes")
+KARAOKE_FONTSIZE = 64
+KARAOKE_BASE_COLOR = (255, 255, 255, 255)       # white
+KARAOKE_HIGHLIGHT_COLOR = (255, 215, 0, 255)    # #FFD700 yellow — CVD-safe, no red/green
+KARAOKE_STROKE_COLOR = (0, 0, 0, 255)
+KARAOKE_STROKE_W = 4
+KARAOKE_Y_PERCENT = 0.55      # line vertical center — inside IG Reels safe band (~25-70%)
+KARAOKE_MAX_LINE_W = VIDEO_WIDTH - 160
+KARAOKE_FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",        # CI: fonts-noto-core
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",    # ubuntu preinstalled
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",     # CI: fonts-freefont-ttf
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",       # mac local runs
+]
 # Keywords that get highlighted in yellow for visual emphasis
 SUBTITLE_HIGHLIGHT_COLOR = "yellow"
 SUBTITLE_HIGHLIGHT_WORDS = {
@@ -316,8 +332,26 @@ AI_THUMBNAIL_GEMINI_FALLBACK = "gemini-3.1-flash-image-preview"
 THUMBNAIL_RESEARCH_FILE = "thumbnail_research.json"  # Weekly research cache
 THUMBNAIL_RESEARCH_MAX_AGE_DAYS = 7
 
-# Auto-Pin Comment — posts a CTA comment and pins it on every upload
+# Cover-design metadata for the learning loop. Set by whichever cover path runs
+# (generate_ai_thumbnail → "ai", generate_thumbnail → "pil"); read when saving
+# the IG upload record so ig_engagement_history learns which covers work.
+COVER_META = {"cover_text": None, "cover_color": None, "cover_path": None, "cover_face": None}
+
+# Auto-Pin Comment — posts a CTA comment and pins it on every upload.
+# Rotates daily between question-bait (comment-signal days) and Sale91-link nudges.
 AUTO_PIN_COMMENT = True
+PIN_TAIL_VARIANTS = [
+    "🤔 Aapka next question kya hai? Comment mein puchho 👇",
+    "💬 Aap kaunsa printing method use karte ho — DTF ya screen? Comment karo 👇",
+    "📦 Bulk plain t-shirts chahiye? Sale91.com — MOQ sirf 10 pieces, Pan India",
+    "🔥 Agla video kis topic pe banaye? Comment mein batao 👇",
+    "🏭 Direct manufacturer se blanks lo → Sale91.com (khud ki knitting, biowashed)",
+]
+
+def get_pin_tail():
+    """Day-rotated pinned-comment tail: 3 question-bait + 2 Sale91 nudges."""
+    return PIN_TAIL_VARIANTS[datetime.now().timetuple().tm_yday % len(PIN_TAIL_VARIANTS)]
+
 PIN_COMMENT_TEXT = """🤔 Aapka next question kya hai? Comment mein puchho 👇
 
 📦 Plain t-shirt for printing? → Sale91.com (MOQ 10 pieces, Pan India)"""
@@ -623,6 +657,66 @@ def get_topic_hashtags(topic):
     return unique
 
 
+# Instagram-specific hashtag/SEO/CTA pools — IG rewards 3-5 targeted tags,
+# a keyword-rich first caption line (IG search indexes captions), and an
+# explicit send/save CTA. Kept separate from the YouTube pools above.
+IG_NICHE_HASHTAGS = {
+    "fabric_gsm": ["#fabricquality", "#cottontshirt", "#gsmfabric"],
+    "customer_stories": ["#b2bindia", "#businesslessons", "#tshirtmanufacturer"],
+    "printing_methods": ["#dtfprinting", "#screenprinting", "#customtshirts"],
+    "business_tips": ["#printingbusiness", "#smallbusinessindia", "#tshirtbrand"],
+    "quality_checks": ["#tshirtquality", "#biowash", "#cottonfabric"],
+    "product_style": ["#oversizedtshirt", "#streetwearindia", "#blankapparel"],
+    "myth_busters": ["#tshirtprinting", "#mythvsfact", "#printingtips"],
+}
+IG_DEFAULT_NICHE = ["#plaintshirt", "#tshirtmanufacturer", "#wholesaletshirt"]
+
+IG_SEO_KEYWORDS = {
+    "fabric_gsm": "cotton fabric GSM guide for t-shirt printing",
+    "customer_stories": "B2B plain t-shirt wholesale India",
+    "printing_methods": "DTF DTG screen printing on plain t-shirts",
+    "business_tips": "t-shirt printing business tips India",
+    "quality_checks": "biowash cotton t-shirt quality check",
+    "product_style": "oversized polo hoodie blanks wholesale",
+    "myth_busters": "t-shirt printing myths busted",
+}
+IG_DEFAULT_SEO = "plain t-shirt wholesale for printing business India"
+
+IG_CTA_LINES = [
+    "Us dost ko bhejo jo t-shirt business start kar raha hai 📩",
+    "Save kar lo — printing business mein kaam aayega 📌",
+    "Apne printing partner ko ye Reel share karo 🤝",
+    "Comment mein batao — agla video kis topic pe banaye? 👇",
+    "Us bande ko tag karo jo abhi bhi mehenge blanks kharid raha hai 😅",
+]
+
+def _match_topic_series(topic):
+    """Return the first TOPIC_SERIES_TAGS series name matching the topic, or None."""
+    topic_lower = topic.lower()
+    for series_name, series_data in TOPIC_SERIES_TAGS.items():
+        for kw in series_data["keywords"]:
+            if kw in topic_lower:
+                return series_name
+    return None
+
+def get_ig_hashtags(topic):
+    """3-5 targeted IG hashtags: 1 broad + 3 niche (per topic) + brand."""
+    series = _match_topic_series(topic)
+    niche = IG_NICHE_HASHTAGS.get(series, IG_DEFAULT_NICHE)
+    return ["#tshirtbusiness"] + niche[:3] + ["#sale91"]
+
+def get_ig_seo_line(topic, title):
+    """Keyword-rich first caption line — IG search indexes caption text."""
+    series = _match_topic_series(topic)
+    kw = IG_SEO_KEYWORDS.get(series, IG_DEFAULT_SEO)
+    line = f"{title} | {kw}"
+    return line[:150]
+
+def get_ig_cta_line():
+    """Rotate send/save CTA deterministically by day of year."""
+    return IG_CTA_LINES[datetime.now().timetuple().tm_yday % len(IG_CTA_LINES)]
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # THUMBNAIL GENERATION
 # ═══════════════════════════════════════════════════════════════════════
@@ -663,11 +757,11 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
                 if best_frame is not None:
                     img = Image.fromarray(best_frame)
                     img = img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
-                    # Darken slightly for text readability + boost contrast
+                    # Local scrim handles text readability — keep base image bright, just boost contrast
                     enhancer = ImageEnhance.Brightness(img)
-                    img = enhancer.enhance(0.7)
+                    img = enhancer.enhance(0.92)
                     enhancer = ImageEnhance.Contrast(img)
-                    img = enhancer.enhance(1.3)
+                    img = enhancer.enhance(1.25)
                     bg_from_clip = True
                     print(f"   🖼️ Thumbnail: using Veo frame (contrast score: {best_score:.0f})")
 
@@ -691,7 +785,6 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
 
         # Try to load a good font, fall back to default
         font_hook = None
-        font_topic = None
         font_paths = [
             "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",  # Supports Hindi/Devanagari
             "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
@@ -705,86 +798,93 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
                 break
 
         if font_file:
-            font_hook = ImageFont.truetype(font_file, 72)
-            font_topic = ImageFont.truetype(font_file, 36)
+            font_hook = ImageFont.truetype(font_file, 110)
+            font_first = ImageFont.truetype(font_file, 140)
         else:
             font_hook = ImageFont.load_default()
-            font_topic = ImageFont.load_default()
+            font_first = font_hook
 
-        # SAFE ZONE for 9:16 Reels: top 10% and bottom 20% are covered by YouTube UI
-        safe_top = int(THUMBNAIL_HEIGHT * 0.20)       # 20% buffer — IG profile grid crops top ~14.8%
-        safe_bottom = int(THUMBNAIL_HEIGHT * 0.80)    # Nothing below 80%
-        safe_left = int(THUMBNAIL_WIDTH * 0.10)       # 10% left margin
-        safe_right = int(THUMBNAIL_WIDTH * 0.90)      # 10% right margin
+        # UNIFIED SAFE BAND: 25%-70% vertical — survives IG profile-grid 4:5 crop AND YT Shorts UI
+        safe_top = int(THUMBNAIL_HEIGHT * 0.25)
+        safe_bottom = int(THUMBNAIL_HEIGHT * 0.70)
+        safe_left = int(THUMBNAIL_WIDTH * 0.10)
+        safe_right = int(THUMBNAIL_WIDTH * 0.90)
         safe_width = safe_right - safe_left
 
-        # Hook text — first word YELLOW (scroll-stop), rest WHITE
+        # Hook text — MAX 4 WORDS, first word YELLOW (scroll-stop), rest WHITE
         hook_display = (hook_text or topic.split("—")[0].strip()).upper()
-        all_words = hook_display.split()
+        all_words = hook_display.split()[:4]
         first_word = all_words[0] if all_words else ""
         rest_words = " ".join(all_words[1:]) if len(all_words) > 1 else ""
 
-        # Use larger font for first word
-        font_first = None
-        if font_file:
-            font_first = ImageFont.truetype(font_file, 90)
-
-        y_start = safe_top
-
-        def _draw_outlined(draw, x, y, text, font, fill, outline=(0, 0, 0), width=4):
+        def _draw_outlined(d, x, y, text, font, fill, outline=(0, 0, 0), width=5):
             for dx in range(-width, width + 1):
                 for dy in range(-width, width + 1):
                     if dx * dx + dy * dy <= width * width:
-                        draw.text((x + dx, y + dy), text, font=font, fill=outline)
-            draw.text((x, y), text, font=font, fill=fill)
+                        d.text((x + dx, y + dy), text, font=font, fill=outline)
+            d.text((x, y), text, font=font, fill=fill)
 
-        # Draw first word in YELLOW (big)
-        current_y = y_start
+        # Measure all lines first so a LOCAL scrim can be drawn behind the text block only
+        lines = []
         if first_word:
-            bbox = draw.textbbox((0, 0), first_word, font=font_first or font_hook)
-            fw_w = bbox[2] - bbox[0]
-            fw_x = max(safe_left, (THUMBNAIL_WIDTH - fw_w) // 2)
-            _draw_outlined(draw, fw_x, current_y, first_word, font_first or font_hook, (255, 215, 0))
-            current_y += (bbox[3] - bbox[1]) + 15
-
-        # Draw remaining words in WHITE (wrap within safe zone)
+            lines.append((first_word, font_first, (255, 215, 0)))
         if rest_words:
-            rest_lines = []
             current_line = ""
             for word in rest_words.split():
                 test = f"{current_line} {word}".strip()
                 bbox = draw.textbbox((0, 0), test, font=font_hook)
-                if bbox[2] - bbox[0] > safe_width:
-                    if current_line:
-                        rest_lines.append(current_line)
+                if bbox[2] - bbox[0] > safe_width and current_line:
+                    lines.append((current_line, font_hook, (255, 255, 255)))
                     current_line = word
                 else:
                     current_line = test
             if current_line:
-                rest_lines.append(current_line)
+                lines.append((current_line, font_hook, (255, 255, 255)))
 
-            for line in rest_lines[:3]:
-                if current_y > safe_bottom - 50:
-                    break  # Don't overflow into bottom unsafe zone
-                bbox = draw.textbbox((0, 0), line, font=font_hook)
-                text_w = bbox[2] - bbox[0]
-                x = max(safe_left, (THUMBNAIL_WIDTH - text_w) // 2)
-                _draw_outlined(draw, x, current_y, line, font_hook, (255, 255, 255))
-                current_y += (bbox[3] - bbox[1]) + 10
+        line_gap = 18
+        sized = []
+        block_h = 0
+        block_w = 0
+        for text, font, fill in lines:
+            bbox = draw.textbbox((0, 0), text, font=font)
+            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            sized.append((text, font, fill, w, h))
+            block_h += h + line_gap
+            block_w = max(block_w, w)
+        block_h -= line_gap if sized else 0
 
-        # Topic summary — smaller text below hook (only if within safe zone)
-        if current_y + 60 < safe_bottom:
-            topic_short = topic[:60] + ("..." if len(topic) > 60 else "")
-            bbox = draw.textbbox((0, 0), topic_short, font=font_topic)
-            topic_w = bbox[2] - bbox[0]
-            topic_y = current_y + 25
-            draw.text((max(safe_left, (THUMBNAIL_WIDTH - topic_w) // 2), topic_y), topic_short,
-                      font=font_topic, fill=(200, 200, 200))
+        y_start = safe_top + max(0, ((safe_bottom - safe_top) - block_h) // 3)
+
+        # LOCAL scrim — dark rounded panel behind the text block only (base image stays vivid)
+        if sized:
+            pad = 36
+            x0 = max(0, (THUMBNAIL_WIDTH - block_w) // 2 - pad)
+            x1 = min(THUMBNAIL_WIDTH, (THUMBNAIL_WIDTH + block_w) // 2 + pad)
+            overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+            ImageDraw.Draw(overlay).rounded_rectangle(
+                [x0, max(0, y_start - pad), x1, min(THUMBNAIL_HEIGHT, y_start + block_h + pad)],
+                radius=28, fill=(0, 0, 0, 150))
+            img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+
+        draw = ImageDraw.Draw(img)
+        current_y = y_start
+        for text, font, fill, w, h in sized:
+            if current_y + h > safe_bottom:
+                break
+            x = max(safe_left, (THUMBNAIL_WIDTH - w) // 2)
+            _draw_outlined(draw, x, current_y, text, font, fill)
+            current_y += h + line_gap
 
         img.save(output_path, "PNG", quality=95)
         if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
             print(f"   ⚠️ Thumbnail file not created or too small")
             return None
+        COVER_META.update({
+            "cover_text": " ".join(all_words) if all_words else None,
+            "cover_color": "#FFD700 first word + #FFFFFF",
+            "cover_path": "pil",
+            "cover_face": False,
+        })
         print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
         return output_path
 
@@ -836,7 +936,7 @@ def refresh_thumbnail_research(claude_client):
         "power_words": ["Secret", "Free", "Shocking", "Reality", "Truth", "Mistake", "Hack", "Asli", "Sach"],
         "best_colors": {"text": ["#FFD700", "#FFFFFF", "#FF0000", "#FF6600"], "stroke": "#000000"},
         "text_rules": "Max 3-4 words, Hinglish, include price/number if relevant, curiosity/urgency",
-        "layout": "Text top 15-45% for 9:16, face on one side text on other, rule of thirds",
+        "layout": "Text in the 25-70% vertical band for 9:16, face on one side text on other, rule of thirds",
         "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks",
     }
 
@@ -871,6 +971,37 @@ def refresh_thumbnail_research(claude_client):
                 "CRITICAL: Instagram is our primary channel. Optimize thumbnail patterns for INSTAGRAM FIRST, YouTube second.\n"
                 "High save-rate = thumbnails that promise lasting value. High share-rate = thumbnails that trigger 'my friend needs to see this'.\n"
             )
+        # Real cover outcomes — top/bottom 5 covers by views+saves, WITH their cover text,
+        # so the brief generator learns from actual results instead of generic best practice.
+        cover_learning_context = ""
+        try:
+            if os.path.exists(IG_ENGAGEMENT_FILE):
+                with open(IG_ENGAGEMENT_FILE, "r") as _cf:
+                    _cov_all = _json.load(_cf)
+                _covers = [r for r in _cov_all if r.get("checked") and not r.get("check_failed") and r.get("cover_text")]
+                if len(_covers) >= 4:
+                    _covers.sort(key=lambda r: r.get("views", 0) + 25 * r.get("saves", 0), reverse=True)
+                    _top = _covers[:5]
+                    _bottom = [r for r in _covers[-5:] if r not in _top]
+
+                    def _cov_line(r):
+                        return (f'- "{r["cover_text"]}" (path={r.get("cover_path", "?")}, color={r.get("cover_color", "?")}, '
+                                f'face={"yes" if r.get("cover_face") else "no"}) → '
+                                f'{r.get("views", 0)} views, {r.get("saves", 0)} saves, {r.get("shares", 0)} shares')
+
+                    cover_learning_context = (
+                        "\n\nREAL COVER OUTCOMES (our own Reel covers with actual results — HIGHEST-VALUE signal):\n"
+                        f"BEST covers (by views + saves):\n" + "\n".join(_cov_line(r) for r in _top) + "\n"
+                    )
+                    if _bottom:
+                        cover_learning_context += "WORST covers:\n" + "\n".join(_cov_line(r) for r in _bottom) + "\n"
+                    cover_learning_context += (
+                        "Compare winning vs losing cover texts: word count, Hindi/English mix, numbers/prices, "
+                        "curiosity angle, face vs product-hero. Derive power_words, text_rules and example_texts "
+                        "from what ACTUALLY worked above, not generic best practice.\n"
+                    )
+        except Exception as _cov_e:
+            print(f"   ⚠️ Cover-outcome context skipped: {_cov_e}")
         resp = claude_client.messages.create(
             model="claude-opus-4-6",
             max_tokens=800,
@@ -884,7 +1015,7 @@ def refresh_thumbnail_research(claude_client):
                     "- Target audience: Small business owners, retailers, resellers, bulk buyers in India\n"
                     "- Content style: Informational, business opportunity, pricing reveals, factory/warehouse tours\n"
                     "- Platform: Instagram Reels (PRIMARY) + YouTube Shorts (9:16 vertical)\n\n"
-                    f"{ig_research_context}\n"
+                    f"{ig_research_context}{cover_learning_context}\n"
                     "RESEARCH TASK:\n"
                     "Analyze top-performing Reels and Shorts in the Indian business niche. "
                     "Focus on: t-shirt business, wholesale business, bulk selling, garment industry, small business ideas India, low investment business. "
@@ -894,14 +1025,14 @@ def refresh_thumbnail_research(claude_client):
                     "- These are VERTICAL 9:16 Reel/Shorts thumbnails\n"
                     "- Viewers see these as tiny previews on mobile phones while scrolling\n"
                     "- On Instagram: thumbnail appears as Reel cover on profile grid and Explore page\n"
-                    "- Top 10% and bottom 20% may be covered by UI — text must be in the 15%-45% from top zone\n"
+                    "- Instagram grid-crop + YouTube UI cover the edges — text must live in the 25%-70% vertical band\n"
                     "- No brand names, URLs, or watermarks — ONLY the hook text goes on the thumbnail\n"
                     "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n\n"
                     "Return a JSON object (no markdown fencing) with these fields:\n"
                     "- power_words: array of 10-15 Hindi/Hinglish power words that get clicks on Reels/Shorts (e.g., Secret, सच, Mistake, Free, Shocking, Reality, Truth, Hack)\n"
                     "- best_colors: object with 'text' (array of 4-5 hex codes — best: Yellow #FFD700, White #FFFFFF, Red #FF0000, Orange #FF6600) and 'stroke' (hex code for outline, usually black)\n"
                     "- text_rules: string summarizing best practices for Reels thumbnail text — max 3-4 words, Hinglish performs best, include numbers/prices, create curiosity/urgency (max 2 sentences)\n"
-                    "- layout: string summarizing layout rules for 9:16 Reels thumbnails — face on one side text on other, rule of thirds, safe zone 15%-45% from top (max 2 sentences)\n"
+                    "- layout: string summarizing layout rules for 9:16 Reels thumbnails — face on one side text on other, rule of thirds, all text in the 25%-70% vertical band (max 2 sentences)\n"
                     "- patterns: string summarizing top-performing thumbnail patterns in Indian business Instagram/YouTube — what makes viewers stop scrolling (max 3 sentences)\n"
                     "- example_texts: array of 10 example thumbnail texts (3-4 words max each) that would work for t-shirt/wholesale business topics. Each must be a different approach — don't give variations of the same idea.\n"
                     "- ig_patterns: string summarizing what thumbnail text/design patterns correlate with high saves and shares on Instagram specifically (max 3 sentences)\n"
@@ -1000,6 +1131,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "Text Position: [Top-Left / Top-Center / Top-Right] ([specific placement description based on the image — e.g., 'above the person's head, on the white wall/ceiling area'])\n"
         "Text Effect: [describe stroke/outline color + shadow details — e.g., 'White stroke (thick outline, 4-5px) + black drop shadow for maximum pop']\n"
         "Font Style: Bold, Impact/Block style — extra thick weight\n"
+        "Face In Design: [Yes / No — Yes ONLY if the final design should include a human face]\n"
         "Additional Design Notes:\n\n"
         "[Describe what you see in the reference image — person, setting, products, background]\n\n"
         "[Specific placement instruction — WHERE exactly to place text relative to the person/products. e.g., 'Place the text ABOVE his head in the clean ceiling/wall zone — do NOT cover his face']\n\n"
@@ -1015,12 +1147,12 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "- Give SPECIFIC placement instructions based on what you see (not generic)\n"
         "- Best performing text colors for Indian YouTube: Yellow (#FFD700), White (#FFFFFF), Red (#FF0000), Orange (#FF6600)\n"
         "- The designer will keep the base image EXACTLY as-is and only add text on top\n"
-        "- Text + face must live in the 25%-65% vertical band — that band survives BOTH YT Shorts UI AND\n"
-        "  the Instagram profile-grid 4:5 crop. Top 12% and bottom 25% will be cropped/covered.\n"
-        "- FACE-FIRST RULE: The thumbnail MUST have a clear human face making eye contact (shocked or\n"
-        "  pointing-at-text expression). If the reference image lacks a face, instruct the designer to\n"
-        "  ADD a realistic Indian factory-owner face (man 30-45y, simple shirt, warm lighting) in the\n"
-        "  upper-center band. Faces drive 2-3× higher CTR than object-only thumbnails on Instagram.\n\n"
+        "- Text + any face must live in the 25%-70% vertical band — that band survives BOTH YT Shorts UI AND\n"
+        "  the Instagram profile-grid 4:5 crop. Nothing critical above 25% or below 70%.\n"
+        "- FACE IS A JUDGMENT CALL: customer-story/reaction content benefits from a clear face making eye\n"
+        "  contact; technical/specs/how-to content performs better with a bold product close-up as the hero.\n"
+        "  State your decision in the 'Face In Design' field — the designer has detailed conditional face\n"
+        "  rules and will execute your call.\n\n"
         f"TOPIC: {topic}\n"
         f"HOOK: {hook_text}\n"
         f"SCRIPT:\n{script_text[:1500]}\n"
@@ -1060,11 +1192,14 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         # Extract the thumbnail text from the brief for logging
         thumb_text = "?"
         thumb_color = "?"
+        thumb_face = False
         for line in brief_text.split("\n"):
             if line.strip().startswith("Thumbnail Text:"):
                 thumb_text = line.split(":", 1)[1].strip()
             elif line.strip().startswith("Text Color:"):
                 thumb_color = line.split(":", 1)[1].strip()
+            elif line.strip().startswith("Face In Design:"):
+                thumb_face = line.split(":", 1)[1].strip().lower().startswith("y")
 
         # Enforce strict 3-4 word limit — truncate if Claude exceeded it
         words = thumb_text.split()
@@ -1083,6 +1218,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
             "brief_text": brief_text,
             "text": thumb_text,
             "color": thumb_color,
+            "face": thumb_face,
         }
 
     except Exception as e:
@@ -1171,15 +1307,11 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "STYLE: Bold, high-contrast, attention-grabbing — typical top Indian YouTube channel style\n\n"
             f"{claude_brief}\n\n"
             "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
-            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid crops this to 4:5 (~1080x1350)\n"
-            "  centered — meaning the TOP 285px (~15%) and BOTTOM 285px (~15%) are CUT OFF on the profile grid.\n"
-            "  YouTube Shorts UI also covers the bottom.\n"
-            "- TOP 20% of image: HARD-BLOCKED. NEVER place text, faces, or critical elements here. They will\n"
-            "  be cropped off on the Instagram profile grid. This is non-negotiable.\n"
-            "- BOTTOM 25% of image: BLOCKED (YouTube Shorts UI + IG grid crop). NEVER place text here.\n"
-            "- LEFT/RIGHT 8%: edge margin. Avoid text here.\n"
-            "- ALL critical text and any face MUST sit fully within 22%-72% from the top — that is the\n"
-            "  visible center band that survives both YT Shorts UI and IG profile-grid 4:5 crop.\n\n"
+            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid crops it to 4:5 and\n"
+            "  YouTube Shorts UI covers the bottom edge.\n"
+            "- ONE RULE: ALL text and any face must sit FULLY inside the 25%-70% vertical band\n"
+            "  (y = 480px to 1344px on the 1920px canvas). NOTHING critical above 25% or below 70%.\n"
+            "- LEFT/RIGHT 8%: edge margin. Avoid text here.\n\n"
             "FACE RULE (CONDITIONAL — apply judgment based on the script content):\n"
             "- IF the brief describes a customer-story / conversation / reaction video (someone said X, kisi ne\n"
             "  bola, customer complained, etc.) → DO add a clear Indian male face (30-45y, factory-owner look)\n"
@@ -1217,7 +1349,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             "- ✅ Add bold readable text with proper stroke/shadow as specified in the brief\n"
             "- ✅ Follow the brief EXACTLY — the brief has specific placement and color instructions\n"
             "- ✅ Generate ONE best thumbnail\n"
-            "- ✅ Respect safe zones — no text in bottom 40% for Reels\n"
+            "- ✅ Respect safe zones — ALL text inside the 25%-70% vertical band\n"
         )
 
         output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
@@ -1262,6 +1394,12 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                                 print(f"   ⚠️ AI thumbnail file not created or too small")
                                 break
                             print(f"   ✅ AI thumbnail generated: {output_path}")
+                            COVER_META.update({
+                                "cover_text": brief.get("text"),
+                                "cover_color": brief.get("color"),
+                                "cover_path": "ai",
+                                "cover_face": brief.get("face", False),
+                            })
                             if cost_tracker:
                                 cost_tracker.track_gemini_image()
                             return output_path
@@ -1963,8 +2101,14 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             print(f"   ℹ️ Insights unavailable — publishing immediately")
 
         # Step 2: Create media container (Reels)
-        topic_hashtags = get_topic_hashtags(topic)
-        ig_caption = f"{title}\n\n{description.split(chr(10))[0]}\n\n{' '.join(topic_hashtags[:10])}\n\n📦 Order: Sale91.com"
+        ig_hashtags = get_ig_hashtags(topic)
+        ig_caption = (
+            f"{get_ig_seo_line(topic, title)}\n\n"
+            f"{description.split(chr(10))[0]}\n\n"
+            f"{get_ig_cta_line()}\n\n"
+            f"📦 Order: Sale91.com (MOQ 10 pcs, Pan India)\n\n"
+            f"{' '.join(ig_hashtags)}"
+        )
 
         container_data = {
             "media_type": "REELS",
@@ -1991,6 +2135,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 print(f"   🖼️ Instagram cover image set: {cover_url}")
             except Exception as e:
                 print(f"   ⚠️ Cover image upload failed, Instagram will auto-select: {e}")
+                COVER_META.update({"cover_text": None, "cover_color": None, "cover_path": None, "cover_face": None})
 
         if schedule_for_later and schedule_timestamp:
             # Schedule instead of instant publish — IG handles it
@@ -2443,7 +2588,7 @@ def get_new_channel_total_views():
 # INSTAGRAM ENGAGEMENT FEEDBACK LOOP
 # ═══════════════════════════════════════════════════════════════════════
 
-def save_ig_upload_record(ig_media_id, title, topic):
+def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
     """Save Instagram media ID after upload for later engagement checking."""
     try:
         records = []
@@ -2454,13 +2599,20 @@ def save_ig_upload_record(ig_media_id, title, topic):
         ist = pytz.timezone(TIMEZONE)
         now = datetime.now(ist)
 
-        records.append({
+        rec = {
             "media_id": str(ig_media_id),
             "title": title,
             "topic": topic,
             "published_at": now.isoformat(),
             "checked": False,
-        })
+        }
+        # Cover-design metadata — lets the weekly thumbnail research learn which covers work
+        if cover_meta and cover_meta.get("cover_text"):
+            rec["cover_text"] = cover_meta.get("cover_text")
+            rec["cover_color"] = cover_meta.get("cover_color")
+            rec["cover_path"] = cover_meta.get("cover_path")
+            rec["cover_face"] = cover_meta.get("cover_face")
+        records.append(rec)
 
         with open(IG_ENGAGEMENT_FILE, "w") as f:
             json.dump(records, f, indent=2, ensure_ascii=False)
@@ -2831,7 +2983,15 @@ def check_instagram_engagement():
                 media_data = media_resp.json()
 
                 if "error" in media_data:
-                    print(f"   ⚠️ IG insights failed for {media_id}: {media_data['error'].get('message', '')}")
+                    err_msg = media_data["error"].get("message", "")
+                    print(f"   ⚠️ IG insights failed for {media_id}: {err_msg}")
+                    fails = record.get("insight_fail_count", 0) + 1
+                    record["insight_fail_count"] = fails
+                    updated = True
+                    if fails >= 3:
+                        record["checked"] = True
+                        record["check_failed"] = True
+                        print(f"   🪦 {media_id}: {fails} strikes — marking checked (media likely deleted)")
                     continue
 
                 # Fetch Reels-specific insights.
@@ -2920,7 +3080,7 @@ def get_top_performing_ig_topics(n=5):
         with open(IG_ENGAGEMENT_FILE, "r") as f:
             records = json.load(f)
 
-        checked = [r for r in records if r.get("checked")]
+        checked = [r for r in records if r.get("checked") and not r.get("check_failed")]
         if not checked:
             return []
 
@@ -2947,7 +3107,7 @@ def get_top_performing_ig_categories():
         with open(IG_ENGAGEMENT_FILE, "r") as f:
             records = json.load(f)
 
-        checked = [r for r in records if r.get("checked")]
+        checked = [r for r in records if r.get("checked") and not r.get("check_failed")]
         if not checked:
             return []
 
@@ -2986,7 +3146,7 @@ def get_ig_engagement_summary():
     try:
         with open(IG_ENGAGEMENT_FILE, "r") as f:
             records = json.load(f)
-        checked = [r for r in records if r.get("checked")]
+        checked = [r for r in records if r.get("checked") and not r.get("check_failed")]
         if not checked:
             return empty
 
@@ -3005,6 +3165,7 @@ def get_ig_engagement_summary():
             "title": r.get("title", ""), "views": r.get("views", 0),
             "saves": r.get("saves", 0), "shares": r.get("shares", 0),
             "save_rate": r.get("save_rate", 0), "share_rate": r.get("share_rate", 0),
+            "cover_text": r.get("cover_text", ""),
         } for r in by_views[:5]]
 
         # Top by save rate (min 100 views to avoid noise)
@@ -3718,16 +3879,21 @@ Mimic the patterns of TOP performers; AVOID the patterns of FLOPS.
 You are writing EXACTLY like a real Indian textile manufacturer talks — but using
 MICRO-STORYTELLING to hook the viewer in the first 2 seconds.
 
-TARGET LENGTH: 8-12 sentences. The Short should be 45-55 seconds long when spoken naturally.
-This is NOT a quick tip — this is a MINI STORY with a beginning, middle, and end.
+TARGET LENGTH: 6-8 sentences. The Short should be 30-35 seconds long when spoken naturally.
+Tight and dense — every sentence earns its place. Still a MINI STORY with a
+beginning, middle, and end, just leaner.
 
 STRUCTURE (follow this EVERY time):
-1. HOOK (first 1-2 sentences) — Start with a REAL STORY, shocking fact, or customer incident:
-   - "Ek customer aaya tha, bola print dhul gaya 2 wash mein..."
-   - "Pehle main bhi yahi galti karta tha..."
-   - "Ek baar ek banda 500 piece ka order cancel karwa diya..."
-   - "Log sochte hai GSM jyada toh better... galat hai"
-   - "Maine ek tshirt 2 saal pehni, ek 2 hafte mein kharab..."
+1. HOOK (first sentence — HARD 2-SECOND MANDATE) — The FIRST SENTENCE must be a
+   PATTERN-INTERRUPT built on LOSS-AVERSION or a SHOCKING NUMBER. Max 10 words.
+   It must contain a ₹ amount, a piece count, or a concrete loss.
+   NEVER a greeting, NEVER context-setting, NEVER a definition, NEVER "aaj main
+   batata hoon". Drop the viewer MID-STORY at the moment of damage:
+   - "Ye galti ₹40,000 ki padi."
+   - "500 piece ka order, 2 wash mein barbaad."
+   - "Ek customer ne ₹50,000 ka order cancel kar diya."
+   - "200 GSM bola tha, 160 nikla."
+   Sentence 2 then opens the story ("Hua ye tha ki...").
 
 2. PROBLEM BUILD-UP (2-3 sentences) — Build the tension, explain what went wrong:
    - "Problem ye thi ki usne check hi nahi kiya..."
@@ -3773,9 +3939,10 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
-1. 8-12 SENTENCES for a 45-55 second Short. Start with story/hook, build up, drop knowledge, end naturally.
-2. FIRST SENTENCE = HOOK — customer story, personal experience, ya surprising fact.
-   NEVER start with a definition or explanation. ALWAYS start with a STORY.
+1. 6-8 SENTENCES for a 30-35 second Short. Hook hard, build fast, drop knowledge, loop back to the hook at the end.
+2. FIRST SENTENCE = LOSS/NUMBER PATTERN-INTERRUPT — max 10 words, must carry a
+   ₹ amount, piece count, or concrete loss. NEVER a greeting, definition, or
+   context-setting. The story unfolds from sentence 2.
 3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
    Give PRACTICAL action: "cut kar lo", "weight kar lo", "try kar lo"
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
@@ -3802,8 +3969,8 @@ collar ki complaint kabhi nahi aayegi... simple hai."
       - "200 GSM aur 220 GSM dono same lagte hain... but printing pe ek hi survive karta hai."
 
 13. CLOSE THE LOOP AT 70-80% — reveal the answer/lesson roughly 4/5ths into the script,
-    NOT at the very end. Top-tier Reels open a loop, build tension, deliver payoff with
-    ~10-15s of script left for "so what to do" — that 10s is where SHARES happen.
+    NOT at the very end. Open a loop, build tension, deliver payoff with ~6-8s of
+    script left for "so what to do" — that tail is where SHARES happen.
 
 14. ONE SHOCKING NUMBER per script — Indian B2B Reels viewers SAVE for numbers they
     can use ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). Bury one
@@ -3829,16 +3996,25 @@ collar ki complaint kabhi nahi aayegi... simple hai."
     A ₹1.2 lakh loss → make it "₹1.5 lakh" or "₹1 lakh" in the script.
     A ₹3.4 crore turnover → "₹3.5 crore" or "₹3 crore".
 
+14c. ONE SCREENSHOT MOMENT (mid-video, ~50-65% mark) — write ONE dense 1-2 sentence
+    "reference card" the viewer will pause, screenshot, and share: compact rate math
+    ("₹140 fabric + ₹18 stitching + ₹22 print = ₹180 landed"), a GSM-to-use-case map
+    ("160 summer, 200 printing, 240 premium"), or a 3-point check ("bill, GSM,
+    sample — teeno check karo"). Make it self-contained — numbers + labels, no story
+    words — so that 2-3s subtitle frame alone is worth saving. Mirror it in
+    script_english with the SAME numbers in the SAME order.
+
 15. STRUCTURE FOR REELS GRID DISCOVERY — a viewer scrolling Explore/Reels feed sees
     your video next to 30 others. The first 1.5 seconds must look DIFFERENT from
     a generic talking-head Short. The hook visual + bold caption do this — script's
     job is to EARN the hold past 3s.
 
-16. NEVER end on a slow trailing-off when the script could END on the saveable insight.
-    The Hindi "...bas yehi hota hai, simple hai" style is good for YT but it costs the
-    Reels share-rate. Better: end the LAST sentence with the actionable takeaway, then
-    let the outro card carry the rest. Trade off: slightly less natural-feeling close
-    in exchange for higher save-and-share rate on IG.
+16. LOOP-BACK ENDING (CRITICAL FOR REPLAYS) — the FINAL line must semantically
+    CONNECT BACK to the opening hook so the video replays seamlessly: reuse the
+    hook's key number, word, or image ("...aur wahi ₹40,000 wali galti kabhi nahi
+    hogi."). A viewer who loops = double watch time. NO spoken CTA anywhere —
+    never say follow/subscribe/website/link/save in the voiceover; the on-screen
+    outro card carries that.
     Specificity = credibility. "200 GSM" is better than "thick fabric".
 
 ━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
@@ -3918,11 +4094,15 @@ RULES:
 1. Last sentence: 3-7 words MAX.
 2. Ends with strong period.
 3. Use a DIFFERENT pattern every video (rotate A/B/C/D/E).
-4. NEVER use long narrative phrases like "complaint kabhi nahi aayegi"
+4. LOOP-BACK: the wrap-up sentence (the one BEFORE the short closer) must echo
+   the hook's key number/word/image, so the ending flows straight back into the
+   opening when the video replays.
+5. NO spoken CTA — never follow/subscribe/website/link in the voiceover.
+6. NEVER use long narrative phrases like "complaint kabhi nahi aayegi"
    or "ye galti kabhi nahi hogi" as the FINAL sentence — those are
    mid-narrative phrases. Use them in the wrap-up sentence BEFORE the
    final short closer if you want.
-5. The ending should match Ketu's actual speaking style — direct,
+7. The ending should match Ketu's actual speaking style — direct,
    action-oriented, sometimes with "theek hai" closer.
 
 ━━━ NATURAL SPEECH FILLERS (for human feel) ━━━
@@ -3964,19 +4144,20 @@ Write in ROMAN HINGLISH — Hindi words in ENGLISH LETTERS (not Devanagari).
 
 ━━━ HOOK TEXT (for on-screen text overlay) ━━━
 
-Write a short CURIOSITY-DRIVEN hook text (max 4 words) that appears on screen
-for the first 1.5 seconds. This must make the viewer STOP SCROLLING instantly.
+Write a 3-6 word LOSS/NUMBER hook text that appears on screen for the first
+2 seconds. It must be PAIRED with the spoken first sentence — same number,
+same loss — so eye and ear hit the same pattern-interrupt together.
 
-Good hook texts:
-- "YE GALTI MAT KARNA..."
-- "99% LOG YE NAHI JAANTE"
-- "EK CUSTOMER NE BATAYA..."
-- "SHOCKING QUALITY DIFFERENCE..."
-- "PEHLE YE CHECK KARO"
+Good hook texts (number/loss driven, paired with the spoken hook):
+- "₹40,000 KI GALTI"
+- "500 PIECE BARBAAD"
+- "2 WASH MEIN PRINT KHATAM"
+- "200 BOLA, 160 NIKLA"
 
-Bad hook texts (boring, no curiosity):
+Bad hook texts (no number, no loss, generic):
 - "GSM KA MATLAB KYA HAI"
 - "FABRIC QUALITY TIPS"
+- "YE GALTI MAT KARNA"
 
 ━━━ VIDEO PROMPT RULES ━━━
 
@@ -3988,6 +4169,7 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Include camera angle, lighting, movement, and specific objects
 - Focus on t-shirt/textile/manufacturing/printing industry visuals
 - CRITICAL: Every clip must START with a visible, well-lit scene from frame 1. NO black intros, NO fade-from-black, NO dark openings. Begin with action immediately.
+- CLIP 1 MUST OPEN MID-ACTION — frame 1 is already INSIDE the event: fabric already tearing, print already peeling under a thumb, rejected stack already hitting the table. NO establishing shot, NO hands reaching toward an object, NO scene-setting. The damage/drama is visible in the very first frame.
 - Be SPECIFIC: "Close-up of Indian man's hands holding a thick white cotton
   round-neck t-shirt, turning it to show the smooth bio-washed fabric texture,
   warm indoor lighting, slight camera dolly forward" — NOT "a tshirt"
@@ -4022,7 +4204,7 @@ paste it across all 5), then describe that clip's scene in detail.
 {_get_recent_clip_prompts()}
 
 The 5 clips should follow the story arc:
-- Clip 1: HOOK — the problem or dramatic moment
+- Clip 1: HOOK — opens MID-ACTION on the damage/problem already happening (not about to happen)
 - Clip 2: CONTEXT — setting the scene, showing the product/situation
 - Clip 3: EXPLANATION — the comparison or process being discussed
 - Clip 4: DEMONSTRATION — showing the technique, test, or method
@@ -4032,11 +4214,11 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
     "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
-    "script_voice": "The ROMAN HINGLISH script. 8-12 sentences for 45-55 seconds. NO website. NO selling. Pure knowledge with storytelling.",
+    "script_voice": "The ROMAN HINGLISH script. 6-8 sentences for 30-35 seconds spoken. First sentence = loss/number pattern-interrupt (max 10 words). Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
     "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
-    "hook_text": "Max 4 words, UPPERCASE, punchy curiosity-driven text for on-screen hook overlay",
+    "hook_text": "3-6 words, UPPERCASE, loss/number driven, paired with the spoken first sentence (same number/loss)",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
-    "video_prompt_1": "HOOK scene — the problem or dramatic moment. 40-80 words.",
+    "video_prompt_1": "HOOK scene — opens MID-ACTION, damage/drama already happening in frame 1. 40-80 words.",
     "video_prompt_2": "CONTEXT scene — setting up the situation. 40-80 words.",
     "video_prompt_3": "EXPLANATION scene — showing the comparison or process. 40-80 words.",
     "video_prompt_4": "DEMONSTRATION scene — the technique or test being shown. 40-80 words.",
@@ -4312,9 +4494,7 @@ Custom printing businesses | Merch brands | Corporate orders
     for t in topic_specific:
         if t.lower() not in [x.lower() for x in all_tags]:
             all_tags.append(t)
-    for t in ["shorts", "youtubeshorts", "viral", "trending"]:
-        if t not in [x.lower() for x in all_tags]:
-            all_tags.append(t)
+    # Generic boosters removed — they waste tag budget and add zero topical relevance.
     all_tags = sanitize_tags(all_tags[:30])
     print(f"   🏷️  Tags ({len(all_tags)}): {all_tags[:5]}{'...' if len(all_tags) > 5 else ''}")
 
@@ -10547,6 +10727,7 @@ def main():
     #   - Each English sentence inherits its Hindi counterpart's timing
     #   - Long English sentences split into smaller subtitle pieces by MAX_SUBTITLE_DURATION
     subtitle_segments = []
+    karaoke_words = []   # [{"text","start","end"}] — Roman-Hinglish words w/ Whisper timing
     sub_source = script_english if script_english else script_voice
     audio_clip_dur = AudioFileClip(audio_path).duration
 
@@ -10570,8 +10751,14 @@ def main():
         wmodel = whisper.load_model("small")
         result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
         # Whisper returns segments — typically sentence-ish. Use those for timing.
+        # Also keep WORD-level timestamps (timing only — Whisper text is Devanagari, no CI font).
         whisper_segs = [
-            {"start": float(s["start"]), "end": float(s["end"])}
+            {"start": float(s["start"]), "end": float(s["end"]),
+             "words": [
+                 {"start": float(w["start"]), "end": float(w["end"])}
+                 for w in (s.get("words") or [])
+                 if w.get("end", 0) > w.get("start", 0)
+             ]}
             for s in result.get("segments", [])
             if s.get("end", 0) > s.get("start", 0)
         ]
@@ -10613,6 +10800,50 @@ def main():
                 subtitle_segments.append({
                     "text": eng, "start": idx * seg_dur, "end": (idx + 1) * seg_dur
                 })
+
+        # ── Karaoke word timings ──
+        # Map script_voice (Roman Hinglish = the ACTUAL spoken words) onto Whisper's
+        # word timestamps, sentence-bucketed so drift stays within one sentence.
+        try:
+            script_sents = [s.strip() for s in _re_subs.split(r'(?<=[.!?])\s+', script_voice.strip()) if s.strip()]
+            if whisper_segs and script_sents:
+                n_sc, n_wseg = len(script_sents), len(whisper_segs)
+                for k, sent in enumerate(script_sents):
+                    if n_sc == n_wseg:
+                        bucket = [whisper_segs[k]]
+                    else:
+                        _r = n_wseg / n_sc
+                        si = min(int(k * _r), n_wseg - 1)
+                        ei = min(max(int((k + 1) * _r) - 1, si), n_wseg - 1)
+                        bucket = whisper_segs[si:ei + 1]
+                    # Devanagari slips render as tofu (CI fonts are Latin-only) — strip them
+                    s_words = [_re_subs.sub(r"[ऀ-ॿ]+", "", w) for w in sent.split()]
+                    s_words = [w for w in s_words if w.strip()]
+                    if not s_words:
+                        continue
+                    wtimes = [w for bseg in bucket for w in bseg.get("words", [])]
+                    if wtimes:
+                        m, n = len(wtimes), len(s_words)
+                        for j, sw in enumerate(s_words):
+                            a = wtimes[min(int(j * m / n), m - 1)]
+                            nxt = wtimes[min(int((j + 1) * m / n), m - 1)] if j + 1 < n else None
+                            st = a["start"]
+                            en = nxt["start"] if nxt and nxt["start"] > st else a["end"]
+                            karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
+                    else:
+                        s_start, s_end = bucket[0]["start"], bucket[-1]["end"]
+                        per = max(0.08, (s_end - s_start) / len(s_words))
+                        for j, sw in enumerate(s_words):
+                            karaoke_words.append({"text": sw, "start": s_start + j * per, "end": s_start + (j + 1) * per})
+                for j in range(1, len(karaoke_words)):
+                    if karaoke_words[j]["start"] < karaoke_words[j - 1]["start"] + 0.02:
+                        karaoke_words[j]["start"] = karaoke_words[j - 1]["start"] + 0.02
+                    if karaoke_words[j]["end"] < karaoke_words[j]["start"] + 0.06:
+                        karaoke_words[j]["end"] = karaoke_words[j]["start"] + 0.06
+                print(f"   🎤 Karaoke timing: {len(karaoke_words)} script words mapped to Whisper word timestamps")
+        except Exception as _ke:
+            karaoke_words = []
+            print(f"   ⚠️ Karaoke timing failed: {_ke}")
 
         # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
         try:
@@ -10791,8 +11022,82 @@ def main():
     # ── 8. Overlays ──
     layers = [base_video]
 
-    # Subtitles — CENTER SCREEN with keyword highlighting
-    if ADD_SUBTITLES and subtitle_segments:
+    # Subtitles — karaoke word-by-word highlight (actual spoken Roman-Hinglish words)
+    def _karaoke_font(size):
+        from PIL import ImageFont
+        for p in KARAOKE_FONT_CANDIDATES:
+            if os.path.exists(p):
+                return ImageFont.truetype(p, size)
+        return ImageFont.load_default()
+
+    def _karaoke_line_img(word_texts, hi_idx):
+        """One caption line as RGBA array; word hi_idx yellow, rest white, black stroke."""
+        from PIL import Image as _KImg, ImageDraw as _KDraw
+        import numpy as _knp
+        fsize = KARAOKE_FONTSIZE
+        while True:
+            font = _karaoke_font(fsize)
+            gap = int(fsize * 0.35)
+            dd = _KDraw.Draw(_KImg.new("RGBA", (8, 8)))
+            boxes = [dd.textbbox((0, 0), wt, font=font, stroke_width=KARAOKE_STROKE_W) for wt in word_texts]
+            widths = [b[2] - b[0] for b in boxes]
+            total_w = sum(widths) + gap * (len(word_texts) - 1)
+            if total_w <= KARAOKE_MAX_LINE_W or fsize <= 40:
+                break
+            fsize -= 6
+        line_h = max(b[3] - b[1] for b in boxes)
+        pad = KARAOKE_STROKE_W + 6
+        img = _KImg.new("RGBA", (total_w + pad * 2, line_h + pad * 2), (0, 0, 0, 0))
+        d = _KDraw.Draw(img)
+        x = pad
+        for i, (wt, b, w_px) in enumerate(zip(word_texts, boxes, widths)):
+            color = KARAOKE_HIGHLIGHT_COLOR if i == hi_idx else KARAOKE_BASE_COLOR
+            d.text((x - b[0], pad - b[1]), wt, font=font, fill=color,
+                   stroke_width=KARAOKE_STROKE_W, stroke_fill=KARAOKE_STROKE_COLOR)
+            x += w_px + gap
+        return _knp.array(img)
+
+    karaoke_rendered = False
+    if ADD_SUBTITLES and KARAOKE_CAPTIONS and karaoke_words:
+        try:
+            k_lines, cur_line = [], []
+            for kw in karaoke_words:
+                cur_line.append(kw)
+                if len(cur_line) >= WORDS_PER_SUBTITLE or kw["text"].rstrip().endswith((".", "!", "?")):
+                    k_lines.append(cur_line); cur_line = []
+            if cur_line:
+                k_lines.append(cur_line)
+            n_word_clips = 0
+            # Build clips locally — layers only gets them if ALL succeed, else a
+            # partial karaoke set would composite together with the fallback subs
+            k_clips = []
+            for li, line in enumerate(k_lines):
+                line_start = line[0]["start"]
+                line_end = line[-1]["end"] + 0.15
+                if li + 1 < len(k_lines):
+                    line_end = min(line_end, k_lines[li + 1][0]["start"])
+                texts = [(w["text"].strip().strip('.,!?…"') or w["text"].strip()) for w in line]
+                for wi, w in enumerate(line):
+                    w_start = max(line_start, w["start"])
+                    w_end = line[wi + 1]["start"] if wi + 1 < len(line) else line_end
+                    w_end = max(w_end, w_start + 0.04)
+                    arr = _karaoke_line_img(texts, wi)
+                    ih, iw = arr.shape[0], arr.shape[1]
+                    ic = (ImageClip(arr)
+                          .set_position(((VIDEO_WIDTH - iw) // 2,
+                                         int(VIDEO_HEIGHT * KARAOKE_Y_PERCENT) - ih // 2))
+                          .set_start(w_start)
+                          .set_end(min(w_end, total_duration)))
+                    k_clips.append(ic)
+                    n_word_clips += 1
+            layers.extend(k_clips)
+            karaoke_rendered = True
+            print(f"   ✅ Karaoke captions: {len(k_lines)} lines / {n_word_clips} word-states")
+        except Exception as e:
+            print(f"   ⚠️ Karaoke captions failed: {e} — falling back to segment subtitles")
+
+    # Fallback — old segment-level English captions (unchanged)
+    if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:
         for seg in subtitle_segments:
             dur = seg["end"] - seg["start"]
             if dur < 0.1: continue
@@ -10861,7 +11166,7 @@ def main():
     if ADD_HOOK_TEXT:
         try:
             hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
-            hook_words = hook_line.split()[:4]
+            hook_words = hook_line.split()[:6]
 
             # First word = yellow (attention grab), rest = white
             first_word = hook_words[0] if hook_words else ""
@@ -11111,7 +11416,7 @@ def main():
                         custom_pin = (
                             f"📖 Full guide with photos & FAQs: {blog_url_preview}\n\n"
                             f"📦 Order plain t-shirts (MOQ 10): https://sale91.com\n\n"
-                            f"🤔 Aapka next question kya hai? Comment mein puchho 👇"
+                            f"{get_pin_tail()}"
                         )
                         pin_comment(youtube, vid_id, comment_text=custom_pin)
 
@@ -11165,7 +11470,7 @@ def main():
         # Use IG-specific title (different patterns work on Reels Explore vs YT search)
         ig_media_id = cross_post_to_instagram(output_path, ig_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
         if ig_media_id and not str(ig_media_id).startswith("test:"):
-            save_ig_upload_record(ig_media_id, ig_title, fresh_topic)
+            save_ig_upload_record(ig_media_id, ig_title, fresh_topic, cover_meta=COVER_META)
 
         # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
         fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"

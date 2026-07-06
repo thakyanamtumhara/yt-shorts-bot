@@ -29,6 +29,11 @@ on:
         required: false
         type: boolean
         default: false
+      enable_subtitles:
+        description: 'Enable karaoke subtitles (ADD_SUBTITLES=1 — off on cron runs until visually verified)'
+        required: false
+        type: boolean
+        default: false
       test_thumbnail:
         description: 'Test AI thumbnail only (no video/upload — just generates thumbnail and saves as artifact)'
         required: false
@@ -120,6 +125,8 @@ jobs:
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
           NEW_TEST_MODE: ${{ github.event.inputs.new_test_mode }}
+          # Karaoke captions stay OFF on cron runs (empty input → '0') until visually verified
+          ADD_SUBTITLES: ${{ github.event.inputs.enable_subtitles == 'true' && '1' || '0' }}
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -159,6 +166,7 @@ jobs:
           git add source_channel_insights.json || true
           git add blog_history.json || true
           git add ig_engagement_history.json || true
+          git add thumbnail_research.json || true
           git add reddit_drafts/ || true
           git add ig_drafts/ || true
           git commit -m "Update tracking files (topic + cost + engagement + clips + source insights + blog + IG + reddit) [skip ci]" || true
@@ -177,7 +185,7 @@ jobs:
           retention-days: 7
 
       - name: Upload test video
-        if: ${{ github.event.inputs.test_mode == 'true' }}
+        if: ${{ github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: test-video
