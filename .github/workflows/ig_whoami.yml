@@ -1,0 +1,60 @@
+name: IG Token Whoami (which app + scopes + expiry)
+
+# Diagnostic: prints which Meta app issued INSTAGRAM_ACCESS_TOKEN, the granted
+# scopes, expiry, and the IG account it acts as. Never prints the token itself.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect token
+        env:
+          IG_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          IG_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: |
+          python3 - << 'PY'
+          import json, os, urllib.request, urllib.parse
+
+          tok = os.environ["IG_TOKEN"].strip()
+          app_id = os.environ.get("FB_APP_ID", "").strip()
+          app_secret = os.environ.get("FB_APP_SECRET", "").strip()
+          ig_id = os.environ.get("IG_BUSINESS_ID", "").strip()
+
+          def get(url):
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  return {"http_error": e.code, "body": json.loads(e.read().decode() or "{}")}
+
+          print("── debug_token (via FB_APP_ID app credentials) ──")
+          if app_id and app_secret:
+              q = urllib.parse.urlencode({"input_token": tok, "access_token": f"{app_id}|{app_secret}"})
+              d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}")
+              data = d.get("data", d)
+              for k in ("app_id", "application", "type", "issued_at", "expires_at",
+                        "data_access_expires_at", "is_valid", "scopes", "granular_scopes",
+                        "user_id", "profile_id"):
+                  if k in data:
+                      print(f"  {k}: {data[k]}")
+              if "http_error" in d:
+                  print(f"  debug_token failed: {d}")
+                  print("  (means the token was NOT issued by the app in FB_APP_ID secret)")
+          else:
+              print("  FB_APP_ID/FB_APP_SECRET secrets missing")
+
+          print("── token acts as (graph.instagram.com/me) ──")
+          q = urllib.parse.urlencode({"fields": "id,user_id,username,account_type", "access_token": tok})
+          print(" ", get(f"https://graph.instagram.com/v21.0/me?{q}"))
+
+          if ig_id:
+              print("── IG business account (graph.facebook.com path) ──")
+              q = urllib.parse.urlencode({"fields": "username,name,followers_count", "access_token": tok})
+              print(" ", get(f"https://graph.facebook.com/v21.0/{ig_id}?{q}"))
+          PY

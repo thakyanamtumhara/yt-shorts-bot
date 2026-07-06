@@ -99,6 +99,10 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          # Voice config picked by Ketu 2026-07-06 (A/B winner V2):
+          # eleven_v3 model, no post-slowdown (VOICE_TEMPO 1.0 disables atempo 0.95)
+          ELEVENLABS_MODEL: eleven_v3
+          VOICE_TEMPO: "1.0"
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           FAL_KEY: ${{ secrets.FAL_KEY }}
