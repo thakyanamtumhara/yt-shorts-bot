@@ -291,22 +291,24 @@ SCHEDULE_PUBLISH = True
 TIMEZONE = "Asia/Kolkata"
 UPLOAD_AS_SHORT = True
 
-# A/B Test Publish Times — rotate between 3 slots to find best engagement
+# Publish slots — labels kept stable; 21:30 retired from rotation but left in
+# the list so historical analytics slot-mapping keeps bucketing old videos.
 # Each slot: (hour, minute, label)
 PUBLISH_SLOTS = [
-    (21, 30, "9:30 PM"),   # Original — post-dinner scroll time
-    (11,  0, "11:00 AM"),  # Morning — chai break / office downtime
-    (19,  0, "7:00 PM"),   # Evening — commute / pre-dinner scroll
+    (21, 30, "9:30 PM"),   # RETIRED from rotation (median 31.5 views) — analytics bucket only
+    (11,  0, "11:00 AM"),  # Small A/B arm — chai break / office downtime
+    (19,  0, "7:00 PM"),   # WINNER — median 79 views (owner data, Jul 2026)
 ]
-# Rotation: Mon/Thu → 11 AM, Tue/Fri → 7 PM, Wed/Sat/Sun → 9:30 PM
+# Rotation: 19:00 IST dominant (owner data: 79 vs 31.5 median views);
+# Wednesday keeps the 11:00 A/B arm for continued signal.
 PUBLISH_SLOT_SCHEDULE = {
-    0: 1,  # Monday    → 11:00 AM
+    0: 2,  # Monday    → 7:00 PM
     1: 2,  # Tuesday   → 7:00 PM
-    2: 0,  # Wednesday → 9:30 PM
-    3: 1,  # Thursday  → 11:00 AM
+    2: 1,  # Wednesday → 11:00 AM (A/B arm)
+    3: 2,  # Thursday  → 7:00 PM
     4: 2,  # Friday    → 7:00 PM
-    5: 0,  # Saturday  → 9:30 PM
-    6: 0,  # Sunday    → 9:30 PM
+    5: 2,  # Saturday  → 7:00 PM
+    6: 2,  # Sunday    → 7:00 PM (unused — Sunday recap workflow)
 }
 
 # Files
@@ -1642,15 +1644,29 @@ def add_to_playlist(youtube, video_id, topic):
 # ═══════════════════════════════════════════════════════════════════════
 
 def get_instagram_best_time(ig_token, ig_business_id):
-    """Query Instagram Insights API to find the best posting hour today.
+    """Find the best IG posting slot from online_followers insights.
 
-    Uses the 'online_followers' metric which returns hourly follower
-    activity for each day of the week (0-23 hours, timezone of the account).
-    Returns a datetime (IST) for the next best posting slot, or None on failure.
+    online_followers (period=lifetime — the only supported period) returns one
+    entry per day for the last ~30 days; each entry's value is {hour: count}
+    with hours in UTC (NOT day-name keyed — the old parser assumed
+    {day_name: {hour: count}} and always failed). We aggregate across days,
+    convert UTC→IST, and pick the peak inside the 17:00-21:00 IST evening
+    window. Never returns None: falls back to 18:30 IST fixed (same evening
+    if possible, else tomorrow).
     """
     ist = pytz.timezone("Asia/Kolkata")
     now_ist = datetime.now(ist)
-    today_weekday = now_ist.weekday()  # 0=Mon, 6=Sun
+    min_lead = now_ist + timedelta(minutes=20)
+
+    def _fallback():
+        candidate = now_ist.replace(hour=18, minute=30, second=0, microsecond=0)
+        if candidate <= min_lead:
+            # 18:30 already passed — post later this evening rather than skipping a day
+            candidate = (now_ist + timedelta(minutes=30)).replace(second=0, microsecond=0)
+            if candidate.hour >= 22 or candidate.hour < 8:
+                candidate = (now_ist + timedelta(days=1)).replace(hour=18, minute=30, second=0, microsecond=0)
+        print(f"   🕐 IG fallback slot: {candidate.strftime('%d %b %I:%M %p IST')}")
+        return candidate
 
     try:
         resp = requests.get(
@@ -1664,70 +1680,56 @@ def get_instagram_best_time(ig_token, ig_business_id):
         )
         if resp.status_code != 200:
             print(f"   ⚠️ Instagram Insights API failed ({resp.status_code}): {resp.text[:120]}")
-            return None
+            return _fallback()
 
         data = resp.json().get("data", [])
-        if not data:
-            print(f"   ⚠️ No Instagram Insights data returned")
-            return None
+        values = data[0].get("values", []) if data else []
 
-        # online_followers returns {day_name: {hour: count}} for each day
-        values = data[0].get("values", [])
-        if not values:
-            return None
-
-        # Map day index to Instagram's day names
-        ig_day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        today_name = ig_day_names[today_weekday]
-
-        # Get today's hourly data
-        today_data = None
+        # Aggregate follower counts per UTC hour across all returned days
+        hour_totals = {}
         for v in values:
-            day_data = v.get("value", {})
-            if today_name in day_data:
-                today_data = day_data[today_name]
-                break
+            day_value = v.get("value") or {}
+            if not isinstance(day_value, dict):
+                continue
+            for hour_str, count in day_value.items():
+                try:
+                    h = int(hour_str)
+                    hour_totals[h] = hour_totals.get(h, 0) + int(count or 0)
+                except (ValueError, TypeError):
+                    continue
 
-        if not today_data:
-            # Fallback: try to get any day's data and use it
-            for v in values:
-                day_data = v.get("value", {})
-                if day_data:
-                    # Use the first available day
-                    first_day = list(day_data.keys())[0]
-                    today_data = day_data[first_day]
-                    print(f"   ℹ️ Using {first_day}'s data as proxy for today")
-                    break
+        if not hour_totals:
+            print("   ⚠️ No usable online_followers data")
+            return _fallback()
 
-        if not today_data:
-            return None
+        # UTC → IST (+5:30): utc_hour h maps to IST h+5 at :30 past
+        ist_totals = {}
+        for utc_hour, count in hour_totals.items():
+            ist_hour = (utc_hour + 5) % 24
+            ist_totals[ist_hour] = ist_totals.get(ist_hour, 0) + count
 
-        # today_data is {hour_str: follower_count}
-        # Find the top 3 hours with most online followers
-        sorted_hours = sorted(today_data.items(), key=lambda x: x[1], reverse=True)
-        print(f"   📊 Instagram audience peak hours today ({today_name}):")
-        for h, count in sorted_hours[:3]:
-            print(f"      {int(h):02d}:00 IST — {count:,} followers online")
+        # Restrict to the 17:00-21:00 IST evening window
+        window = {h: c for h, c in ist_totals.items() if 17 <= h <= 20}
+        if not window:
+            print("   ⚠️ No audience peak inside 17:00-21:00 IST window")
+            return _fallback()
 
-        # Pick the best hour that's still in the future (at least 15 min from now)
-        min_schedule_time = now_ist + timedelta(minutes=15)
-        for hour_str, _ in sorted_hours:
-            hour = int(hour_str)
-            candidate = now_ist.replace(hour=hour, minute=0, second=0, microsecond=0)
-            if candidate > min_schedule_time:
-                print(f"   🕐 Best posting slot: {candidate.strftime('%I:%M %p IST')} ({today_name})")
+        ranked = sorted(window.items(), key=lambda x: x[1], reverse=True)
+        print("   📊 IG audience peaks (17:00-21:00 IST window, 30-day sum):")
+        for h, c in ranked[:3]:
+            print(f"      {h:02d}:30 IST — {c:,} follower-hours")
+
+        for h, _ in ranked:
+            candidate = now_ist.replace(hour=h, minute=30, second=0, microsecond=0)
+            if candidate > min_lead:
+                print(f"   🕐 IG best slot: {candidate.strftime('%d %b %I:%M %p IST')}")
                 return candidate
-
-        # All peak hours have passed today — schedule for tomorrow's best hour
-        best_hour = int(sorted_hours[0][0])
-        tomorrow = now_ist + timedelta(days=1)
-        candidate = tomorrow.replace(hour=best_hour, minute=0, second=0, microsecond=0)
-        print(f"   🕐 Today's peak passed — scheduling for tomorrow {candidate.strftime('%I:%M %p IST')}")
-        return candidate
+        # Whole window already passed today
+        return _fallback()
 
     except Exception as e:
         print(f"   ⚠️ Instagram best-time detection failed: {e}")
-        return None
+        return _fallback()
 
 
 def refresh_instagram_token_if_needed():
@@ -2967,9 +2969,48 @@ def check_instagram_engagement():
             if media_id.startswith("test:"):
                 record["checked"] = True
                 continue
-            # Scheduled posts have "scheduled:" prefix — strip it for API call
+            # Scheduled posts store the CONTAINER id ("scheduled:<id>").
+            # After IG auto-publishes, the container is NOT insight-queryable —
+            # resolve to the real media id by matching a REELS media published
+            # within 12h after container creation.
             if media_id.startswith("scheduled:"):
-                media_id = media_id.replace("scheduled:", "", 1)
+                container_id = media_id.replace("scheduled:", "", 1)
+                resolved = None
+                ig_biz = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
+                if ig_biz:
+                    try:
+                        m_resp = requests.get(
+                            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_biz}/media",
+                            params={
+                                "fields": "id,timestamp,media_product_type",
+                                "limit": 15,
+                                "access_token": ig_token,
+                            },
+                            timeout=15,
+                        )
+                        candidates = []
+                        for m in m_resp.json().get("data", []):
+                            if m.get("media_product_type") != "REELS":
+                                continue
+                            try:
+                                ts = datetime.fromisoformat(
+                                    m.get("timestamp", "").replace("+0000", "+00:00")
+                                ).astimezone(ist)
+                            except Exception:
+                                continue
+                            delta_h = (ts - pub_time).total_seconds() / 3600
+                            if 0 <= delta_h <= 12:
+                                candidates.append((delta_h, m["id"]))
+                        if candidates:
+                            resolved = min(candidates)[1]
+                    except Exception:
+                        pass
+                if resolved:
+                    media_id = resolved
+                    record["media_id"] = resolved
+                    updated = True
+                else:
+                    media_id = container_id  # 3-strikes below retires it if truly gone
 
             # Fetch media insights from Instagram Graph API
             try:
@@ -4359,16 +4400,11 @@ def get_best_publish_slot(youtube):
             else:
                 print(f"   📊 No clear winner in own data — falling through")
 
-    # ── Priority 2: Source/main channel posting patterns ──
-    # PRIMARY when <1L views, FALLBACK when ≥1L views
-    source_slot = get_source_optimized_slot()
-    if source_slot:
-        hour_views = get_source_channel_posting_patterns()
-        print(f"   📊 Main channel posting patterns (IST):")
-        for h in sorted(hour_views):
-            print(f"      {h}:00 → {hour_views[h]:,} avg views")
-        print(f"   🏆 Main-channel-optimized: using {source_slot[2]}")
-        return source_slot
+    # ── Priority 2 RETIRED 2026-07-06: source-channel proxy no longer used.
+    # Owner's own-channel data (19:00 IST median 79 views vs 21:30 median 31.5)
+    # is encoded directly in PUBLISH_SLOT_SCHEDULE; letting the source channel's
+    # posting pattern override it defeated the reweighting. Own-channel
+    # analytics (Priority 1) resume automatically at ≥1L total views.
 
     # ── Priority 3: A/B rotation schedule ──
     return None

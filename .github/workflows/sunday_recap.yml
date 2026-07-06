@@ -3,7 +3,7 @@ name: Sunday Recap (Main Channel)
 # Sunday 13:30 UTC = 7:00 PM IST. Picks up the user's Saturday upload on
 # their main 40K-subs channel (CHANNEL_ID_2) and generates a blog post +
 # Reddit draft from it. Replaces Sunday's autonomous Veo daily-bot run
-# (daily_short.yml cron is `0 12 * * 1-6` — Mon-Sat only, no Sunday).
+# (daily_short.yml cron is `0 9 * * 1-6` — Mon-Sat only, no Sunday).
 #
 # Why Sunday evening (not morning):
 #   The user uploads original content Saturday evening (sometimes as late as
