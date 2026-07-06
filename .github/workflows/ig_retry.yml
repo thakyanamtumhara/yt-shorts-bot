@@ -1,0 +1,85 @@
+name: IG Reel Retry (manual)
+
+# Re-attempts an Instagram Reel publish for an already-hosted video
+# (e.g. after a transient 2207052 processing failure in the daily run).
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Public MP4 URL (CloudFront)'
+        required: true
+      cover_url:
+        description: 'Public cover PNG URL (optional)'
+        required: false
+        default: ''
+      caption:
+        description: 'Reel caption'
+        required: true
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Create container, poll, publish
+        env:
+          IG_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          IG_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          VIDEO_URL: ${{ inputs.video_url }}
+          COVER_URL: ${{ inputs.cover_url }}
+          CAPTION: ${{ inputs.caption }}
+        run: |
+          python3 - << 'PY'
+          import json, os, time, urllib.request, urllib.parse
+
+          tok = os.environ["IG_TOKEN"].strip()
+          ig = os.environ["IG_ID"].strip()
+          V = "v21.0"
+
+          def post(url, data):
+              req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode())
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  return {"error_http": e.code, "body": e.read().decode()[:300]}
+
+          def get(url, params):
+              q = urllib.parse.urlencode(params)
+              with urllib.request.urlopen(f"{url}?{q}", timeout=30) as r:
+                  return json.load(r)
+
+          data = {
+              "media_type": "REELS",
+              "video_url": os.environ["VIDEO_URL"].strip(),
+              "caption": os.environ["CAPTION"][:2200],
+              "is_ai_generated": "true",
+              "access_token": tok,
+          }
+          if os.environ.get("COVER_URL", "").strip():
+              data["cover_url"] = os.environ["COVER_URL"].strip()
+
+          resp = post(f"https://graph.facebook.com/{V}/{ig}/media", data)
+          if "id" not in resp and "is_ai_generated" in data:
+              print(f"container failed with is_ai_generated ({str(resp)[:150]}) — retrying without")
+              data.pop("is_ai_generated")
+              resp = post(f"https://graph.facebook.com/{V}/{ig}/media", data)
+          cid = resp.get("id")
+          assert cid, f"container creation failed: {resp}"
+          print(f"📦 container {cid}")
+
+          for i in range(20):
+              time.sleep(30)
+              st = get(f"https://graph.facebook.com/{V}/{cid}", {"fields": "status_code,status", "access_token": tok})
+              print(f"  [{i+1}/20] {st.get('status_code')} {st.get('status','')[:100]}")
+              if st.get("status_code") == "FINISHED":
+                  break
+              if st.get("status_code") == "ERROR":
+                  raise SystemExit(f"❌ processing ERROR again: {st}")
+
+          pub = post(f"https://graph.facebook.com/{V}/{ig}/media_publish", {"creation_id": cid, "access_token": tok})
+          mid = pub.get("id")
+          assert mid, f"publish failed: {pub}"
+          print(f"✅ PUBLISHED → media_id {mid}")
+          PY
