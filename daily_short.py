@@ -1875,11 +1875,26 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             container_data["published"] = "false"
             container_data["scheduled_publish_time"] = str(schedule_timestamp)
 
+        # Meta AI-disclosure param (added to Graph API Jun 2026) — required for
+        # photorealistic AI video + synthetic audio. Applies the "AI info" label.
+        container_data["is_ai_generated"] = "true"
+
         container_resp = requests.post(
             f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
             data=container_data,
             timeout=30,
         )
+
+        if container_resp.status_code != 200 and "is_ai_generated" in container_data:
+            # Param is new — if this API version rejects it, retry without rather than
+            # losing the post (Meta can still auto-label via C2PA metadata).
+            print(f"   ⚠️ IG container failed with is_ai_generated param ({container_resp.text[:120]}) — retrying without")
+            container_data.pop("is_ai_generated", None)
+            container_resp = requests.post(
+                f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
+                data=container_data,
+                timeout=30,
+            )
 
         if container_resp.status_code != 200:
             error_text = container_resp.text[:200]
@@ -2520,19 +2535,45 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
             return None
         print(f"   📦 IG carousel: parent CAROUSEL container → {parent_id}")
 
-        # Step 3: Publish
-        pub_resp = requests.post(
-            f"{base}/media_publish",
-            data={"creation_id": parent_id, "access_token": ig_token},
-            timeout=30,
-        )
-        if pub_resp.status_code != 200:
+        # Step 2.5: Wait for parent container to reach FINISHED before publishing.
+        # Publishing too early returns "Media ID is not available" — this missing
+        # poll caused 5 of the last 14 carousel runs to fail.
+        for check in range(10):
+            status_resp = requests.get(
+                f"{base.rsplit('/', 1)[0]}/{parent_id}",
+                params={"fields": "status_code", "access_token": ig_token},
+                timeout=30,
+            )
+            status_code = status_resp.json().get("status_code") if status_resp.status_code == 200 else None
+            if status_code == "FINISHED":
+                print(f"   ✅ IG carousel: parent container FINISHED")
+                break
+            if status_code == "ERROR":
+                print(f"   ❌ IG carousel: parent container ERROR: {status_resp.text[:200]}")
+                return None
+            print(f"   ⏳ IG carousel: parent {status_code or 'PENDING'} — waiting 15s ({check+1}/10)")
+            time.sleep(15)
+
+        # Step 3: Publish (retry — container can need a little extra time)
+        media_id = None
+        for attempt in range(3):
+            pub_resp = requests.post(
+                f"{base}/media_publish",
+                data={"creation_id": parent_id, "access_token": ig_token},
+                timeout=30,
+            )
+            if pub_resp.status_code == 200:
+                media_id = pub_resp.json().get("id")
+                if media_id:
+                    break
             err = pub_resp.json().get("error", {})
-            print(f"   ❌ IG carousel: publish failed: {err.get('message', pub_resp.text[:200])}")
+            print(f"   ⚠️ IG carousel: publish attempt {attempt+1}/3 failed: {err.get('message', pub_resp.text[:200])}")
+            if attempt < 2:
+                time.sleep(20)
+        if not media_id:
+            print(f"   ❌ IG carousel: publish failed after 3 attempts")
             return None
-        media_id = pub_resp.json().get("id")
-        if media_id:
-            print(f"   ✅ IG carousel: PUBLISHED → media_id {media_id}")
+        print(f"   ✅ IG carousel: PUBLISHED → media_id {media_id}")
         return media_id
     except Exception as e:
         print(f"   ⚠️ IG carousel: unexpected error: {e}")
@@ -4167,6 +4208,10 @@ Custom printing businesses | Merch brands | Corporate orders
         "status": {
             "selfDeclaredMadeForKids": False,
             "embeddable": True,
+            # YouTube A/S disclosure — required: realistic Veo scenes that didn't occur
+            # (own-voice clone alone is exempt, but the visuals are not). Undisclosed
+            # synthetic media risks forced labels / removal / YPP suspension.
+            "containsSyntheticMedia": True,
         }
     }
 
@@ -9764,14 +9809,15 @@ def main():
         print(f"   ║ Kling Duration/Clip    : {KLING_DURATION + 's':>25} ║")
     print("   ║                                                   ║")
     print("   ║ ── AUDIO ──                                       ║")
-    if sarvam_available:
+    # Label must match the real call order in generate_voice: ElevenLabs → Sarvam → OpenAI
+    if elevenlabs_available:
+        _tts_primary = "ElevenLabs Hindi (PVC)"
+        _tts_fb = "Sarvam → OpenAI" if sarvam_available else "OpenAI gpt-4o-mini-tts"
+    elif sarvam_available:
         _tts_primary = "Sarvam Bulbul v3"
-        _tts_fb = "ElevenLabs → OpenAI"
-    elif elevenlabs_available:
-        _tts_primary = "ElevenLabs Hindi"
         _tts_fb = "OpenAI gpt-4o-mini-tts"
     else:
-        _tts_primary = "OpenAI (no Sarvam/11Labs)"
+        _tts_primary = "OpenAI (no 11Labs/Sarvam)"
         _tts_fb = "(none)"
     print(f"   ║ TTS Primary            : {_tts_primary:>25} ║")
     print(f"   ║ TTS Fallback           : {_tts_fb:>25} ║")
