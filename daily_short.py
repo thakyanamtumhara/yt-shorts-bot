@@ -1855,10 +1855,12 @@ def publish_fb_reel(video_path, description):
     pages_manage_posts + pages_read_engagement + pages_show_list).
     Page rate limit: 30 API-published reels per rolling 24h — we post 1/day.
     Returns fb video_id on success, None on failure. Non-fatal."""
-    page_id = (os.environ.get("FB_PAGE_ID") or "").strip()
-    page_token = (os.environ.get("FB_PAGE_ACCESS_TOKEN") or "").strip()
+    # The main IG token is a never-expiring PAGE token for this Page and (since
+    # 2026-07-06) carries pages_manage_posts — use it when no dedicated token set.
+    page_id = (os.environ.get("FB_PAGE_ID") or "1999594936994410").strip()
+    page_token = (os.environ.get("FB_PAGE_ACCESS_TOKEN") or os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
     if not page_id or not page_token:
-        print("   ℹ️ FB Reel: skipped (no FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN)")
+        print("   ℹ️ FB Reel: skipped (no page token available)")
         return None
     if not video_path or not os.path.exists(video_path):
         print("   ⚠️ FB Reel: video file missing")
