@@ -25,8 +25,8 @@
     "#apparel",
     "#bulkorder"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
-  "posted_at": null
+  "posted": true,
+  "media_id": "17977554057049835",
+  "error": null,
+  "posted_at": "2026-07-06T17:18:48.418165+05:30"
 }
