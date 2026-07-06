@@ -32,11 +32,18 @@ jobs:
           [ -n "$LONG" ] || { echo "❌ long-lived exchange failed"; exit 1; }
           echo "✅ long-lived user token obtained"
 
-          PAGE_TOKEN=$(curl -s "https://graph.facebook.com/v21.0/me/accounts?access_token=${LONG}" | python3 -c "
+          ACCOUNTS=$(curl -s "https://graph.facebook.com/v21.0/me/accounts?limit=100&access_token=${LONG}")
+          echo "── Pages this token can see ──"
+          echo "$ACCOUNTS" | python3 -c "
+          import json,sys
+          d = json.load(sys.stdin)
+          for p in d.get('data',[]): print(' ', p.get('id'), p.get('name'))
+          if not d.get('data'): print('  (none)', d.get('error',''))"
+          PAGE_TOKEN=$(echo "$ACCOUNTS" | python3 -c "
           import json,sys
           for p in json.load(sys.stdin).get('data',[]):
               if p.get('id')=='${PAGE_ID}': print(p.get('access_token','')); break")
-          [ -n "$PAGE_TOKEN" ] || { echo "❌ Page ${PAGE_ID} not in /me/accounts — wrong FB account or missing pages_show_list"; exit 1; }
+          [ -n "$PAGE_TOKEN" ] || { echo "❌ Page ${PAGE_ID} (Own Knitted Blank Wears) not in the granted list above — it was not ticked in the popup, or it needs to be granted via Business settings"; exit 1; }
           echo "✅ Page token obtained for Own Knitted Blank Wears"
 
           START=$(curl -s -X POST "https://graph.facebook.com/v21.0/${PAGE_ID}/video_reels" -d "upload_phase=start&access_token=${PAGE_TOKEN}")
