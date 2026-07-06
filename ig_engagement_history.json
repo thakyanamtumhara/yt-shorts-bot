@@ -50,7 +50,7 @@
     "topic": "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
     "published_at": "2026-03-26T21:56:38.761506+05:30",
     "checked": false,
-    "insight_fail_count": 1
+    "insight_fail_count": 2
   },
   {
     "media_id": "18110526379750589",
@@ -418,7 +418,7 @@
     "topic": "Usne ₹2 Lakh Ka Order Liya Bina GST Number Ke — Ye Galti Mat Karna 🚫 | B2B Mistake",
     "published_at": "2026-05-05T22:44:10.899523+05:30",
     "checked": false,
-    "insight_fail_count": 1
+    "insight_fail_count": 2
   },
   {
     "media_id": "18063930452411412",
@@ -1025,6 +1025,14 @@
     "title": "Same DTF Print, One Cracked in 50 Washes — ₹30 Blank Trap That Kills Your Orders",
     "topic": "DTF Print 50 Wash Ke Baad Kaisa Dikhta Hai? — Cheap vs Premium Blank T-Shirt Comparison",
     "published_at": "2026-07-04T19:33:09.827983+05:30",
-    "checked": false
+    "checked": true,
+    "checked_at": "2026-07-06T21:28:44.427593+05:30",
+    "hours_since_publish": 49.9,
+    "views": 2522,
+    "reach": 2216,
+    "likes": 15,
+    "comments": 0,
+    "shares": 14,
+    "saves": 9
   }
 ]

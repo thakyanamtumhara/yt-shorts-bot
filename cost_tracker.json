@@ -1941,5 +1941,22 @@
       "whisper": 0.0045,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-07-06T16:07:16.893451",
+    "topic": "\u20b910 \u0915\u0940 Polyester vs \u20b910 \u0915\u0940 Cotton \u2014 Barish \u092e\u0947\u0902 \u0915\u094c\u0928 \u0938\u0921\u093c\u0924\u093e \u0939\u0948? Shocking Truth",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 \u20b980,000 \u0915\u093e \u0938\u094d\u091f\u0949\u0915 \u092c\u0930\u094d\u092c\u093e\u0926 \u2014 Polyester vs Cotton \u0915\u093e \u0938\u091a \ud83d\ude31",
+    "total_usd": 7.8446,
+    "duration_min": 28.0,
+    "breakdown": {
+      "claude_opus": 0.368,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0238,
+      "veo_clips": 7.04,
+      "whisper": 0.0043,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2384
+    }
   }
 ]
