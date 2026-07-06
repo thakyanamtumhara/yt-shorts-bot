@@ -1,0 +1,41 @@
+name: ElevenLabs Plan Check
+
+# Diagnostic: prints subscription tier, character usage, and voice info.
+# Never prints the API key.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check subscription + voice
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          python3 - << 'PY'
+          import json, os, urllib.request
+
+          key = os.environ["ELEVENLABS_API_KEY"].strip()
+
+          def get(url):
+              req = urllib.request.Request(url, headers={"xi-api-key": key})
+              with urllib.request.urlopen(req, timeout=20) as r:
+                  return json.load(r)
+
+          s = get("https://api.elevenlabs.io/v1/user/subscription")
+          print("── subscription ──")
+          for k in ("tier", "character_count", "character_limit",
+                    "next_character_count_reset_unix", "voice_slots_used",
+                    "voice_limit", "professional_voice_limit", "can_use_professional_voice_cloning",
+                    "currency", "status", "billing_period"):
+              if k in s: print(f"  {k}: {s[k]}")
+
+          v = get("https://api.elevenlabs.io/v1/voices/cejtKjfE9sHUZ1FnUYEV")
+          print("── voice Ketu Original ──")
+          print("  name:", v.get("name"), "| category:", v.get("category"))
+          ft = v.get("fine_tuning") or {}
+          print("  fine_tuning state:", ft.get("state"))
+          PY
