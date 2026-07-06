@@ -1,0 +1,46 @@
+{
+  "power_words": [
+    "Trap",
+    "Mistake",
+    "सच",
+    "Secret",
+    "Exposed",
+    "Hack",
+    "Reality",
+    "Free",
+    "Shocking",
+    "गलती",
+    "Profit",
+    "Scam",
+    "Truth",
+    "Destroy",
+    "Hidden"
+  ],
+  "best_colors": {
+    "text": [
+      "#FFD700",
+      "#FFFFFF",
+      "#FF0000",
+      "#FF6600",
+      "#00FF00"
+    ],
+    "stroke": "#000000"
+  },
+  "text_rules": "Use max 3-4 Hinglish words with a specific ₹ amount or number to create instant curiosity — combine a pain/loss word (Trap, Mistake, Destroy) with a tangible metric (₹40K, 500 T-Shirts, 3X). Numbers and rupee figures stop the scroll; vague motivational text does not.",
+  "layout": "Place the subject's face or product on one side (left or right third) with bold hook text on the opposite side, keeping ALL text strictly within the 25%-70% vertical band to avoid Instagram grid-crop at top and YouTube UI overlay at bottom. Use large, thick sans-serif font (Impact/Montserrat Bold) with a black stroke/shadow so text pops over any background.",
+  "patterns": "Top-performing Indian business Reels thumbnails follow a 'Loss/Mistake + Specific Number' formula — showing a real person with a shocked or serious expression next to bold text revealing a specific monetary loss or hidden industry trap (e.g., '₹40K Loss', '500 T-Shirts Ruined'). The color palette is almost always yellow or white text on a dark or warehouse/factory background with a thick black outline for readability at tiny mobile sizes. Thumbnails that expose an insider secret or industry scam consistently outperform generic motivational or 'business idea' thumbnails because they trigger both fear-of-loss and curiosity.",
+  "example_texts": [
+    "₹40K GSM Trap",
+    "Yarn सच Exposed",
+    "₹15 Profit Killer",
+    "Wholesale गलती #1",
+    "3X Sales Secret",
+    "₹80 vs ₹120 Reality",
+    "Print Business Trap",
+    "500 Pcs Destroyed",
+    "Girls Category = 3X",
+    "₹8 Savings Scam"
+  ],
+  "ig_patterns": "High-save Reels thumbnails promise lasting educational value — they use 'Check These 3 Things' or 'Trap Nobody Checks' patterns that signal a checklist or hidden knowledge worth revisiting, driving viewers to bookmark for future reference. High-share Reels thumbnails trigger the 'my friend is making this exact mistake' reflex by combining a specific relatable loss (₹40K, 500 T-Shirts ruined) with an industry-insider warning tone. The overlap sweet spot — content that both saves AND shares well — uses a specific rupee figure + a quality trap/mistake that any small t-shirt business owner would instantly recognize and feel compelled to both save and forward to their supplier or business partner.",
+  "updated": "2026-07-06T09:26:55.255841"
+}
