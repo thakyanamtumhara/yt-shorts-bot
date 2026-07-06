@@ -74,7 +74,8 @@ jobs:
               req = urllib.request.Request(
                   "https://backboard.railway.com/graphql/v2",
                   data=json.dumps({"query": query, "variables": variables}).encode(),
-                  headers={"Authorization": f"Bearer {rw}", "Content-Type": "application/json"},
+                  headers={"Authorization": f"Bearer {rw}", "Content-Type": "application/json",
+                           "User-Agent": "curl/8.5.0"},
               )
               with urllib.request.urlopen(req, timeout=30) as r:
                   return json.load(r)
