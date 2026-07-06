@@ -57,4 +57,22 @@ jobs:
               print("── IG business account (graph.facebook.com path) ──")
               q = urllib.parse.urlencode({"fields": "username,name,followers_count", "access_token": tok})
               print(" ", get(f"https://graph.facebook.com/v21.0/{ig_id}?{q}"))
+
+              print("── online_followers insight test (needs manage_insights + 100 followers) ──")
+              q = urllib.parse.urlencode({"metric": "online_followers", "period": "lifetime", "access_token": tok})
+              r = get(f"https://graph.facebook.com/v21.0/{ig_id}/insights?{q}")
+              vals = r.get("data", [{}])[0].get("values", []) if isinstance(r.get("data"), list) and r.get("data") else []
+              print("  WORKS ✅" if vals else f"  result: {str(r)[:400]}")
+
+          print("── FB Reels permission test: upload_phase=start on the Page (harmless, nothing publishes) ──")
+          data = urllib.parse.urlencode({"upload_phase": "start", "access_token": tok}).encode()
+          try:
+              with urllib.request.urlopen(
+                  urllib.request.Request("https://graph.facebook.com/v21.0/1999594936994410/video_reels", data=data),
+                  timeout=20,
+              ) as r:
+                  d = json.load(r)
+                  print("  WORKS ✅ — video_id created:", bool(d.get("video_id")))
+          except urllib.error.HTTPError as e:
+              print("  FAILED:", e.code, e.read().decode()[:300])
           PY
