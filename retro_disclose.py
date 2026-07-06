@@ -20,7 +20,7 @@ import os
 import sys
 import time
 
-MAX_UPDATES = int(os.environ.get("MAX_UPDATES", "100"))
+MAX_UPDATES = int(os.environ.get("MAX_UPDATES") or "100")
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 TOKEN_FILE = os.environ.get("TOKEN_FILE", "/tmp/yt_shorts/youtube_token.json")
 

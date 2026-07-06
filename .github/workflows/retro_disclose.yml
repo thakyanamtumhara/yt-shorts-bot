@@ -5,6 +5,12 @@ name: Retro AI-Disclosure Backfill
 # run with default max_updates=100, then again the next day until pending: 0.
 
 on:
+  schedule:
+    # ONE-TIME batch 2 (remaining ~114 videos): 7 July 08:15 UTC = 13:45 IST,
+    # after the midnight-PT quota reset. Remove this schedule block once the
+    # run reports "back-catalog fully disclosed" (harmless idempotent noop if
+    # left — it would fire again 7 July next year only).
+    - cron: '15 8 7 7 *'
   workflow_dispatch:
     inputs:
       max_updates:
