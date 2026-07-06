@@ -2650,11 +2650,12 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
         ig_filenames = [fn.replace(".webp", ".jpg") for fn in uploaded_filenames]
         image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in ig_filenames]
     elif uploaded_filenames and len(uploaded_filenames) == 1:
-        # Only hero was generated (Replicate partial failure). Use it twice so IG's
-        # ≥2 image minimum is met and the draft is still created for next-morning post.
+        # Only hero was generated (provider partial failure). Post a SINGLE image
+        # instead of a degenerate carousel with the same photo twice (user saw
+        # duplicate slides on 2026-07-06 — never again).
         hero_jpg = f"{BLOG_BASE_URL}/p/{blog_slug}-{uploaded_filenames[0].replace('.webp', '.jpg')}"
-        image_urls = [hero_jpg, hero_jpg]
-        print("   ⚠️ IG carousel: Only 1 image uploaded — using hero twice (2-slide carousel)")
+        image_urls = [hero_jpg]
+        print("   ⚠️ IG carousel: Only 1 image uploaded — draft will post as a single image")
     else:
         # Fallback when no image info is passed (pre-fix callers / all 3 generated)
         image_urls = [
@@ -2757,9 +2758,44 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
     if not ig_token or not ig_business_id:
         print("   ℹ️ IG carousel: skipped (no INSTAGRAM_ACCESS_TOKEN/INSTAGRAM_BUSINESS_ID)")
         return None
-    if not image_urls or len(image_urls) < 2:
-        print(f"   ⚠️ IG carousel: need 2-10 images, got {len(image_urls) if image_urls else 0}")
+
+    # Dedupe (order-preserving) — old drafts may contain the same hero twice;
+    # a carousel of identical slides must never reach the account again.
+    image_urls = list(dict.fromkeys(image_urls or []))
+    if not image_urls:
+        print("   ⚠️ IG carousel: no images to post")
         return None
+
+    if len(image_urls) == 1:
+        # Single-image fallback: plain photo post instead of a fake carousel
+        print("   📷 IG carousel: 1 unique image — publishing as a single photo post")
+        full_caption = caption.strip()
+        if hashtags:
+            hashtag_line = " ".join(h if h.startswith("#") else f"#{h}" for h in hashtags)
+            full_caption = f"{full_caption}\n\n{hashtag_line}"
+        base = f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}"
+        try:
+            c_data = {"image_url": image_urls[0], "caption": full_caption,
+                      "is_ai_generated": "true", "access_token": ig_token}
+            resp = requests.post(f"{base}/media", data=c_data, timeout=30)
+            if resp.status_code != 200 and "is_ai_generated" in c_data:
+                c_data.pop("is_ai_generated")
+                resp = requests.post(f"{base}/media", data=c_data, timeout=30)
+            if resp.status_code != 200:
+                print(f"   ❌ IG single photo: container failed: {resp.text[:200]}")
+                return None
+            cid = resp.json().get("id")
+            pub = requests.post(f"{base}/media_publish",
+                                data={"creation_id": cid, "access_token": ig_token}, timeout=30)
+            if pub.status_code != 200:
+                print(f"   ❌ IG single photo: publish failed: {pub.text[:200]}")
+                return None
+            media_id = pub.json().get("id")
+            print(f"   ✅ IG single photo: PUBLISHED → media_id {media_id}")
+            return media_id
+        except Exception as e:
+            print(f"   ⚠️ IG single photo: unexpected error: {e}")
+            return None
 
     # Assemble the full caption (caption text + blank line + hashtags)
     full_caption = caption.strip()
@@ -4756,6 +4792,16 @@ _TTS_PHONETIC_MAP = {
 _TTS_HINGLISH_DEVANAGARI = {
     # User-reported (2026-05-08): mat/thik/assi mispronounced.
     "mat": "मत", "matlab": "मतलब", "thik": "ठीक", "theek": "ठीक",
+    # User-reported (2026-07-06): badbu/sada mispronounced in the ₹80k storage
+    # video. Multi-word forms FIRST — single-word rewrites below ("gaya" etc.)
+    # would break their match if applied earlier.
+    "sad gaya": "सड़ गया", "sad jayega": "सड़ जाएगा", "sad jaega": "सड़ जाएगा",
+    "sada hua": "सड़ा हुआ", "sadne laga": "सड़ने लगा",
+    "badbu": "बदबू", "badboo": "बदबू", "badbudar": "बदबूदार",
+    "sadta": "सड़ता", "sadti": "सड़ती", "sadna": "सड़ना", "sadne": "सड़ने",
+    "sadega": "सड़ेगा", "sadenge": "सड़ेंगे",
+    # NOTE: bare "sada" stays unmapped — ambiguous with सादा (plain), core
+    # vocabulary for a plain-tshirt business.
     # High-frequency function words / verbs in our scripts:
     "nahi": "नहीं", "nahin": "नहीं", "haan": "हाँ", "hai": "है", "hain": "हैं",
     "tha": "था", "thi": "थी", "the": "थे",
