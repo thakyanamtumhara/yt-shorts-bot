@@ -15,6 +15,14 @@ on:
         description: 'ElevenLabs model id'
         required: false
         default: 'eleven_multilingual_v2'
+      stability:
+        description: 'Voice stability 0-1 (lower = more expressive/varied)'
+        required: false
+        default: '0.50'
+      style:
+        description: 'Style exaggeration 0-1 (higher = more energy)'
+        required: false
+        default: '0.00'
 
 jobs:
   audition:
@@ -36,6 +44,8 @@ jobs:
           INPUT_SAMPLE_TEXT: ${{ inputs.sample_text }}
           INPUT_VOICE_IDS: ${{ inputs.voice_ids }}
           INPUT_MODEL_ID: ${{ inputs.model_id }}
+          INPUT_STABILITY: ${{ inputs.stability }}
+          INPUT_STYLE: ${{ inputs.style }}
         run: |
           set -e
           pip install -q requests
@@ -46,6 +56,8 @@ jobs:
           text = os.environ.get("INPUT_SAMPLE_TEXT") or "Hello"
           model_id = os.environ.get("INPUT_MODEL_ID") or "eleven_multilingual_v2"
           voice_ids_csv = os.environ.get("INPUT_VOICE_IDS", "").strip()
+          stability = float(os.environ.get("INPUT_STABILITY") or "0.50")
+          style = float(os.environ.get("INPUT_STYLE") or "0.00")
 
           # Apply MINIMAL preprocessing (just ₹/numbers — leave words alone)
           src = open("daily_short.py").read()
@@ -103,7 +115,7 @@ jobs:
                   json={
                       "text": processed,
                       "model_id": model_id,
-                      "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": True},
+                      "voice_settings": {"stability": stability, "similarity_boost": 0.75, "style": style, "use_speaker_boost": True},
                   },
                   timeout=60,
               )

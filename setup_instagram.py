@@ -45,6 +45,11 @@ REDIRECT_URI = "https://localhost:8888/callback"
 SCOPES = [
     "instagram_business_basic",
     "instagram_business_content_publish",
+    # added 2026-07-06: unblocks best-time scheduling + per-reel insights,
+    # comment auto-reply, and the future DM assistant
+    "instagram_business_manage_insights",
+    "instagram_business_manage_comments",
+    "instagram_business_manage_messages",
 ]
 
 

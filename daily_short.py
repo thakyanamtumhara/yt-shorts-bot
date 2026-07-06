@@ -1705,6 +1705,128 @@ def refresh_instagram_token_if_needed():
     return new_token
 
 
+def publish_fb_reel(video_path, description):
+    """Cross-post the video as a Facebook Reel on the Sale91 FB Page.
+
+    Official 3-step flow (developers.facebook.com/docs/video-api/guides/reels-publishing):
+    1. POST /{page_id}/video_reels upload_phase=start  → video_id + upload_url
+    2. POST binary to rupload.facebook.com with offset/file_size headers
+    3. POST /{page_id}/video_reels upload_phase=finish video_state=PUBLISHED
+
+    Dormant until FB_PAGE_ID + FB_PAGE_ACCESS_TOKEN secrets exist (page token needs
+    pages_manage_posts + pages_read_engagement + pages_show_list).
+    Page rate limit: 30 API-published reels per rolling 24h — we post 1/day.
+    Returns fb video_id on success, None on failure. Non-fatal."""
+    page_id = (os.environ.get("FB_PAGE_ID") or "").strip()
+    page_token = (os.environ.get("FB_PAGE_ACCESS_TOKEN") or "").strip()
+    if not page_id or not page_token:
+        print("   ℹ️ FB Reel: skipped (no FB_PAGE_ID/FB_PAGE_ACCESS_TOKEN)")
+        return None
+    if not video_path or not os.path.exists(video_path):
+        print("   ⚠️ FB Reel: video file missing")
+        return None
+
+    try:
+        # Step 1: initialize upload session
+        start_resp = requests.post(
+            f"https://graph.facebook.com/{IG_API_VERSION}/{page_id}/video_reels",
+            data={"upload_phase": "start", "access_token": page_token},
+            timeout=30,
+        )
+        if start_resp.status_code != 200:
+            print(f"   ❌ FB Reel: start failed: {start_resp.text[:200]}")
+            return None
+        start_data = start_resp.json()
+        fb_video_id = start_data.get("video_id")
+        upload_url = start_data.get("upload_url")
+        if not fb_video_id or not upload_url:
+            print(f"   ❌ FB Reel: start returned no video_id/upload_url: {start_resp.text[:200]}")
+            return None
+        print(f"   📦 FB Reel: upload session started → {fb_video_id}")
+
+        # Step 2: upload the binary
+        file_size = os.path.getsize(video_path)
+        with open(video_path, "rb") as f:
+            up_resp = requests.post(
+                upload_url,
+                headers={
+                    "Authorization": f"OAuth {page_token}",
+                    "offset": "0",
+                    "file_size": str(file_size),
+                },
+                data=f,
+                timeout=300,
+            )
+        if up_resp.status_code != 200 or not up_resp.json().get("success"):
+            print(f"   ❌ FB Reel: binary upload failed: {up_resp.text[:200]}")
+            return None
+        print(f"   ⬆️ FB Reel: uploaded {file_size // 1024}KB")
+
+        # Step 3: publish
+        fin_resp = requests.post(
+            f"https://graph.facebook.com/{IG_API_VERSION}/{page_id}/video_reels",
+            data={
+                "upload_phase": "finish",
+                "video_state": "PUBLISHED",
+                "video_id": fb_video_id,
+                "description": description[:2000],
+                "access_token": page_token,
+            },
+            timeout=60,
+        )
+        if fin_resp.status_code != 200:
+            print(f"   ❌ FB Reel: finish failed: {fin_resp.text[:200]}")
+            return None
+        print(f"   ✅ FB Reel: PUBLISHED → video_id {fb_video_id}")
+        return fb_video_id
+    except Exception as e:
+        print(f"   ⚠️ FB Reel: unexpected error: {e}")
+        return None
+
+
+def post_telegram_channel(video_path, caption):
+    """Post the video to the Sale91 Telegram channel via Bot API sendVideo.
+
+    Dormant until TELEGRAM_BOT_TOKEN + TELEGRAM_CHANNEL_ID secrets exist
+    (channel id = @handle or -100xxxxxxxxxx; bot must be channel admin).
+    Bot API upload limit 50MB — our ~40s 720x1280 output fits comfortably.
+    Returns telegram message_id on success, None on failure. Non-fatal."""
+    bot_token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    channel_id = (os.environ.get("TELEGRAM_CHANNEL_ID") or "").strip()
+    if not bot_token or not channel_id:
+        print("   ℹ️ Telegram: skipped (no TELEGRAM_BOT_TOKEN/TELEGRAM_CHANNEL_ID)")
+        return None
+    if not video_path or not os.path.exists(video_path):
+        print("   ⚠️ Telegram: video file missing")
+        return None
+    if os.path.getsize(video_path) > 49 * 1024 * 1024:
+        print("   ⚠️ Telegram: video exceeds 50MB bot upload limit — skipped")
+        return None
+
+    try:
+        with open(video_path, "rb") as f:
+            resp = requests.post(
+                f"https://api.telegram.org/bot{bot_token}/sendVideo",
+                data={
+                    "chat_id": channel_id,
+                    "caption": caption[:1024],
+                    "supports_streaming": "true",
+                },
+                files={"video": ("short.mp4", f, "video/mp4")},
+                timeout=300,
+            )
+        data = resp.json()
+        if not data.get("ok"):
+            print(f"   ❌ Telegram: sendVideo failed: {str(data)[:200]}")
+            return None
+        message_id = data.get("result", {}).get("message_id")
+        print(f"   ✅ Telegram: posted → message_id {message_id}")
+        return message_id
+    except Exception as e:
+        print(f"   ⚠️ Telegram: unexpected error: {e}")
+        return None
+
+
 def cross_post_to_instagram(video_path, title, description, topic, thumbnail_path=None):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
@@ -11044,6 +11166,13 @@ def main():
         ig_media_id = cross_post_to_instagram(output_path, ig_title, yt_description, fresh_topic, thumbnail_path=thumbnail_path)
         if ig_media_id and not str(ig_media_id).startswith("test:"):
             save_ig_upload_record(ig_media_id, ig_title, fresh_topic)
+
+        # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
+        fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"
+        print("\n📘 Facebook Reel cross-post...")
+        publish_fb_reel(output_path, fb_caption)
+        print("\n✈️ Telegram channel cross-post...")
+        post_telegram_channel(output_path, fb_caption)
 
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST and not upload_failed and vid_id:
