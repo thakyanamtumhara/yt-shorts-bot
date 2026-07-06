@@ -11045,14 +11045,17 @@ def main():
             if total_w <= KARAOKE_MAX_LINE_W or fsize <= 40:
                 break
             fsize -= 6
-        line_h = max(b[3] - b[1] for b in boxes)
+        # Draw all words from the SAME origin y — PIL's default anchor is the
+        # ascender line, so a shared origin = shared baseline. Shifting each
+        # word by its own bbox top (-b[1]) misaligns short lowercase words.
+        line_h = max(b[3] for b in boxes)
         pad = KARAOKE_STROKE_W + 6
         img = _KImg.new("RGBA", (total_w + pad * 2, line_h + pad * 2), (0, 0, 0, 0))
         d = _KDraw.Draw(img)
         x = pad
         for i, (wt, b, w_px) in enumerate(zip(word_texts, boxes, widths)):
             color = KARAOKE_HIGHLIGHT_COLOR if i == hi_idx else KARAOKE_BASE_COLOR
-            d.text((x - b[0], pad - b[1]), wt, font=font, fill=color,
+            d.text((x - b[0], pad), wt, font=font, fill=color,
                    stroke_width=KARAOKE_STROKE_W, stroke_fill=KARAOKE_STROKE_COLOR)
             x += w_px + gap
         return _knp.array(img)

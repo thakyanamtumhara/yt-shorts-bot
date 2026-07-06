@@ -125,8 +125,9 @@ jobs:
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
           NEW_TEST_MODE: ${{ github.event.inputs.new_test_mode }}
-          # Karaoke captions stay OFF on cron runs (empty input → '0') until visually verified
-          ADD_SUBTITLES: ${{ github.event.inputs.enable_subtitles == 'true' && '1' || '0' }}
+          # Karaoke captions LIVE (baseline fix visually verified 2026-07-06; Ketu approved).
+          # Kill switch: set to "0".
+          ADD_SUBTITLES: "1"
           YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
           CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
