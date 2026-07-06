@@ -17,6 +17,7 @@ jobs:
           FB_APP_ID: ${{ secrets.FB_APP_ID }}
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
           IG_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
         run: |
           python3 - << 'PY'
           import json, os, urllib.request, urllib.parse
@@ -63,6 +64,19 @@ jobs:
               r = get(f"https://graph.facebook.com/v21.0/{ig_id}/insights?{q}")
               vals = r.get("data", [{}])[0].get("values", []) if isinstance(r.get("data"), list) and r.get("data") else []
               print("  WORKS ✅" if vals else f"  result: {str(r)[:400]}")
+
+          print("── STORED FB_PAGE_ACCESS_TOKEN health ──")
+          pt = os.environ.get("FB_PAGE_TOKEN", "").strip()
+          if pt and app_id and app_secret:
+              q = urllib.parse.urlencode({"input_token": pt, "access_token": f"{app_id}|{app_secret}"})
+              d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+              print("  type:", d.get("type"), "| valid:", d.get("is_valid"), "| expires_at:", d.get("expires_at"), "(0 = never)")
+              data = urllib.parse.urlencode({"upload_phase": "start", "access_token": pt}).encode()
+              try:
+                  with urllib.request.urlopen(urllib.request.Request("https://graph.facebook.com/v21.0/1999594936994410/video_reels", data=data), timeout=20) as r:
+                      print("  video_reels start with STORED token: WORKS ✅" if json.load(r).get("video_id") else "  no video_id?")
+              except urllib.error.HTTPError as e:
+                  print("  video_reels start FAILED:", e.code, e.read().decode()[:200])
 
           print("── FB Reels permission test: upload_phase=start on the Page (harmless, nothing publishes) ──")
           data = urllib.parse.urlencode({"upload_phase": "start", "access_token": tok}).encode()
