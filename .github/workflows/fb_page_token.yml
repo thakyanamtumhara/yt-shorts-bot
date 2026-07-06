@@ -1,0 +1,47 @@
+name: FB Page Token Setup (one-time)
+
+# Takes a short-lived user token from Graph API Explorer (with pages_manage_posts),
+# exchanges it for a long-lived one, pulls the never-expiring Page token for
+# "Own Knitted Blank Wears", VALIDATES it against the video_reels start phase,
+# then stores FB_PAGE_ACCESS_TOKEN + FB_PAGE_ID secrets via GH_PAT.
+# Token values are never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      short_token:
+        description: 'Short-lived user token from Graph API Explorer (EAA..., ~1h validity)'
+        required: true
+
+jobs:
+  exchange:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Exchange, validate, store
+        env:
+          SHORT_TOKEN: ${{ inputs.short_token }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -e
+          PAGE_ID="1999594936994410"
+
+          LONG=$(curl -s "https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${FB_APP_ID}&client_secret=${FB_APP_SECRET}&fb_exchange_token=${SHORT_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))")
+          [ -n "$LONG" ] || { echo "❌ long-lived exchange failed"; exit 1; }
+          echo "✅ long-lived user token obtained"
+
+          PAGE_TOKEN=$(curl -s "https://graph.facebook.com/v21.0/me/accounts?access_token=${LONG}" | python3 -c "
+          import json,sys
+          for p in json.load(sys.stdin).get('data',[]):
+              if p.get('id')=='${PAGE_ID}': print(p.get('access_token','')); break")
+          [ -n "$PAGE_TOKEN" ] || { echo "❌ Page ${PAGE_ID} not in /me/accounts — wrong FB account or missing pages_show_list"; exit 1; }
+          echo "✅ Page token obtained for Own Knitted Blank Wears"
+
+          START=$(curl -s -X POST "https://graph.facebook.com/v21.0/${PAGE_ID}/video_reels" -d "upload_phase=start&access_token=${PAGE_TOKEN}")
+          echo "$START" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('video_id'), d; print('✅ video_reels start-phase WORKS — permission confirmed')"
+
+          echo "$PAGE_TOKEN" | gh secret set FB_PAGE_ACCESS_TOKEN -R thakyanamtumhara/yt-shorts-bot --body -
+          echo "$PAGE_ID" | gh secret set FB_PAGE_ID -R thakyanamtumhara/yt-shorts-bot --body -
+          echo "✅ secrets FB_PAGE_ACCESS_TOKEN + FB_PAGE_ID stored — FB Reels goes live on the next daily run"
