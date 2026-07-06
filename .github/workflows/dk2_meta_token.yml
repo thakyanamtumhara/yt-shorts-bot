@@ -1,0 +1,92 @@
+name: dk2 Meta Token Setup (one-time)
+
+# Exchanges a short-lived Explorer token → long-lived → never-expiring Page token,
+# verifies the messaging scopes, then injects it into the digital-ketu2 Railway
+# service env via the Railway GraphQL API. Token values are never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      short_token:
+        description: 'Short-lived user token from Graph API Explorer (EAA...)'
+        required: true
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Exchange, verify scopes, inject into Railway
+        env:
+          SHORT_TOKEN: ${{ inputs.short_token }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          python3 - << 'PY'
+          import json, os, sys, urllib.request, urllib.parse
+
+          short = os.environ["SHORT_TOKEN"].strip()
+          app_id = os.environ["FB_APP_ID"].strip()
+          app_secret = os.environ["FB_APP_SECRET"].strip()
+          rw = os.environ["RAILWAY_TOKEN"].strip()
+          PAGE_ID = "1999594936994410"
+          IG_ID = "17841407981790313"
+
+          def get(url):
+              with urllib.request.urlopen(url, timeout=20) as r:
+                  return json.load(r)
+
+          # 1. long-lived exchange
+          q = urllib.parse.urlencode({"grant_type": "fb_exchange_token", "client_id": app_id,
+                                      "client_secret": app_secret, "fb_exchange_token": short})
+          long_tok = get(f"https://graph.facebook.com/v21.0/oauth/access_token?{q}").get("access_token", "")
+          assert long_tok, "long-lived exchange failed"
+          print("✅ long-lived user token obtained")
+
+          # 2. verify scopes on the long token
+          q = urllib.parse.urlencode({"input_token": long_tok, "access_token": f"{app_id}|{app_secret}"})
+          d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+          scopes = d.get("scopes", [])
+          print("scopes:", scopes)
+          required = {"instagram_manage_messages", "instagram_basic", "pages_manage_posts",
+                      "instagram_manage_comments", "pages_show_list"}
+          missing = required - set(scopes)
+          if missing:
+              print(f"❌ MISSING required scopes: {missing}"); sys.exit(1)
+          print("✅ all required messaging scopes present")
+
+          # 3. page token (business-owned page route)
+          q = urllib.parse.urlencode({"fields": "access_token,name", "access_token": long_tok})
+          pd = get(f"https://graph.facebook.com/v21.0/{PAGE_ID}?{q}")
+          page_tok = pd.get("access_token", "")
+          assert page_tok, f"no page token: {str(pd)[:200]}"
+          print(f"✅ Page token obtained for {pd.get('name')}")
+
+          # 4. health-check the page token
+          q = urllib.parse.urlencode({"input_token": page_tok, "access_token": f"{app_id}|{app_secret}"})
+          hd = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+          print(f"page token: type={hd.get('type')} valid={hd.get('is_valid')} expires_at={hd.get('expires_at')} (0=never)")
+          assert hd.get("is_valid") and hd.get("type") == "PAGE" and hd.get("expires_at") == 0, "page token not healthy"
+
+          # 5. inject into digital-ketu2 Railway env (values never printed)
+          def railway(query, variables):
+              req = urllib.request.Request(
+                  "https://backboard.railway.com/graphql/v2",
+                  data=json.dumps({"query": query, "variables": variables}).encode(),
+                  headers={"Authorization": f"Bearer {rw}", "Content-Type": "application/json"},
+              )
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          MUT = """mutation($input: VariableUpsertInput!) { variableUpsert(input: $input) }"""
+          base = {"projectId": "1532ef75-5566-43a8-b3f9-a104b693f28d",
+                  "environmentId": "d6a67225-aac8-485d-b01c-a24a50fc0f31",
+                  "serviceId": "2f0995b2-0c6a-4aee-a5c3-8af7f9309300"}
+          for name, value in [("IG_MSG_TOKEN", page_tok), ("IG_BUSINESS_ID", IG_ID), ("FB_PAGE_ID", PAGE_ID)]:
+              resp = railway(MUT, {"input": {**base, "name": name, "value": value}})
+              ok = resp.get("data", {}).get("variableUpsert")
+              print(f"railway var {name}: {'✅ set' if ok else '❌ ' + str(resp)[:200]}")
+              if not ok: sys.exit(1)
+          print("✅ dk2 Railway env ready — bridge build can begin")
+          PY
