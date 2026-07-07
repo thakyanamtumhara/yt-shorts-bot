@@ -1677,7 +1677,15 @@ def get_instagram_best_time(ig_token, ig_business_id):
     convert UTC→IST, and pick the peak inside the 17:00-21:00 IST evening
     window. Never returns None: falls back to 18:30 IST fixed (same evening
     if possible, else tomorrow).
+
+    DISABLED 2026-07-07: returning a time makes cross_post_to_instagram use
+    scheduled_publish_time, which Meta rejects for this account with
+    "(#3) User must be on whitelist" (scheduled publishing is a restricted
+    feature we're not whitelisted for) — so the Reel never posted. Returning
+    None forces the immediate-publish path (reliable for months). Re-enable
+    only if the account is granted scheduled-publishing access.
     """
+    return None
     ist = pytz.timezone("Asia/Kolkata")
     now_ist = datetime.now(ist)
     min_lead = now_ist + timedelta(minutes=20)
