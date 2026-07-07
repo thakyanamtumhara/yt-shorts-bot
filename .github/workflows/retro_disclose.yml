@@ -6,11 +6,12 @@ name: Retro AI-Disclosure Backfill
 
 on:
   schedule:
-    # ONE-TIME batch 2 (remaining ~114 videos): 7 July 08:15 UTC = 13:45 IST,
-    # after the midnight-PT quota reset. Remove this schedule block once the
-    # run reports "back-catalog fully disclosed" (harmless idempotent noop if
-    # left — it would fire again 7 July next year only).
-    - cron: '15 8 7 7 *'
+    # 07:45 UTC = 13:15 IST daily: AFTER the midnight-PT quota reset (~07:00 UTC)
+    # and BEFORE the 09:00 UTC daily run, so the shared YouTube quota isn't
+    # contended (batch-2 failed 07-Jul on quotaExceeded when it ran mid-day).
+    # Idempotent: finishes the remaining videos in one run, then daily no-op.
+    # Remove once a run logs "back-catalog fully disclosed".
+    - cron: '45 7 * * *'
   workflow_dispatch:
     inputs:
       max_updates:
