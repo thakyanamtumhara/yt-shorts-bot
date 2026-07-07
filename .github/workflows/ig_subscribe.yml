@@ -1,0 +1,57 @@
+name: IG Webhook Subscribe (one-time)
+
+# Subscribes the Meta app + Page to Instagram message webhooks pointing at dk2.
+# Run AFTER dk2's /ig/webhook route is deployed (Meta validates the callback live).
+
+on:
+  workflow_dispatch:
+    inputs:
+      callback_url:
+        description: 'Public webhook URL'
+        required: false
+        default: 'https://digital-ketu2-production.up.railway.app/ig/webhook'
+      verify_token:
+        description: 'Must equal dk2 env IG_VERIFY_TOKEN'
+        required: true
+
+jobs:
+  subscribe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Subscribe app + page
+        env:
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          PAGE_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          CALLBACK: ${{ inputs.callback_url }}
+          VERIFY: ${{ inputs.verify_token }}
+        run: |
+          set -e
+          PAGE_ID="1999594936994410"
+          IG_ID="17841407981790313"
+          APP_TOKEN="${FB_APP_ID}|${FB_APP_SECRET}"
+
+          echo "── 1. App-level subscription (object=instagram, field=messages) ──"
+          curl -sf -X POST "https://graph.facebook.com/v21.0/${FB_APP_ID}/subscriptions" \
+            --data-urlencode "object=instagram" \
+            --data-urlencode "callback_url=${CALLBACK}" \
+            --data-urlencode "verify_token=${VERIFY}" \
+            --data-urlencode "fields=messages" \
+            --data-urlencode "access_token=${APP_TOKEN}" \
+            && echo " ✅ app subscription OK (Meta validated the callback handshake)"
+
+          echo "── 2. Page-level subscribed_apps (messages) ──"
+          curl -s -X POST "https://graph.facebook.com/v21.0/${PAGE_ID}/subscribed_apps" \
+            --data-urlencode "subscribed_fields=messages" \
+            --data-urlencode "access_token=${PAGE_TOKEN}" | tee /tmp/page_sub.json
+          python3 -c "import json; d=json.load(open('/tmp/page_sub.json')); assert d.get('success'), d; print(' ✅ page subscribed')"
+
+          echo "── 3. IG-account subscribed_apps (belt-and-braces; may not apply on FB-login setups) ──"
+          curl -s -X POST "https://graph.facebook.com/v21.0/${IG_ID}/subscribed_apps" \
+            --data-urlencode "subscribed_fields=messages" \
+            --data-urlencode "access_token=${PAGE_TOKEN}" || true
+          echo ""
+
+          echo "── 4. Read back app subscription state ──"
+          curl -s "https://graph.facebook.com/v21.0/${FB_APP_ID}/subscriptions?access_token=${APP_TOKEN}" | python3 -m json.tool | head -30
