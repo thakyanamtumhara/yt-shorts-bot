@@ -1395,6 +1395,30 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                             if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
                                 print(f"   ⚠️ AI thumbnail file not created or too small")
                                 break
+                            # QA gate: text must be fully visible inside the safe band —
+                            # user saw a live cover with text at the very top, half cut off
+                            # (2026-07-07). Fail-open on QA errors, fail-closed on a clear NO.
+                            try:
+                                qa_img = Image.open(output_path)
+                                qa_resp = genai_client.models.generate_content(
+                                    model=AI_THUMBNAIL_GEMINI_FALLBACK,
+                                    contents=[
+                                        "You are checking an Instagram Reel cover image (1080x1920). "
+                                        "Answer with EXACTLY one word, YES or NO. Answer YES only if ALL of: "
+                                        "(1) every piece of text is FULLY visible — no letters cropped at any edge; "
+                                        "(2) all text sits within the middle vertical band, roughly 25%-70% of the "
+                                        "image height — no text in the top quarter or the bottom third; "
+                                        "(3) the text is large and clearly legible.",
+                                        qa_img,
+                                    ],
+                                )
+                                _verdict = (getattr(qa_resp, "text", "") or "").strip().upper()
+                                if _verdict.startswith("NO"):
+                                    print(f"   🚫 Cover QA FAILED (text cropped/off-band) — discarding, next model or PIL fallback takes over")
+                                    break
+                                print(f"   ✅ Cover QA passed")
+                            except Exception as _qe:
+                                print(f"   ⚠️ Cover QA errored ({_qe}) — accepting cover unchecked")
                             print(f"   ✅ AI thumbnail generated: {output_path}")
                             COVER_META.update({
                                 "cover_text": brief.get("text"),
@@ -10886,45 +10910,62 @@ def main():
                 })
 
         # ── Karaoke word timings ──
-        # Map script_voice (Roman Hinglish = the ACTUAL spoken words) onto Whisper's
-        # word timestamps, sentence-bucketed so drift stays within one sentence.
+        # Map script_voice words (Roman Hinglish = the ACTUAL spoken words) onto
+        # Whisper's word timestamps with a single GLOBAL proportional mapping.
+        # (The old per-sentence bucketing collapsed when script sentence count
+        # differed from Whisper segment count — ellipses inflate script sentences —
+        # cramming words into early buckets: user saw captions race then vanish.)
+        # Global j→int(j*m/n) is monotonic by construction, so drift is gradual
+        # and coverage always spans the full audio.
         try:
-            script_sents = [s.strip() for s in _re_subs.split(r'(?<=[.!?])\s+', script_voice.strip()) if s.strip()]
-            if whisper_segs and script_sents:
-                n_sc, n_wseg = len(script_sents), len(whisper_segs)
-                for k, sent in enumerate(script_sents):
-                    if n_sc == n_wseg:
-                        bucket = [whisper_segs[k]]
-                    else:
-                        _r = n_wseg / n_sc
-                        si = min(int(k * _r), n_wseg - 1)
-                        ei = min(max(int((k + 1) * _r) - 1, si), n_wseg - 1)
-                        bucket = whisper_segs[si:ei + 1]
-                    # Devanagari slips render as tofu (CI fonts are Latin-only) — strip them
-                    s_words = [_re_subs.sub(r"[ऀ-ॿ]+", "", w) for w in sent.split()]
-                    s_words = [w for w in s_words if w.strip()]
-                    if not s_words:
-                        continue
-                    wtimes = [w for bseg in bucket for w in bseg.get("words", [])]
-                    if wtimes:
-                        m, n = len(wtimes), len(s_words)
-                        for j, sw in enumerate(s_words):
-                            a = wtimes[min(int(j * m / n), m - 1)]
-                            nxt = wtimes[min(int((j + 1) * m / n), m - 1)] if j + 1 < n else None
-                            st = a["start"]
-                            en = nxt["start"] if nxt and nxt["start"] > st else a["end"]
-                            karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
-                    else:
-                        s_start, s_end = bucket[0]["start"], bucket[-1]["end"]
-                        per = max(0.08, (s_end - s_start) / len(s_words))
-                        for j, sw in enumerate(s_words):
-                            karaoke_words.append({"text": sw, "start": s_start + j * per, "end": s_start + (j + 1) * per})
+            # Devanagari slips render as tofu (CI fonts are Latin-only) — strip them
+            script_words_all = [
+                w for w in (_re_subs.sub(r"[ऀ-ॿ]+", "", t) for t in script_voice.split())
+                if w.strip()
+            ]
+            wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
+
+            if script_words_all:
+                n = len(script_words_all)
+                if wtimes_all:
+                    m = len(wtimes_all)
+                    for j, sw in enumerate(script_words_all):
+                        i0 = min(int(j * m / n), m - 1)
+                        i1 = min(int((j + 1) * m / n), m - 1)
+                        st = wtimes_all[i0]["start"]
+                        en = wtimes_all[i1]["start"] if i1 > i0 else wtimes_all[i0]["end"]
+                        karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
+                else:
+                    # No word timestamps at all — spread evenly across speech span
+                    span_start = whisper_segs[0]["start"] if whisper_segs else 0.2
+                    span_end = whisper_segs[-1]["end"] if whisper_segs else max(audio_clip_dur - 0.3, 1.0)
+                    per = max(0.12, (span_end - span_start) / n)
+                    for j, sw in enumerate(script_words_all):
+                        karaoke_words.append({"text": sw, "start": span_start + j * per,
+                                              "end": span_start + (j + 1) * per})
+
+                # Monotonic clamp (safety net — global mapping is already ordered)
                 for j in range(1, len(karaoke_words)):
                     if karaoke_words[j]["start"] < karaoke_words[j - 1]["start"] + 0.02:
                         karaoke_words[j]["start"] = karaoke_words[j - 1]["start"] + 0.02
                     if karaoke_words[j]["end"] < karaoke_words[j]["start"] + 0.06:
                         karaoke_words[j]["end"] = karaoke_words[j]["start"] + 0.06
-                print(f"   🎤 Karaoke timing: {len(karaoke_words)} script words mapped to Whisper word timestamps")
+
+                # Coverage sanity: if the mapping ends long before the audio does
+                # (or starts absurdly late), the timing source is degenerate —
+                # rebuild with an even spread rather than ship racing captions.
+                if karaoke_words:
+                    cov_end = karaoke_words[-1]["end"]
+                    cov_start = karaoke_words[0]["start"]
+                    if cov_end < 0.55 * audio_clip_dur or cov_start > 6.0:
+                        print(f"   ⚠️ Karaoke coverage degenerate (span {cov_start:.1f}-{cov_end:.1f}s of {audio_clip_dur:.1f}s) — using even spread")
+                        karaoke_words = []
+                        span_start, span_end = 0.2, max(audio_clip_dur - 0.3, 1.0)
+                        per = max(0.12, (span_end - span_start) / n)
+                        for j, sw in enumerate(script_words_all):
+                            karaoke_words.append({"text": sw, "start": span_start + j * per,
+                                                  "end": span_start + (j + 1) * per})
+                    print(f"   🎤 Karaoke timing: {len(karaoke_words)} words, span {karaoke_words[0]['start']:.1f}s → {karaoke_words[-1]['end']:.1f}s (audio {audio_clip_dur:.1f}s)")
         except Exception as _ke:
             karaoke_words = []
             print(f"   ⚠️ Karaoke timing failed: {_ke}")
