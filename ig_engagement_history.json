@@ -49,8 +49,9 @@
     "title": "Navy Blue vs Black T-Shirt: This Color Mistake Cost 800 Pieces",
     "topic": "Repeat customer ka order mix ho gaya — color code follow karna zaroori hai",
     "published_at": "2026-03-26T21:56:38.761506+05:30",
-    "checked": false,
-    "insight_fail_count": 2
+    "checked": true,
+    "insight_fail_count": 3,
+    "check_failed": true
   },
   {
     "media_id": "18110526379750589",
@@ -417,8 +418,9 @@
     "title": "He Ordered 1500 T-Shirts Without GST — See What Happened",
     "topic": "Usne ₹2 Lakh Ka Order Liya Bina GST Number Ke — Ye Galti Mat Karna 🚫 | B2B Mistake",
     "published_at": "2026-05-05T22:44:10.899523+05:30",
-    "checked": false,
-    "insight_fail_count": 2
+    "checked": true,
+    "insight_fail_count": 3,
+    "check_failed": true
   },
   {
     "media_id": "18063930452411412",

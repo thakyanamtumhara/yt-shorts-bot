@@ -1958,5 +1958,19 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2384
     }
+  },
+  {
+    "date": "2026-07-07T07:02:55.572807",
+    "topic": "Tiruppur Se Direct Loge Toh Sasta Padega? \u2014 \u20b922 Hidden Cost Jo Koi Nahi Batata | Wholesale Reality",
+    "title": "Tiruppur \u0938\u0947 Direct \u0932\u093f\u092f\u093e \u2014 \u20b922 \u091b\u0941\u092a\u093e \u0916\u0930\u094d\u091a\u093e, \u20b915K \u092c\u091a\u0924 \u0917\u093e\u092f\u092c \ud83d\ude33",
+    "total_usd": 0.4993,
+    "duration_min": 10.1,
+    "breakdown": {
+      "claude_opus": 0.3719,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0272,
+      "whisper": 0.0052,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
