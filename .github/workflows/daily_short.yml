@@ -196,11 +196,11 @@ jobs:
             /tmp/yt_shorts/thumbnail_*.png
           retention-days: 3
 
-      - name: Save video for retry (on upload failure)
+      - name: Save rendered video (backup for every run, not a failure signal)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: failed-upload-video
+          name: rendered-video-backup
           path: |
             /tmp/yt_shorts/SHORT_*.mp4
             /tmp/yt_shorts/thumbnail_*.png
