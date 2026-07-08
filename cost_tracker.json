@@ -1988,5 +1988,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2342
     }
+  },
+  {
+    "date": "2026-07-08T11:23:06.249532",
+    "topic": "\u20b96 \u0915\u093e Tag \u0932\u0917\u093e\u092f\u093e \u0928\u0939\u0940\u0902 \u2014 1000 T-Shirts Return \u0939\u094b \u0917\u0908\u0902 \ud83d\udc80 Packaging Trap \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e",
+    "title": "\u20b96 \u0915\u093e Tag \u0928\u0939\u0940\u0902 \u0932\u0917\u093e\u092f\u093e \u2014 1000 T-Shirts Reject \ud83d\udc80 \u092f\u0947 Trap \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e",
+    "total_usd": 7.7992,
+    "duration_min": 27.2,
+    "breakdown": {
+      "claude_opus": 0.377,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0333,
+      "veo_clips": 7.04,
+      "whisper": 0.0062,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2228
+    }
   }
 ]
