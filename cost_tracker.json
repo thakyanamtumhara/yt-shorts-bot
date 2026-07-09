@@ -2005,5 +2005,22 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2228
     }
+  },
+  {
+    "date": "2026-07-09T12:10:51.041502",
+    "topic": "Screen Print Monsoon \u092e\u0947\u0902 Crack \u0915\u094d\u092f\u094b\u0902 \u0939\u094b\u0924\u093e \u0939\u0948? \u2014 \u20b915 \u0915\u0940 \u0917\u0932\u0924\u0940 \u091c\u094b \u0939\u0930 Printer \u0915\u0930\u0924\u093e \u0939\u0948 \ud83d\udd25",
+    "title": "Monsoon \u092e\u0947\u0902 300 T-Shirts Crack \u0939\u094b \u0917\u0908\u0902 \u2014 \u20b915 \u0915\u0940 \u0917\u0932\u0924\u0940 \u091c\u094b \u0939\u0930 Printer \u0915\u0930\u0924\u093e \u0939\u0948",
+    "total_usd": 7.776,
+    "duration_min": 23.8,
+    "breakdown": {
+      "claude_opus": 0.3658,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0235,
+      "veo_clips": 7.04,
+      "whisper": 0.0048,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2219
+    }
   }
 ]
