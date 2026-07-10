@@ -7609,7 +7609,10 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
    - Place remaining images between content sections where they add visual context
    - Use proper <img> tags with descriptive alt text (SEO-friendly, include keywords)
    - Add loading="lazy" to all images except the hero
-   - Style images: width:100%; border-radius:12px; margin:20px 0;
+   - The hero <img> must have fetchpriority="high" (it is the mobile LCP element) and NO loading attribute
+   - EVERY <img> must carry explicit width/height attributes so the browser reserves space (zero CLS):
+     hero = width="1280" height="720"; other images = width="1024" height="768"
+   - Style images: width:100%; height:auto; border-radius:12px; margin:20px 0;
    - Wrap each image in a <figure> with a <figcaption> describing what's shown
    - IMPORTANT: Use {og_image_url} as the og:image and twitter:image in meta tags
 """
