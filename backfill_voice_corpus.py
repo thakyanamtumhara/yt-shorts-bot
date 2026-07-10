@@ -19,9 +19,11 @@ the public channel page (local). Idempotent — already-fetched videos skip.
 import os
 import subprocess
 import sys
+import time
 
 import requests
 
+import daily_short
 from daily_short import (
     MAIN_CHANNEL_VIDEOS_URL,
     SOURCE_CHANNEL_API_KEY,
@@ -128,6 +130,12 @@ def main():
         if os.path.exists(out) or vid in already:
             skipped += 1
             continue
+        if daily_short._CAPTIONS_IP_BLOCKED and SKIP_WHISPER:
+            print(f"🛑 YouTube rate-limited caption fetches from this IP — "
+                  f"stopping at [{i}/{len(videos)}]. Re-run later; already-"
+                  f"fetched videos are skipped automatically.")
+            break
+        time.sleep(2)  # pace requests — rapid bursts trip YouTube's IP block
         text, source = get_video_speech_text(
             vid, allow_whisper=not SKIP_WHISPER,
             whisper_model=WHISPER_MODEL, max_seconds=3600,

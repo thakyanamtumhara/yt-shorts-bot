@@ -3661,6 +3661,9 @@ def _read_phase_status():
 # into vocabulary + pronunciation artifacts the daily pipeline reads.
 
 
+_CAPTIONS_IP_BLOCKED = False  # set once YouTube rate-limits caption fetches
+
+
 def fetch_transcript_unauthenticated(video_id):
     """YouTube auto-captions via youtube-transcript-api — no OAuth needed,
     works on videos this bot doesn't own. Hindi ASR tracks come back in
@@ -3680,12 +3683,23 @@ def fetch_transcript_unauthenticated(video_id):
         api = YouTubeTranscriptApi()
         fetched = api.fetch(video_id, languages=langs)
         entries = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else list(fetched)
-    except Exception:
-        try:
-            # Legacy API: classmethod .get_transcript()
-            entries = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
-        except Exception as e:
-            print(f"   📝 Unauth captions unavailable for {video_id}: {str(e)[:120]}")
+    except Exception as e1:
+        if type(e1).__name__ == "IpBlocked":
+            # YouTube rate-limited this IP — every further request will fail
+            # too. Flag it so batch callers (backfill) can stop early.
+            global _CAPTIONS_IP_BLOCKED
+            _CAPTIONS_IP_BLOCKED = True
+        # Legacy API (< 1.0) only: don't let its AttributeError on modern
+        # versions mask the real error above.
+        if hasattr(YouTubeTranscriptApi, "get_transcript"):
+            try:
+                entries = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
+            except Exception as e2:
+                print(f"   📝 Unauth captions unavailable for {video_id}: {str(e2)[:120]}")
+                return None
+        else:
+            print(f"   📝 Unauth captions unavailable for {video_id}: "
+                  f"{type(e1).__name__} {str(e1)[:120]}")
             return None
     if not entries:
         return None
