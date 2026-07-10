@@ -3603,6 +3603,16 @@ def fetch_youtube_captions(video_id):
 VOICE_CORPUS_DIR = "voice_corpus"
 PHASE_STATUS_FILE = "phase_status.json"
 
+# Self-learning voice artifacts (built by build_voice_models, committed to the
+# repo like the other tracking JSONs so the daily CI run can read them):
+#   voice_vocab.json            — frequency-ranked Devanagari words he uses
+#   learned_pronunciations.json — auto roman→Devanagari map from his speech
+VOICE_VOCAB_FILE = "voice_vocab.json"
+LEARNED_PRON_FILE = "learned_pronunciations.json"
+# Public long-form tab of the main channel — lets backfill list videos with
+# yt-dlp when the YouTube API key isn't in the environment (local runs).
+MAIN_CHANNEL_VIDEOS_URL = "https://www.youtube.com/@BulkPlainTshirt_com/videos"
+
 
 def _write_phase_status(phase_id: int, status: str, result: str, details: str = ""):
     """Update a single phase's status in phase_status.json. Read-modify-write.
@@ -3644,43 +3654,466 @@ def _read_phase_status():
     return {"phases": {}, "last_update": None}
 
 
-def extract_voice_corpus_style_hints(max_entries=12):
-    """Phase 4: read accumulated voice_corpus/*.txt and extract style hints
-    for inclusion in the daily script-generation prompt.
+# ── Self-learning voice (2026-07-10) ──────────────────────────────────────
+# The corpus was learning from video DESCRIPTIONS (marketing copy) because
+# captions().download() is denied on the main channel. These helpers capture
+# Ketu's REAL spoken words instead, cheapest source first, and distill them
+# into vocabulary + pronunciation artifacts the daily pipeline reads.
 
-    Returns a string of style guidance, or '' if corpus is too sparse (<4 weeks).
-    Style guidance includes the user's high-frequency vocabulary and 5 example
-    ending sentences so the daily-generated script matches the user's voice.
+
+def fetch_transcript_unauthenticated(video_id):
+    """YouTube auto-captions via youtube-transcript-api — no OAuth needed,
+    works on videos this bot doesn't own. Hindi ASR tracks come back in
+    Devanagari = his actual spoken words. Same path .github/extract_vocab.py
+    already used successfully on this channel (avoids yt-dlp bot-detection
+    on CI runners). Hindi tracks only — an English track would be a
+    translation, useless for pronunciation learning."""
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+    except ImportError:
+        print("   📝 youtube-transcript-api not installed — skipping unauth captions")
+        return None
+    langs = ["hi", "hi-IN"]
+    entries = None
+    try:
+        # Modern API (>= 1.0): instance method .fetch()
+        api = YouTubeTranscriptApi()
+        fetched = api.fetch(video_id, languages=langs)
+        entries = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else list(fetched)
+    except Exception:
+        try:
+            # Legacy API: classmethod .get_transcript()
+            entries = YouTubeTranscriptApi.get_transcript(video_id, languages=langs)
+        except Exception as e:
+            print(f"   📝 Unauth captions unavailable for {video_id}: {str(e)[:120]}")
+            return None
+    if not entries:
+        return None
+
+    def _snip(e):
+        return e.get("text", "") if isinstance(e, dict) else getattr(e, "text", "")
+
+    text = " ".join(_snip(e) for e in entries if _snip(e))
+    text = re.sub(r"\[[^\]]*\]", " ", text)  # [संगीत] / [Music] / [applause]
+    text = re.sub(r"\s+", " ", text).strip()
+    return text or None
+
+
+_WHISPER_MODEL_CACHE = {}
+
+
+def _get_whisper_model(name):
+    """Load-once cache — backfill transcribes many videos in one process."""
+    if name not in _WHISPER_MODEL_CACHE:
+        import whisper
+        _WHISPER_MODEL_CACHE[name] = whisper.load_model(name)
+    return _WHISPER_MODEL_CACHE[name]
+
+
+def transcribe_youtube_video(video_id, whisper_model="small", max_seconds=None):
+    """Download a public video's audio (yt-dlp) and Whisper-transcribe it to
+    Devanagari Hindi. Fallback for videos without a Hindi caption track.
+    Slow (local CPU) — never in the daily cron; the Sunday recap caps
+    duration via max_seconds. Returns transcript text or None."""
+    import subprocess, tempfile, shutil
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    tmp = tempfile.mkdtemp(prefix="ytaudio_")
+    try:
+        audio_path = os.path.join(tmp, f"{video_id}.m4a")
+        cmd = ["yt-dlp", "-f", "bestaudio[ext=m4a]/bestaudio", "-o", audio_path,
+               "--no-playlist", "-q", url]
+        r = subprocess.run(cmd, capture_output=True, timeout=600)
+        if r.returncode != 0 or not os.path.exists(audio_path):
+            err = r.stderr.decode(errors="replace")[:160] if r.stderr else "no output file"
+            print(f"   ⚠️ yt-dlp failed for {video_id}: {err}")
+            return None
+        if max_seconds:
+            trimmed = os.path.join(tmp, f"{video_id}_t.m4a")
+            subprocess.run(["ffmpeg", "-i", audio_path, "-t", str(max_seconds),
+                            "-c", "copy", "-y", trimmed], capture_output=True, timeout=120)
+            if os.path.exists(trimmed):
+                audio_path = trimmed
+        model = _get_whisper_model(whisper_model)
+        result = model.transcribe(audio_path, language="hi")
+        text = (result.get("text") or "").strip()
+        return text or None
+    except Exception as e:
+        print(f"   ⚠️ transcribe_youtube_video({video_id}) failed: {e}")
+        return None
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def get_video_speech_text(video_id, allow_whisper=True, whisper_model="small",
+                          max_seconds=None):
+    """His REAL spoken words, cheapest source first: unauthenticated captions
+    → OAuth captions API → yt-dlp+Whisper. Returns (text, source_label) or
+    (None, None). The description fallback stays with the callers — it is
+    NOT speech and must be labelled as such in the corpus."""
+    text = fetch_transcript_unauthenticated(video_id)
+    if text and len(text) > 200:
+        return text, "captions"
+    text = fetch_youtube_captions(video_id)
+    if text and len(text) > 200:
+        return text, "captions-oauth"
+    if allow_whisper:
+        text = transcribe_youtube_video(video_id, whisper_model=whisper_model,
+                                        max_seconds=max_seconds)
+        if text:
+            return text, "whisper"
+    return None, None
+
+
+# Never auto-map these romanizations — English homographs / function words
+# that would wreck the Hinglish code-switching if forced to Devanagari.
+# ("do"/"teen"/"hi" are deliberate hand-curated homograph calls in
+# _TTS_HINGLISH_DEVANAGARI — the learner must never own them.)
+_PRON_DENYLIST = {
+    "do", "to", "hi", "the", "is", "us", "in", "so", "no", "me", "he", "we",
+    "an", "or", "of", "on", "at", "be", "by", "it", "as", "up", "teen",
+    "are", "use", "man", "men", "was", "has", "had", "for", "and", "not",
+    "but", "all", "can", "may", "say", "see", "one", "two", "ten", "our",
+    "out", "now", "new", "any", "who", "how", "why", "his", "her", "him",
+    "got", "get", "let", "yes", "did", "does", "you", "your", "with", "this",
+    "that", "have", "from", "they", "will", "what", "when", "make", "like",
+    "time", "just", "know", "take", "come", "some", "them", "then", "than",
+    "look", "only", "over", "also", "back", "work", "well", "even", "want",
+    "give", "most", "more", "less", "sale", "name", "same", "game", "day",
+    "aura", "were", "been", "each", "much", "many", "very", "here", "there",
+    # Script-plausible English that Whisper/captions write in Devanagari
+    # (मार्केट, स्टार्ट...) — their romanizations round-trip to the English
+    # word itself and must never be force-converted (2026-07-10 review)
+    "market", "marketing", "plan", "start", "stop", "drop", "sport", "sports",
+    "transport", "regular", "maroon", "karate", "sari", "bare", "wale",
+    "age", "bar", "bat", "aid", "ate", "die", "lie", "too", "tin", "ham",
+    "vet", "usa", "gee", "dis", "chai", "team", "time", "line", "fit",
+    "best", "rate", "rest", "test", "type", "call", "care", "case", "cash",
+    "city", "free", "full", "gain", "girl", "gold", "good", "hand", "head",
+    "help", "high", "home", "idea", "item", "keep", "kind", "last", "late",
+    "life", "list", "live", "long", "made", "mail", "main", "mark", "mind",
+    "need", "next", "nice", "note", "open", "pack", "page", "paid", "part",
+    "past", "phone", "piece", "place", "point", "price", "pure", "real",
+    "ready", "right", "road", "room", "rule", "safe", "save", "seat", "sell",
+    "send", "shop", "show", "side", "sign", "site", "slow", "sold", "sort",
+    "stock", "store", "sure", "tape", "term", "true", "turn", "unit", "used",
+    "user", "view", "wait", "wash", "wear", "week", "wide", "wish", "word",
+    "year", "your", "zero", "brand", "check", "china", "clear", "cloth",
+    "count", "cover", "daily", "early", "extra", "final", "fresh", "front",
+    "great", "group", "heavy", "hello", "india", "large", "level", "light",
+    "local", "money", "month", "never", "offer", "paper", "party", "photo",
+    "plain", "plant", "reply", "sales", "share", "sheet", "short", "small",
+    "sound", "speed", "staff", "still", "style", "table", "today", "total",
+    "touch", "track", "trade", "train", "under", "video", "visit", "water",
+    "wheel", "white", "whole", "world", "worth", "wrong",
+    # Business vocab that must stay English in our scripts
+    "order", "print", "quality", "sample", "size", "cotton", "gsm", "sada",
+}
+
+
+def _load_expected_english():
+    """EXPECTED_ENGLISH from .github/qa_loop.py — words the voice-QA harness
+    requires to stay Latin in TTS output. The learner must never map them.
+    Best-effort: returns an empty set if the file moves."""
+    try:
+        qa_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               ".github", "qa_loop.py")
+        src = open(qa_path).read()
+        s = src.index("EXPECTED_ENGLISH = {")
+        e = src.index("}", s) + 1
+        ns = {}
+        exec(src[s:e], ns)
+        return set(ns["EXPECTED_ENGLISH"])
+    except Exception:
+        return set()
+
+
+# Devanagari → colloquial Hinglish romanization tables. Deliberately NOT a
+# transliteration library: ITRANS/HK render बेचेंगे as "becheMge" which never
+# matches how Claude actually spells it in scripts ("bechenge"). These tables
+# generate the informal spellings people (and our script prompts) really use.
+_DEVA_CONSONANT_ROMAN = {
+    "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "n",
+    "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "n",
+    "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n",
+    "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n",
+    "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m",
+    "य": "y", "र": "r", "ल": "l", "व": "v", "श": "sh",
+    "ष": "sh", "स": "s", "ह": "h",
+}
+_DEVA_NUKTA_OPTIONS = {  # consonant + ़ → common informal spellings
+    "क": ("q", "k"), "ख": ("kh",), "ग": ("g",), "ज": ("z", "j"),
+    "ड": ("d", "r"), "ढ": ("dh", "rh"), "फ": ("f", "ph"), "य": ("y",),
+}
+_DEVA_MATRA_OPTIONS = {
+    "ा": ("aa", "a"),   # ा
+    "ि": ("i",),        # ि
+    "ी": ("ee", "i"),   # ी
+    "ु": ("u",),        # ु
+    "ू": ("oo", "u"),   # ू
+    "ृ": ("ri",),       # ृ
+    "ॅ": ("e",),        # ॅ
+    "े": ("e",),        # े
+    "ै": ("ai",),       # ै
+    "ॉ": ("o",),        # ॉ
+    "ो": ("o",),        # ो
+    "ौ": ("au",),       # ौ
+}
+_DEVA_VOWEL_OPTIONS = {
+    "अ": ("a",), "आ": ("aa", "a"), "इ": ("i",), "ई": ("ee", "i"),
+    "उ": ("u",), "ऊ": ("oo", "u"), "ऋ": ("ri",), "ए": ("e",),
+    "ऐ": ("ai",), "ओ": ("o",), "औ": ("au",), "ऑ": ("o",), "ऍ": ("e",),
+}
+
+
+def _devanagari_to_roman_variants(word, max_variants=12):
+    """Colloquial Hinglish spellings of a Devanagari word, most common first:
+    बेचेंगे → ['bechenge', 'bechemge'], काम → ['kaam', 'kam', ...].
+    Returns [] for tokens containing digits/danda/rare signs. Variants that
+    never appear in a script are harmless — they just never match."""
+    import unicodedata, itertools
+    word = unicodedata.normalize("NFD", word)  # split precomposed nukta (क़ → क+़)
+    NUKTA, HALANT = "़", "्"
+    ANUSVARA, CHANDRABINDU, VISARGA = "ं", "ँ", "ः"
+    chars = [c for c in word if c not in ("‌", "‍")]
+    segs, kinds = [], []   # parallel: roman alternatives + segment kind
+    pending_a = False      # inherent vowel of the previous consonant
+
+    def flush():
+        nonlocal pending_a
+        if pending_a:
+            segs.append(("a",))
+            kinds.append("A")  # inherent schwa — deletion candidate
+        pending_a = False
+
+    for idx, ch in enumerate(chars):
+        if ch in _DEVA_CONSONANT_ROMAN:
+            flush()
+            if idx + 1 < len(chars) and chars[idx + 1] == NUKTA:
+                segs.append(_DEVA_NUKTA_OPTIONS.get(ch, (_DEVA_CONSONANT_ROMAN[ch],)))
+            else:
+                segs.append((_DEVA_CONSONANT_ROMAN[ch],))
+            kinds.append("C")
+            pending_a = True
+        elif ch == NUKTA:
+            continue  # consumed with its consonant
+        elif ch in _DEVA_MATRA_OPTIONS:
+            pending_a = False
+            segs.append(_DEVA_MATRA_OPTIONS[ch])
+            kinds.append("V")
+        elif ch == HALANT:
+            pending_a = False  # conjunct — no inherent vowel
+        elif ch in (ANUSVARA, CHANDRABINDU):
+            flush()
+            segs.append(("n", "m") if ch == ANUSVARA else ("n",))
+            kinds.append("N")
+        elif ch == VISARGA:
+            flush()
+            segs.append(("h",))
+            kinds.append("C")
+        elif ch in _DEVA_VOWEL_OPTIONS:
+            flush()
+            segs.append(_DEVA_VOWEL_OPTIONS[ch])
+            kinds.append("V")
+        else:
+            return []  # danda, digits, om, rare signs — not a speech token
+    if pending_a:
+        segs.append(("", "a"))  # trailing schwa usually drops (काम → kaam first)
+        kinds.append("V")
+    # Colloquial medial schwa deletion (करना → "karna" not "karana"): the
+    # last inherent 'a' before the final syllable usually drops in writing.
+    # Deletion-first ordering so the vi-major fill in build_voice_models
+    # picks the common spelling as each word's primary variant.
+    for i in range(len(segs) - 2, 0, -1):
+        if kinds[i] == "A":
+            segs[i] = ("", "a")
+            break
+    # Word-final ा is usually written single-'a' (mera, karna — not meraa)
+    if segs and segs[-1] == ("aa", "a"):
+        segs[-1] = ("a", "aa")
+    variants = []
+    for combo in itertools.islice(itertools.product(*segs), 64):
+        v = "".join(combo)
+        # 4-char floor: every 1-3 letter romanization (do, kya, hai, age,
+        # too, bar...) is either hand-curated already or an English homograph
+        if re.fullmatch(r"[a-z]{4,20}", v) and v not in variants:
+            variants.append(v)
+        if len(variants) >= max_variants:
+            break
+    return variants
+
+
+def build_voice_models():
+    """Distill voice_corpus/*.txt into the two committed artifacts:
+    voice_vocab.json (his words, frequency-ranked) + learned_pronunciations.json
+    (auto roman→Devanagari; hand-curated _TTS_HINGLISH_DEVANAGARI always wins).
+    Speech transcripts (source: captions/whisper) are preferred — description
+    files only count while almost no speech exists yet. Idempotent; re-run
+    every Sunday and after backfills."""
+    import collections
+    if not os.path.isdir(VOICE_CORPUS_DIR):
+        return
+    speech_texts, other_texts = [], []
+    for fn in sorted(os.listdir(VOICE_CORPUS_DIR)):
+        if not fn.endswith(".txt"):
+            continue
+        try:
+            with open(os.path.join(VOICE_CORPUS_DIR, fn)) as f:
+                raw = f.read()
+        except Exception:
+            continue
+        body = "\n".join(l for l in raw.splitlines() if not l.startswith("#"))
+        header = raw[:400]
+        if "# source: captions" in header or "# source: whisper" in header:
+            speech_texts.append(body)
+        else:
+            other_texts.append(body)  # legacy description-era files
+    corpus = "\n".join(speech_texts if len(speech_texts) >= 3
+                       else speech_texts + other_texts)
+    words = [w.strip("।॥॰ॐऽ०१२३४५६७८९")
+             for w in re.findall(r"[ऀ-ॿ]{2,}", corpus)]
+    freq = collections.Counter(w for w in words if len(w) >= 2)
+    top = [w for w, c in freq.most_common(400) if c >= 2]
+    with open(VOICE_VOCAB_FILE, "w") as f:
+        json.dump({"top_words": top, "counts": {w: freq[w] for w in top}},
+                  f, ensure_ascii=False, indent=2)
+
+    deny = set(_PRON_DENYLIST) | _load_expected_english()
+    hand = {k.lower() for k in _TTS_HINGLISH_DEVANAGARI}
+    # WORD-level guard, not just key-level: a Devanagari word that is already
+    # a hand-map VALUE has its pronunciation curated — its OTHER romanization
+    # variants (आगे→'age', करते→'karate') can only ever match English words
+    # in real scripts, so the learner must not touch the word at all.
+    hand_values = set(_TTS_HINGLISH_DEVANAGARI.values())
+    learnable = [w for w in top if w not in hand_values]
+    learned = {}
+    # Variant-index-major fill: every word gets its PRIMARY colloquial
+    # spelling before any word gets its 2nd/3rd variant, so the 800 cap
+    # can't starve low-frequency words of their most common spelling.
+    all_variants = {w: _devanagari_to_roman_variants(w) for w in learnable}
+    for vi in range(12):
+        for w in learnable:
+            variants = all_variants[w]
+            if vi >= len(variants):
+                continue
+            roman = variants[vi]
+            if roman in deny or roman in hand or roman in learned:
+                continue
+            learned[roman] = w
+            if len(learned) >= 800:
+                break
+        if len(learned) >= 800:
+            break
+    with open(LEARNED_PRON_FILE, "w") as f:
+        json.dump(learned, f, ensure_ascii=False, indent=2)
+    global _LEARNED_PRON_CACHE
+    _LEARNED_PRON_CACHE = None  # force reload on next normalize_for_tts
+    print(f"   🧠 voice models: {len(top)} vocab words, {len(learned)} learned pronunciations"
+          f" (from {len(speech_texts)} speech + {len(other_texts)} description files)")
+
+
+_LEARNED_PRON_CACHE = None
+
+
+def _get_learned_pronunciations():
+    """learned_pronunciations.json, loaded once per process. Both KEYS and
+    VALUES are validated so a hand-edited/merge-mangled file can never crash
+    the daily render (re.sub replacement templates) or leak junk into the
+    spoken text — anything suspicious is silently dropped."""
+    global _LEARNED_PRON_CACHE
+    if _LEARNED_PRON_CACHE is None:
+        loaded = {}
+        try:
+            if os.path.exists(LEARNED_PRON_FILE):
+                with open(LEARNED_PRON_FILE) as f:
+                    for k, v in json.load(f).items():
+                        if (isinstance(k, str) and isinstance(v, str)
+                                and re.fullmatch(r"[a-z]{4,20}", k.lower())
+                                and re.fullmatch(r"[ऀ-ॿ‌‍ ]{1,40}", v)):
+                            loaded[k.lower()] = v
+        except Exception:
+            loaded = {}
+        _LEARNED_PRON_CACHE = loaded
+    return _LEARNED_PRON_CACHE
+
+
+def extract_voice_corpus_style_hints(max_entries=12):
+    """Phase 4: distill voice_corpus/*.txt into prompt guidance — 5 example
+    ending sentences from the TAIL of his transcripts (his real sign-offs)
+    plus his high-frequency vocabulary from voice_vocab.json.
+
+    Returns a string of style guidance, or '' if corpus is too sparse (<4 files).
     """
     if not os.path.isdir(VOICE_CORPUS_DIR):
         return ""
-    files = sorted(os.listdir(VOICE_CORPUS_DIR), reverse=True)[:max_entries]
-    if len(files) < 4:
+    import re as _re
+    all_files = [f for f in os.listdir(VOICE_CORPUS_DIR) if f.endswith(".txt")]
+    if len(all_files) < 4:
         # Not enough corpus yet — Phase 4 activates after 4 weeks of data
         return ""
-    samples = []
-    for fname in files:
-        if not fname.endswith(".txt"):
-            continue
+    # Order: REAL-speech files first (dated Sundays newest-first, then the
+    # back-catalog backfills), description-era files only as last resort.
+    # A plain reverse sort would rank every backfill-* above every dated
+    # file forever ('b' > '2') and starve out new Sunday transcripts.
+    speech_dated, speech_backfill, described = [], [], []
+    headers = {}
+    for fname in all_files:
         try:
             with open(os.path.join(VOICE_CORPUS_DIR, fname)) as f:
-                samples.append(f.read()[:3000])
+                headers[fname] = f.read(400)
         except Exception:
             continue
-    if not samples:
+        is_speech = ("# source: captions" in headers[fname]
+                     or "# source: whisper" in headers[fname])
+        if not is_speech:
+            described.append(fname)
+        elif _re.match(r"\d{4}-\d{2}-\d{2}\.txt$", fname):
+            speech_dated.append(fname)
+        else:
+            speech_backfill.append(fname)
+    ordered = (sorted(speech_dated, reverse=True) + sorted(speech_backfill)
+               + sorted(described, reverse=True))
+    # His long-form sign-offs often pitch the website/channel — never feed
+    # CTA-flavoured lines back as ending examples (spoken CTA is banned).
+    _CTA = _re.compile(r"(?i)subscribe|website|channel|\.com|link|"
+                       r"सब्सक्राइब|चैनल|वेबसाइट|लिंक|लाइक|कमेंट|वीडियो")
+    endings, n_read = [], 0
+    for fname in ordered[:max_entries]:
+        try:
+            with open(os.path.join(VOICE_CORPUS_DIR, fname)) as f:
+                raw = f.read()
+        except Exception:
+            continue
+        body = "\n".join(l for l in raw.splitlines() if not l.startswith("#")).strip()
+        if not body:
+            continue
+        n_read += 1
+        # Real sign-offs live at the END of a transcript, so look at the tail
+        # (the old code read the first 3000 chars — mid-video for a long form)
+        sentences = [x.strip() for x in _re.split(r'[।.!?]\s+', body[-1200:])
+                     if len(x.strip()) >= 8]
+        if len(sentences) < 3:
+            continue  # no reliable sentence structure — skip, no fragments
+        for cand in (sentences[-2], sentences[-3]):
+            if not _CTA.search(cand):
+                endings.append(cand[:120])
+                break
+    if not n_read:
         return ""
-    # Extract last 1-2 sentences from each sample as ending-pattern examples
-    import re as _re
-    endings = []
-    for sample in samples:
-        sentences = _re.split(r'[।.!?]\s+', sample.strip())
-        if len(sentences) >= 2:
-            endings.append(sentences[-2][:120])
     endings_text = "\n".join(f"   - {e}" for e in endings[:5])
+    vocab_line = ""
+    try:
+        if os.path.exists(VOICE_VOCAB_FILE):
+            with open(VOICE_VOCAB_FILE) as f:
+                top = json.load(f).get("top_words", [])[:60]
+            if top:
+                vocab_line = ("\nHIS HIGH-FREQUENCY WORDS (prefer these — this is "
+                              "how he actually talks): " + ", ".join(top) + "\n")
+    except Exception:
+        pass
     return (
-        f"\n\nUSER VOICE STYLE (from {len(samples)} recent main-channel video transcripts):\n"
+        f"\n\nUSER VOICE STYLE (from {n_read} recent main-channel video transcripts):\n"
         f"Example ending sentences the user actually uses — match this energy + register:\n"
-        f"{endings_text}\n"
+        f"{endings_text}\n{vocab_line}"
     )
 
 
@@ -4018,12 +4451,16 @@ STRUCTURE (follow this EVERY time):
    - Include specific numbers, methods, or techniques
    - "Dekho... agar tum 180 GSM loge toh summer ke liye theek hai, par printing ke liye 200 minimum rakho"
 
-4. NATURAL ENDING (1-2 sentences) — Trail off conclusively (ROTATE — use a DIFFERENT ending each video):
-   - "...simple hai, pehle check kar lo, phir order karo."
-   - "...bas yehi galti mat karna, aur kuch nahi."
-   - "...toh wahi hota hai, bas."
-   - "...itna kar lo, complaint nahi aayegi."
-   - "...wo jyada theek rahega, try karke dekh lo."
+4. FINAL CLOSER — end on a SHORT, FIRM line, NOT a trail-off. The wrap-up
+   sentence may flow, but the LAST line must be 3-6 words, land at full
+   energy, and STOP on a hard period. No leading "...", no fade. Rotate
+   closers (see the detailed "NATURAL ENDING" section below). The firm
+   final line looks like:
+   - "Theek hai."
+   - "Bas itna hi."
+   - "Dhyaan rakhna."
+   - "Sample kar lo."
+   - "Yehi tha bhai."
 
 Study these REAL examples from the actual business owner — match this tone PERFECTLY:
 
@@ -5528,6 +5965,22 @@ _TTS_HINGLISH_DEVANAGARI.update({
 # theory — in our scripts it's always Hindi. Conditional add.
 _TTS_HINGLISH_DEVANAGARI["hi"] = "ही"
 
+# ── Ketu-reported mispronunciations, 2026-07-10 ──
+# "bechenge" was read as "bechenche" (Tag-missing video, ~7s). The future/
+# plural sell-forms were missing. (bechna/becha/bechi/bechte/bechen/becho/
+# bech/bechke/bechoge are already mapped above.)
+_TTS_HINGLISH_DEVANAGARI.update({
+    "bechenge": "बेचेंगे", "becheinge": "बेचेंगे",
+    "bechega": "बेचेगा", "bechegi": "बेचेगी",
+    "bechunga": "बेचूँगा", "bechungi": "बेचूँगी",
+})
+# "do" (दो = two) was read as English "do" (300-tshirt video, ~22s). The old
+# comment near the number-word map claiming '"do": "दो" already exists' was
+# WRONG — it never existed. Homograph with English "do", but in our Hindi-
+# dominant B2B scripts standalone "do" is ~always दो (same call we made for
+# "teen"→तीन and "hi"→ही). Whole-word only, so "download"/"double" are safe.
+_TTS_HINGLISH_DEVANAGARI["do"] = "दो"
+
 
 def normalize_for_tts(text: str) -> str:
     """Normalize a Hinglish script for cleaner TTS output.
@@ -5705,9 +6158,18 @@ def normalize_for_tts(text: str) -> str:
     for word, deva in _TTS_HINGLISH_DEVANAGARI.items():
         s = _re.sub(rf"\b{word}\b", deva, s, flags=_re.IGNORECASE)
 
-    # Preserve ellipses — ElevenLabs reads "..." as a natural trail-off pause,
-    # which is exactly the prosody our prompt requests for ending sentences.
-    # (Earlier we stripped ellipses for Sarvam, but ElevenLabs handles them well.)
+    # Auto-learned pronunciations from Ketu's own channel corpus (see
+    # build_voice_models). Hand-curated always wins: it ran first, and keys
+    # present in _TTS_HINGLISH_DEVANAGARI are skipped as a second guard.
+    # Lambda replacement so re.sub never parses the value as a template.
+    for word, deva in _get_learned_pronunciations().items():
+        if word not in _TTS_HINGLISH_DEVANAGARI:
+            s = _re.sub(rf"\b{_re.escape(word)}\b", lambda m, d=deva: d, s,
+                        flags=_re.IGNORECASE)
+
+    # Preserve MID-SCRIPT ellipses — ElevenLabs reads "..." as a natural
+    # thinking pause, good prosody between sentences. (The very LAST words are
+    # different — see FINAL-SENTENCE FINALITY below.)
     s = s.replace("…", "...")  # normalize unicode ellipsis to three dots
     s = _re.sub(r",\s*,", ",", s)
     # Pre-quote pause: speech verb + comma + opening quote reads too fast on
@@ -5718,6 +6180,14 @@ def normalize_for_tts(text: str) -> str:
         s,
         flags=_re.IGNORECASE,
     )
+    # FINAL-SENTENCE FINALITY: eleven_v3 reads a trailing "..." as a fade-out.
+    # Fine mid-script, wrong on the very last words — force the closer to a
+    # hard stop. Handles dots around ?/!/danda ("ho?...", "...!") and a
+    # closing quote after the ellipsis (with or without a space before it).
+    s = s.rstrip()
+    s = _re.sub(r'([?!।])\s*\.{2,}(["”’\']*)$', r'\1\2', s)
+    s = _re.sub(r'\.{2,}\s*([।!?]["”’\']*)$', r'\1', s)
+    s = _re.sub(r'\.{2,}\s*(["”’\']*)$', r'.\1', s)
     s = _re.sub(r"\s+", " ", s).strip()
     return s
 
@@ -7823,35 +8293,49 @@ def process_main_channel_recap():
     print(f"   📺 Uploaded {video['hours_old']}h ago · duration {video['duration_seconds']}s")
     print(f"   📺 URL: {video['vid_url']}")
 
-    # ── Step 2: Phase 2 — best-effort caption fetch ──
-    transcript = fetch_youtube_captions(video["video_id"])
+    # ── Step 2: Phase 2 — REAL speech: unauth captions → OAuth captions →
+    #    yt-dlp+Whisper → description. Whisper here uses the fast "base"
+    #    model on 10 min of audio MAX: transcribe() has no wall-clock bound,
+    #    and a long run would eat the 45-min job before the blog publishes.
+    transcript, speech_source = get_video_speech_text(video["video_id"],
+                                                      whisper_model="base",
+                                                      max_seconds=600)
     if transcript:
-        print(f"   📝 Phase 2: Got transcript ({len(transcript)} chars)")
+        print(f"   📝 Phase 2: Got REAL speech via {speech_source} ({len(transcript)} chars)")
         script_source = transcript
-        _write_phase_status(2, "active", "transcript-fetched",
-                            f"Got {len(transcript)} char transcript for {video['title'][:50]}")
+        _write_phase_status(2, "active", f"speech-{speech_source}",
+                            f"Got {len(transcript)} char {speech_source} transcript "
+                            f"for {video['title'][:50]}")
     else:
-        print(f"   📝 Phase 2: No transcript (captions API needs OAuth) — using description")
+        speech_source = None
+        print(f"   📝 Phase 2: No speech source worked — using description")
         script_source = video["description"]
         _write_phase_status(2, "best-effort", "fallback-to-description",
-                            "Captions API requires OAuth; falling back to video description. "
-                            "Will be upgraded when OAuth caption scope is added.")
+                            "Captions (unauth + OAuth) and Whisper all failed; "
+                            "falling back to video description.")
 
     # ── Step 3: Save to voice corpus for Phase 4 learning ──
     os.makedirs(VOICE_CORPUS_DIR, exist_ok=True)
     corpus_path = os.path.join(VOICE_CORPUS_DIR, f"{today}.txt")
     try:
         with open(corpus_path, "w") as f:
-            f.write(f"# {video['title']}\n# {video['vid_url']}\n# Uploaded: {video['published_at']}\n\n")
+            f.write(f"# {video['title']}\n# {video['vid_url']}\n# Uploaded: {video['published_at']}\n")
+            f.write(f"# source: {speech_source or 'description'}\n\n")
             f.write(script_source)
         corpus_count = len([f for f in os.listdir(VOICE_CORPUS_DIR) if f.endswith(".txt")])
         print(f"   💾 Phase 3: Saved to voice_corpus/ ({corpus_count} entries total)")
-        weeks = corpus_count // 1  # roughly weekly entries
         _write_phase_status(3, "active", "saved",
                             f"{corpus_count} corpus entries · target 4+ for Phase 4 activation")
     except Exception as e:
         print(f"   ⚠️ Phase 3: corpus save failed: {e}")
         _write_phase_status(3, "failed", str(e), "Corpus save error")
+
+    # Refresh the self-learning artifacts (voice_vocab.json +
+    # learned_pronunciations.json) from the updated corpus every Sunday.
+    try:
+        build_voice_models()
+    except Exception as e:
+        print(f"   ⚠️ build_voice_models failed: {e}")
 
     # ── Step 4-6: Generate blog + publish to S3 ──
     try:
@@ -10522,7 +11006,7 @@ def main():
             response = openai_client.audio.speech.create(
                 model="gpt-4o-mini-tts",
                 voice=TARGET_VOICE,
-                input=tts_input + "...",
+                input=tts_input,
                 instructions=VOICE_INSTRUCTIONS,
                 speed=VOICE_SPEED,
                 response_format="mp3",
@@ -11387,9 +11871,11 @@ def main():
 
     final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
 
-    # Gradual voice fade-out at the end (natural trailing off)
+    # De-click only — do NOT fade the closer. A real ending lands at full
+    # volume on the last word, then stops (a "button", not a trail-off).
+    # 1.2s used to fade the punchy final line into silence = no ending feel.
     from moviepy.audio.fx.audio_fadeout import audio_fadeout
-    audio_clip = audio_fadeout(audio_clip, 1.2)
+    audio_clip = audio_fadeout(audio_clip, 0.25)
 
     # Extract Veo ambient audio (scene sounds at low volume)
     ambient_clip, ambient_temp_files = extract_ambient_audio(downloaded_clips, total_duration)

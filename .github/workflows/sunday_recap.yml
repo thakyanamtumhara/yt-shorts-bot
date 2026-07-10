@@ -18,7 +18,7 @@ on:
 jobs:
   recap:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -67,6 +67,8 @@ jobs:
           git add reddit_drafts/ || true
           git add voice_corpus/ || true
           git add phase_status.json || true
+          git add voice_vocab.json || true
+          git add learned_pronunciations.json || true
           git commit -m "Sunday recap [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}

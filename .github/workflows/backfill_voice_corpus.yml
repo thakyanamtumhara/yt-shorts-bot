@@ -1,0 +1,63 @@
+name: Backfill Voice Corpus
+
+# Manual one-shot: transcribe the main channel's back-catalog into
+# voice_corpus/ (auto-captions first, Whisper fallback) and commit the
+# corpus + rebuilt voice_vocab.json / learned_pronunciations.json.
+# NEVER on a cron — Whisper over many videos is slow. Idempotent: videos
+# already in voice_corpus/ are skipped, so re-running extends the corpus.
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_videos:
+        description: 'How many recent long-form videos to backfill'
+        required: false
+        default: '40'
+      skip_whisper:
+        description: 'true = captions only (fast); false = Whisper fallback for caption-less videos'
+        required: false
+        default: 'true'
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Install Python packages
+        run: pip install -q -r requirements.txt
+
+      - name: Run backfill
+        env:
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+          CHANNEL_ID_2: ${{ secrets.CHANNEL_ID_2 }}
+          MAX_VIDEOS: ${{ inputs.max_videos }}
+          SKIP_WHISPER: ${{ inputs.skip_whisper == 'true' && '1' || '' }}
+        run: python3 backfill_voice_corpus.py
+
+      - name: Commit corpus + voice models
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add voice_corpus/ || true
+          git add voice_vocab.json || true
+          git add learned_pronunciations.json || true
+          git commit -m "Backfill voice corpus + rebuild voice models [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }}
