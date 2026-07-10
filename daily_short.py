@@ -7325,6 +7325,10 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         '<a href="https://www.youtube.com/@BulkPlainTshirt_com" rel="author noopener" target="_blank" '
         'style="color:#007bff;text-decoration:underline;">YouTube channel</a> with 40K+ subscribers.'
         '</div>'
+        '<div style="font-size:12px;color:#999;margin-top:8px;">'
+        'Transparency: our articles are AI-assisted drafts built on real production data from our '
+        'Tiruppur factory and Delhi warehouse, published by the Sale91.com team.'
+        '</div>'
         '</div>'
         '</section>'
     )
@@ -7392,6 +7396,160 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     howto_note = " (incl. HowTo)" if len(step_matches) >= 3 else ""
     print(f"   📊 Blog SEO: Injected {ld_count} JSON-LD schemas ({faq_count} FAQs{howto_note}) + author card + sticky bar")
     return html_content
+
+
+def _load_blog_history_active():
+    """Load blog_history.json minus consolidated posts.
+
+    Entries carrying a 'redirect_to' key are duplicate-cluster losers that were
+    redirect-consolidated into a winner article — they must stay out of every
+    reader-facing surface (sitemap, blog index, RSS, related-links, llms.txt),
+    otherwise we keep publishing links to URLs that redirect away."""
+    if not os.path.exists(BLOG_HISTORY_FILE):
+        return []
+    try:
+        with open(BLOG_HISTORY_FILE) as f:
+            history = json.load(f)
+    except Exception:
+        return []
+    return [h for h in history if not h.get('redirect_to')]
+
+
+# ── Blog publish gate ──────────────────────────────────────────────────
+# June 2026: 35 near-duplicate posts in one month tipped Google's scaled-content
+# threshold — new posts land in "Crawled – currently not indexed" and the
+# suppression began spilling onto the /catalog/ money pages. Two rules stop it
+# from recurring:
+#   1. Cadence: blog posts only Mon/Wed/Fri (Shorts/Reels stay daily — YouTube
+#      and Instagram don't apply Google's duplication penalty).
+#   2. Cluster dedup: never publish a second article targeting the same search
+#      query as an existing one — Google indexes one winner per query cluster
+#      and files the rest under "Crawled – not indexed", dragging section-wide
+#      quality signals down with them.
+BLOG_WEEKDAYS = {int(d) for d in os.environ.get("BLOG_WEEKDAYS", "0,2,4").split(",") if d.strip().isdigit()}
+FORCE_BLOG = os.environ.get("FORCE_BLOG", "").strip() in ("1", "true", "yes")
+
+_CLUSTER_DROP_TOKENS = {
+    # storytelling noise — never part of the search query a page targets
+    'mistake', 'mistakes', 'galti', 'galtiyan', 'lost', 'loss', 'ruined', 'gone',
+    'wrong', 'failed', 'fail', 'trap', 'secret', 'truth', 'real', 'story', 'nobody',
+    'warns', 'warning', 'shocking', 'why', 'how', 'what', 'when', 'which', 'this',
+    'that', 'your', 'his', 'her', 'every', 'never', 'always', 'stop', 'avoid',
+    # hindi fillers (latin script)
+    'kya', 'kyu', 'kyun', 'kaise', 'hota', 'hoti', 'hain', 'hai', 'mein', 'nahi',
+    'mat', 'karo', 'kare', 'wala', 'wale', 'aur', 'par', 'yeh', 'woh',
+    # cities — swapped between near-duplicates to fake variety
+    'delhi', 'mumbai', 'pune', 'surat', 'jaipur', 'ludhiana', 'tiruppur',
+    'bangalore', 'bengaluru', 'kolkata', 'chennai', 'hyderabad', 'ahmedabad',
+    'noida', 'gurgaon', 'indore',
+    # generic filler — appears in nearly every post, carries no cluster signal
+    'india', 'indian', 'business', 'owner', 'customer', 'buyer', 'supplier',
+    'guide', 'tips', 'complete', 'best', 'top',
+    'tshirt', 'tshirts', 'shirt', 'shirts', 'tee', 'tees',
+    'piece', 'pieces', 'pcs',
+}
+
+
+def _blog_cluster_tokens(*texts):
+    """Reduce topic/title/slug text to the core keyword set identifying which
+    search-query cluster an article targets. GSM values stay fused to their
+    number (180gsm vs 240gsm are different products = different clusters);
+    every other bare number (₹ figures, piece counts, wash counts) is
+    storytelling noise that near-duplicates swap around to fake variety."""
+    blob = ' '.join(t for t in texts if t).lower()
+    blob = re.sub(r'(\d+)\s*[-–]?\s*gsm', r' \1gsm ', blob)
+    blob = re.sub(r'(?:₹|rs\.?)\s*[\d,.]+\s*(?:k|lakh|lac|crore)?', ' ', blob)
+    blob = re.sub(r'\b\d[\d,.]*\s*(?:k|lakh|lac|crore)\b', ' ', blob)
+    blob = re.sub(r'\b\d[\d,.]*\b', ' ', blob)
+    blob = re.sub(r'[^a-z0-9]+', ' ', blob)
+    return {w for w in blob.split() if len(w) >= 3 and w not in _CLUSTER_DROP_TOKENS}
+
+
+def blog_cluster_collision(topic, title, claude_client=None):
+    """Return (colliding_slug, similarity) if an existing article already targets
+    the same search-query cluster, else (None, 0.0).
+
+    Token containment ≥ 0.72 = hard collision. 0.45–0.72 = ambiguous → Claude
+    judges search intent. Fails open (no collision) on API errors — the hard
+    band alone catches the keyword-swap duplicates behind the June pile-up."""
+    cand = _blog_cluster_tokens(topic, title)
+    if not cand:
+        return None, 0.0
+    history = []
+    if os.path.exists(BLOG_HISTORY_FILE):
+        try:
+            with open(BLOG_HISTORY_FILE) as f:
+                history = json.load(f)
+        except Exception:
+            history = []
+    scored = []
+    for h in history:
+        if h.get('redirect_to'):
+            continue  # already consolidated away — its winner is a separate entry
+        h_toks = _blog_cluster_tokens(h.get('topic', ''), h.get('title', ''),
+                                      (h.get('slug') or '').replace('-', ' '))
+        if not h_toks:
+            continue
+        overlap = cand & h_toks
+        if len(overlap) < 2:
+            continue
+        containment = len(overlap) / min(len(cand), len(h_toks))
+        # Shared GSM tokens are the strongest duplicate signal (the June dupes
+        # were "240 GSM ..." rewrites of each other) but long Hindi-mixed token
+        # sets dilute them — weight each shared GSM value up explicitly.
+        gsm_overlap = sum(1 for t in overlap if re.match(r'^\d{2,3}gsm$', t))
+        if gsm_overlap:
+            containment = min(1.0, containment + 0.2 * gsm_overlap)
+        scored.append((containment, h.get('slug', ''), h.get('title', '')))
+    if not scored:
+        return None, 0.0
+    scored.sort(reverse=True)
+    top_sim, top_slug, _ = scored[0]
+    if top_sim >= 0.72:
+        return top_slug, top_sim
+    ambiguous = [s for s in scored[:5] if s[0] >= 0.40]
+    if ambiguous and claude_client:
+        listing = "\n".join(f"- {s[1]}: {s[2]}" for s in ambiguous)
+        try:
+            resp = claude_client.messages.create(
+                model="claude-opus-4-6", max_tokens=120,
+                messages=[{"role": "user", "content": f"""A blog already has these articles:
+{listing}
+
+Proposed new article:
+TOPIC: {topic}
+TITLE: {title}
+
+Would the new article target the SAME primary Google search query as any listed article (i.e. Google would treat them as near-duplicates and index only one)? Different GSM values, different garment types, or genuinely different buyer questions = NOT the same query.
+
+Answer with ONLY the colliding slug, or NONE."""}]
+            )
+            ans = resp.content[0].text.strip().strip('"')
+            if ans and ans.upper() != "NONE":
+                for sim, s_slug, _t in ambiguous:
+                    if s_slug and s_slug in ans:
+                        return s_slug, sim
+        except Exception as e:
+            print(f"   ⚠️ Cluster-collision judge failed (fail-open): {e}")
+    return None, 0.0
+
+
+def blog_publish_gate(topic, title, claude_client=None):
+    """Decide whether today's run publishes a blog post.
+
+    Returns (ok, reason, fallback_slug). fallback_slug points the IG carousel
+    at an existing on-topic article when the blog is skipped, so the daily
+    carousel cadence survives blog throttling."""
+    if FORCE_BLOG:
+        return True, "FORCE_BLOG=1 override", None
+    ist_now = datetime.now(pytz.timezone(TIMEZONE))
+    if ist_now.weekday() not in BLOG_WEEKDAYS:
+        slug, _sim = blog_cluster_collision(topic, title)  # no Claude call — only picks the carousel link
+        return False, f"cadence throttle — blog days are Mon/Wed/Fri, today is {ist_now.strftime('%A')}", slug
+    slug, sim = blog_cluster_collision(topic, title, claude_client=claude_client)
+    if slug:
+        return False, f"topic-cluster collision with existing article '{slug}' (similarity {sim:.2f})", slug
+    return True, "fresh cluster", None
 
 
 def generate_blog_slug(title):
@@ -7529,7 +7687,7 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
         video_meta_lines = ""
         video_url_lines = ""
         task_source = "on this topic for India's B2B plain t-shirt buyers"
-        content_directive = "Write a detailed, original, genuinely useful article on this topic (no video to expand — build it from industry expertise)"
+        content_directive = "Write a detailed, original, genuinely useful article on this topic grounded ONLY in the real business facts from BUSINESS CONTEXT and verifiable textile knowledge — never invented specifics"
         video_card_req = ""
 
     return f"""You are an expert SEO content writer for Sale91.com (BulkPlainTshirt.com), India's leading B2B plain t-shirt manufacturer.
@@ -7553,14 +7711,31 @@ REQUIREMENTS:
    - {content_directive}
    - Use H1 for main title, H2 for major sections, H3 for subsections
    - Write in professional English with occasional Hinglish terms where natural (like "GSM", industry terms)
-   - Include practical tips, comparisons, and real-world examples from Indian textile industry
+   - Include practical tips and comparisons grounded in the REAL data from BUSINESS CONTEXT above
+     (real GSM range 180-430, real MOQ, real discounts, real 30-day throughput, real Tiruppur
+     factory + Delhi Khanpur warehouse)
+   - TRUTHFULNESS — NON-NEGOTIABLE (Google's scaled-content policy flags fabricated specifics,
+     and invented "real customer" stories are why this blog's indexing collapsed in June 2026):
+     * NEVER invent customer stories, named customers, customer cities, or "this really happened"
+       incident framing. No "a printer from Pune lost ₹40,000" unless it is a documented fact.
+     * NEVER invent specific ₹ losses, order quantities, percentages, or dates. Every specific
+       number must come from BUSINESS CONTEXT or be a verifiable industry fact.
+     * Hypotheticals are allowed ONLY when clearly framed as hypothetical ("Suppose you order
+       500 pieces...") — never dressed up as a real event.
+   - INFORMATION GAIN — each article must contain at least ONE element found in no other post:
+     a concrete spec/decision table built from our real product data, an original step-by-step
+     checklist, or a genuine process detail from our own manufacturing/warehouse operations.
+     An article that only re-says what other articles already say should not exist.
+   - Do NOT re-explain GSM / bio-wash / pre-shrunk basics from scratch — link the first mention
+     to https://www.bulkplaintshirt.com/p/FQA.html (one sentence max, then move on)
    - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
    - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
 {video_card_req}   - End with a strong CTA section linking to Sale91.com
 
-2. FAQ SECTION (5-8 Q&As):
-   - Add an FAQ section with questions people actually search for
-   - Related to the topic, GSM, fabric, printing, wholesale t-shirts
+2. FAQ SECTION (3-6 Q&As):
+   - Questions a buyer would actually type into Google about THIS article's specific topic
+   - Do NOT reuse the generic GSM/wholesale/MOQ boilerplate questions that appear on other
+     posts — every FAQ must be answerable only by this article
    - Each answer should be 2-4 sentences
 
 3. HTML STRUCTURE:
@@ -7774,9 +7949,8 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     related_posts = []
     prev_post = None  # chronologically previous (for prev/next nav)
     try:
-        if os.path.exists(BLOG_HISTORY_FILE):
-            with open(BLOG_HISTORY_FILE) as f:
-                history = json.load(f)
+        history = _load_blog_history_active()
+        if history:
             history_sorted = sorted(history, key=lambda h: h.get('date', ''), reverse=True)
             for h in history_sorted:
                 if h.get('slug') != slug:
@@ -8836,31 +9010,25 @@ def build_sitemap_xml(new_post=None):
 
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
 
-    # Static pages — every page on the site for full crawlability
+    # Static pages — NO lastmod: these rarely change, and stamping today's date
+    # on every rebuild taught Google to distrust the sitemap's lastmod signal.
+    # policy.html / term.html / disclaimer.html are Disallow'd in robots.txt and
+    # /p/feed.xml is an RSS feed, not a page — listing them created permanent
+    # "Blocked by robots.txt" / junk entries in Search Console. Keep them out.
     static_pages = [
-        (f"{BLOG_BASE_URL}/", today, "daily", "1.0"),
-        (f"{BLOG_BASE_URL}/catalog/index.html", today, "weekly", "0.9"),
-        (f"{BLOG_BASE_URL}/p/index.html", today, "daily", "0.9"),
-        (f"{BLOG_BASE_URL}/p/feed.xml", today, "daily", "0.5"),
-        (f"{BLOG_BASE_URL}/contactus.html", today, "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/seller.html", today, "monthly", "0.6"),
-        (f"{BLOG_BASE_URL}/p/FQA.html", today, "monthly", "0.8"),
-        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", today, "monthly", "0.7"),
-        (f"{BLOG_BASE_URL}/policy.html", today, "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/returnpolicy.html", today, "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/refundpolicy.html", today, "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/term.html", today, "yearly", "0.3"),
-        (f"{BLOG_BASE_URL}/disclaimer.html", today, "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/", "daily", "1.0"),
+        (f"{BLOG_BASE_URL}/catalog/index.html", "weekly", "0.9"),
+        (f"{BLOG_BASE_URL}/p/index.html", "daily", "0.9"),
+        (f"{BLOG_BASE_URL}/contactus.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/seller.html", "monthly", "0.6"),
+        (f"{BLOG_BASE_URL}/p/FQA.html", "monthly", "0.8"),
+        (f"{BLOG_BASE_URL}/calc/shipping-calculator.html", "monthly", "0.7"),
+        (f"{BLOG_BASE_URL}/returnpolicy.html", "yearly", "0.3"),
+        (f"{BLOG_BASE_URL}/refundpolicy.html", "yearly", "0.3"),
     ]
 
-    # Blog posts from history
-    posts = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                posts = _json.load(f)
-        except Exception:
-            posts = []
+    # Blog posts from history (redirect-consolidated losers excluded)
+    posts = _load_blog_history_active()
 
     if new_post and new_post.get('slug'):
         if not any(p.get('slug') == new_post['slug'] for p in posts):
@@ -8868,10 +9036,9 @@ def build_sitemap_xml(new_post=None):
 
     # Build URL entries
     urls_xml = ''
-    for loc, lastmod, changefreq, priority in static_pages:
+    for loc, changefreq, priority in static_pages:
         urls_xml += f'''  <url>
     <loc>{loc}</loc>
-    <lastmod>{lastmod}</lastmod>
     <changefreq>{changefreq}</changefreq>
     <priority>{priority}</priority>
   </url>
@@ -8920,7 +9087,6 @@ def build_sitemap_xml(new_post=None):
             seen_slugs.add(slug)
             urls_xml += f'''  <url>
     <loc>{BLOG_BASE_URL}/p/{slug}.html</loc>
-    <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -8966,13 +9132,7 @@ def build_blog_index_html(new_post=None):
     import html as _html
 
     # Load blog history
-    posts = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                posts = _json.load(f)
-        except Exception:
-            posts = []
+    posts = _load_blog_history_active()
 
     # Append new post if provided (not yet in history)
     if new_post and new_post.get('slug'):
@@ -9380,13 +9540,7 @@ def build_rss_feed(new_post=None):
     import json as _json
     import html as _html
 
-    posts = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                posts = _json.load(f)
-        except Exception:
-            posts = []
+    posts = _load_blog_history_active()
 
     if new_post and new_post.get('slug'):
         if not any(p.get('slug') == new_post['slug'] for p in posts):
@@ -9451,13 +9605,7 @@ def build_blog_widget_html(max_posts=3):
     import json as _json
     import html as _html
 
-    posts = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                posts = _json.load(f)
-        except Exception:
-            posts = []
+    posts = _load_blog_history_active()
 
     posts.sort(key=lambda p: p.get('date', ''), reverse=True)
     posts = posts[:max_posts]
@@ -9587,13 +9735,7 @@ def _build_and_upload_p_llms_txt(s3_client, current_blog=None):
     3. By topic clusters — what we have depth in
     4. Full chronological list — complete index for bots that want everything
     """
-    history = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                history = json.load(f)
-        except Exception:
-            history = []
+    history = _load_blog_history_active()
     # Splice in the current blog if not already in history (it usually isn't,
     # since save_blog_history runs after this function)
     if current_blog and current_blog.get('url'):
@@ -9669,13 +9811,7 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     Cap at max_articles entries — full llms-full.txt can grow large; AI bots
     fetch the whole file each time, so keep payload reasonable.
     """
-    posts = []
-    if os.path.exists(BLOG_HISTORY_FILE):
-        try:
-            with open(BLOG_HISTORY_FILE) as f:
-                posts = json.load(f)
-        except Exception:
-            posts = []
+    posts = _load_blog_history_active()
     posts.sort(key=lambda p: p.get('date', ''), reverse=True)
 
     # Build the latest entry's excerpt fresh from the HTML we just published
@@ -12118,78 +12254,105 @@ def main():
     # ── 10e. Generate & Publish SEO Blog Post ──
     if not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST and not upload_failed and vid_id:
         try:
-            # IMPORTANT: blog uses blog_title (Latin script — Google/AI search optimized),
-            # NOT yt_title (Hindi — YouTube algo optimized). yt_title and ig_title stay
-            # Hindi for their respective platforms. See optimize_title() docstring.
-            blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
-                claude_client=claude,
-                cost_tracker=cost,
-                topic=fresh_topic,
-                title=blog_title,                       # ← Latin script for Google SEO
-                description=yt_description,
-                script_english=script_english,
-                tags=yt_tags,
-                hook_text=hook_text_from_claude,
-                vid_id=vid_id,
-                vid_url=vid_url,
-                video_prompts=video_prompts,
-            )
-
-            if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
-                if publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url, blog_images, vid_id=vid_id, tags=yt_tags):
-                    excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
-                    save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
-                                      tags=yt_tags, description=yt_description,
-                                      word_count=len(blog_html.split()) if blog_html else 0,
-                                      excerpt=excerpt)
-                    print(f"   ✅ Blog published: {blog_url}")
-
-                    # Generate Reddit post draft for the employee to paste manually.
-                    # Non-fatal — if this fails, the daily pipeline doesn't break.
-                    hero_url = None
-                    for img_bytes, fname in (blog_images or []):
-                        if fname == "hero.webp":
-                            hero_url = f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp"
-                            break
-                    try:
-                        # Reddit posts go to English-speaking subs (r/PrintOnDemand etc.) —
-                        # blog_title (Latin script) is what Reddit users want anyway.
-                        generate_reddit_post(
-                            claude_client=claude,
-                            cost_tracker=cost,
-                            topic=fresh_topic,
-                            blog_title=blog_title,    # ← Latin script
-                            blog_url=blog_url,
-                            script_english=script_english,
-                            tags=yt_tags,
-                            hero_image_url=hero_url,
-                        )
-                    except Exception as e:
-                        print(f"   ⚠️ Reddit draft failed (non-fatal): {e}")
-
-                    # IG carousel draft — separate from the same-day Reel cross-post.
-                    # Published next day at 1 PM IST by ig_carousel.yml workflow.
-                    # Caption can mix scripts; the prompt handles Reels-style voice.
-                    try:
-                        generate_ig_carousel_draft(
-                            claude_client=claude,
-                            cost_tracker=cost,
-                            blog_title=blog_title,    # ← Latin script (caption gen handles mixing)
-                            blog_url=blog_url,
-                            blog_slug=blog_slug,
-                            topic=fresh_topic,
-                            script_english=script_english,
-                            tags=yt_tags,
-                            uploaded_filenames=[fn for _, fn in blog_images] if blog_images else None,
-                        )
-                    except Exception as e:
-                        print(f"   ⚠️ IG carousel draft failed (non-fatal): {e}")
-            elif blog_html:
-                print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
-            # else: generate_blog_post already printed its warning
+            blog_ok, gate_reason, fallback_slug = blog_publish_gate(fresh_topic, blog_title, claude_client=claude)
         except Exception as e:
-            print(f"   ⚠️ Blog generation/publish failed (non-fatal): {e}")
-            # Blog failure should NEVER break the video pipeline
+            blog_ok, gate_reason, fallback_slug = True, f"gate error (fail-open): {e}", None
+        if not blog_ok:
+            print(f"   🚫 Blog skipped: {gate_reason}")
+            print("      (Shorts/Reels unchanged — the gate only limits Google-facing article volume)")
+            # Keep the daily IG carousel alive: link it to the closest existing
+            # article (cluster match if any, else the latest post — both have
+            # their images already on S3 as {slug}-hero.jpg etc.).
+            try:
+                active = sorted(_load_blog_history_active(), key=lambda h: h.get('date', ''), reverse=True)
+                fb = next((h for h in active if h.get('slug') == fallback_slug), None) or (active[0] if active else None)
+                if fb and fb.get('slug'):
+                    generate_ig_carousel_draft(
+                        claude_client=claude,
+                        cost_tracker=cost,
+                        blog_title=fb.get('title', ''),
+                        blog_url=f"{BLOG_BASE_URL}/p/{fb['slug']}.html",
+                        blog_slug=fb['slug'],
+                        topic=fresh_topic,
+                        script_english=script_english,
+                        tags=yt_tags,
+                    )
+            except Exception as e:
+                print(f"   ⚠️ IG carousel draft failed (non-fatal): {e}")
+        else:
+            try:
+                # IMPORTANT: blog uses blog_title (Latin script — Google/AI search optimized),
+                # NOT yt_title (Hindi — YouTube algo optimized). yt_title and ig_title stay
+                # Hindi for their respective platforms. See optimize_title() docstring.
+                blog_html, blog_slug, blog_url, blog_images = generate_blog_post(
+                    claude_client=claude,
+                    cost_tracker=cost,
+                    topic=fresh_topic,
+                    title=blog_title,                       # ← Latin script for Google SEO
+                    description=yt_description,
+                    script_english=script_english,
+                    tags=yt_tags,
+                    hook_text=hook_text_from_claude,
+                    vid_id=vid_id,
+                    vid_url=vid_url,
+                    video_prompts=video_prompts,
+                )
+
+                if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):
+                    if publish_blog_to_s3(blog_html, blog_slug, blog_title, blog_url, blog_images, vid_id=vid_id, tags=yt_tags):
+                        excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
+                        save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
+                                          tags=yt_tags, description=yt_description,
+                                          word_count=len(blog_html.split()) if blog_html else 0,
+                                          excerpt=excerpt)
+                        print(f"   ✅ Blog published: {blog_url}")
+
+                        # Generate Reddit post draft for the employee to paste manually.
+                        # Non-fatal — if this fails, the daily pipeline doesn't break.
+                        hero_url = None
+                        for img_bytes, fname in (blog_images or []):
+                            if fname == "hero.webp":
+                                hero_url = f"{BLOG_BASE_URL}/p/{blog_slug}-hero.webp"
+                                break
+                        try:
+                            # Reddit posts go to English-speaking subs (r/PrintOnDemand etc.) —
+                            # blog_title (Latin script) is what Reddit users want anyway.
+                            generate_reddit_post(
+                                claude_client=claude,
+                                cost_tracker=cost,
+                                topic=fresh_topic,
+                                blog_title=blog_title,    # ← Latin script
+                                blog_url=blog_url,
+                                script_english=script_english,
+                                tags=yt_tags,
+                                hero_image_url=hero_url,
+                            )
+                        except Exception as e:
+                            print(f"   ⚠️ Reddit draft failed (non-fatal): {e}")
+
+                        # IG carousel draft — separate from the same-day Reel cross-post.
+                        # Published next day at 1 PM IST by ig_carousel.yml workflow.
+                        # Caption can mix scripts; the prompt handles Reels-style voice.
+                        try:
+                            generate_ig_carousel_draft(
+                                claude_client=claude,
+                                cost_tracker=cost,
+                                blog_title=blog_title,    # ← Latin script (caption gen handles mixing)
+                                blog_url=blog_url,
+                                blog_slug=blog_slug,
+                                topic=fresh_topic,
+                                script_english=script_english,
+                                tags=yt_tags,
+                                uploaded_filenames=[fn for _, fn in blog_images] if blog_images else None,
+                            )
+                        except Exception as e:
+                            print(f"   ⚠️ IG carousel draft failed (non-fatal): {e}")
+                elif blog_html:
+                    print("   ⚠️ Blog generated but AWS credentials not found — skipping S3 upload")
+                # else: generate_blog_post already printed its warning
+            except Exception as e:
+                print(f"   ⚠️ Blog generation/publish failed (non-fatal): {e}")
+                # Blog failure should NEVER break the video pipeline
 
     # ── 10f. Cost summary + save ──
     print()
