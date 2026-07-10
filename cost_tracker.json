@@ -2036,5 +2036,21 @@
       "whisper": 0.0043,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-07-10T12:05:50.738109",
+    "topic": "180 GSM vs 200 GSM vs 220 GSM \u2014 \u20b915 \u0915\u0947 \u092b\u093c\u0930\u094d\u0915 \u092e\u0947\u0902 Print Quality \u0915\u093e \u092a\u0942\u0930\u093e \u0916\u0947\u0932 \u092c\u0926\u0932 \u0917\u092f\u093e \ud83d\ude31",
+    "title": "\u20b915 \u092c\u091a\u093e\u090f, 300 \u092a\u0940\u0938 Reject \u2014 180 GSM Print \u0915\u0940 \u0938\u092c\u0938\u0947 \u092c\u0921\u093c\u0940 \u0917\u0932\u0924\u0940 \ud83d\ude31",
+    "total_usd": 7.5638,
+    "duration_min": 20.9,
+    "breakdown": {
+      "claude_opus": 0.388,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0275,
+      "veo_clips": 7.04,
+      "whisper": 0.0057,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0077
+    }
   }
 ]

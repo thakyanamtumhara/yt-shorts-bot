@@ -1042,11 +1042,19 @@
     "title": "₹6 Tag Missing — 1000 T-Shirts Returned! Packaging Trap That Kills Margins 💀",
     "topic": "₹6 का Tag लगाया नहीं — 1000 T-Shirts Return हो गईं 💀 Packaging Trap जो कोई नहीं बताता",
     "published_at": "2026-07-08T16:48:46.363494+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹6 Tag = RETURN",
     "cover_color": "#FFD700 (Gold Yellow)",
     "cover_path": "ai",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-07-10T17:33:20.033688+05:30",
+    "hours_since_publish": 48.7,
+    "views": 2239,
+    "reach": 1982,
+    "likes": 36,
+    "comments": 0,
+    "shares": 28,
+    "saves": 22
   },
   {
     "media_id": "18115025857818224",
@@ -1055,6 +1063,17 @@
     "published_at": "2026-07-09T17:36:17.604408+05:30",
     "checked": false,
     "cover_text": "Print Crack क्यों?",
+    "cover_color": "#FFD700 (Yellow)",
+    "cover_path": "ai",
+    "cover_face": false
+  },
+  {
+    "media_id": "18024478823843847",
+    "title": "₹15 Savings Destroyed 300 Printed T-Shirts — GSM Trap Nobody Checks 💀",
+    "topic": "180 GSM vs 200 GSM vs 220 GSM — ₹15 के फ़र्क में Print Quality का पूरा खेल बदल गया 😱",
+    "published_at": "2026-07-10T17:35:32.735863+05:30",
+    "checked": false,
+    "cover_text": "₹15 में 300 Pc",
     "cover_color": "#FFD700 (Yellow)",
     "cover_path": "ai",
     "cover_face": false
