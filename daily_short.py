@@ -4123,10 +4123,35 @@ def extract_voice_corpus_style_hints(max_entries=12):
     try:
         if os.path.exists(VOICE_VOCAB_FILE):
             with open(VOICE_VOCAB_FILE) as f:
-                top = json.load(f).get("top_words", [])[:60]
-            if top:
+                top = json.load(f).get("top_words", [])[:120]
+            # Present his words in ROMAN Hinglish — showing Devanagari here
+            # made Claude write Devanagari into script_voice, and the karaoke
+            # captions (Latin-only CI fonts) lost those words → desync.
+            # Canonical spelling: the hand-map KEY when the word is hand-
+            # curated (aap/aur/nahi), else the primary generated variant —
+            # the generator's spellings (aapa/nheen) are for matching, not
+            # for showing Claude.
+            hand_rev = {}
+            for k, v in _TTS_HINGLISH_DEVANAGARI.items():
+                import re as _re_v
+                if _re_v.fullmatch(r"[a-z]+", str(k)) and v not in hand_rev:
+                    hand_rev[v] = k
+            # Hand-curated words only: the rest of his top words are mostly
+            # English loanwords in Devanagari (कलर/वेबसाइट) that Claude
+            # already writes in English — generated romanizations of those
+            # (kalr, vebsaait) would just teach Claude bad spellings.
+            roman = []
+            for w in top:
+                r = hand_rev.get(w)
+                if r:
+                    roman.append(r)
+                if len(roman) >= 60:
+                    break
+            if roman:
                 vocab_line = ("\nHIS HIGH-FREQUENCY WORDS (prefer these — this is "
-                              "how he actually talks): " + ", ".join(top) + "\n")
+                              "how he actually talks). Write them in Roman Hinglish "
+                              "as usual, NEVER in Devanagari script: "
+                              + ", ".join(roman) + "\n")
     except Exception:
         pass
     return (
@@ -6004,6 +6029,24 @@ _TTS_HINGLISH_DEVANAGARI.update({
 # "teen"→तीन and "hi"→ही). Whole-word only, so "download"/"double" are safe.
 _TTS_HINGLISH_DEVANAGARI["do"] = "दो"
 
+# ── Ketu-reported mispronunciations, 2026-07-11 (240 GSM video) ──
+# None of these were mapped, and none appear in his 52 transcribed videos
+# (corpus count 0) — so the learner couldn't cover them. ElevenLabs guessed:
+# "badal" → "baadal" (बादल, cloud), "adhi" → "adi" (aspiration dropped).
+_TTS_HINGLISH_DEVANAGARI.update({
+    # बदल (change) family — in B2B scripts "badal" is ~never बादल (cloud)
+    "badal": "बदल", "badla": "बदला", "badli": "बदली", "badle": "बदले",
+    "badalke": "बदलके", "badalna": "बदलना", "badalta": "बदलता",
+    "badalti": "बदलती", "badlega": "बदलेगा", "badlegi": "बदलेगी",
+    "baadal": "बादल",  # actual cloud, if a monsoon script ever writes it
+    # आधा (half) family — "adhi" was read "adi"
+    "aadha": "आधा", "adha": "आधा", "aadhi": "आधी", "adhi": "आधी",
+    "aadhe": "आधे", "adhe": "आधे",
+    # बचाके (having saved) — distinct from बचके (dodge); both now explicit
+    "bachake": "बचाके", "bachaake": "बचाके", "bachakar": "बचाकर",
+    "bachke": "बचके",
+})
+
 
 def normalize_for_tts(text: str) -> str:
     """Normalize a Hinglish script for cleaner TTS output.
@@ -6185,6 +6228,15 @@ def normalize_for_tts(text: str) -> str:
     # ("hum saath the." / "kam the,"), the article always precedes a word —
     # convert only when punctuation or end-of-text follows.
     s = _re.sub(r'\bthe\b(?=\s*(?:[,.!?;:।…"”’\']|$))', "थे", s, flags=_re.IGNORECASE)
+
+    # "₹15 bachke" is a recurring grammar slip — after a money amount the
+    # correct form is बचाके (saving it), not बचके (dodging). Fix it after the
+    # maps have run (both roman and Devanagari money words covered).
+    # NB: no trailing \b — Python \b treats matras (े) as non-word chars, so
+    # \b after Devanagari never matches; explicit lookahead instead.
+    s = _re.sub(r"((?:रुपये|रुपया|रुपिया|पैसे|पैसा|लाख|हज़ार|करोड़|"
+                r"rupay\w*|rupiya|paisa|paise)\s+)बचके(?=[\s,.!?।…\"']|$)",
+                r"\1बचाके", s, flags=_re.IGNORECASE)
 
     # Auto-learned pronunciations from Ketu's own channel corpus (see
     # build_voice_models). Hand-curated always wins: it ran first, and keys
@@ -11578,9 +11630,22 @@ def main():
         # Global j→int(j*m/n) is monotonic by construction, so drift is gradual
         # and coverage always spans the full audio.
         try:
-            # Devanagari slips render as tofu (CI fonts are Latin-only) — strip them
+            # Devanagari words in the script render as tofu (CI fonts are
+            # Latin-only). Show their Roman spelling via reverse map instead
+            # of dropping them — dropped words shrank the caption word list
+            # and desynced captions from the voice (Ketu report 2026-07-11).
+            _deva_to_roman = {}
+            for _k, _v in (list(_TTS_HINGLISH_DEVANAGARI.items())
+                           + list(_get_learned_pronunciations().items())):
+                if _re_subs.fullmatch(r"[a-z]+", str(_k)) and _v not in _deva_to_roman:
+                    _deva_to_roman[_v] = _k
+
+            def _romanize_token(t):
+                return _re_subs.sub(r"[ऀ-ॿ]+",
+                                    lambda m: _deva_to_roman.get(m.group(0), ""), t)
+
             script_words_all = [
-                w for w in (_re_subs.sub(r"[ऀ-ॿ]+", "", t) for t in script_voice.split())
+                w for w in (_romanize_token(t) for t in script_voice.split())
                 if w.strip()
             ]
             wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
