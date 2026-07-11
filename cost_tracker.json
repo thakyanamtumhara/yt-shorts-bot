@@ -2052,5 +2052,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0077
     }
+  },
+  {
+    "date": "2026-07-11T10:32:27.123306",
+    "topic": "240 GSM Oversize Boxy Fit Out of Stock Kyun Hota Hai? \u2014 Manufacturing Ka Wo Secret Jo Koi Nahi Batata",
+    "title": "240 GSM \u092c\u0928\u093e\u0928\u093e \u0907\u0924\u0928\u093e \u092e\u0941\u0936\u094d\u0915\u093f\u0932 \u0915\u094d\u092f\u094b\u0902? \u2014 \u091c\u094b Factory \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u0940",
+    "total_usd": 7.5012,
+    "duration_min": 21.6,
+    "breakdown": {
+      "claude_opus": 0.3721,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.026,
+      "veo_clips": 7.04,
+      "whisper": 0.0051,
+      "claude_sonnet": 0.008
+    }
   }
 ]
