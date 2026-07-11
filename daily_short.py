@@ -3799,6 +3799,11 @@ _PRON_DENYLIST = {
     # word itself and must never be force-converted (2026-07-10 review)
     "market", "marketing", "plan", "start", "stop", "drop", "sport", "sports",
     "transport", "regular", "maroon", "karate", "sari", "bare", "wale",
+    # Colour + logistics loanwords he says in Devanagari (ग्रीन, शिप, पेंट)
+    # whose romanization round-trips to the English word itself (2026-07-11)
+    "green", "grin", "paint", "ship", "shipping", "blue", "black", "pink",
+    "grey", "gray", "yellow", "orange", "purple", "brown", "navy", "cream",
+    "beige", "teal", "silver", "olive", "wine", "royal",
     "age", "bar", "bat", "aid", "ate", "die", "lie", "too", "tin", "ham",
     "vet", "usa", "gee", "dis", "chai", "team", "time", "line", "fit",
     "best", "rate", "rest", "test", "type", "call", "care", "case", "cash",
@@ -5287,7 +5292,11 @@ _TTS_HINGLISH_DEVANAGARI = {
     # vocabulary for a plain-tshirt business.
     # High-frequency function words / verbs in our scripts:
     "nahi": "नहीं", "nahin": "नहीं", "haan": "हाँ", "hai": "है", "hain": "हैं",
-    "tha": "था", "thi": "थी", "the": "थे",
+    "tha": "था", "thi": "थी",
+    # NOTE: "the" removed from the blanket map (2026-07-11) — it was turning
+    # English "the best/the same" into थे. Hindi थे is clause-final ("hum
+    # saath the."), English "the" always precedes a word, so a punctuation
+    # lookahead in normalize_for_tts handles it instead.
     "kiya": "किया", "karna": "करना", "karta": "करता", "karti": "करती",
     "bola": "बोला", "boli": "बोली", "bolta": "बोलता",
     "liya": "लिया", "lena": "लेना", "diya": "दिया", "dena": "देना",
@@ -6171,6 +6180,11 @@ def normalize_for_tts(text: str) -> str:
     # Whole-word, case-insensitive. English-only nouns are not in the map.
     for word, deva in _TTS_HINGLISH_DEVANAGARI.items():
         s = _re.sub(rf"\b{word}\b", deva, s, flags=_re.IGNORECASE)
+
+    # Hindi past-tense "the" (थे) vs English article "the": थे ends a clause
+    # ("hum saath the." / "kam the,"), the article always precedes a word —
+    # convert only when punctuation or end-of-text follows.
+    s = _re.sub(r'\bthe\b(?=\s*(?:[,.!?;:।…"”’\']|$))', "थे", s, flags=_re.IGNORECASE)
 
     # Auto-learned pronunciations from Ketu's own channel corpus (see
     # build_voice_models). Hand-curated always wins: it ran first, and keys
