@@ -6810,10 +6810,27 @@ OUTPUT THIS JSON ONLY (no markdown):
         return 30, "review error — approved by default"
 
 
+def _topic_blog_viable(topic, claude_client=None):
+    """True if today's topic can also become a blog post (or today isn't a blog day).
+
+    The duplicate check runs BEFORE anything is generated: on blog days
+    (Mon/Wed/Fri) the day's topic itself must target a search-query cluster the
+    blog hasn't covered, so the blog never silently skips and no generation
+    spend is wasted on an unpublishable topic. Non-blog days are unconstrained
+    (video topics may repeat freely — YouTube/IG don't punish repeats)."""
+    if datetime.now(pytz.timezone(TIMEZONE)).weekday() not in BLOG_WEEKDAYS:
+        return True
+    slug, sim = blog_cluster_collision(topic, topic, claude_client=claude_client)
+    if slug:
+        print(f"   🚫 Topic not blog-viable — cluster already covered by '{slug}' (sim {sim:.2f}); trying another")
+    return slug is None
+
+
 def smart_pick_topic(claude_client, topic_bank, topic_history):
     """Smart topic selection:
     1. If unused topics in bank, pick from them but validate with Claude
     2. If bank exhausted, generate trending topics and pick the best one
+    On blog days, topics must pass the blog-cluster viability pre-check.
     Returns the selected topic string."""
 
     unused = [t for t in topic_bank if t not in topic_history]
@@ -6839,19 +6856,36 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
             prioritized = sorted(unused, key=_cat_priority)
             # Pick from top 30% (biased towards high-performing categories)
             pool_size = max(3, len(prioritized) // 3)
-            candidate = random.choice(prioritized[:pool_size])
+            pool = prioritized[:pool_size]
             print(f"   📊 Top categories by engagement ({cat_source}): {', '.join(top_cats[:3])}")
         else:
-            candidate = random.choice(unused)
+            prioritized = unused[:]
+            pool = unused[:]
+
+        # Walk the pool in random order and take the first topic that can also
+        # become a blog today; widen past the engagement-biased pool if needed
+        # (on blog days freshness beats category bias). Cap the scan so the
+        # ambiguous-band Claude judge can't burn unbounded calls.
+        random.shuffle(pool)
+        scan = pool + [t for t in prioritized if t not in pool]
+        candidate = None
+        for t in scan[:12]:
+            if _topic_blog_viable(t, claude_client):
+                candidate = t
+                break
+        if candidate is None:
+            # No blog-viable topic found — pick normally; the publish gate
+            # will skip the blog (video/reel still ship).
+            candidate = random.choice(pool)
 
         score, feedback = review_topic(claude_client, candidate, topic_history)
         print(f"   📋 Bank topic score: {score}/40 — {feedback}")
         if score >= TOPIC_MIN_SCORE:
             return candidate
-        # If bank topic scored low, try 2 more from bank
+        # If bank topic scored low, try 2 more from bank (blog-viable only)
         for _ in range(2):
             alt = random.choice(unused)
-            if alt != candidate:
+            if alt != candidate and _topic_blog_viable(alt, claude_client):
                 alt_score, alt_feedback = review_topic(claude_client, alt, topic_history)
                 print(f"   📋 Alt bank topic score: {alt_score}/40 — {alt_feedback}")
                 if alt_score > score:
@@ -6885,10 +6919,13 @@ Return ONLY the topic text, nothing else."""}]
             print(f"   ⚠️ Fallback topic generation failed: {e}")
             return "Plain T-Shirt Quality Check — GSM aur Fabric Basics"
 
-    # Score all trending candidates and pick the best
+    # Score all trending candidates and pick the best (blog-viable first;
+    # fall back to the unfiltered list if nothing viable — blog will skip)
     best_topic = trending[0]
     best_score = 0
-    candidates_to_review = [t for t in trending if t not in topic_history][:TOPIC_MAX_CANDIDATES]
+    candidates_to_review = [t for t in trending if t not in topic_history and _topic_blog_viable(t, claude_client)][:TOPIC_MAX_CANDIDATES]
+    if not candidates_to_review:
+        candidates_to_review = [t for t in trending if t not in topic_history][:TOPIC_MAX_CANDIDATES]
 
     for t in candidates_to_review:
         score, feedback = review_topic(claude_client, t, topic_history)
