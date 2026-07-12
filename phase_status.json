@@ -3,31 +3,31 @@
     "2": {
       "id": 2,
       "status": "best-effort",
-      "last_run": "2026-07-05T20:28:49.309281+05:30",
+      "last_run": "2026-07-12T20:12:26.147473+05:30",
       "last_result": "fallback-to-description",
-      "details": "Captions API requires OAuth; falling back to video description. Will be upgraded when OAuth caption scope is added."
+      "details": "Captions (unauth + OAuth) and Whisper all failed; falling back to video description."
     },
     "3": {
       "id": 3,
       "status": "active",
-      "last_run": "2026-07-05T20:28:49.309705+05:30",
+      "last_run": "2026-07-12T20:12:26.147924+05:30",
       "last_result": "saved",
-      "details": "7 corpus entries · target 4+ for Phase 4 activation"
+      "details": "60 corpus entries · target 4+ for Phase 4 activation"
     },
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-07-05T20:33:03.939209+05:30",
+      "last_run": "2026-07-12T20:17:53.935898+05:30",
       "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/free-whatsapp-api-dropshipping-website-referral-system-for.html · source: 'मैंने आपको 3 चीज़ें FREE दीं 🎁 जल्दी फायदा उठाओ'"
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/t-shirt-printing-business-earning-50000month-my-real-2018.html · source: '₹50,000/महीना T-Shirt Printing से 🔥 मैंने 2018 में ऐसे कमाए'"
     },
     "4": {
       "id": 4,
       "status": "active",
-      "last_run": "2026-07-05T20:33:03.939510+05:30",
+      "last_run": "2026-07-12T20:17:53.936243+05:30",
       "last_result": "ready",
-      "details": "Voice style hints active in daily script gen (7 corpus entries)"
+      "details": "Voice style hints active in daily script gen (60 corpus entries)"
     }
   },
-  "last_update": "2026-07-05T20:33:03.939510+05:30"
+  "last_update": "2026-07-12T20:17:53.936243+05:30"
 }
