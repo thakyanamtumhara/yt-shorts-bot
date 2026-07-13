@@ -327,12 +327,31 @@ GENERATE_THUMBNAIL = True
 THUMBNAIL_WIDTH = 1080
 THUMBNAIL_HEIGHT = 1920  # Vertical for Shorts
 
-# AI Thumbnail (Claude text strategy + Gemini image generation)
+# AI Thumbnail (Claude text strategy + Gemini TEXT-FREE scene; text is
+# composited by our own PIL renderer, never rendered by the image model —
+# diffusion models garble letters, worst of all Devanagari). 2026-07-13.
 AI_THUMBNAIL = True
 AI_THUMBNAIL_GEMINI_MODEL = "gemini-3-pro-image-preview"
 AI_THUMBNAIL_GEMINI_FALLBACK = "gemini-3.1-flash-image-preview"
 THUMBNAIL_RESEARCH_FILE = "thumbnail_research.json"  # Weekly research cache
 THUMBNAIL_RESEARCH_MAX_AGE_DAYS = 7
+
+# ── Cover typography (his proven style: huge, one keyword yellow, heavy
+# black outline + top/bottom darkening, all inside the 25-70% safe band) ──
+_ASSETS_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fonts")
+# Baloo 2 (variable, wght→800) carries Latin + Devanagari + ₹ in ONE family.
+COVER_FONT_BALOO = os.path.join(_ASSETS_FONT_DIR, "Baloo2.ttf")
+COVER_FONT_DEVA = os.path.join(_ASSETS_FONT_DIR, "NotoSansDevanagari-Bold.ttf")
+COVER_HL_YELLOW = (255, 212, 0)     # CVD-safe highlight (Ketu red-green CVD) + top-CTR
+COVER_WHITE = (255, 255, 255)
+COVER_BLACK = (0, 0, 0)
+# Correct Devanagari shaping (ि-matra reorder, conjuncts) needs libraqm.
+# Without it, Hindi garbles — so we fall back to Latin-only cover text.
+try:
+    from PIL import features as _pil_features
+    COVER_RAQM = bool(_pil_features.check("raqm"))
+except Exception:
+    COVER_RAQM = False
 
 # Cover-design metadata for the learning loop. Set by whichever cover path runs
 # (generate_ai_thumbnail → "ai", generate_thumbnail → "pil"); read when saving
@@ -723,176 +742,242 @@ def get_ig_cta_line():
 # THUMBNAIL GENERATION
 # ═══════════════════════════════════════════════════════════════════════
 
-def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None):
-    """Generate a branded thumbnail image for YouTube SEO.
-    If veo_clip_path is provided, extracts the best frame from the first Veo clip
-    and overlays text on it (much more clickable than a plain gradient).
-    Returns the file path to the thumbnail PNG, or None on failure."""
-    if not GENERATE_THUMBNAIL:
-        return None
+def _has_deva(s):
+    return any("ऀ" <= c <= "ॿ" for c in (s or ""))
 
+
+def _cover_font(size):
+    """Baloo 2 @ weight 800 with RAQM shaping when available (needed for
+    correct Devanagari). Falls back to bundled Noto Devanagari, then to a
+    system font. Latin/number covers never need RAQM."""
+    from PIL import ImageFont
+    layout = getattr(ImageFont, "Layout", None)
+    engine = (layout.RAQM if (COVER_RAQM and layout) else
+              (layout.BASIC if layout else None))
+    for path in (COVER_FONT_BALOO, COVER_FONT_DEVA):
+        if os.path.exists(path):
+            try:
+                f = (ImageFont.truetype(path, size, layout_engine=engine)
+                     if engine is not None else ImageFont.truetype(path, size))
+                try:
+                    f.set_variation_by_axes([800])   # Baloo variable → ExtraBold
+                except Exception:
+                    pass
+                return f
+            except Exception:
+                continue
+    for sysf in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                 "/System/Library/Fonts/Supplemental/Arial Black.ttf"):
+        if os.path.exists(sysf):
+            return ImageFont.truetype(sysf, size)
+    return ImageFont.load_default()
+
+
+def _cover_line_width(draw, s, size):
+    f = _cover_font(size)
+    return int(draw.textlength(s, font=f)), f
+
+
+def _cover_fit_size(draw, s, target_w, start, minsz=54, step=6):
+    size = start
+    while size > minsz:
+        w, _ = _cover_line_width(draw, s, size)
+        if w <= target_w:
+            break
+        size -= step
+    return size
+
+
+def _cover_darken(img, top=210, bottom=215):
+    """Darken the top ~44% and bottom ~40% so text reads over any scene while
+    the vivid middle (the hero) stays bright."""
+    from PIL import Image, ImageDraw
+    W, H = img.size
+    ov = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(ov)
+    for y in range(H):
+        if y < H * 0.44:
+            a = int(top * (1 - y / (H * 0.44)))
+        elif y > H * 0.60:
+            a = int(bottom * ((y - H * 0.60) / (H * 0.40)))
+        else:
+            a = 0
+        d.line([(0, y), (W, y)], fill=(0, 0, 0, max(0, min(255, a))))
+    return Image.alpha_composite(img.convert("RGBA"), ov).convert("RGB")
+
+
+def _cover_draw_line(draw, x, y, s, size, fill, ow):
+    """One line: hard drop-shadow + thick circular black outline + fill."""
+    f = _cover_font(size)
+    draw.text((x + ow + 5, y + ow + 7), s, font=f, fill=COVER_BLACK)  # shadow
+    for dx in range(-ow, ow + 1):
+        for dy in range(-ow, ow + 1):
+            if dx * dx + dy * dy <= ow * ow:
+                draw.text((x + dx, y + dy), s, font=f, fill=COVER_BLACK)
+    draw.text((x, y), s, font=f, fill=fill)
+
+
+def compose_cover_text(base_img, lines, highlight=None, output_path=None):
+    """THE single cover-text renderer (used by AI + fallback paths). Draws
+    1-2 huge lines centred in the 25-70% safe band, one token highlighted
+    yellow, heavy black outline + shadow + top/bottom darkening. Text is
+    razor-sharp PIL — it can never garble or crop (auto-fit guarantees fit).
+
+    lines: list of 1-2 short strings (already split).
+    highlight: exact substring to colour yellow (e.g. "₹60"); rest is white.
+    Returns output_path or None.
+    """
+    from PIL import Image, ImageDraw
     try:
-        from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
-        import numpy as np
+        W, H = THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT
+        img = base_img.convert("RGB").resize((W, H), Image.LANCZOS)
+        img = _cover_darken(img)
+        draw = ImageDraw.Draw(img)
+
+        lines = [l.strip() for l in lines if l and l.strip()][:2]
+        if not lines:
+            return None
+        safe_w = int(W * 0.88)
+        safe_top, safe_bot = int(H * 0.26), int(H * 0.70)
+
+        sized = []
+        for i, ln in enumerate(lines):
+            is_hero = (highlight and highlight in ln) or (len(lines) == 1) or (i == len(lines) - 1)
+            start = 300 if is_hero else 180
+            size = _cover_fit_size(draw, ln, safe_w, start)
+            w, f = _cover_line_width(draw, ln, size)
+            asc, desc = f.getmetrics()
+            sized.append({"text": ln, "size": size, "w": w, "h": asc + desc})
+
+        gap = 24
+        block_h = sum(s["h"] for s in sized) + gap * (len(sized) - 1)
+        y = max(safe_top, (safe_top + safe_bot) // 2 - block_h // 2)
+
+        for s in sized:
+            ln, size, w = s["text"], s["size"], s["w"]
+            x = (W - w) // 2
+            ow = max(6, int(size * 0.075))
+            hl = highlight if (highlight and highlight in ln) else None
+            if hl:
+                idx = ln.index(hl)
+                parts = [(ln[:idx], COVER_WHITE), (hl, COVER_HL_YELLOW),
+                         (ln[idx + len(hl):], COVER_WHITE)]
+                cx = x
+                for txt, col in parts:
+                    if not txt:
+                        continue
+                    _cover_draw_line(draw, cx, y, txt, size, col, ow)
+                    cx += int(draw.textlength(txt, font=_cover_font(size)))
+            else:
+                _cover_draw_line(draw, x, y, ln, size, COVER_WHITE, ow)
+            y += s["h"] + gap
 
         if output_path is None:
             output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
-
-        # Try to extract a frame from the first Veo clip (hook scene)
-        bg_from_clip = False
-        if veo_clip_path and os.path.exists(veo_clip_path):
-            try:
-                clip = VideoFileClip(veo_clip_path)
-                # Sample frames at 25%, 40%, 50% of clip duration — pick the most "interesting" one
-                # (highest contrast/color variance = more visually striking)
-                best_frame = None
-                best_score = -1
-                for t_pct in [0.25, 0.40, 0.50, 0.60]:
-                    t = min(t_pct * clip.duration, clip.duration - 0.1)
-                    frame = clip.get_frame(t)
-                    # Score: standard deviation of pixel values (higher = more visual contrast)
-                    score = float(np.std(frame))
-                    if score > best_score:
-                        best_score = score
-                        best_frame = frame
-
-                if best_frame is not None:
-                    img = Image.fromarray(best_frame)
-                    img = img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
-                    # Local scrim handles text readability — keep base image bright, just boost contrast
-                    enhancer = ImageEnhance.Brightness(img)
-                    img = enhancer.enhance(0.92)
-                    enhancer = ImageEnhance.Contrast(img)
-                    img = enhancer.enhance(1.25)
-                    bg_from_clip = True
-                    print(f"   🖼️ Thumbnail: using Veo frame (contrast score: {best_score:.0f})")
-
-                clip.close()
-            except Exception as e:
-                print(f"   ⚠️ Veo frame extraction failed: {e}, falling back to gradient")
-
-        # Fallback: gradient background
-        if not bg_from_clip:
-            img = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), color=(15, 15, 25))
-            draw_bg = ImageDraw.Draw(img)
-            for y in range(THUMBNAIL_HEIGHT):
-                ratio = y / THUMBNAIL_HEIGHT
-                r = int(15 + 60 * ratio)
-                g = int(15 - 10 * ratio)
-                b = int(25 - 15 * ratio)
-                r, g, b = max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b))
-                draw_bg.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
-
-        draw = ImageDraw.Draw(img)
-
-        # Try to load a good font, fall back to default
-        font_hook = None
-        font_paths = [
-            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",  # Supports Hindi/Devanagari
-            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
-            "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ]
-        font_file = None
-        for fp in font_paths:
-            if os.path.exists(fp):
-                font_file = fp
-                break
-
-        if font_file:
-            font_hook = ImageFont.truetype(font_file, 110)
-            font_first = ImageFont.truetype(font_file, 140)
-        else:
-            font_hook = ImageFont.load_default()
-            font_first = font_hook
-
-        # UNIFIED SAFE BAND: 25%-70% vertical — survives IG profile-grid 4:5 crop AND YT Shorts UI
-        safe_top = int(THUMBNAIL_HEIGHT * 0.25)
-        safe_bottom = int(THUMBNAIL_HEIGHT * 0.70)
-        safe_left = int(THUMBNAIL_WIDTH * 0.10)
-        safe_right = int(THUMBNAIL_WIDTH * 0.90)
-        safe_width = safe_right - safe_left
-
-        # Hook text — MAX 4 WORDS, first word YELLOW (scroll-stop), rest WHITE
-        hook_display = (hook_text or topic.split("—")[0].strip()).upper()
-        all_words = hook_display.split()[:4]
-        first_word = all_words[0] if all_words else ""
-        rest_words = " ".join(all_words[1:]) if len(all_words) > 1 else ""
-
-        def _draw_outlined(d, x, y, text, font, fill, outline=(0, 0, 0), width=5):
-            for dx in range(-width, width + 1):
-                for dy in range(-width, width + 1):
-                    if dx * dx + dy * dy <= width * width:
-                        d.text((x + dx, y + dy), text, font=font, fill=outline)
-            d.text((x, y), text, font=font, fill=fill)
-
-        # Measure all lines first so a LOCAL scrim can be drawn behind the text block only
-        lines = []
-        if first_word:
-            lines.append((first_word, font_first, (255, 215, 0)))
-        if rest_words:
-            current_line = ""
-            for word in rest_words.split():
-                test = f"{current_line} {word}".strip()
-                bbox = draw.textbbox((0, 0), test, font=font_hook)
-                if bbox[2] - bbox[0] > safe_width and current_line:
-                    lines.append((current_line, font_hook, (255, 255, 255)))
-                    current_line = word
-                else:
-                    current_line = test
-            if current_line:
-                lines.append((current_line, font_hook, (255, 255, 255)))
-
-        line_gap = 18
-        sized = []
-        block_h = 0
-        block_w = 0
-        for text, font, fill in lines:
-            bbox = draw.textbbox((0, 0), text, font=font)
-            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            sized.append((text, font, fill, w, h))
-            block_h += h + line_gap
-            block_w = max(block_w, w)
-        block_h -= line_gap if sized else 0
-
-        y_start = safe_top + max(0, ((safe_bottom - safe_top) - block_h) // 3)
-
-        # LOCAL scrim — dark rounded panel behind the text block only (base image stays vivid)
-        if sized:
-            pad = 36
-            x0 = max(0, (THUMBNAIL_WIDTH - block_w) // 2 - pad)
-            x1 = min(THUMBNAIL_WIDTH, (THUMBNAIL_WIDTH + block_w) // 2 + pad)
-            overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            ImageDraw.Draw(overlay).rounded_rectangle(
-                [x0, max(0, y_start - pad), x1, min(THUMBNAIL_HEIGHT, y_start + block_h + pad)],
-                radius=28, fill=(0, 0, 0, 150))
-            img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-
-        draw = ImageDraw.Draw(img)
-        current_y = y_start
-        for text, font, fill, w, h in sized:
-            if current_y + h > safe_bottom:
-                break
-            x = max(safe_left, (THUMBNAIL_WIDTH - w) // 2)
-            _draw_outlined(draw, x, current_y, text, font, fill)
-            current_y += h + line_gap
-
-        img.save(output_path, "PNG", quality=95)
+        img.save(output_path, "PNG")
         if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
-            print(f"   ⚠️ Thumbnail file not created or too small")
             return None
-        COVER_META.update({
-            "cover_text": " ".join(all_words) if all_words else None,
-            "cover_color": "#FFD700 first word + #FFFFFF",
-            "cover_path": "pil",
-            "cover_face": False,
-        })
-        print(f"   🖼️ Thumbnail generated: {os.path.basename(output_path)}")
         return output_path
-
     except Exception as e:
-        print(f"   ⚠️ Thumbnail generation failed: {e}")
+        print(f"   ⚠️ compose_cover_text failed: {e}")
         return None
+
+
+def _cover_lines_from_text(text):
+    """Turn a brief's short thumbnail text into (lines, highlight).
+    Accepts a pipe '|' as an explicit line break; else splits ~half by words.
+    Highlight = the ₹-number/percent token if present, else None."""
+    import re as _re
+    text = (text or "").strip()
+    if not text:
+        return [], None
+    if "|" in text:
+        lines = [p.strip() for p in text.split("|") if p.strip()][:2]
+    else:
+        words = text.split()
+        if len(words) <= 2:
+            lines = [text]
+        else:
+            cut = len(words) // 2
+            for i, w in enumerate(words):
+                if "₹" in w or _re.search(r"\d", w):
+                    if 0 < i < len(words):
+                        cut = i
+                        break
+            lines = [" ".join(words[:cut]).strip(), " ".join(words[cut:]).strip()]
+            lines = [l for l in lines if l][:2]
+    m = _re.search(r"₹[\d,]+|\b\d[\d,]*%?\b", text)
+    highlight = m.group(0) if (m and any(m.group(0) in l for l in lines)) else None
+    return lines, highlight
+
+
+def _thumbnail_background(veo_clip_path, enhance=True):
+    """Return a 1080x1920 PIL background for the cover: the most visually
+    striking frame from the first Veo clip, else a dark gradient. No text."""
+    from PIL import Image, ImageDraw, ImageEnhance
+    import numpy as np
+    W, H = THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT
+    if veo_clip_path and os.path.exists(veo_clip_path):
+        try:
+            clip = VideoFileClip(veo_clip_path)
+            best_frame, best_score = None, -1
+            for t_pct in (0.25, 0.40, 0.50, 0.60):
+                t = min(t_pct * clip.duration, clip.duration - 0.1)
+                frame = clip.get_frame(t)
+                score = float(np.std(frame))
+                if score > best_score:
+                    best_score, best_frame = score, frame
+            clip.close()
+            if best_frame is not None:
+                img = Image.fromarray(best_frame).resize((W, H), Image.LANCZOS)
+                if enhance:
+                    img = ImageEnhance.Contrast(ImageEnhance.Brightness(img).enhance(0.94)).enhance(1.2)
+                print(f"   \U0001F5BC\uFE0F Thumbnail bg: Veo frame (contrast {best_score:.0f})")
+                return img
+        except Exception as e:
+            print(f"   \u26A0\uFE0F Veo frame extraction failed: {e}, using gradient")
+    img = Image.new("RGB", (W, H), (16, 16, 26))
+    d = ImageDraw.Draw(img)
+    for y in range(H):
+        r = y / H
+        d.line([(0, y), (W, y)], fill=(int(16 + 55 * r), int(16 + 8 * r), int(30 + 20 * (1 - r))))
+    return img
+
+
+def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
+                       cover_text=None, highlight=None):
+    """Fallback cover: striking Veo frame (or gradient) + our crisp PIL text
+    layer (compose_cover_text). Big, one keyword yellow, heavy outline, always
+    inside the safe band. Returns the PNG path or None."""
+    if not GENERATE_THUMBNAIL:
+        return None
+    try:
+        bg = _thumbnail_background(veo_clip_path)
+        text = cover_text or hook_text or (topic.split("\u2014")[0] if topic else "")
+        # Latin-safe guard: without RAQM, Devanagari garbles \u2192 drop Hindi
+        # words entirely and tidy orphaned punctuation rather than ship broken
+        # Hindi. (On CI, RAQM is present, so this rarely triggers.)
+        if _has_deva(text) and not COVER_RAQM:
+            import re as _re
+            text = _re.sub(r"[\u0900-\u097F\u200C\u200D\u093C]+[\?\u0964!.]*", "", text)
+            text = _re.sub(r"\s{2,}", " ", text).strip(" -\u2014|?.\u0964")
+            if not text:
+                text = _re.sub(r"[\u0900-\u097F]", "", (topic or "")).strip() or "SAME GSM"
+        lines, hl = _cover_lines_from_text(text)
+        if highlight and any(highlight in l for l in lines):
+            hl = highlight
+        path = compose_cover_text(bg, lines, hl, output_path)
+        if path:
+            COVER_META.update({
+                "cover_text": " ".join(lines), "cover_color": "#FFD400 keyword + #FFFFFF",
+                "cover_path": "pil", "cover_face": False,
+            })
+            print(f"   \U0001F5BC\uFE0F Thumbnail generated: {os.path.basename(path)} | \"{' / '.join(lines)}\"")
+        return path
+    except Exception as e:
+        print(f"   \u26A0\uFE0F Thumbnail generation failed: {e}")
+        return None
+
 
 
 def upload_thumbnail(youtube, video_id, thumbnail_path):
@@ -1113,36 +1198,26 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         f"{yt_context}\n"
         f"{ig_context}\n"
         "TASK:\n"
-        "You are given a reference image (the base frame for the thumbnail) along with the video topic, hook, and script. "
-        "Generate a DETAILED thumbnail brief that a designer (Gemini) will use to place text on this exact image.\n\n"
-        "THUMBNAIL TEXT RULES:\n"
-        "- CRITICAL: MAXIMUM 3-4 WORDS ONLY. Count your words — if more than 4 words, you MUST shorten it. Shorter = better CTR.\n"
-        "  Good examples (3-4 words): '₹49 T-Shirt Secret', 'Fabric गलती!', 'GSM का Truth', 'Print Crack क्यों?', '300 Piece RETURN?'\n"
-        "  BAD examples (too long): '₹49 में T-Shirt Business कैसे करें' (7 words — WAY too long!)\n"
-        "- Use Hindi-English mix (Hinglish) — this performs best in India\n"
-        "- Include a number or price if relevant (numbers get clicks)\n"
-        "- Create curiosity or urgency\n"
-        "- Use power words: Secret, Free, Shocking, Reality, Truth, Mistake, Hack, सच, गलती\n"
-        "- Think like a viewer scrolling on their phone — what makes them STOP and click?\n"
-        "- If the topic is broad, pick the sharpest angle that creates maximum curiosity\n\n"
-        "OUTPUT FORMAT — Return EXACTLY this format (the designer will read this directly):\n\n"
+        "You are given a reference frame from the video. Choose the COVER TEXT only. "
+        "Our own renderer draws it huge and razor-sharp — you do NOT design or place it, "
+        "just pick the words. Winning covers on THIS channel are 2 short lines, one number "
+        "popped, e.g. 'PROFIT vs TURNOVER?', 'MY BUSINESS / STORY', '10rs Price Drop'.\n\n"
+        "COVER TEXT RULES:\n"
+        "- TWO lines, separated by a single '|'. TOTAL 2-4 words across both lines. Shorter = higher CTR.\n"
+        "- Line 1 = short supporting phrase (e.g. 'SAME GSM'). Line 2 = the HERO line and MUST contain a\n"
+        "  number or ₹-price (e.g. '₹60 फर्क?'). The number is what stops the scroll — always include one.\n"
+        "- Keep the CONTRADICTION/curiosity that makes them click (e.g. 'same' + the '₹60' gap), not a flat label.\n"
+        "- Hinglish is great, but at most ONE short Hindi power-word (सच / गलती / फर्क / क्यों / राज़). "
+        "Everything else Latin/number. Never a full Hindi sentence.\n"
+        "- Think: scrolling on a 4-inch phone — what makes them STOP?\n\n"
+        "ALSO give a LATIN-SAFE version: the SAME hook with the Hindi word swapped for an English/number "
+        "equivalent (used when Devanagari can't be shaped). e.g. 'SAME GSM | ₹60 फर्क?' → 'SAME GSM | ₹60 FARAK?'.\n\n"
+        "OUTPUT FORMAT — return EXACTLY these lines:\n\n"
         "=== THUMBNAIL BRIEF ===\n"
-        "Format: Reel 9:16\n"
-        "Thumbnail Text: [your chosen text — 3-4 words MAXIMUM, Hinglish]\n"
-        "Text Color: [hex code] ([color name])\n"
-        "Text Position: [Top-Left / Top-Center / Top-Right] ([specific placement description based on the image — e.g., 'above the person's head, on the white wall/ceiling area'])\n"
-        "Text Effect: [describe stroke/outline color + shadow details — e.g., 'White stroke (thick outline, 4-5px) + black drop shadow for maximum pop']\n"
-        "Font Style: Bold, Impact/Block style — extra thick weight\n"
-        "Face In Design: [Yes / No — Yes ONLY if the final design should include a human face]\n"
-        "Additional Design Notes:\n\n"
-        "[Describe what you see in the reference image — person, setting, products, background]\n\n"
-        "[Specific placement instruction — WHERE exactly to place text relative to the person/products. e.g., 'Place the text ABOVE his head in the clean ceiling/wall zone — do NOT cover his face']\n\n"
-        "[Text sizing instruction — e.g., 'The text is only 2-3 words in Hindi — make it BIG, filling the entire top third of the frame']\n\n"
-        "[Color/contrast instruction — e.g., 'Red text (#FF0000) with thick white outline (#FFFFFF, 4-5px) and subtle black shadow so it pops against the light background']\n\n"
-        "[What NOT to add — e.g., 'Do NOT add any other design elements — the warehouse stock behind him already tells the story visually']\n\n"
-        "[Bottom half instruction — e.g., 'Keep the bottom half completely clean — just his face and the stock bags']\n\n"
-        "[Readability note — 'This is a Reel thumbnail so text must be readable even at small mobile preview size']\n\n"
-        "Video Title: [suggested Hindi/Hinglish title for context — NOT placed on thumbnail]\n"
+        "Thumbnail Text: [line1 | line2 — 2-4 words total, line2 has a number]\n"
+        "Thumbnail Text (Latin-safe): [same hook, no Devanagari]\n"
+        "Text Color: [hex] ([name])\n"
+        "Face In Design: [Yes / No — Yes only for a customer-story/reaction video]\n"
         "=== END BRIEF ===\n\n"
         "IMPORTANT:\n"
         "- Look at the reference image carefully and describe it accurately\n"
@@ -1191,34 +1266,39 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
         brief_text = resp.content[0].text.strip()
 
-        # Extract the thumbnail text from the brief for logging
-        thumb_text = "?"
-        thumb_color = "?"
+        thumb_text = ""
+        thumb_latin = ""
+        thumb_color = "#FFD400 (Gold Yellow)"
         thumb_face = False
         for line in brief_text.split("\n"):
-            if line.strip().startswith("Thumbnail Text:"):
-                thumb_text = line.split(":", 1)[1].strip()
-            elif line.strip().startswith("Text Color:"):
-                thumb_color = line.split(":", 1)[1].strip()
-            elif line.strip().startswith("Face In Design:"):
-                thumb_face = line.split(":", 1)[1].strip().lower().startswith("y")
+            ls = line.strip()
+            if ls.startswith("Thumbnail Text (Latin-safe):"):
+                thumb_latin = ls.split(":", 1)[1].strip().strip('"').strip("[]")
+            elif ls.startswith("Thumbnail Text:"):
+                thumb_text = ls.split(":", 1)[1].strip().strip('"').strip("[]")
+            elif ls.startswith("Text Color:"):
+                thumb_color = ls.split(":", 1)[1].strip()
+            elif ls.startswith("Face In Design:"):
+                thumb_face = ls.split(":", 1)[1].strip().lower().startswith("y")
 
-        # Enforce strict 3-4 word limit — truncate if Claude exceeded it
-        words = thumb_text.split()
-        if len(words) > 4:
-            print(f"   ⚠️ Thumbnail text too long ({len(words)} words): \"{thumb_text}\"")
-            thumb_text_short = " ".join(words[:4])
-            print(f"   ✂️ Truncated to 4 words: \"{thumb_text_short}\"")
-            # Update the brief text too so Gemini gets the truncated version
-            brief_text = brief_text.replace(thumb_text, thumb_text_short)
-            thumb_text = thumb_text_short
+        if not thumb_text:
+            # last-ditch: use the hook/topic; renderer + auto-fit handle length
+            thumb_text = (hook_text or topic or "").strip()
+        # No word-count truncation — the renderer auto-fits, so long text just
+        # shrinks instead of getting butchered (old bug: dropped words + dangling
+        # '—'). We only cap absurd length to keep it punchy.
+        if len(thumb_text.split()) > 6:
+            thumb_text = " ".join(thumb_text.split()[:6])
+        if not thumb_latin:
+            import re as _re
+            thumb_latin = _re.sub(r"[ऀ-ॿ‌‍़]+[\?।!.]*", "", thumb_text)
+            thumb_latin = _re.sub(r"\s{2,}", " ", thumb_latin).strip(" -—|?.।")
 
-        print(f"   ✅ Thumbnail brief: \"{thumb_text}\" | color: {thumb_color}")
-
-        # Return both the full brief text (for Gemini) and parsed fields (for logging/fallback)
+        print(f"   ✅ Cover text: \"{thumb_text}\"  (latin-safe: \"{thumb_latin}\") | {thumb_color}")
         return {
             "brief_text": brief_text,
             "text": thumb_text,
+            "text_latin": thumb_latin,
             "color": thumb_color,
             "face": thumb_face,
         }
@@ -1230,238 +1310,113 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
 def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                           claude_client=None, genai_client=None, cost_tracker=None):
-    """Generate a high-quality AI thumbnail using Claude (detailed brief with vision) + Gemini Pro (image).
-    1. Extract best Veo frame
-    2. Send frame to Claude Opus — Claude sees the image and generates a detailed design brief
-    3. Send frame + Claude's full brief to Gemini Pro — Gemini places text on untouched image
-    Falls back to basic generate_thumbnail() on failure. Returns thumbnail file path or None."""
-    if not AI_THUMBNAIL or not claude_client or not genai_client:
+    """High-CTR cover: Claude writes SHORT punchy text (with vision on the Veo
+    frame) -> Gemini paints a TEXT-FREE hero scene -> our PIL renderer
+    composites big, crisp, keyword-highlighted text. The image model never
+    renders letters (it garbles them, worst of all Devanagari), so clarity is
+    guaranteed. Returns the cover PNG path or None.
+    """
+    if not AI_THUMBNAIL or not claude_client:
         return None
-
     try:
-        from PIL import Image, ImageEnhance
+        from PIL import Image
         from google.genai import types
-        import numpy as np
 
-        print("   🤖 AI Thumbnail Pipeline: Claude brief (with vision) → Gemini Pro image...")
-
-        # Step 1: Get/refresh research patterns
+        print("   \U0001F916 Cover pipeline: Claude text -> Gemini TEXT-FREE scene -> PIL crisp text...")
         research = refresh_thumbnail_research(claude_client)
 
-        # Step 2: Extract best frame from Veo clip FIRST (so Claude can see it)
-        frame_image = None
-        if veo_clip_path and os.path.exists(veo_clip_path):
-            try:
-                clip = VideoFileClip(veo_clip_path)
-                best_frame = None
-                best_score = -1
-                for t_pct in [0.25, 0.40, 0.50, 0.60]:
-                    t = min(t_pct * clip.duration, clip.duration - 0.1)
-                    frame = clip.get_frame(t)
-                    score = float(np.std(frame))
-                    if score > best_score:
-                        best_score = score
-                        best_frame = frame
-                if best_frame is not None:
-                    frame_image = Image.fromarray(best_frame)
-                    frame_image = frame_image.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
-                    print(f"   🖼️ AI thumbnail: using Veo frame (contrast score: {best_score:.0f})")
-                clip.close()
-            except Exception as e:
-                print(f"   ⚠️ Frame extraction failed: {e}")
+        # 1. Best Veo frame = the base scene (and Claude's vision reference)
+        frame_image = _thumbnail_background(veo_clip_path, enhance=False)
 
-        # Create gradient fallback if no frame
-        if frame_image is None:
-            frame_image = Image.new("RGB", (THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), (15, 15, 25))
-            from PIL import ImageDraw
-            draw = ImageDraw.Draw(frame_image)
-            for y in range(THUMBNAIL_HEIGHT):
-                r = int(15 + (40 * y / THUMBNAIL_HEIGHT))
-                g = int(15 + (20 * y / THUMBNAIL_HEIGHT))
-                b = int(25 + (15 * y / THUMBNAIL_HEIGHT))
-                draw.line([(0, y), (THUMBNAIL_WIDTH, y)], fill=(r, g, b))
-            print("   🖼️ AI thumbnail: using gradient background (no clip available)")
-
-        # Step 3: Generate detailed thumbnail brief via Claude (with frame image for vision)
+        # 2. Claude writes the cover text (2 lines, one number highlighted)
         source_insights = get_source_channel_top_topics(5)
         audience_qs = get_audience_questions(5)
         _ig_brief = get_ig_engagement_summary()
         brief = generate_thumbnail_brief(
             claude_client, script_text, hook_text, topic, research,
             source_insights=source_insights, audience_qs=audience_qs,
-            cost_tracker=cost_tracker, frame_image=frame_image,
-            ig_summary=_ig_brief
+            cost_tracker=cost_tracker, frame_image=frame_image, ig_summary=_ig_brief,
         )
         if not brief:
-            print("   ⚠️ AI thumbnail: brief generation failed, falling back to basic")
-            return None
+            print("   ⚠️ Cover: brief failed → basic fallback")
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
 
-        # Step 4: Send frame image + Claude's full detailed brief to Gemini Pro
-        # Claude's brief_text contains the complete design direction — Gemini just executes it
-        claude_brief = brief.get("brief_text", "")
+        # Pick the cover text: Devanagari version only if we can shape it (RAQM),
+        # else the Latin-safe version the brief also returned.
+        cover_text = brief.get("text") or ""
+        if _has_deva(cover_text) and not COVER_RAQM:
+            cover_text = brief.get("text_latin") or cover_text
+        lines, highlight = _cover_lines_from_text(cover_text)
+        if not lines:
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
 
-        gemini_prompt = (
-            "You are a professional YouTube thumbnail designer. You receive a reference image and a design brief, "
-            "and you create a high-CTR YouTube thumbnail by adding text and design elements ON TOP of the reference image. "
-            "You are a DESIGN EXECUTOR — you do NOT research or change the text/title. You only design.\n\n"
-            "BUSINESS CONTEXT: Indian wholesale bulk plain t-shirt brand\n"
-            "AUDIENCE: Indian viewers (Hindi/Hinglish text is common)\n"
-            "STYLE: Bold, high-contrast, attention-grabbing — typical top Indian YouTube channel style\n\n"
-            f"{claude_brief}\n\n"
-            "SAFE ZONE RULES (CRITICAL — NEVER BREAK THESE):\n"
-            "- This is a 9:16 Reel thumbnail (1080x1920). The Instagram profile grid crops it to 4:5 and\n"
-            "  YouTube Shorts UI covers the bottom edge.\n"
-            "- ONE RULE: ALL text and any face must sit FULLY inside the 25%-70% vertical band\n"
-            "  (y = 480px to 1344px on the 1920px canvas). NOTHING critical above 25% or below 70%.\n"
-            "- LEFT/RIGHT 8%: edge margin. Avoid text here.\n\n"
-            "FACE RULE (CONDITIONAL — apply judgment based on the script content):\n"
-            "- IF the brief describes a customer-story / conversation / reaction video (someone said X, kisi ne\n"
-            "  bola, customer complained, etc.) → DO add a clear Indian male face (30-45y, factory-owner look)\n"
-            "  making eye contact with shocked/concerned expression. This is the parasocial scroll-stop.\n"
-            "- IF the brief describes a technical / specs / how-to / product-comparison video (GSM check, fabric\n"
-            "  difference, print quality, ironing tips, etc.) → DO NOT force a face. A bold product close-up\n"
-            "  (fabric texture, t-shirt detail, defect visible, comparison side-by-side) with strong text\n"
-            "  performs BETTER for B2B specs content than an unrelated AI face.\n"
-            "- When you DO use a face: occupy 25-40% of the visible center band, eyes wide, looking into lens.\n"
-            "- When you DON'T use a face: make the product/process the hero, with text as the second focal point.\n"
-            "- NEVER show the back of a head, blurry face, or a face cropped at the eyes.\n\n"
-            "IMAGE RULES (NEVER BREAK THESE):\n"
-            "- Output exactly 1080x1920 pixels (Reel 9:16)\n"
-            "- The reference image is the BASE/BACKGROUND. You may zoom, recompose, or add a face\n"
-            "  on top, but keep the same overall scene/colors so it matches the video opener.\n"
-            "- Keep face and product clearly visible at all times\n\n"
-            "TEXT RULES (NEVER BREAK THESE):\n"
-            "- ONLY use the EXACT thumbnail text from the brief above — NOTHING ELSE\n"
-            "- Do NOT add ANY extra text — no website URLs, no brand names, no watermarks, no labels, no subtitles\n"
-            "- Do NOT add 'Sale91', 'Sale91.com', 'WATCH', or any text not in the brief\n"
-            "- Maximum 4-5 words total on the entire thumbnail — the brief text ONLY\n"
-            "- Text must be READABLE on a mobile phone screen (imagine 4cm wide)\n"
-            "- Use BOLD, thick, block-style fonts — NEVER thin or decorative fonts\n"
-            "- Every letter must have a visible stroke (outline) AND shadow for readability\n"
-            "- NEVER place text over my face\n"
-            "- Text should fill 30-40% of the thumbnail area\n\n"
-            "DO NOT:\n"
-            "- ❌ Change the thumbnail text — use it EXACTLY as provided\n"
-            "- ❌ Add extra text beyond what's in the brief\n"
-            "- ❌ Generate a completely new image — my reference photo is the base\n"
-            "- ❌ Use thin, script, or decorative fonts\n"
-            "- ❌ Place text over my face or the main product\n\n"
-            "MUST DO:\n"
-            "- ✅ Keep my original image INTACT as the base — do NOT modify it\n"
-            "- ✅ Add bold readable text with proper stroke/shadow as specified in the brief\n"
-            "- ✅ Follow the brief EXACTLY — the brief has specific placement and color instructions\n"
-            "- ✅ Generate ONE best thumbnail\n"
-            "- ✅ Respect safe zones — ALL text inside the 25%-70% vertical band\n"
-        )
-
-        output_path = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
-
-        # Try primary model (Pro), then fallback (Flash)
-        # Each model gets up to 3 retries with exponential backoff for transient errors (503/429)
-        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-        GEMINI_IMAGE_TIMEOUT = 120  # seconds per model attempt (2 min — keep CI fast)
-        GEMINI_IMAGE_MAX_RETRIES = 3
-
-        for model_name in [AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK]:
-            for attempt in range(1, GEMINI_IMAGE_MAX_RETRIES + 1):
+        # 3. Gemini paints a TEXT-FREE hero scene (background only). If it fails
+        #    or is unavailable, the Veo frame is already a fine background.
+        scene = frame_image
+        if genai_client and frame_image is not None:
+            scene_prompt = (
+                "You are a product photographer creating a background plate for an Indian "
+                "wholesale plain t-shirt brand's Reel cover (1080x1920, 9:16).\n"
+                "Recreate/enhance the reference image into a striking, high-contrast HERO SCENE: "
+                "keep the product/fabric the clear subject, rich warehouse bokeh, cinematic lighting.\n"
+                "Leave the UPPER-CENTER (25%-55% height) visually CALM and slightly darker so text can "
+                "sit there later. Put the main subject in the lower-center.\n\n"
+                "ABSOLUTELY NO TEXT: no letters, no words, no numbers, no captions, no watermark, "
+                "no logo, no price tag with digits, no signage. A person is optional; if present, "
+                "an Indian factory-owner look, no text on clothing. Output exactly 1080x1920."
+            )
+            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+            for model_name in (AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK):
                 try:
-                    retry_label = f" (attempt {attempt}/{GEMINI_IMAGE_MAX_RETRIES})" if attempt > 1 else ""
-                    print(f"   🎨 Generating thumbnail via Gemini ({model_name}){retry_label} [timeout={GEMINI_IMAGE_TIMEOUT}s]...")
-
-                    def _call_gemini(m=model_name):
+                    print(f"   \U0001F3A8 Gemini text-free scene ({model_name}) [timeout=120s]...")
+                    def _call(m=model_name):
                         return genai_client.models.generate_content(
-                            model=m,
-                            contents=[gemini_prompt, frame_image],
-                            config=types.GenerateContentConfig(
-                                response_modalities=["TEXT", "IMAGE"],
-                            ),
+                            model=m, contents=[scene_prompt, frame_image],
+                            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
                         )
-
-                    with ThreadPoolExecutor(max_workers=1) as executor:
-                        future = executor.submit(_call_gemini)
-                        response = future.result(timeout=GEMINI_IMAGE_TIMEOUT)
-
-                    # Extract generated image from response
+                    with ThreadPoolExecutor(max_workers=1) as ex:
+                        response = ex.submit(_call).result(timeout=120)
+                    got = None
                     for part in response.parts:
                         if part.inline_data is not None:
-                            generated_img = part.as_image()
-                            # Ensure PIL Image (some Gemini models return non-PIL types)
-                            if not isinstance(generated_img, Image.Image):
-                                import io
-                                generated_img = Image.open(io.BytesIO(part.inline_data.data))
-                            # Resize to exact thumbnail dimensions
-                            generated_img = generated_img.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
-                            generated_img.save(output_path, "PNG", quality=95)
-                            if not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
-                                print(f"   ⚠️ AI thumbnail file not created or too small")
-                                break
-                            # QA gate: text must be fully visible inside the safe band —
-                            # user saw a live cover with text at the very top, half cut off
-                            # (2026-07-07). Fail-open on QA errors, fail-closed on a clear NO.
-                            try:
-                                qa_img = Image.open(output_path)
-                                qa_resp = genai_client.models.generate_content(
-                                    model=AI_THUMBNAIL_GEMINI_FALLBACK,
-                                    contents=[
-                                        "You are checking an Instagram Reel cover image (1080x1920). "
-                                        "Answer with EXACTLY one word, YES or NO. Answer YES only if ALL of: "
-                                        "(1) every piece of text is FULLY visible — no letters cropped at any edge; "
-                                        "(2) all text sits within the middle vertical band, roughly 25%-70% of the "
-                                        "image height — no text in the top quarter or the bottom third; "
-                                        "(3) the text is large and clearly legible.",
-                                        qa_img,
-                                    ],
-                                )
-                                _verdict = (getattr(qa_resp, "text", "") or "").strip().upper()
-                                if _verdict.startswith("NO"):
-                                    print(f"   🚫 Cover QA FAILED (text cropped/off-band) — discarding, next model or PIL fallback takes over")
-                                    break
-                                print(f"   ✅ Cover QA passed")
-                            except Exception as _qe:
-                                print(f"   ⚠️ Cover QA errored ({_qe}) — accepting cover unchecked")
-                            print(f"   ✅ AI thumbnail generated: {output_path}")
-                            COVER_META.update({
-                                "cover_text": brief.get("text"),
-                                "cover_color": brief.get("color"),
-                                "cover_path": "ai",
-                                "cover_face": brief.get("face", False),
-                            })
-                            if cost_tracker:
-                                cost_tracker.track_gemini_image()
-                            return output_path
-
+                            got = part.as_image()
+                            if not isinstance(got, Image.Image):
+                                import io as _io
+                                got = Image.open(_io.BytesIO(part.inline_data.data))
+                            break
+                    if got is not None:
+                        scene = got.resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+                        if cost_tracker:
+                            cost_tracker.track_gemini_image()
+                        print("   ✅ Gemini scene ready (text-free)")
+                        break
                     print(f"   ⚠️ Gemini ({model_name}) returned no image")
-                    break  # No image in response — skip retries, try next model
-
                 except FuturesTimeout:
-                    print(f"   ⚠️ Gemini ({model_name}) timed out after {GEMINI_IMAGE_TIMEOUT}s")
-                    break  # Timeout — skip retries, try next model
+                    print(f"   ⚠️ Gemini ({model_name}) timed out → next")
+                except Exception as _ge:
+                    print(f"   ⚠️ Gemini ({model_name}) failed: {str(_ge)[:120]} → next")
 
-                except Exception as e:
-                    err_str = str(e).lower()
-                    is_transient = any(k in err_str for k in ("500", "internal", "503", "429", "unavailable", "rate limit", "too many", "overloaded", "high demand", "resource exhausted"))
-                    if is_transient and attempt < GEMINI_IMAGE_MAX_RETRIES:
-                        wait = 15 * attempt  # 15s, 30s, 45s — give Gemini time to recover
-                        print(f"   ⚠️ Gemini ({model_name}) attempt {attempt} failed: {e}")
-                        print(f"   ⏳ Retrying in {wait}s (API is busy, backing off)...")
-                        time.sleep(wait)
-                        continue
-                    print(f"   ⚠️ Gemini ({model_name}) failed: {e}")
-                    break  # Non-transient error or out of retries — try next model
-
-            else:
-                # All retries exhausted for this model
-                pass
-
-            if model_name == AI_THUMBNAIL_GEMINI_MODEL:
-                print(f"   🔄 Trying fallback model...")
-
-        print("   ❌ AI thumbnail: all Gemini models failed, falling back to basic")
-        return None
+        # 4. Composite the crisp text (this is what guarantees clarity)
+        out = compose_cover_text(scene, lines, highlight)
+        if not out:
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path,
+                                      cover_text=cover_text, highlight=highlight)
+        COVER_META.update({
+            "cover_text": " ".join(lines),
+            "cover_color": "#FFD400 keyword + #FFFFFF",
+            "cover_path": "ai+pil" if scene is not frame_image else "veo+pil",
+            "cover_face": brief.get("face", False),
+        })
+        print(f"   ✅ Cover ready: \"{' / '.join(lines)}\"  ({os.path.basename(out)})")
+        return out
 
     except Exception as e:
         print(f"   ⚠️ AI thumbnail pipeline failed: {e}")
-        return None
+        try:
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
+        except Exception:
+            return None
+
 
 
 def pin_comment(youtube, video_id, comment_text=None):

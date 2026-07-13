@@ -1,0 +1,67 @@
+name: Thumbnail Preview (cover renderer QA)
+
+# Renders REAL covers with the production compose_cover_text() renderer so a
+# thumbnail change can be eyeballed WITHOUT running the whole daily pipeline.
+# Also reports whether libraqm (Devanagari shaping) is active on the runner.
+# Manual only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      texts:
+        description: 'Cover texts, one per line-pair, separated by ";;" (line1 | line2)'
+        required: false
+        default: '₹80 vs ₹140 | SAME GSM?;;SAME GSM | ₹60 फर्क?;;SAME GSM | ₹60 ज़्यादा?;;₹60 का | राज़'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Install system deps
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo -E apt-get update -qq
+          sudo -E apt-get install -y -qq ffmpeg fonts-noto-core libraqm0 libraqm-dev
+      - name: Install Python packages
+        run: pip install -q -r requirements.txt
+      - name: Render preview covers
+        env:
+          INPUT_TEXTS: ${{ inputs.texts }}
+        run: |
+          python3 - << 'PY'
+          import os
+          from PIL import Image, features, ImageDraw
+          import daily_short as ds
+          print("=" * 60)
+          print("libraqm (Devanagari shaping) ACTIVE:", features.check("raqm"))
+          print("COVER_RAQM in module:", ds.COVER_RAQM)
+          print("Baloo font exists:", os.path.exists(ds.COVER_FONT_BALOO))
+          print("=" * 60)
+
+          # a representative dark-teal gradient background (stand-in for a Veo scene)
+          W, H = ds.THUMBNAIL_WIDTH, ds.THUMBNAIL_HEIGHT
+          bg = Image.new("RGB", (W, H), (18, 22, 30)); d = ImageDraw.Draw(bg)
+          for y in range(H):
+              r = y / H
+              d.line([(0, y), (W, y)], fill=(int(20 + 40*r), int(24 + 30*r), int(38 + 30*(1-r))))
+
+          texts = [t.strip() for t in (os.environ.get("INPUT_TEXTS") or "").split(";;") if t.strip()]
+          os.makedirs("previews", exist_ok=True)
+          for i, t in enumerate(texts, 1):
+              lines, hl = ds._cover_lines_from_text(t)
+              out = f"previews/cover_{i}.png"
+              ds.compose_cover_text(bg.copy(), lines, hl, out)
+              print(f"  [{i}] {t!r} -> lines={lines} hl={hl} -> {out}")
+          PY
+      - name: Upload previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: thumbnail-previews
+          path: previews/
+          retention-days: 7
