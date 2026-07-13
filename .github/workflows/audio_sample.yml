@@ -1,22 +1,34 @@
 name: Audio Sample (TTS verification)
 
-# Generates a 10-15s ElevenLabs audio sample with the actual preprocessor logic.
-# Saves the WAV as an artifact so you can download and listen without running
-# the full daily pipeline (no apt-get install, no Veo, no upload).
-# Cost: ~$0.02 in ElevenLabs credits + Whisper for verification transcript.
+# Generates an ElevenLabs audio sample with the ACTUAL production preprocessor,
+# model, voice, and settings (eleven_v3, VOICE_TEMPO 1.0 — matched to
+# daily_short.yml). Whisper-transcribes the result so you can verify a
+# pronunciation fix WITHOUT listening, then uploads WAV + transcript.
+# Cost: ~$0.02 ElevenLabs + a few cents Whisper.
+#
+# Use it to confirm a _TTS_HINGLISH_DEVANAGARI / _TTS_PHONETIC_MAP change
+# reads correctly on the real production model before it ships in a daily video.
 
 on:
   workflow_dispatch:
     inputs:
       sample_text:
-        description: 'Hinglish phrase to test (default: covers all reported issues)'
+        description: 'Hinglish phrase to test'
         required: false
-        default: 'Ek customer ne mujhe call kiya, bola DTF printer liya tha 80 hazaar ka, 3 mahine chalega, par thik nahi chala. 8 piece order pe ₹2 lakh ka loss hua, matlab ye galti mat karna.'
+        default: 'Ye combed cotton hai, laambe samay tak chalega. Aankhein band karke feel karo. 15 rupiya bachke, feel hi badal jaata hai.'
+      model:
+        description: 'ElevenLabs model id (production uses eleven_v3)'
+        required: false
+        default: 'eleven_v3'
+      voice_tempo:
+        description: 'atempo (production uses 1.0 = no slowdown)'
+        required: false
+        default: '1.0'
 
 jobs:
   sample:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,75 +42,82 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
 
-      - name: Generate sample
+      - name: Generate + verify sample
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          INPUT_SAMPLE_TEXT: ${{ inputs.sample_text }}
+          INPUT_MODEL: ${{ inputs.model }}
+          VOICE_TEMPO: ${{ inputs.voice_tempo }}
         run: |
           set -e
-          pip install -q requests
+          pip install -q elevenlabs requests openai-whisper
           python3 - << 'PY'
-          import os, sys, importlib.util
+          import os, subprocess
 
-          # Load just the preprocessor functions from daily_short.py without running main()
-          spec = importlib.util.spec_from_file_location("ds", "daily_short.py")
-          # We can't full-import (heavy deps). Read the file and exec just the symbols we need.
+          # Load ONLY the TTS preprocessor slice from daily_short.py (no heavy
+          # top-level deps). normalize_for_tts's one out-of-slice reference is
+          # _get_learned_pronunciations — stub it (this tool verifies the
+          # HAND-curated map; the learned map is exercised by the daily run).
           src = open("daily_short.py").read()
           start = src.index("# ╔══════════════════════════════════════════════════════════════════════╗\n# ║                   TTS PRE-PROCESSING")
           end = src.index("def sarvam_tts_to_mp3")
-          ns = {}
+          ns = {"_get_learned_pronunciations": lambda: {}}
           exec(src[start:end], ns)
           normalize_for_tts = ns["normalize_for_tts"]
 
-          text = os.environ.get("INPUT_SAMPLE_TEXT") or "${{ inputs.sample_text }}"
+          # Production voice + settings (must match daily_short.py)
+          VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"   # Ketu Original (PVC clone)
+          SETTINGS = {"stability": 0.50, "similarity_boost": 0.75,
+                      "style": 0.00, "use_speaker_boost": True}
+          model = os.environ.get("INPUT_MODEL") or "eleven_v3"
+
+          text = os.environ.get("INPUT_SAMPLE_TEXT") or ""
           if not text or text == "None":
-              text = "Ek customer ne mujhe call kiya, bola DTF printer liya tha 80 hazaar ka, 3 mahine chalega, par thik nahi chala. 8 piece order pe ₹2 lakh ka loss hua, matlab ye galti mat karna."
+              text = "Ye combed cotton hai, laambe samay tak chalega. Aankhein band karke feel karo."
 
-          print("=" * 70)
-          print("ORIGINAL SCRIPT:")
-          print(text)
-          print()
           processed = normalize_for_tts(text)
-          print("AFTER PREPROCESSOR (this is what ElevenLabs sees):")
-          print(processed)
+          print("=" * 70)
+          print("ORIGINAL:\n" + text)
+          print("\nAFTER PREPROCESSOR (what ElevenLabs sees):\n" + processed)
+          print(f"\nMODEL: {model}")
           print("=" * 70)
 
-          # Call ElevenLabs Hindi voice (same voice + settings as production)
-          import requests
-          ELEVENLABS_VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"
-          ELEVENLABS_MODEL = "eleven_multilingual_v2"
-          api_key = os.environ["ELEVENLABS_API_KEY"]
-          r = requests.post(
-              f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
-              headers={"xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"},
-              json={
-                  "text": processed,
-                  "model_id": ELEVENLABS_MODEL,
-                  # Match ElevenLabs Library web-preview defaults exactly
-                  "voice_settings": {"stability": 0.50, "similarity_boost": 0.75, "style": 0.00, "use_speaker_boost": True},
-              },
-              timeout=60,
+          # Exact production call path (elevenlabs SDK, same as daily_short.py)
+          from elevenlabs import ElevenLabs
+          client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
+          audio_iter = client.text_to_speech.convert(
+              voice_id=VOICE_ID, model_id=model, text=processed,
+              voice_settings=SETTINGS,
           )
-          r.raise_for_status()
-          with open("sample_audio_raw.mp3", "wb") as f:
-              f.write(r.content)
-          print(f"✅ Generated sample_audio_raw.mp3 ({len(r.content)} bytes)")
+          with open("sample_raw.mp3", "wb") as f:
+              for chunk in audio_iter:
+                  f.write(chunk)
+          print(f"✅ Generated sample_raw.mp3 ({os.path.getsize('sample_raw.mp3')} bytes)")
 
-          # Apply same atempo slowdown as production daily_short.py uses
-          import subprocess
-          tempo = os.environ.get("VOICE_TEMPO", "0.95")
+          # Production post-process: VOICE_TEMPO (1.0 = none) + loudnorm
           try:
-              tempo_val = max(0.5, min(2.0, float(tempo)))
+              tempo = max(0.5, min(2.0, float(os.environ.get("VOICE_TEMPO", "1.0"))))
           except ValueError:
-              tempo_val = 0.95
-          subprocess.run([
-              "ffmpeg", "-i", "sample_audio_raw.mp3",
-              "-af", f"atempo={tempo_val:.3f},loudnorm=I=-14:TP=-1.5:LRA=11",
-              "-y", "sample_audio.mp3",
-          ], check=True, capture_output=True)
-          print(f"🔊 Applied tempo={tempo_val} + loudnorm")
+              tempo = 1.0
+          af = "loudnorm=I=-14:TP=-1.5:LRA=11"
+          if abs(tempo - 1.0) > 0.001:
+              af = f"atempo={tempo:.3f}," + af
+          subprocess.run(["ffmpeg", "-i", "sample_raw.mp3", "-af", af,
+                          "-y", "sample_audio.mp3"], check=True, capture_output=True)
+          print(f"🔊 tempo={tempo} + loudnorm applied")
+
+          # Whisper verification — transcribe what was ACTUALLY spoken so a
+          # pronunciation fix can be checked without listening.
+          import whisper
+          wt = whisper.load_model("small").transcribe("sample_audio.mp3", language="hi")
+          transcript = (wt.get("text") or "").strip()
+          print("\n" + "=" * 70)
+          print("WHISPER HEARD:\n" + transcript)
+          print("=" * 70)
 
           with open("sample_meta.txt", "w") as f:
-              f.write(f"ORIGINAL:\n{text}\n\nAFTER PREPROCESSOR:\n{processed}\n\nTEMPO: {tempo_val}\n")
+              f.write(f"ORIGINAL:\n{text}\n\nPREPROCESSED:\n{processed}\n\n"
+                      f"MODEL: {model}\nTEMPO: {tempo}\n\nWHISPER HEARD:\n{transcript}\n")
           PY
 
       - name: Upload audio sample artifact

@@ -5295,7 +5295,13 @@ _TTS_PHONETIC_MAP = {
     # User-reported mispronunciations — respell so ElevenLabs's multilingual
     # model reads the intended English phonemes. Each entry must be tested.
     # Format: <Latin word as Claude writes> → <Latin respelling that ElevenLabs reads correctly>
-    "combed": "kohmd",  # 2026-05-08: produced "kom-BED" instead of "KOMD"
+    #
+    # "combed" → "kohmd" was tuned on eleven_multilingual_v2 (2026-05-08).
+    # Production moved to eleven_v3 on 2026-07-06, which reads that respelling
+    # WRONG (Ketu report, 80-vs-140 video 2026-07-13). v3 handles real English
+    # words natively, so combed is now handled in Devanagari below (कोम्ड) —
+    # deterministic on v3 — instead of a Latin respelling. Left this map in
+    # place (empty) for future v3-confirmed respellings.
 }
 
 # Hinglish (Latin) → Devanagari for high-frequency Hindi words ElevenLabs
@@ -6045,6 +6051,26 @@ _TTS_HINGLISH_DEVANAGARI.update({
     # बचाके (having saved) — distinct from बचके (dodge); both now explicit
     "bachake": "बचाके", "bachaake": "बचाके", "bachakar": "बचाकर",
     "bachke": "बचके",
+})
+# ── Ketu-reported mispronunciations, 2026-07-13 (₹80 vs ₹140 video) ──
+# combed/laambe/band all wrong. None in his corpus (count 0). "band" was read
+# as English "band" (music), "laambe" as English, and "combed" as garbage —
+# the old "kohmd" Latin respelling broke when production moved to eleven_v3.
+_TTS_HINGLISH_DEVANAGARI.update({
+    # combed cotton → phonetic Devanagari (b is SILENT: /koʊmd/, not "komb-d").
+    # v3 reads Devanagari graphemes deterministically; verify via audio_sample.
+    "combed": "कोम्ड",
+    # लंबा (long) family — "laambe"/"lambe" were read as English.
+    "lamba": "लंबा", "lambi": "लंबी", "lambe": "लंबे", "lambey": "लंबे",
+    "laamba": "लंबा", "laambi": "लंबी", "laambe": "लंबे", "laambey": "लंबे",
+    "lambai": "लंबाई", "lambaai": "लंबाई", "lambaayi": "लंबाई",
+    # बंद (closed) — "aankhein band" read as English "band". Homograph with
+    # English band/rubber-band, but in his B2B scripts standalone "band" is
+    # ~always बंद (dukaan band, aankhein band, band karo) — same call as
+    # do/teen/hi. Whole-word only, so "waistband"/"bandwidth" are safe.
+    "band": "बंद", "bund": "बंद",
+    # आँखें (eyes) — ensure the "aankhe" spelling he uses is covered too
+    "aankhe": "आँखें", "aankhein": "आँखें", "ankhe": "आँखें",
 })
 
 

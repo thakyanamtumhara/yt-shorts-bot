@@ -38,6 +38,11 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
+          # yt-dlp now needs a JS runtime to extract YouTube audio; without it
+          # the Sunday Whisper speech-capture path fails and the corpus falls
+          # back to the video description (marketing copy, not his speech).
+          curl -fsSL https://deno.land/install.sh | sh -s -- -y || true
+          echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
 
       - name: Install Python packages
         run: pip install -q -r requirements.txt
