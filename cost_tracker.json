@@ -2067,5 +2067,21 @@
       "whisper": 0.0051,
       "claude_sonnet": 0.008
     }
+  },
+  {
+    "date": "2026-07-13T12:20:43.669222",
+    "topic": "\u20b980 vs \u20b9140 Plain T-Shirt \u2014 Same GSM, Same Weight, Fir Bhi \u20b960 Ka Farak Kyu? Yarn Truth Exposed",
+    "title": "\u20b980 vs \u20b9140 \u091f\u0940-\u0936\u0930\u094d\u091f \u2014 Same GSM, \u092b\u093f\u0930 \u20b960 \u0915\u093e \u092b\u0930\u094d\u0915? Yarn \u0915\u093e \u0938\u091a \ud83d\ude33",
+    "total_usd": 7.7582,
+    "duration_min": 26.1,
+    "breakdown": {
+      "claude_opus": 0.3762,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0259,
+      "veo_clips": 7.04,
+      "whisper": 0.0046,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2366
+    }
   }
 ]
