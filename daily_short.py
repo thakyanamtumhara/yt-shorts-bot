@@ -889,6 +889,10 @@ def _cover_lines_from_text(text):
     Highlight = the ₹-number/percent token if present, else None."""
     import re as _re
     text = (text or "").strip()
+    # Strip emoji/pictographs — the crisp PIL font can't render colour emoji
+    # (they'd tofu). The words carry the hook; emoji were an AI-render habit.
+    text = _re.sub(r"[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF️‍]", "", text)
+    text = _re.sub(r"\s{2,}", " ", text).strip()
     if not text:
         return [], None
     if "|" in text:
@@ -906,8 +910,8 @@ def _cover_lines_from_text(text):
                         break
             lines = [" ".join(words[:cut]).strip(), " ".join(words[cut:]).strip()]
             lines = [l for l in lines if l][:2]
-    m = _re.search(r"₹[\d,]+|\b\d[\d,]*%?\b", text)
-    highlight = m.group(0) if (m and any(m.group(0) in l for l in lines)) else None
+    m = _re.search(r"₹[\d,]+(?:[LKlk]|\s?(?:lakh|cr|crore))?|\b\d[\d,]*%?\b", text)
+    highlight = m.group(0).strip() if (m and any(m.group(0).strip() in l for l in lines)) else None
     return lines, highlight
 
 
