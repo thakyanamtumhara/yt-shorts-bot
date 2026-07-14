@@ -2097,5 +2097,21 @@
       "whisper": 0.0042,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-07-14T10:51:55.518002",
+    "topic": "Monsoon \u092e\u0947\u0902 \u20b98 \u0915\u0940 \u0917\u0932\u0924\u0940 \u0938\u0947 400 T-Shirts \u092a\u0930 Color Bleeding \u2014 \u0939\u0930 Bulk Buyer \u092f\u0939\u0940 \u0915\u0930\u0924\u093e \u0939\u0948 \ud83d\udc80",
+    "title": "\u20b98 \u0915\u0940 \u0917\u0932\u0924\u0940 \u0938\u0947 400 T-Shirts \u092c\u0930\u094d\u092c\u093e\u0926 \u2014 Monsoon \u092e\u0947\u0902 \u092f\u0947 \u092d\u0942\u0932 \u092e\u0924 \u0915\u0930\u0928\u093e \ud83d\udc80",
+    "total_usd": 7.5021,
+    "duration_min": 21.0,
+    "breakdown": {
+      "claude_opus": 0.3352,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0211,
+      "veo_clips": 7.04,
+      "whisper": 0.0035,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0073
+    }
   }
 ]
