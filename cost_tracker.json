@@ -2113,5 +2113,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0073
     }
+  },
+  {
+    "date": "2026-07-15T11:12:29.941410",
+    "topic": "College Mein Zero Investment Se T-Shirt Brand Shuru Kiya \u2014 2017 Se 2026 Tak Ka Real Journey \ud83d\ude4f",
+    "title": "\u20b93,000 \u0938\u0947 \u0936\u0941\u0930\u0942 \u0915\u093f\u092f\u093e T-Shirt Brand \u2014 College \u0938\u0947 \u0915\u0930\u094b\u0921\u093c\u094b\u0902 \u0924\u0915 \u0915\u093e \u0938\u092b\u0930 \ud83d\ude4f",
+    "total_usd": 7.7624,
+    "duration_min": 28.4,
+    "breakdown": {
+      "claude_opus": 0.3374,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.028,
+      "veo_clips": 7.04,
+      "whisper": 0.0055,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2316
+    }
   }
 ]
