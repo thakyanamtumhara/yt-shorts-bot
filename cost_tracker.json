@@ -2130,5 +2130,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2316
     }
+  },
+  {
+    "date": "2026-07-16T11:10:56.738538",
+    "topic": "240 GSM Oversize Royal Blue Kyu Milta Nahi? \u2014 Dyeing Ka \u20b915 Secret Jo Manufacturer Chhupate Hain",
+    "title": "Royal Blue \u0915\u094d\u092f\u094b\u0902 \u0928\u0939\u0940\u0902 \u092e\u093f\u0932\u0924\u093e 240 GSM \u092e\u0947\u0902? \u2014 \u20b915 \u0915\u093e Dyeing Secret",
+    "total_usd": 7.5226,
+    "duration_min": 19.6,
+    "breakdown": {
+      "claude_opus": 0.3453,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0296,
+      "veo_clips": 7.04,
+      "whisper": 0.0051,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0076
+    }
   }
 ]
