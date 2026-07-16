@@ -6037,6 +6037,117 @@ _TTS_HINGLISH_DEVANAGARI.update({
 })
 
 
+def _forced_align_caption_times(raw_tokens, whisper_words, normalize_fn):
+    """Forced-align each script display token to the audio via Whisper.
+
+    Proportional/weighted mapping drifts because Whisper's word count diverges
+    NON-uniformly from the script (mishears, merges, splits). This aligns the
+    two properly: the audio is TTS of normalize_fn(script), so expand each
+    display token into its spoken Devanagari word(s), then Needleman-Wunsch
+    align those against Whisper's Devanagari transcription (same speech, same
+    script — differ only by ASR noise), and hand each token the timestamps of
+    the Whisper words it matched. Returns [(start,end)] per raw token, or None.
+    """
+    import re as _re
+    W = [w for w in whisper_words if (w.get("text") or "").strip()]
+    if not W or not raw_tokens:
+        return None
+
+    # 1. Expand tokens → spoken Devanagari units, remembering the source token.
+    spoken, owner = [], []
+    for i, raw in enumerate(raw_tokens):
+        try:
+            norm = normalize_fn(raw)
+        except Exception:
+            norm = raw
+        units = _re.findall(r"[ऀ-ॿ]+|[A-Za-z]+|\d+", norm) or [raw]
+        for u in units:
+            spoken.append(u)
+            owner.append(i)
+    S, T = len(spoken), len(W)
+    if not S:
+        return None
+
+    def _norm(s):
+        return _re.sub(r"[^\w]", "", (s or "").lower())
+    sp = [_norm(x) for x in spoken]
+    wp = [_norm(w["text"]) for w in W]
+
+    def _sim(a, b):
+        if not a or not b:
+            return 0.0
+        if a == b:
+            return 1.0
+        if a in b or b in a:
+            return 0.8
+        A, B = set(a), set(b)
+        return 0.6 * len(A & B) / max(len(A | B), 1)
+
+    # 2. Needleman-Wunsch (S×T ≈ 200×150 → fine). Gap penalty modest.
+    GAP = -0.4
+    dp = [[0.0] * (T + 1) for _ in range(S + 1)]
+    for i in range(1, S + 1):
+        dp[i][0] = dp[i - 1][0] + GAP
+    for j in range(1, T + 1):
+        dp[0][j] = dp[0][j - 1] + GAP
+    for i in range(1, S + 1):
+        row, prow = dp[i], dp[i - 1]
+        a = sp[i - 1]
+        for j in range(1, T + 1):
+            row[j] = max(prow[j - 1] + _sim(a, wp[j - 1]),
+                         prow[j] + GAP, row[j - 1] + GAP)
+    # 3. Backtrack → each spoken unit gets a matched Whisper index (or None).
+    match = [None] * S
+    i, j = S, T
+    while i > 0 and j > 0:
+        here, diag = dp[i][j], dp[i - 1][j - 1]
+        if here == diag + _sim(sp[i - 1], wp[j - 1]):
+            match[i - 1] = j - 1
+            i -= 1; j -= 1
+        elif here == dp[i - 1][j] + GAP:
+            i -= 1
+        else:
+            j -= 1
+
+    # 4. Interpolate timestamps for unmatched spoken units, then aggregate to
+    #    each display token (min start / max end of its spoken units).
+    su_start, su_end = [None] * S, [None] * S
+    for k in range(S):
+        if match[k] is not None:
+            su_start[k] = float(W[match[k]]["start"])
+            su_end[k] = float(W[match[k]]["end"])
+    # fill leading/trailing/gaps by linear interpolation over known anchors
+    known = [k for k in range(S) if su_start[k] is not None]
+    if not known:
+        return None
+    first, last = known[0], known[-1]
+    for k in range(first):
+        su_start[k] = su_end[k] = su_start[first]
+    for k in range(last + 1, S):
+        su_start[k] = su_end[k] = su_end[last]
+    for a, b in zip(known, known[1:]):
+        if b - a > 1:
+            t0, t1 = su_end[a], su_start[b]
+            for k in range(a + 1, b):
+                frac = (k - a) / (b - a)
+                su_start[k] = su_end[k] = t0 + (t1 - t0) * frac
+
+    out = [None] * len(raw_tokens)
+    for k in range(S):
+        i = owner[k]
+        s, e = su_start[k], su_end[k]
+        if out[i] is None:
+            out[i] = [s, e]
+        else:
+            out[i][0] = min(out[i][0], s)
+            out[i][1] = max(out[i][1], e)
+    # tokens with no spoken units (pure punctuation) → zero-length placeholder
+    for i in range(len(out)):
+        if out[i] is None:
+            out[i] = None
+    return [(o[0], o[1]) if o else None for o in out]
+
+
 def normalize_for_tts(text: str) -> str:
     """Normalize a Hinglish script for cleaner TTS output.
 
@@ -11687,15 +11798,37 @@ def main():
             raw_tokens = [t for t in script_voice.split() if t.strip()]
             script_words_all = [_romanize_token(t) for t in raw_tokens]
             token_weights = [_spoken_units(t) for t in raw_tokens]
-            # keep display + weight arrays aligned after dropping empties
-            _pairs = [(w, wt) for w, wt in zip(script_words_all, token_weights) if w.strip()]
-            script_words_all = [p[0] for p in _pairs]
-            token_weights = [p[1] for p in _pairs]
+            # keep raw + display + weight arrays aligned after dropping empties
+            _tris = [(rt, w, wt) for rt, w, wt in zip(raw_tokens, script_words_all, token_weights) if w.strip()]
+            raw_tokens = [p[0] for p in _tris]
+            script_words_all = [p[1] for p in _tris]
+            token_weights = [p[2] for p in _tris]
             wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
 
             if script_words_all:
                 n = len(script_words_all)
+                # PRIMARY: true forced alignment (handles non-uniform ASR drift).
+                aligned = None
                 if wtimes_all:
+                    try:
+                        aligned = _forced_align_caption_times(raw_tokens, wtimes_all, normalize_for_tts)
+                    except Exception as _ae:
+                        print(f"   ⚠️ Forced align failed ({_ae}) — using weighted map")
+                        aligned = None
+                if aligned and any(a for a in aligned):
+                    # fill any None (punctuation-only tokens) from neighbours
+                    _last = 0.0
+                    for j, sw in enumerate(script_words_all):
+                        a = aligned[j]
+                        if a is None:
+                            st = en = _last
+                        else:
+                            st, en = a
+                            _last = en
+                        karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
+                    print(f"   🎯 Captions force-aligned to audio ({len(karaoke_words)} words)")
+                elif wtimes_all:
+                    # FALLBACK: spoken-weight proportional map
                     m = len(wtimes_all)
                     total_w = float(sum(token_weights)) or float(n)
                     cum = 0.0
