@@ -11601,7 +11601,8 @@ def main():
         whisper_segs = [
             {"start": float(s["start"]), "end": float(s["end"]),
              "words": [
-                 {"start": float(w["start"]), "end": float(w["end"])}
+                 {"start": float(w["start"]), "end": float(w["end"]),
+                  "text": (w.get("word") or "").strip()}
                  for w in (s.get("words") or [])
                  if w.get("end", 0) > w.get("start", 0)
              ]}
@@ -11670,21 +11671,42 @@ def main():
                 return _re_subs.sub(r"[ऀ-ॿ]+",
                                     lambda m: _deva_to_roman.get(m.group(0), ""), t)
 
-            script_words_all = [
-                w for w in (_romanize_token(t) for t in script_voice.split())
-                if w.strip()
-            ]
+            def _spoken_units(tok):
+                """How many WORDS this script token becomes when spoken — the
+                audio is TTS of normalize_for_tts(script), so "₹140" → "एक सौ
+                चालीस रुपये" = 4 spoken words, "GSM"/"combed" = 1. Weighting the
+                caption timing by this (instead of 1-per-token) is what keeps
+                captions in sync: flat mapping drifts after every number/price
+                because the spoken word count ≠ the script token count."""
+                try:
+                    norm = normalize_for_tts(tok)
+                except Exception:
+                    norm = tok
+                return max(1, len(_re_subs.findall(r"[ऀ-ॿ]+|[A-Za-z]+|\d+", norm)))
+
+            raw_tokens = [t for t in script_voice.split() if t.strip()]
+            script_words_all = [_romanize_token(t) for t in raw_tokens]
+            token_weights = [_spoken_units(t) for t in raw_tokens]
+            # keep display + weight arrays aligned after dropping empties
+            _pairs = [(w, wt) for w, wt in zip(script_words_all, token_weights) if w.strip()]
+            script_words_all = [p[0] for p in _pairs]
+            token_weights = [p[1] for p in _pairs]
             wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
 
             if script_words_all:
                 n = len(script_words_all)
                 if wtimes_all:
                     m = len(wtimes_all)
+                    total_w = float(sum(token_weights)) or float(n)
+                    cum = 0.0
                     for j, sw in enumerate(script_words_all):
-                        i0 = min(int(j * m / n), m - 1)
-                        i1 = min(int((j + 1) * m / n), m - 1)
+                        w0 = cum / total_w
+                        cum += token_weights[j]
+                        w1 = cum / total_w
+                        i0 = min(int(w0 * m), m - 1)
+                        i1 = min(max(int(w1 * m), i0 + 1), m)
                         st = wtimes_all[i0]["start"]
-                        en = wtimes_all[i1]["start"] if i1 > i0 else wtimes_all[i0]["end"]
+                        en = wtimes_all[i1 - 1]["end"]
                         karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
                 else:
                     # No word timestamps at all — spread evenly across speech span
@@ -11717,6 +11739,17 @@ def main():
                             karaoke_words.append({"text": sw, "start": span_start + j * per,
                                                   "end": span_start + (j + 1) * per})
                     print(f"   🎤 Karaoke timing: {len(karaoke_words)} words, span {karaoke_words[0]['start']:.1f}s → {karaoke_words[-1]['end']:.1f}s (audio {audio_clip_dur:.1f}s)")
+                    # Sync self-check: for a few caption words, show what Whisper
+                    # actually HEARD at that word's start time. If the caption word
+                    # and the heard word line up, timing is synced.
+                    try:
+                        _step = max(1, len(karaoke_words) // 8)
+                        for _ki in range(0, len(karaoke_words), _step):
+                            _kw = karaoke_words[_ki]
+                            _heard = min(wtimes_all, key=lambda w: abs(w["start"] - _kw["start"]))
+                            print(f"      ⏱ {_kw['start']:5.1f}s caption={_kw['text'][:14]:<14} | heard={_heard.get('text','')[:14]}")
+                    except Exception:
+                        pass
         except Exception as _ke:
             karaoke_words = []
             print(f"   ⚠️ Karaoke timing failed: {_ke}")
