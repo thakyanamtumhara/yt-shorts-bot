@@ -9341,16 +9341,18 @@ def build_sitemap_xml(new_post=None):
 '''
 
     # Legacy/manual posts NOT in blog_history.json but live on the site
-    # 2026-07-10: 240gsmtshirt, DelhiBIGGESTPlainTShirtWarehouse, wholesale-plain-t-shirts,
-    # AcidWashTshirt, Wholesale-Blanks removed — they 301 to their cluster winners now
-    # (GSC-data-driven consolidation; redirect map lives in catalog/cloudfront/url-rewrite.js).
+    # 2026-07-10: consolidated slugs removed — they 301 to their cluster winners
+    # (map lives in catalog/cloudfront/url-rewrite.js). 2026-07-17: acid-wash-tshirts
+    # and Biggest-Plain-Tshirt-Warehouse turned out to be legacy "Moved" meta-refresh
+    # STUBS, so the redirects were reversed — the real articles (AcidWashTshirt,
+    # DelhiBIGGESTPlainTShirtWarehouse) live in blog_history and the stubs 301 away.
     legacy_sitemap_posts = [
-        "Biggest-Plain-Tshirt-Warehouse", "build-tshirt-brand",
+        "build-tshirt-brand",
         "premium-plain-t-shirts-bulk-supplier-india",
         "fast-delivery-plain-t-shirts-maharashtra",
         "plain-t-shirt-wholesale-near-me-delhi-india",
         "dropshipping",
-        "wholesale-blank-t-shirts", "Shipping-Method", "acid-wash-tshirts",
+        "wholesale-blank-t-shirts", "Shipping-Method",
         "Dropshoulders", "plainhoodie", "430gsm-dropshoulder-hoodie",
         "b2b-dropshipping-guide", "next-day-train-delivery",
         "how-to-order", "third-party-printing-service",
