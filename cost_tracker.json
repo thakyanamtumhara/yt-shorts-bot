@@ -2174,5 +2174,19 @@
       "whisper": 0.0051,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-07-16T13:28:46.022965",
+    "topic": "Boxy Fit T-Shirts \u0938\u093f\u0930\u094d\u092b Black & White \u092e\u0947\u0902 \u0915\u094d\u092f\u094b\u0902? \u2014 Manufacturing Reality \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e",
+    "title": "Boxy Fit \u092e\u0947\u0902 15 Colors \u091a\u093e\u0939\u093f\u090f? \u2014 \u20b9 \u0915\u093e \u0916\u0947\u0932 \u0938\u092e\u091d\u094b \u092a\u0939\u0932\u0947",
+    "total_usd": 0.4681,
+    "duration_min": 12.3,
+    "breakdown": {
+      "claude_opus": 0.3391,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0285,
+      "whisper": 0.0055,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
