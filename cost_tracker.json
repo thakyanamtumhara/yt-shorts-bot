@@ -2146,5 +2146,19 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0076
     }
+  },
+  {
+    "date": "2026-07-16T12:52:42.712116",
+    "topic": "240 GSM Oversized Royal Blue T-Shirt \u2014 Bulk \u092e\u0947\u0902 \u0932\u0947\u0928\u0947 \u0938\u0947 \u092a\u0939\u0932\u0947 \u092f\u0947 3 \u091a\u0940\u091c\u093c\u0947\u0902 Check \u0915\u0930\u094b \u0935\u0930\u0928\u093e Loss \u092a\u0915\u094d\u0915\u093e",
+    "title": "240 GSM Royal Blue \u2014 300 \u092e\u0947\u0902 \u0938\u0947 80 Reject! \u092f\u0947 3 \u0917\u0932\u0924\u093f\u092f\u093e\u0901 \u092e\u0924 \u0915\u0930\u0928\u093e",
+    "total_usd": 0.4313,
+    "duration_min": 6.9,
+    "breakdown": {
+      "claude_opus": 0.3074,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0243,
+      "whisper": 0.0046,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
