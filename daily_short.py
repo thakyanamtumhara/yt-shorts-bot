@@ -1167,6 +1167,22 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
     research_context = _json.dumps(research_patterns, indent=2, ensure_ascii=False)
 
+    # Last 7 shipped covers — the brief must not reuse their power-word or
+    # skeleton (राज़ two days running made the grid read as a filled template,
+    # Ketu report 2026-07-16).
+    recent_covers = []
+    try:
+        _hist = _json.load(open(IG_ENGAGEMENT_FILE))
+        _recs = _hist if isinstance(_hist, list) else _hist.get("reels") or _hist.get("records") or []
+        recent_covers = [r.get("cover_text") for r in _recs[-7:] if r.get("cover_text")]
+    except Exception:
+        pass
+    recent_covers_context = (
+        ("\nRECENT COVERS (last 7 — do NOT reuse their power-word or skeleton):\n"
+         + "\n".join(f"- {c}" for c in recent_covers) + "\n")
+        if recent_covers else ""
+    )
+
     # Build YouTube insights context if available
     yt_context = ""
     if source_insights:
@@ -1201,28 +1217,47 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         f"RESEARCH PATTERNS (what works in this niche):\n{research_context}\n\n"
         f"{yt_context}\n"
         f"{ig_context}\n"
+        f"{recent_covers_context}\n"
         "TASK:\n"
         "You are given a reference frame from the video. Choose the COVER TEXT only. "
         "Our own renderer draws it huge and razor-sharp — you do NOT design or place it, just pick the words.\n\n"
-        "HOUSE FORMAT (owner-approved 2026-07-13 — follow it EVERY time):\n"
-        "Two stacked lines, split by a single '|':\n"
-        "  LINE 1 = the SETUP: a 1-3 word Latin/number phrase stating what's constant or the context\n"
-        "           (e.g. 'SAME GSM', 'SAME PRICE', '₹140 TEE', '1 GALTI', '3 SAAL').\n"
-        "  LINE 2 = the HOOK: a ₹-amount or number (this is the yellow scroll-stopper) + exactly ONE short\n"
-        "           Hindi power-word + '?'. Power-words: फर्क / सच / गलती / क्यों / राज़ / ज़्यादा / खेल / जाल.\n"
-        "           e.g. '₹60 फर्क?', '₹40K गलती?', '₹2 का खेल?', '80% सच?'.\n"
-        "The gold standard is 'SAME GSM | ₹60 फर्क?' — same setup+hook shape for THIS and every video.\n\n"
-        "RULES:\n"
-        "- TOTAL 3-4 words across both lines. Shorter = higher CTR. LINE 2 MUST have a number/₹.\n"
-        "- Keep the CONTRADICTION/curiosity (setup that clashes with the number). Never a flat label.\n"
-        "- EXACTLY ONE Hindi power-word, only on line 2. Everything else Latin/number. Never a Hindi sentence.\n"
-        "- If the video genuinely has no comparison, line 1 may be a bold claim ('BIGGEST MISTAKE') but keep\n"
-        "  line 2 = number + Hindi word + '?'.\n\n"
+        "HOUSE FORMAT v2 (2026-07-16 — measured on this account's own 74 reels):\n"
+        "Two stacked lines, split by a single '|', 3-6 words TOTAL. Two approved skeletons — ROTATE them, "
+        "never the same skeleton two days running:\n"
+        "  A. LOSS:    [micro-₹ ≤₹20 cause] + [object] + [failure/batch]  → '₹12 Thread | 500 RETURN'\n"
+        "  B. PARADOX: 'SAME [spec]' | [numbered contradiction]           → 'SAME GSM | ₹60 फर्क?'\n\n"
+        "THE TENSION TEST — the cover MUST pass ALL THREE from its text alone; if any answer is 'nothing', "
+        "pick different words:\n"
+        "  1. OBJECT: what physical thing is named? (thread/tag/yarn/GSM/print/collar/dye/wash — NEVER a "
+        "colour, never 'business'). Line 1 must contain a searchable trade term — cover text is OCR'd into "
+        "Instagram search.\n"
+        "  2. STAKE: what breaks/returns/bleeds money, with a number? (crack/RETURN/bleed/destroyed/fade/"
+        "'cheap feel' + batch size or micro-₹)\n"
+        "  3. ITCH: why must a wholesale buyer resolve it NOW? (contradiction or threat to HIS stock)\n"
+        "  Falsifiable check: could a t-shirt trader LOSE MONEY by not tapping? If no → reject.\n\n"
+        "MEASURED ON THIS ACCOUNT (follow the data):\n"
+        "- Named-pain covers: 0.53% share-rate. Generic curiosity (राज़/सच/गलती with no failure named): "
+        "0.23%. Shares are THE non-follower reach signal — never ship unanchored curiosity.\n"
+        "- Statements out-share bare questions 2.4x. '?' is allowed only welded to a named failure "
+        "('Print Crack क्यों?' = 5,098 views — क्यों EARNED by 'Print Crack').\n"
+        "- Micro-₹ (≤₹20) causes beat lakh-outcomes: '₹1.2 Lakh LOST' style covers sit in the bottom half "
+        "(median 1,642). The big number is the OUTCOME — say it in the video, never on the cover.\n\n"
+        "BANNED (auto-reject):\n"
+        "- राज़/secret/सच/गलती/shock UNLESS the same line names the failure mode\n"
+        "- ₹ ≥1,000, 'K' or 'Lakh' amounts as the hook\n"
+        "- Colour names or product names as line 1 (a colour is not a claim — 'ROYAL BLUE | ₹15 राज़?' "
+        "failed every test above)\n"
+        "- Founder-story frames (he/she/ZERO START — worst share bucket 0.19%)\n"
+        "- Any power-word or skeleton used in the RECENT COVERS list below\n\n"
+        "GOOD (his real winners): '₹6 Tag = RETURN' (top save+share) · 'Print Crack क्यों? | ₹15' · "
+        "'₹12 Thread | 500 RETURN' · 'SAME GSM | ₹60 फर्क?' · '240 GSM | फिर भी Cheap Feel?'\n"
+        "BAD: 'ROYAL BLUE | ₹15 राज़?' (colour≠claim) · 'ZERO START ₹3,000 राज़?' (story+unanchored राज़) · "
+        "'400 TEES ₹8 गलती?' (गलती names no failure) · '3 DIN MEIN STOCK' (nothing breaks).\n\n"
         "ALSO give a LATIN-SAFE version: SAME hook, Hindi word transliterated to Latin (used when Devanagari "
         "can't be shaped). e.g. 'SAME GSM | ₹60 फर्क?' → 'SAME GSM | ₹60 FARAK?'.\n\n"
         "OUTPUT FORMAT — return EXACTLY these lines:\n\n"
         "=== THUMBNAIL BRIEF ===\n"
-        "Thumbnail Text: [SETUP | ₹NUMBER + oneHindiWord? — house format above]\n"
+        "Thumbnail Text: [line1 | line2 — house format v2, must pass the tension test]\n"
         "Thumbnail Text (Latin-safe): [same hook, no Devanagari]\n"
         "Text Color: [hex] ([name])\n"
         "Face In Design: [Yes / No — Yes only for a customer-story/reaction video]\n"
@@ -1262,32 +1297,54 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     message_content.append({"type": "text", "text": prompt_text})
 
     try:
-        print("   🎨 Generating thumbnail brief via Claude Opus...")
-        resp = claude_client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=800,
-            messages=[{"role": "user", "content": message_content}],
-        )
-
-        if cost_tracker:
-            cost_tracker.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
-
-        brief_text = resp.content[0].text.strip()
+        # Power-words whose repetition across consecutive covers makes the grid
+        # read as a filled template (राज़ two days running, 2026-07-16 report).
+        _POWER_WORDS = ["राज़", "सच", "गलती", "फर्क", "क्यों", "ज़्यादा", "खेल",
+                        "जाल", "RETURN", "SECRET", "TRUTH", "MISTAKE"]
+        _recent_blob = " ".join(recent_covers[-3:])
 
         thumb_text = ""
         thumb_latin = ""
         thumb_color = "#FFD400 (Gold Yellow)"
         thumb_face = False
-        for line in brief_text.split("\n"):
-            ls = line.strip()
-            if ls.startswith("Thumbnail Text (Latin-safe):"):
-                thumb_latin = ls.split(":", 1)[1].strip().strip('"').strip("[]")
-            elif ls.startswith("Thumbnail Text:"):
-                thumb_text = ls.split(":", 1)[1].strip().strip('"').strip("[]")
-            elif ls.startswith("Text Color:"):
-                thumb_color = ls.split(":", 1)[1].strip()
-            elif ls.startswith("Face In Design:"):
-                thumb_face = ls.split(":", 1)[1].strip().lower().startswith("y")
+        brief_text = ""
+        for attempt in (1, 2):
+            print(f"   🎨 Generating thumbnail brief via Claude Opus..."
+                  f"{' (retry: repeated power-word)' if attempt == 2 else ''}")
+            resp = claude_client.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=800,
+                messages=[{"role": "user", "content": message_content}],
+            )
+            if cost_tracker:
+                cost_tracker.track_claude_call("opus", resp.usage.input_tokens, resp.usage.output_tokens)
+            brief_text = resp.content[0].text.strip()
+
+            thumb_text = ""
+            thumb_latin = ""
+            for line in brief_text.split("\n"):
+                ls = line.strip()
+                if ls.startswith("Thumbnail Text (Latin-safe):"):
+                    thumb_latin = ls.split(":", 1)[1].strip().strip('"').strip("[]")
+                elif ls.startswith("Thumbnail Text:"):
+                    thumb_text = ls.split(":", 1)[1].strip().strip('"').strip("[]")
+                elif ls.startswith("Text Color:"):
+                    thumb_color = ls.split(":", 1)[1].strip()
+                elif ls.startswith("Face In Design:"):
+                    thumb_face = ls.split(":", 1)[1].strip().lower().startswith("y")
+
+            _repeated = next((pw for pw in _POWER_WORDS
+                              if pw.lower() in thumb_text.lower()
+                              and pw.lower() in _recent_blob.lower()), None)
+            if _repeated and attempt == 1 and recent_covers:
+                print(f"   🔁 Cover reuses '{_repeated}' from the last 3 covers — regenerating")
+                message_content = message_content + [{
+                    "type": "text",
+                    "text": (f"REJECTED: \"{thumb_text}\" reuses the power-word '{_repeated}' "
+                             f"already on a cover in the last 3 days. Produce a DIFFERENT hook: "
+                             f"other skeleton, different power-word, same tension test.")}]
+                continue
+            break
 
         if not thumb_text:
             # last-ditch: use the hook/topic; renderer + auto-fit handle length
@@ -2121,20 +2178,30 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
 
         # Upload custom cover image (thumbnail) to S3 and set as Instagram Reel cover
         if thumbnail_path and os.path.exists(thumbnail_path):
-            try:
-                import boto3
-                ig_cover_key = f"p/ig-cover-{int(time.time())}.png"
-                s3_cover = boto3.client("s3")
-                s3_cover.upload_file(
-                    thumbnail_path, BLOG_S3_BUCKET, ig_cover_key,
-                    ExtraArgs={"ContentType": "image/png", "CacheControl": "max-age=3600"}
-                )
-                cover_url = f"{BLOG_BASE_URL}/{ig_cover_key}"
-                container_data["cover_url"] = cover_url
-                print(f"   🖼️ Instagram cover image set: {cover_url}")
-            except Exception as e:
-                print(f"   ⚠️ Cover image upload failed, Instagram will auto-select: {e}")
-                COVER_META.update({"cover_text": None, "cover_color": None, "cover_path": None, "cover_face": None})
+            for _cover_try in (1, 2, 3):
+                try:
+                    import boto3
+                    ig_cover_key = f"p/ig-cover-{int(time.time())}.png"
+                    s3_cover = boto3.client("s3")
+                    s3_cover.upload_file(
+                        thumbnail_path, BLOG_S3_BUCKET, ig_cover_key,
+                        ExtraArgs={"ContentType": "image/png", "CacheControl": "max-age=3600"}
+                    )
+                    cover_url = f"{BLOG_BASE_URL}/{ig_cover_key}"
+                    container_data["cover_url"] = cover_url
+                    print(f"   🖼️ Instagram cover image set: {cover_url}")
+                    break
+                except Exception as e:
+                    if _cover_try < 3:
+                        print(f"   ⚠️ Cover upload attempt {_cover_try} failed: {e} — retrying")
+                        time.sleep(5 * _cover_try)
+                        continue
+                    print(f"   ⚠️ Cover image upload failed 3x, Instagram will auto-select: {e}")
+                    # Keep cover_text/color for the learning loop — mark delivery
+                    # failed instead of wiping attribution (the cover still exists
+                    # on YouTube; wiping made these reels invisible to analysis).
+                    if COVER_META.get("cover_path"):
+                        COVER_META["cover_path"] = f"{COVER_META['cover_path']}-igupload-failed"
 
         if schedule_for_later and schedule_timestamp:
             # Schedule instead of instant publish — IG handles it
