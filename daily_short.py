@@ -11705,7 +11705,11 @@ def main():
 
     try:
         import whisper
-        wmodel = whisper.load_model("small")
+        # "medium" for caption timing: small mis-hears clear TTS words (सुफ्ट for
+        # "soft", वोष for "wash"), which breaks forced alignment at those spots.
+        # medium is markedly more accurate; SUBTITLE_WHISPER_MODEL can override.
+        _sub_model = os.environ.get("SUBTITLE_WHISPER_MODEL", "medium").strip() or "medium"
+        wmodel = whisper.load_model(_sub_model)
         result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
         # Whisper returns segments — typically sentence-ish. Use those for timing.
         # Also keep WORD-level timestamps (timing only — Whisper text is Devanagari, no CI font).
