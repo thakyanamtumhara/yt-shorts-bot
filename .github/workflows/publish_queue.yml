@@ -1,0 +1,95 @@
+name: Publish Queue (17:15 IST daily)
+
+# Publishes any queued reels (publish_queue/*.json) at the account's measured
+# best window (16-18h IST; 17:15 keeps 1h gap after the daily bot reel).
+# Queue file format:
+#   {"video_url": "...", "cover_url": "...", "caption": "...", "first_comment": "..."}
+# Successful publishes move to publish_queue/done/ with the permalink appended.
+
+on:
+  schedule:
+    - cron: '45 11 * * *'   # 11:45 UTC = 17:15 IST
+  workflow_dispatch:
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish queued reels
+        env:
+          IG_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          IG_BIZ: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: |
+          pip install -q requests
+          python3 - << 'PY'
+          import os, glob, json, time, requests
+
+          files = sorted(glob.glob("publish_queue/*.json"))
+          if not files:
+              print("queue empty — nothing to publish")
+              raise SystemExit(0)
+
+          V = "v21.0"
+          tok = os.environ["IG_TOKEN"].strip()
+          biz = os.environ["IG_BIZ"].strip()
+          os.makedirs("publish_queue/done", exist_ok=True)
+
+          for path in files:
+              job = json.load(open(path))
+              print("publishing:", path)
+              data = {"media_type": "REELS",
+                      "video_url": job["video_url"],
+                      "caption": job.get("caption", "")[:2200],
+                      "access_token": tok}
+              if job.get("cover_url"):
+                  data["cover_url"] = job["cover_url"]
+              r = requests.post(f"https://graph.facebook.com/{V}/{biz}/media",
+                                data=data, timeout=60)
+              print("  container:", r.status_code, r.text[:200])
+              r.raise_for_status()
+              cid = r.json()["id"]
+              for i in range(40):
+                  st = requests.get(f"https://graph.facebook.com/{V}/{cid}",
+                                    params={"fields": "status_code,status",
+                                            "access_token": tok}, timeout=30).json()
+                  if st.get("status_code") == "FINISHED":
+                      break
+                  if st.get("status_code") == "ERROR":
+                      raise SystemExit(f"container error: {st}")
+                  time.sleep(15)
+              r = requests.post(f"https://graph.facebook.com/{V}/{biz}/media_publish",
+                                data={"creation_id": cid, "access_token": tok}, timeout=60)
+              print("  publish:", r.status_code, r.text[:200])
+              r.raise_for_status()
+              media_id = r.json()["id"]
+              pl = requests.get(f"https://graph.facebook.com/{V}/{media_id}",
+                                params={"fields": "permalink", "access_token": tok},
+                                timeout=30).json().get("permalink", "")
+              print("  PERMALINK:", pl)
+              fc = job.get("first_comment", "").strip()
+              if fc:
+                  requests.post(f"https://graph.facebook.com/{V}/{media_id}/comments",
+                                data={"message": fc, "access_token": tok}, timeout=30)
+              job["published_permalink"] = pl
+              job["published_media_id"] = media_id
+              done = "publish_queue/done/" + os.path.basename(path)
+              json.dump(job, open(done, "w"), ensure_ascii=False, indent=1)
+              os.remove(path)
+          PY
+
+      - name: Commit queue state
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add publish_queue/ || true
+          git commit -m "publish queue drained [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }} || true
