@@ -1,0 +1,95 @@
+name: Publish Reel (manual — Factory Sach etc.)
+
+# Publishes an already-produced reel (public video URL, e.g. on the blog S3)
+# to Instagram with a custom cover + caption + first comment. Used for the
+# Factory Sach face series — REAL footage, so no AI-disclosure label.
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Public MP4 URL (S3/CDN)'
+        required: true
+      cover_url:
+        description: 'Public cover image URL (optional)'
+        required: false
+        default: ''
+      caption:
+        description: 'IG caption (use \n for newlines)'
+        required: true
+      first_comment:
+        description: 'First comment to post after publish (optional)'
+        required: false
+        default: ''
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Publish to Instagram
+        env:
+          IG_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          IG_BIZ: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          VIDEO_URL: ${{ inputs.video_url }}
+          COVER_URL: ${{ inputs.cover_url }}
+          CAPTION: ${{ inputs.caption }}
+          FIRST_COMMENT: ${{ inputs.first_comment }}
+        run: |
+          pip install -q requests
+          python3 - << 'PY'
+          import os, time, requests, sys
+
+          V = "v21.0"
+          tok = os.environ["IG_TOKEN"].strip()
+          biz = os.environ["IG_BIZ"].strip()
+          caption = os.environ["CAPTION"].replace("\\n", "\n")[:2200]
+
+          data = {
+              "media_type": "REELS",
+              "video_url": os.environ["VIDEO_URL"].strip(),
+              "caption": caption,
+              "access_token": tok,
+          }
+          cover = os.environ.get("COVER_URL", "").strip()
+          if cover:
+              data["cover_url"] = cover
+
+          r = requests.post(f"https://graph.facebook.com/{V}/{biz}/media",
+                            data=data, timeout=60)
+          print("container:", r.status_code, r.text[:300])
+          r.raise_for_status()
+          cid = r.json()["id"]
+
+          # poll until the container is ready
+          for i in range(40):
+              st = requests.get(f"https://graph.facebook.com/{V}/{cid}",
+                                params={"fields": "status_code,status",
+                                        "access_token": tok}, timeout=30).json()
+              code = st.get("status_code")
+              print(f"  poll {i}: {code} {st.get('status','')[:120]}")
+              if code == "FINISHED":
+                  break
+              if code == "ERROR":
+                  sys.exit(f"container error: {st}")
+              time.sleep(15)
+          else:
+              sys.exit("container never finished")
+
+          r = requests.post(f"https://graph.facebook.com/{V}/{biz}/media_publish",
+                            data={"creation_id": cid, "access_token": tok}, timeout=60)
+          print("publish:", r.status_code, r.text[:300])
+          r.raise_for_status()
+          media_id = r.json()["id"]
+
+          pl = requests.get(f"https://graph.facebook.com/{V}/{media_id}",
+                            params={"fields": "permalink", "access_token": tok},
+                            timeout=30).json()
+          print("PERMALINK:", pl.get("permalink"))
+
+          fc = os.environ.get("FIRST_COMMENT", "").strip()
+          if fc:
+              rc = requests.post(f"https://graph.facebook.com/{V}/{media_id}/comments",
+                                 data={"message": fc, "access_token": tok}, timeout=30)
+              print("first comment:", rc.status_code, rc.text[:200])
+          PY
