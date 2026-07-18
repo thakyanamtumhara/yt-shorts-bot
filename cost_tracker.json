@@ -2205,5 +2205,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2293
     }
+  },
+  {
+    "date": "2026-07-18T10:32:37.648839",
+    "topic": "Barish \u092e\u0947\u0902 Polyester vs Cotton \u2014 \u20b945 \u0915\u0940 T-Shirt \u0928\u0947 \u20b985 \u0935\u093e\u0932\u0940 \u0915\u094b \u0915\u0948\u0938\u0947 \u0939\u0930\u093e \u0926\u093f\u092f\u093e? Monsoon Reality",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 \u20b945 Polyester \u0928\u0947 \u20b985 Cotton \u0915\u094b \u0939\u0930\u093e\u092f\u093e \u2014 300 \u092a\u0940\u0938 \u092c\u0930\u094d\u092c\u093e\u0926!",
+    "total_usd": 7.5297,
+    "duration_min": 21.3,
+    "breakdown": {
+      "claude_opus": 0.3567,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0259,
+      "veo_clips": 7.04,
+      "whisper": 0.0047,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0074
+    }
   }
 ]
