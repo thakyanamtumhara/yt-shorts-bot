@@ -2847,6 +2847,28 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
                 print(f"   ❌ IG single photo: container failed: {resp.text[:200]}")
                 return None
             cid = resp.json().get("id")
+            if not cid:
+                print(f"   ❌ IG single photo: container returned no id: {resp.text[:200]}")
+                return None
+            # Poll for FINISHED before publishing — mirrors the carousel path.
+            # Publishing immediately after container creation returns
+            # OAuthException 9007/2207027 "Media ID is not available" when IG
+            # hasn't finished processing the image yet.
+            for check in range(10):
+                s_resp = requests.get(
+                    f"https://graph.facebook.com/{IG_API_VERSION}/{cid}",
+                    params={"fields": "status_code", "access_token": ig_token},
+                    timeout=30,
+                )
+                sc = s_resp.json().get("status_code") if s_resp.status_code == 200 else None
+                if sc == "FINISHED":
+                    print(f"   ✅ IG single photo: container FINISHED")
+                    break
+                if sc == "ERROR":
+                    print(f"   ❌ IG single photo: container ERROR: {s_resp.text[:200]}")
+                    return None
+                print(f"   ⏳ IG single photo: {sc or 'PENDING'} — waiting 15s ({check+1}/10)")
+                time.sleep(15)
             pub = requests.post(f"{base}/media_publish",
                                 data={"creation_id": cid, "access_token": ig_token}, timeout=30)
             if pub.status_code != 200:
