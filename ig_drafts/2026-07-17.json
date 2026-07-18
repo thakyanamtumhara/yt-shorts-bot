@@ -26,5 +26,6 @@
   ],
   "posted": false,
   "media_id": null,
-  "error": null
+  "error": "publish_ig_carousel returned None — check logs",
+  "posted_at": null
 }
