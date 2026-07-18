@@ -5365,7 +5365,7 @@ _TTS_HINGLISH_DEVANAGARI = {
     "hua": "हुआ", "hui": "हुई", "hota": "होता", "hoti": "होती",
     "mujhe": "मुझे", "tumhe": "तुम्हें", "usse": "उससे",
     "mahine": "महीने", "mahina": "महीना", "saal": "साल", "din": "दिन",
-    "galti": "गलती", "loss": "loss",  # leave 'loss' English on purpose
+    "galti": "ग़लती", "loss": "loss",  # ग़लती with nukta — same family as ग़लत (Ketu 2026-07-18)
     "rupaye": "रुपये", "rupiya": "रुपया", "rupaiye": "रुपये",
     "hazaar": "हज़ार", "hazar": "हज़ार",
     "hazaron": "हज़ारों", "hazaron_": "हज़ारों",
@@ -5661,7 +5661,7 @@ _TTS_HINGLISH_DEVANAGARI = {
     "phenkna": "फेंकना", "phenka": "फेंका", "phenk": "फेंक",
     # Cycle 10 final additions
     "badhenge": "बढ़ेंगे", "ghatenge": "घटेंगे",
-    "galat": "गलत", "sahihe": "सहीहै",  # गलत without nukta — ElevenLabs reads "ग़" as a non-Hindi consonant ("ghalat" with kh sound); modern Hindi spelling is plain "ग"
+    "galat": "ग़लत", "sahihe": "सहीहै",  # ग़लत WITH nukta — Ketu confirmed by ear (2026-07-18) the nukta ग़ is the correct soft "ġ" sound on eleven_v3. (The old plain गलत was tuned for eleven_v2, which read ग़ as a harsh "kh"; that decision went stale on v3 — same lesson as combed.)
     "jeetega": "जीतेगा", "harega": "हारेगा", "jeetegi": "जीतेगी",
     "kitna": "कितना", "kitni": "कितनी", "kitne": "कितने",
     "pucha": "पूछा", "puchhi": "पूछी", "puchhna": "पूछना", "puch": "पूछ",
@@ -6404,6 +6404,14 @@ def normalize_for_tts(text: str) -> str:
     s = _re.sub(r"((?:रुपये|रुपया|रुपिया|पैसे|पैसा|लाख|हज़ार|करोड़|"
                 r"rupay\w*|rupiya|paisa|paise)\s+)बचके(?=[\s,.!?।…\"']|$)",
                 r"\1बचाके", s, flags=_re.IGNORECASE)
+
+    # Nukta correction: eleven_v3 says plain गलत/गलती with a hard "g"; the
+    # correct sound is the soft ग़ (ġ), Ketu-confirmed 2026-07-18. The roman
+    # map already emits ग़, but scripts sometimes write plain गलत in Devanagari
+    # directly (e.g. topic "सब गलत हो गया") — fix those too. गलत→ग़लत also
+    # upgrades गलती→ग़लती; the plain sequence never matches the already-nukta'd
+    # ग़लत (a nukta sits between ग and ल there), so no double-nukta.
+    s = s.replace("गलत", "ग़लत")
 
     # Auto-learned pronunciations from Ketu's own channel corpus (see
     # build_voice_models). Hand-curated always wins: it ran first, and keys
