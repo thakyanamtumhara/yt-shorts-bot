@@ -3,31 +3,31 @@
     "2": {
       "id": 2,
       "status": "best-effort",
-      "last_run": "2026-07-12T20:12:26.147473+05:30",
+      "last_run": "2026-07-19T20:10:25.998842+05:30",
       "last_result": "fallback-to-description",
       "details": "Captions (unauth + OAuth) and Whisper all failed; falling back to video description."
     },
     "3": {
       "id": 3,
       "status": "active",
-      "last_run": "2026-07-12T20:12:26.147924+05:30",
+      "last_run": "2026-07-19T20:10:25.999362+05:30",
       "last_result": "saved",
-      "details": "60 corpus entries · target 4+ for Phase 4 activation"
+      "details": "61 corpus entries · target 4+ for Phase 4 activation"
     },
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-07-12T20:17:53.935898+05:30",
+      "last_run": "2026-07-19T20:15:03.757594+05:30",
       "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/t-shirt-printing-business-earning-50000month-my-real-2018.html · source: '₹50,000/महीना T-Shirt Printing से 🔥 मैंने 2018 में ऐसे कमाए'"
+      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/plain-t-shirt-factory-cost-vs-mrp-why-a-999-branded-tee.html · source: '₹999 वाली T-Shirt की Factory Cost सिर्फ ₹180? 😳 | Factory Sa'"
     },
     "4": {
       "id": 4,
       "status": "active",
-      "last_run": "2026-07-12T20:17:53.936243+05:30",
+      "last_run": "2026-07-19T20:15:03.758008+05:30",
       "last_result": "ready",
-      "details": "Voice style hints active in daily script gen (60 corpus entries)"
+      "details": "Voice style hints active in daily script gen (61 corpus entries)"
     }
   },
-  "last_update": "2026-07-12T20:17:53.936243+05:30"
+  "last_update": "2026-07-19T20:15:03.758008+05:30"
 }
