@@ -8929,6 +8929,7 @@ def process_main_channel_recap():
             topic=video["title"],
             script_english=script_source[:1500],
             tags=blog_tags,
+            uploaded_filenames=[fn for _, fn in blog_images] if blog_images else None,
         )
     except Exception as e:
         print(f"   ⚠️ IG carousel draft non-fatal failure: {e}")

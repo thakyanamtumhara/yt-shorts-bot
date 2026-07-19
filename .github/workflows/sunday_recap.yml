@@ -70,6 +70,7 @@ jobs:
           git config user.email "bot@sale91.com"
           git add blog_history.json || true
           git add reddit_drafts/ || true
+          git add ig_drafts/ || true
           git add voice_corpus/ || true
           git add phase_status.json || true
           git add voice_vocab.json || true
