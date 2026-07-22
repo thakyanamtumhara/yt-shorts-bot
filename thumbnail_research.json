@@ -1,46 +1,26 @@
 {
+  "updated": "2026-07-22T11:19:31.739018",
   "power_words": [
-    "Trap",
-    "Mistake",
     "Secret",
-    "सच",
-    "Exposed",
-    "Destroyed",
-    "Reality",
-    "Hack",
     "Free",
     "Shocking",
-    "Scam",
-    "गलती",
-    "Profit",
-    "Hidden",
-    "💀"
+    "Reality",
+    "Truth",
+    "Mistake",
+    "Hack",
+    "Asli",
+    "Sach"
   ],
   "best_colors": {
     "text": [
       "#FFD700",
       "#FFFFFF",
       "#FF0000",
-      "#FF6600",
-      "#00FF00"
+      "#FF6600"
     ],
     "stroke": "#000000"
   },
-  "text_rules": "Use max 3-4 Hinglish words with a specific ₹ amount or number to create instant curiosity — pair a loss/gain figure with an emotional trigger word like Trap, Mistake, or Destroyed. Numbers (₹40K, 500 T-Shirts, 3X) always outperform vague claims; odd specificity (₹12 Thread, ₹6 Tag) stops the scroll harder than round numbers.",
-  "layout": "Place the person/product on the left or right third of the frame with bold hook text on the opposite side, all text strictly within the 25%-70% vertical band to survive Instagram grid-crop and YouTube's bottom UI overlay. Use a dark or contrasting background behind text — never place text over busy visuals — and keep font size large enough to read on a 4-inch phone preview.",
-  "patterns": "The highest-performing Indian business Reels thumbnails follow a 'Specific Loss + Hidden Cause' formula — a concrete rupee amount lost paired with a surprising everyday detail (₹12 thread, ₹6 tag, GSM number) that the viewer didn't know to check. Faces showing shock, disappointment, or disbelief dramatically increase stop-rate; holding the actual product (ruined t-shirt, cheap thread) adds proof and context. Red/yellow bold text on dark backgrounds with a 💀 or 🤯 emoji as a visual anchor consistently outperforms clean, polished thumbnails in this niche.",
-  "example_texts": [
-    "₹12 Thread = ₹40K Loss",
-    "GSM सच Nobody Checks",
-    "500 T-Shirts Destroyed 💀",
-    "₹85 vs ₹45 Reality",
-    "Printing Trap Exposed 🤯",
-    "Girls Category = 3X Profit",
-    "₹6 Tag Missing = Return",
-    "Yarn Scam ₹15 गलती",
-    "First Order Mistake ❌",
-    "Bulk Buying Hidden Cost"
-  ],
-  "ig_patterns": "High save-rate thumbnails promise reusable knowledge — checklist-style hooks ('Check These 3 Things'), comparison frameworks (A vs B vs C), and quality-test methods that buyers can reference repeatedly before purchasing. High share-rate thumbnails trigger 'my friend is making this exact mistake' — they name a specific, common error with a painful ₹ consequence that feels personally urgent to forward. Combining both: use a specific cost-of-mistake number (₹40K, 1000 returns) with an actionable but incomplete reveal (the '3 things' or 'one trap') so viewers save for later AND tag their reseller friends.",
-  "updated": "2026-07-13T12:12:13.679594"
+  "text_rules": "Max 3-4 words, Hinglish, include price/number if relevant, curiosity/urgency",
+  "layout": "Text in the 25-70% vertical band for 9:16, face on one side text on other, rule of thirds",
+  "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks"
 }
