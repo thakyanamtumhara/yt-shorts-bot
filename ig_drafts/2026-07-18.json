@@ -26,8 +26,8 @@
     "#sale91",
     "#textilemanufacturer"
   ],
-  "posted": false,
+  "posted": true,
   "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
+  "error": "skipped by daily verifier 2026-07-22 — img1.jpg and img2.jpg return HTTP 404; IG API rejected second image with 'Only photo or video can be accepted as media type'. Post never went live.",
   "posted_at": null
 }
