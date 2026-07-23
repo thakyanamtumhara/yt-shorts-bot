@@ -215,23 +215,34 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # Skip if an open bot-failure issue already exists
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${RUN_URL}"
+          # 1) Primary alert — ping Ketu on Telegram (GH issues go unwatched)
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHANNEL_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHANNEL_ID}" \
+              --data-urlencode "text=⚠️ Daily Short pipeline FAILED — $(date -u +'%d %b %Y %H:%M UTC') (trigger: ${{ github.event_name }}). No Short/blog today. Likely causes: Anthropic credit balance empty, Veo/TTS API, or YouTube upload. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
+          # 2) Tracking issue (ensure label exists first, else create fails silently)
+          gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
           EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
           if [ -n "$EXISTING" ]; then
             echo "Open issue #$EXISTING already exists — adding comment instead"
             gh issue comment "$EXISTING" --body "Another failure at $(date -u +'%H:%M UTC %d %b').
-          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+          **Run:** ${RUN_URL}" || true
           else
             gh issue create \
               --title "⚠️ Daily Short failed — $(date -u +'%d %b %Y')" \
               --body "Pipeline failed at $(date -u +'%H:%M UTC').
 
-          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Run:** ${RUN_URL}
           **Trigger:** ${{ github.event_name }}
 
-          Check logs for: Veo API errors, TTS failures, YouTube upload issues, or cost limit exceeded." \
+          Check logs for: Anthropic credit balance empty, Veo API errors, TTS failures, YouTube upload issues, or cost limit exceeded." \
               --label "bot-failure" || true
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
