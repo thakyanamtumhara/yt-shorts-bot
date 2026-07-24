@@ -2254,5 +2254,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0069
     }
+  },
+  {
+    "date": "2026-07-24T11:26:58.281369",
+    "topic": "Tiruppur Se Delhi Tak \u20b925 Mein T-Shirt \u2014 Asli Supply Chain Ka Sach Jo Manufacturer Nahi Batayega",
+    "title": "\u20b925 \u092e\u0947\u0902 T-Shirt \u092a\u0939\u0941\u0901\u091a\u0924\u0940 \u0939\u0948 2500 km \u2014 \u0924\u093f\u0930\u0941\u092a\u0941\u0930 \u0915\u093e \u0938\u091a \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u090f\u0917\u093e",
+    "total_usd": 7.795,
+    "duration_min": 30.5,
+    "breakdown": {
+      "claude_opus": 0.3275,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0297,
+      "veo_clips": 7.04,
+      "whisper": 0.0051,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.05,
+      "claude_sonnet": 0.2478
+    }
   }
 ]
