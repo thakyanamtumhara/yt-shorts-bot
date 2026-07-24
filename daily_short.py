@@ -6124,6 +6124,16 @@ _TTS_HINGLISH_DEVANAGARI.update({
     # आँखें (eyes) — ensure the "aankhe" spelling he uses is covered too
     "aankhe": "आँखें", "aankhein": "आँखें", "ankhe": "आँखें",
 })
+# ── Ketu-reported mispronunciations, 2026-07-24 (Tiruppur→Delhi ₹25 video) ──
+# "Delhi" read as English; correct Hindi is दिल्ली (Dilli). "bhar" (भर, as in
+# "truck bhar ke" = truck-full) read as English. Neither was mapped. Note:
+# "delhi" also lives in SUBTITLE_HIGHLIGHT_WORDS (caption colour) — separate.
+_TTS_HINGLISH_DEVANAGARI.update({
+    "delhi": "दिल्ली", "dilli": "दिल्ली",
+    # भर (full/laden). "truck bhar ke", "din bhar", "saal bhar". Whole-word,
+    # so "bharat"/"bharosa"/"bharti" are untouched.
+    "bhar": "भर", "bharke": "भरके", "bharkar": "भरकर",
+})
 
 
 def _forced_align_caption_times(raw_tokens, whisper_words, normalize_fn):
@@ -6209,6 +6219,26 @@ def _forced_align_caption_times(raw_tokens, whisper_words, normalize_fn):
     known = [k for k in range(S) if su_start[k] is not None]
     if not known:
         return None
+
+    # Anchor cleanup — drop matches that imply an IMPOSSIBLE local speech rate.
+    # A distant script word can spuriously match a repeated Whisper word (e.g.
+    # "कौरियर" said twice), creating a false anchor that pins ~40 later words
+    # into a <1s window → captions "raced then vanished" at 32s (Ketu report
+    # 2026-07-24). Greedy keep: an anchor survives only if the rate from the
+    # last surviving anchor is plausible (≤ MAX_UNITS_PER_SEC) and time moves
+    # forward. Dropped words are then interpolated across the correct larger
+    # gap instead of collapsing.
+    MAX_UNITS_PER_SEC = 12.0
+    cleaned = [known[0]]
+    for k in known[1:]:
+        prev = cleaned[-1]
+        dt = su_start[k] - su_start[prev]
+        if dt <= 0.02:               # same/backward time → false match
+            continue
+        if (k - prev) / dt > MAX_UNITS_PER_SEC:   # impossibly fast → false match
+            continue
+        cleaned.append(k)
+    known = cleaned
     first, last = known[0], known[-1]
     for k in range(first):
         su_start[k] = su_end[k] = su_start[first]
