@@ -26,8 +26,8 @@
     "#printingbusiness",
     "#bulkorders"
   ],
-  "posted": false,
+  "posted": true,
   "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
+  "error": "SKIPPED by verifier 2026-07-24: img1.jpg is 404 on S3, IG API rejected child 2 container with 'Only photo or video can be accepted as media type'. Same pattern as 2026-07-18. Draft skipped so carousel moves to 2026-07-24.json.",
   "posted_at": null
 }
