@@ -2271,5 +2271,19 @@
       "blog_images": 0.05,
       "claude_sonnet": 0.2478
     }
+  },
+  {
+    "date": "2026-07-24T12:32:13.742358",
+    "topic": "\u20b940 Ki T-Shirt Pe \u20b9120 Margin \u2014 Sabse Profitable Printing Method Kaun Sa Hai 2026 Mein?",
+    "title": "\u20b940 \u0915\u0940 T-Shirt \u092a\u0947 \u20b9120 Margin \u2014 DTG \u091b\u094b\u0921\u093c\u094b, \u092f\u0947 Method \u0905\u092a\u0928\u093e\u0913",
+    "total_usd": 0.4617,
+    "duration_min": 10.7,
+    "breakdown": {
+      "claude_opus": 0.3316,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0297,
+      "whisper": 0.0054,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
