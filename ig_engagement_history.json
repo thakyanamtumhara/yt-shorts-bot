@@ -1232,11 +1232,19 @@
     "title": "₹40 T-Shirt Almost Killed His Print Business — I Sent ₹85 Instead",
     "topic": "Client ने ₹40 में T-Shirt माँगी, ₹85 वाली दी — फिर क्या हुआ? | Real B2B Customer Story",
     "published_at": "2026-07-22T16:52:27.479858+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "140 GSM SHAPE 1 WASH?",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-07-25T16:11:29.243781+05:30",
+    "hours_since_publish": 71.3,
+    "views": 17232,
+    "reach": 15160,
+    "likes": 295,
+    "comments": 14,
+    "shares": 123,
+    "saves": 124
   },
   {
     "media_id": "17951971971203353",
@@ -1256,6 +1264,17 @@
     "published_at": "2026-07-24T16:49:50.704547+05:30",
     "checked": false,
     "cover_text": "₹25 FREIGHT 10,000 Pc TRUCK",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
+  },
+  {
+    "media_id": "18132488959621307",
+    "title": "300 Dark Navy Tees Ruined in One Rain — ₹10 Fix Every Printer Must Know",
+    "topic": "Monsoon Mein Color Bleeding Kyu Hoti Hai? — ₹10 Ka Hack Jo Koi Nahi Batata 🤫",
+    "published_at": "2026-07-25T16:13:44.791288+05:30",
+    "checked": false,
+    "cover_text": "₹10 DYE FIX 300 Pc",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false

@@ -2285,5 +2285,21 @@
       "whisper": 0.0054,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-07-25T10:44:11.769320",
+    "topic": "Monsoon Mein Color Bleeding Kyu Hoti Hai? \u2014 \u20b910 Ka Hack Jo Koi Nahi Batata \ud83e\udd2b",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 300 \u092a\u0940\u0938 \u092c\u0930\u094d\u092c\u093e\u0926 \u2014 \u20b910 \u0915\u093e \u092f\u0947 Hack \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e \ud83e\udd2b",
+    "total_usd": 7.5119,
+    "duration_min": 21.7,
+    "breakdown": {
+      "claude_opus": 0.3414,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0236,
+      "veo_clips": 7.04,
+      "whisper": 0.0045,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0073
+    }
   }
 ]
