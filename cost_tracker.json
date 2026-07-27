@@ -2301,5 +2301,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0073
     }
+  },
+  {
+    "date": "2026-07-27T12:42:52.143697",
+    "topic": "\u20b915 Savings Per T-Shirt Ne \u20b91.5 Lakh Ka Nuksaan Karaya \u2014 Low Margin Trap Reality",
+    "title": "\u20b915 \u092c\u091a\u093e\u090f, \u20b91.5 \u0932\u093e\u0916 \u0921\u0942\u092c\u0947 \u2014 \u0938\u0938\u094d\u0924\u0940 T-Shirt \u0915\u093e \u0905\u0938\u0932\u0940 \u0928\u0941\u0915\u0938\u093e\u0928",
+    "total_usd": 7.8702,
+    "duration_min": 29.9,
+    "breakdown": {
+      "claude_opus": 0.3597,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0259,
+      "veo_clips": 7.04,
+      "whisper": 0.0049,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2697
+    }
   }
 ]
