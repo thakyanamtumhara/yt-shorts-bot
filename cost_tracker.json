@@ -2318,5 +2318,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2697
     }
+  },
+  {
+    "date": "2026-07-28T11:32:16.808944",
+    "topic": "180 GSM vs 220 GSM \u2014 Baarish Mein Kaunsa T-Shirt Sukhta Hai Jaldi? Shocking Test Result",
+    "title": "\u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 \u20b950,000 \u0915\u093e \u0938\u094d\u091f\u0949\u0915 \u092c\u0930\u094d\u092c\u093e\u0926 \u2014 180 vs 220 GSM \u0938\u0941\u0916\u0928\u0947 \u0915\u093e Test",
+    "total_usd": 7.5363,
+    "duration_min": 21.3,
+    "breakdown": {
+      "claude_opus": 0.3636,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0262,
+      "veo_clips": 7.04,
+      "whisper": 0.0043,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0071
+    }
   }
 ]
