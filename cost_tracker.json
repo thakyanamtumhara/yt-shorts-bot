@@ -2334,5 +2334,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0071
     }
+  },
+  {
+    "date": "2026-07-29T11:43:07.494668",
+    "topic": "Stitching Local Ya Brand Level? \u2014 \u20b985 Ki T-Shirt Mein Ye 5 Cheezein Check Karo \ud83d\udd0d | Quality Secret",
+    "title": "\u20b985 \u0915\u0940 \u091f\u0940-\u0936\u0930\u094d\u091f Local \u0932\u0917\u0940 \u2014 300 Pcs Print \u0915\u0930\u0915\u0947 Client \u0928\u0947 Reject \u0915\u093f\u092f\u093e \ud83d\ude30",
+    "total_usd": 7.7795,
+    "duration_min": 25.9,
+    "breakdown": {
+      "claude_opus": 0.3581,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0227,
+      "veo_clips": 7.04,
+      "whisper": 0.0044,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2343
+    }
   }
 ]
