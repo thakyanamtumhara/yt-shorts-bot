@@ -2351,5 +2351,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2343
     }
+  },
+  {
+    "date": "2026-07-30T11:23:53.354505",
+    "topic": "\u20b940K Ka Order Reject Hua \u2014 Client Ne Bola 200 GSM Cheap Lagta Hai | Ye 3 Cheezein Check Karo GSM Ke Alawa",
+    "title": "\u20b940K \u0915\u093e \u0911\u0930\u094d\u0921\u0930 Reject \u2014 200 GSM \u0938\u0938\u094d\u0924\u093e \u0932\u0917\u093e | \u092f\u0947 3 \u091a\u0940\u091c\u093c\u0947\u0902 \u091a\u0947\u0915 \u0915\u0930\u094b",
+    "total_usd": 7.5336,
+    "duration_min": 23.8,
+    "breakdown": {
+      "claude_opus": 0.3631,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0238,
+      "veo_clips": 7.04,
+      "whisper": 0.0042,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0075
+    }
   }
 ]
