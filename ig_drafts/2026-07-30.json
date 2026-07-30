@@ -26,7 +26,7 @@
     "#wholesaletextiles",
     "#bulkorderindia"
   ],
-  "posted": false,
+  "posted": true,
   "media_id": null,
-  "error": null
+  "error": "auto-skipped by verifier: img1 and img2 are 404 (Thursday blog-skip day — images not yet uploaded to S3); carousel moves to next available draft"
 }
