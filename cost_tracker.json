@@ -2367,5 +2367,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0075
     }
+  },
+  {
+    "date": "2026-07-31T12:08:30.379572",
+    "topic": "Customer \u0928\u0947 \u092c\u094b\u0932\u093e 'More Colors \u0926\u094b Premium Polo \u092e\u0947\u0902' \u2014 \u0924\u094b \u0939\u092e\u0928\u0947 \u092f\u0947 8 Shades \u092c\u0928\u093e\u0908 \ud83c\udfa8 Sneak Peek",
+    "title": "Customer \u0928\u0947 Order Cancel \u0915\u093f\u092f\u093e \u2014 \u0924\u094b \u0939\u092e\u0928\u0947 8 \u0928\u0908 Polo Shades \u092c\u0928\u093e \u0926\u0940\u0902 \ud83c\udfa8",
+    "total_usd": 7.767,
+    "duration_min": 25.1,
+    "breakdown": {
+      "claude_opus": 0.36,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0261,
+      "veo_clips": 7.04,
+      "whisper": 0.0045,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2165
+    }
   }
 ]
