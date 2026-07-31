@@ -92,3 +92,21 @@ jobs:
           git commit -m "IG carousel: posted update [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}
+
+      # Added 31-Jul-2026. This workflow failed 13 of 22 runs between 11-Jul and
+      # 31-Jul and NOT ONE of them raised anything — the 23-Jul alerting fix only
+      # ever landed in daily_short.yml, so every failure here was found by hand.
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::❌ IG Carousel post FAILED! Check logs: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHANNEL_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHANNEL_ID}" \
+              --data-urlencode "text=⚠️ IG Carousel post FAILED — $(date -u +'%d %b %Y %H:%M UTC'). No carousel today. Likely causes: blog images missing from S3, IG token expired, or Graph API rejection. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi

@@ -2687,6 +2687,43 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
         print(f"   ⚠️ Failed to save IG upload record: {e}")
 
 
+def _reachable_image_urls(urls, timeout=10):
+    """Keep only the URLs that actually serve an image right now.
+
+    Instagram's Graph API fetches each image_url itself. When the object was
+    never uploaded, CloudFront answers with the branded 404 HTML page, and IG
+    rejects the whole container with "Only photo or video can be accepted as
+    media type" — killing the entire carousel run. Between 11-Jul and 31-Jul
+    2026 that failed 13 of 22 daily runs, each one needing a hand-edited draft.
+
+    Network errors fail OPEN (URL kept): the real breakage is a definite 404,
+    and dropping good images because our own egress hiccuped would be worse.
+    """
+    kept = []
+    for u in urls or []:
+        verdict = None
+        for method in ("HEAD", "GET"):
+            try:
+                r = requests.request(
+                    method, u, timeout=timeout, allow_redirects=True,
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; Sale91Bot/1.0)"},
+                )
+                verdict = (r.status_code == 200 and
+                           (r.headers.get("content-type") or "").lower().startswith("image/"))
+                break
+            except Exception:
+                continue  # retry once with GET, then fail open below
+        name = u.rsplit("/", 1)[-1]
+        if verdict is None:
+            print(f"   ⚠️ IG images: could not verify {name} — keeping it (fail-open)")
+            kept.append(u)
+        elif verdict:
+            kept.append(u)
+        else:
+            print(f"   🚫 IG images: dropping {name} — not on S3 (404)")
+    return kept
+
+
 def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url, blog_slug,
                                 topic, script_english, tags, uploaded_filenames=None):
     """Generate an IG carousel post draft for tomorrow morning's auto-publish.
@@ -2710,21 +2747,30 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
     # IG Graph API rejects .webp — use the .jpg copies uploaded alongside each .webp.
     if uploaded_filenames and len(uploaded_filenames) >= 2:
         ig_filenames = [fn.replace(".webp", ".jpg") for fn in uploaded_filenames]
-        image_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in ig_filenames]
+        candidate_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{fn}" for fn in ig_filenames]
     elif uploaded_filenames and len(uploaded_filenames) == 1:
         # Only hero was generated (provider partial failure). Post a SINGLE image
         # instead of a degenerate carousel with the same photo twice (user saw
         # duplicate slides on 2026-07-06 — never again).
-        hero_jpg = f"{BLOG_BASE_URL}/p/{blog_slug}-{uploaded_filenames[0].replace('.webp', '.jpg')}"
-        image_urls = [hero_jpg]
-        print("   ⚠️ IG carousel: Only 1 image uploaded — draft will post as a single image")
+        candidate_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{uploaded_filenames[0].replace('.webp', '.jpg')}"]
     else:
-        # Fallback when no image info is passed (pre-fix callers / all 3 generated)
-        image_urls = [
+        # No image info passed (blog-skip branch / pre-fix callers). These three
+        # names are a GUESS, not a fact — verified below before we commit to them.
+        candidate_urls = [
             f"{BLOG_BASE_URL}/p/{blog_slug}-hero.jpg",
             f"{BLOG_BASE_URL}/p/{blog_slug}-img1.jpg",
             f"{BLOG_BASE_URL}/p/{blog_slug}-img2.jpg",
         ]
+
+    # Verify every candidate actually exists before writing the draft — the check
+    # the comment above always promised but the else-branch never performed.
+    image_urls = _reachable_image_urls(candidate_urls)
+    if not image_urls:
+        print("   🚫 IG carousel: no reachable images for this post — skipping the draft "
+              "(a draft here would fail the carousel workflow every day until hand-edited)")
+        return None
+    if len(image_urls) == 1:
+        print("   ⚠️ IG carousel: only 1 reachable image — draft will post as a single image")
 
     tags_str = ", ".join(tags) if tags else "none"
     prompt = f"""You are writing an Instagram CAROUSEL caption for a B2B Indian textile manufacturer (Sale91.com / BulkPlainTshirt.com — plain t-shirts, hoodies, blanks for printing businesses).
@@ -2978,6 +3024,31 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
         return None
 
 
+# A draft older than this is stale news — tombstone it rather than let it sit at
+# the head of the queue failing the workflow every day (31-Jul-2026: the 25-Jul
+# and 26-Jul drafts had done exactly that for six consecutive runs).
+IG_DRAFT_MAX_AGE_DAYS = 4
+
+
+def _tombstone_ig_draft(path, data, reason):
+    """Retire a draft that can never publish, so the queue moves on by itself.
+
+    Marks posted=true (what the selector reads) plus an explicit skipped flag so
+    the state is honest — this is the same end-state the hand-written
+    'auto-fix(verifier)' commits produced, minus the human."""
+    data["posted"] = True
+    data["skipped"] = True
+    data["skip_reason"] = reason
+    data["media_id"] = None
+    data["error"] = reason
+    try:
+        with open(path, "w") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"   🪦 IG carousel: retired {os.path.basename(path)} — {reason}")
+    except Exception as e:
+        print(f"   ⚠️ IG carousel: could not retire {path}: {e}")
+
+
 def post_latest_ig_carousel():
     """Read the latest ig_drafts/*.json and publish it to IG.
 
@@ -2993,11 +3064,17 @@ def post_latest_ig_carousel():
         print(f"   ℹ️ No {IG_CAROUSEL_DRAFTS_DIR}/ folder yet — nothing to post")
         return False
 
-    # Find the most recent UNPOSTED draft (any date)
+    # Find the most recent UNPOSTED draft that can still publish. Two guards,
+    # both added 31-Jul-2026 after this step failed 13 of 22 runs:
+    #   • age    — anything past IG_DRAFT_MAX_AGE_DAYS is retired, so one bad
+    #              draft can no longer block every later one behind it.
+    #   • images — 404 URLs are dropped before the Graph API ever sees them;
+    #              a draft with nothing left is retired and we try the next.
     candidates = sorted(
         [f for f in os.listdir(IG_CAROUSEL_DRAFTS_DIR) if f.endswith(".json")],
         reverse=True,
     )
+    today_ist = datetime.now(pytz.timezone(TIMEZONE)).date()
     target = None
     target_data = None
     for fname in candidates:
@@ -3005,12 +3082,34 @@ def post_latest_ig_carousel():
         try:
             with open(path) as f:
                 data = json.load(f)
-            if not data.get("posted"):
-                target = path
-                target_data = data
-                break
         except Exception:
             continue
+        if data.get("posted"):
+            continue
+
+        try:
+            age_days = (today_ist - datetime.strptime(fname[:-5], "%Y-%m-%d").date()).days
+        except Exception:
+            age_days = 0  # non-dated filename — don't age it out
+        if age_days > IG_DRAFT_MAX_AGE_DAYS:
+            _tombstone_ig_draft(path, data,
+                                f"stale — {age_days} days old (cap {IG_DRAFT_MAX_AGE_DAYS})")
+            continue
+
+        wanted = data.get("image_urls") or []
+        live = _reachable_image_urls(wanted)
+        if not live:
+            _tombstone_ig_draft(path, data,
+                                "every image_url 404s — the images were never uploaded to S3")
+            continue
+        if len(live) != len(wanted):
+            print(f"   🧹 IG carousel: dropped {len(wanted) - len(live)} unreachable image(s), "
+                  f"posting the {len(live)} that resolve")
+            data["image_urls"] = live
+
+        target = path
+        target_data = data
+        break
 
     if not target_data:
         print("   ℹ️ No unposted IG carousel draft found — nothing to post today")
@@ -3034,7 +3133,20 @@ def post_latest_ig_carousel():
     target_data["posted"] = bool(media_id)
     target_data["media_id"] = media_id
     target_data["posted_at"] = datetime.now(pytz.timezone(TIMEZONE)).isoformat() if media_id else None
-    target_data["error"] = None if media_id else "publish_ig_carousel returned None — check logs"
+    if media_id:
+        target_data["error"] = None
+    else:
+        # Count the attempt and retire the draft once it has proven it can't
+        # publish, so a failure that isn't a missing image still can't wedge
+        # the queue the way 25-Jul/26-Jul did.
+        attempts = int(target_data.get("attempts") or 0) + 1
+        target_data["attempts"] = attempts
+        target_data["error"] = "publish_ig_carousel returned None — check logs"
+        if attempts >= 2:
+            target_data["posted"] = True
+            target_data["skipped"] = True
+            target_data["skip_reason"] = f"publish failed {attempts}× — retired so the queue moves on"
+            print(f"   🪦 IG carousel: retiring after {attempts} failed attempts")
     with open(target, "w") as f:
         json.dump(target_data, f, ensure_ascii=False, indent=2)
     print(f"   💾 Draft updated: posted={target_data['posted']}, media_id={media_id}")
@@ -8215,7 +8327,12 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
     image_style = "professional commercial photography, high quality, sharp focus, well-lit, 4K, realistic"
 
     results = []
-    replicate_failed = False  # sticky flag: if Replicate fails, switch to fal.ai for remaining
+    # Was a sticky bool: ONE Replicate error disabled it for every remaining
+    # image. With fal.ai's balance exhausted (since 25-Jun-2026) the fallback is
+    # a no-op, so a single transient failure meant a post with NO images at all
+    # — which is how 12-Jul and 26-Jul shipped image-less and their og:image fell
+    # back to a YouTube thumbnail. Retry per image; give up only after 2 failures.
+    replicate_fails = 0
 
     for i, base in enumerate(base_prompts[:3]):
         prompt = f"{base}. {image_style}"
@@ -8223,14 +8340,15 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
         aspect = "16:9" if i == 0 else "4:3"
         img_bytes = None
 
-        # Try Replicate first (unless it already failed)
-        if has_replicate and not replicate_failed:
+        # Try Replicate first (until it has failed twice — see counter above)
+        if has_replicate and replicate_fails < 2:
             try:
                 print(f"   📷 Blog images: Generating {filename} via Replicate FLUX Dev...")
                 img_bytes = _generate_image_replicate(prompt, aspect)
             except Exception as e:
-                print(f"   ⚠️ Blog images: Replicate failed for {filename}: {e}")
-                replicate_failed = True  # switch to fal.ai for remaining images
+                replicate_fails += 1
+                print(f"   ⚠️ Blog images: Replicate failed for {filename} "
+                      f"({replicate_fails}/2): {e}")
 
         # Fallback to fal.ai
         if not img_bytes and has_fal:
@@ -8877,6 +8995,22 @@ def process_main_channel_recap():
         blog_title = video["title"]
 
     print(f"   ✍️ Blog title: {blog_title}")
+
+    # Cluster dedup (added 31-Jul-2026). This path used to reach generate_blog_post
+    # without touching the guardrails at all — blog_publish_gate() is called from
+    # exactly one place, the weekday pipeline — so the Sunday slot could publish a
+    # near-duplicate of an existing article, the precise thing that tipped Google's
+    # scaled-content threshold in June. The weekday CADENCE check is deliberately
+    # not applied here (Sunday recap is its own editorial slot, and running it
+    # through blog_publish_gate would block it every week by definition); only the
+    # duplicate check is enforced.
+    dup_slug, dup_sim = blog_cluster_collision(video["title"], blog_title, claude_client=claude)
+    if dup_slug:
+        msg = (f"Sunday recap blog skipped: topic-cluster collision with existing article "
+               f"'{dup_slug}' (similarity {dup_sim:.2f})")
+        print(f"   🚫 {msg}")
+        _write_phase_status(1, "active", "cluster-collision", msg)
+        return True  # the gate doing its job is a success, not a pipeline failure
 
     # The actual blog content uses description + transcript as the source.
     # Hook = first line of description (or first 80 chars).
@@ -10311,12 +10445,15 @@ def inject_backlinks_to_new_post(s3_client, new_slug, new_title, new_url, tags=N
     Idempotent: skips a target that already links to new_url; the injected block
     has a stable marker so re-runs update (dedupe + cap) instead of duplicating.
     Returns the list of S3 paths it modified (for CloudFront invalidation)."""
-    if not os.path.exists(BLOG_HISTORY_FILE):
-        return []
-    try:
-        with open(BLOG_HISTORY_FILE) as f:
-            history = json.load(f)
-    except Exception:
+    # MUST read the ACTIVE history. Reading the raw file (the bug until
+    # 31-Jul-2026) let consolidated 301 losers be picked as injection targets:
+    # the inbound link then lived on a page CloudFront redirects away, so
+    # Googlebot never fetched it and the link counted for nothing. Measured on
+    # the July posts, 11 of 30 backlink slots (37%) were being spent that way —
+    # which is exactly how these posts stayed orphaned and unindexed, the very
+    # failure this function exists to prevent.
+    history = _load_blog_history_active()
+    if not history:
         return []
 
     # Score older posts by tag + slug-word overlap (same heuristic as forward links).
@@ -10416,13 +10553,15 @@ def backfill_internal_links():
                       aws_access_key_id=ak, aws_secret_access_key=sk)
     cf = boto3.client("cloudfront", region_name="ap-south-1",
                       aws_access_key_id=ak, aws_secret_access_key=sk)
-    if not os.path.exists(BLOG_HISTORY_FILE):
-        print("❌ blog_history.json not found")
+    # Active history only. Reading the raw file made consolidated 301 losers
+    # both link SOURCES (a live page ends up pointing at a URL that redirects)
+    # and link TARGETS (the link lands on a page Googlebot never fetches).
+    history = _load_blog_history_active()
+    if not history:
+        print("❌ blog_history.json not found, unreadable, or has no active posts")
         return 1
-    with open(BLOG_HISTORY_FILE) as f:
-        history = json.load(f)
 
-    print(f"🔗 Backfill: building internal-link mesh across {len(history)} posts...")
+    print(f"🔗 Backfill: building internal-link mesh across {len(history)} active posts...")
     modified = set()
     for i, p in enumerate(history, 1):
         slug = p.get("slug")
