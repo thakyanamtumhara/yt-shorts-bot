@@ -1,0 +1,41 @@
+name: Repair Internal 301 Links
+
+# Manual. Repoints internal links that still address one of the 36 consolidated
+# 301 losers so they hit the winner directly. Posts published before the
+# 10-Jul-2026 consolidation still carry the old URLs — 211 links across 68 of 89
+# live posts as of 31-Jul-2026. Google follows the redirect either way, so this
+# is not a correctness fix; it stops spending a crawl hop per link on a site
+# whose bottleneck is crawl budget. Idempotent — safe to re-run.
+#
+# Run with dry_run=true first to see exactly what would change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Preview only — list the changes without writing to S3'
+        type: boolean
+        default: true
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Repair internal 301 links
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          python3 daily_short.py --mode=repair-301-links \
+            ${{ inputs.dry_run && '--dry-run' || '' }}

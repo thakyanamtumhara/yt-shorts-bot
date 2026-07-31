@@ -10592,6 +10592,98 @@ def backfill_internal_links():
     return 0
 
 
+def repair_internal_301_links(dry_run=False):
+    """Repoint internal links that still address a consolidated 301 loser.
+
+    The 10-Jul-2026 consolidation 301'd 36 duplicate-cluster losers into their
+    winners, but every post published BEFORE that still links to the old URLs —
+    211 such links across 68 of 89 live posts as of 31-Jul-2026. Nothing is
+    broken (Google follows a 301 and passes the equity on), but each one burns a
+    crawl hop on a site whose measured bottleneck is exactly crawl budget: most
+    July posts sit at "Discovered – currently not indexed" with lastCrawl never.
+
+    Only single-hop mappings are used — a winner that is itself a loser is
+    skipped rather than guessed at. Matching includes the '.html' suffix so a
+    slug can never partially match a longer one. Idempotent."""
+    import boto3
+    ak = os.environ.get("AWS_ACCESS_KEY_ID")
+    sk = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    if not ak or not sk:
+        print("❌ AWS credentials not found")
+        return 1
+    if not os.path.exists(BLOG_HISTORY_FILE):
+        print("❌ blog_history.json not found")
+        return 1
+    with open(BLOG_HISTORY_FILE) as f:
+        raw = json.load(f)
+
+    loser_map = {h["slug"]: h["redirect_to"] for h in raw
+                 if h.get("redirect_to") and h.get("slug")}
+    chained = {l: w for l, w in loser_map.items() if w in loser_map}
+    for l in chained:
+        print(f"   ⚠️ Skipping chained mapping {l} -> {chained[l]} (winner redirects too)")
+        loser_map.pop(l, None)
+    if not loser_map:
+        print("ℹ️ No consolidated posts to repair")
+        return 0
+
+    active = _load_blog_history_active()
+    print(f"🔧 301-link repair: scanning {len(active)} live posts for links into "
+          f"{len(loser_map)} redirected URLs{' (DRY RUN)' if dry_run else ''}...")
+
+    s3 = boto3.client("s3", region_name="ap-south-1",
+                      aws_access_key_id=ak, aws_secret_access_key=sk)
+    modified, total = [], 0
+    for i, p in enumerate(active, 1):
+        slug = p.get("slug")
+        if not slug:
+            continue
+        key = f"p/{slug}.html"
+        try:
+            html = s3.get_object(Bucket=BLOG_S3_BUCKET, Key=key)["Body"].read().decode("utf-8")
+        except Exception as e:
+            print(f"   ⚠️ {key}: could not read ({e})")
+            continue
+        new_html, n = html, 0
+        for loser, winner in loser_map.items():
+            old_url = f"{BLOG_BASE_URL}/p/{loser}.html"
+            if old_url in new_html:
+                n += new_html.count(old_url)
+                new_html = new_html.replace(old_url, f"{BLOG_BASE_URL}/p/{winner}.html")
+        if not n:
+            continue
+        total += n
+        modified.append(f"/p/{slug}.html")
+        print(f"   [{i}/{len(active)}] {slug}: {n} link(s) repointed")
+        if dry_run:
+            continue
+        try:
+            s3.put_object(Bucket=BLOG_S3_BUCKET, Key=key, Body=new_html.encode("utf-8"),
+                          ContentType="text/html; charset=utf-8",
+                          CacheControl="public, max-age=86400")
+        except Exception as e:
+            print(f"   ⚠️ {key}: write failed ({e})")
+            modified.pop()
+
+    print(f"🔧 301-link repair: {total} link(s) across {len(modified)} post(s)"
+          f"{' — DRY RUN, nothing written' if dry_run else ''}")
+    if modified and not dry_run:
+        try:
+            cf = boto3.client("cloudfront", region_name="ap-south-1",
+                              aws_access_key_id=ak, aws_secret_access_key=sk)
+            cf.create_invalidation(
+                DistributionId=BLOG_CLOUDFRONT_DIST_ID,
+                InvalidationBatch={
+                    "Paths": {"Quantity": 1, "Items": ["/p/*"]},
+                    "CallerReference": f"repair301-{int(time.time())}",
+                },
+            )
+            print("   🔄 301-link repair: CloudFront invalidation /p/* created")
+        except Exception as e:
+            print(f"   ⚠️ 301-link repair: CloudFront invalidation failed: {e}")
+    return 0
+
+
 def rewrite_thin_posts(only_slug=None):
     """Rewrite thin legacy pages in place per rewrite_plan.json. Each 'rewrite'
     becomes a full article on its existing URL (forced slug, no video); each
@@ -13060,6 +13152,11 @@ if __name__ == "__main__":
     # Triggered manually by .github/workflows/backfill_internal_links.yml.
     if "--mode=backfill-internal-links" in sys.argv:
         sys.exit(backfill_internal_links())
+    # Repoint internal links that still address a consolidated 301 loser.
+    # Add --dry-run to preview without writing. Triggered manually by
+    # .github/workflows/repair_internal_301_links.yml.
+    if "--mode=repair-301-links" in sys.argv:
+        sys.exit(repair_internal_301_links(dry_run="--dry-run" in sys.argv))
     # Rewrite thin legacy pages in place per rewrite_plan.json. Optional --slug=X
     # to process a single page (test one before the full run). Triggered manually
     # by .github/workflows/rewrite_thin_posts.yml.
