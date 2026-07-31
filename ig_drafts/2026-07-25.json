@@ -26,8 +26,10 @@
     "#printingbusiness",
     "#textiletech"
   ],
-  "posted": false,
+  "posted": true,
   "media_id": null,
-  "error": "publish_ig_carousel returned None — check logs",
-  "posted_at": null
+  "error": "stale — 6 days old (cap 4)",
+  "posted_at": null,
+  "skipped": true,
+  "skip_reason": "stale — 6 days old (cap 4)"
 }
