@@ -8,7 +8,7 @@ name: Publish Queue (17:15 IST daily)
 
 on:
   schedule:
-    - cron: '45 11 * * *'   # 11:45 UTC = 17:15 IST
+    - cron: '15 10 * * *'   # 10:15 UTC = 15:45 IST — GitHub runs this cron 47min-2h11m LATE every day (12/12 runs 19-30 Jul), so 15:45 nominal lands 16:32-17:56 IST = inside the 16-18h window. Do NOT 'correct' this back to 17:15.
   workflow_dispatch:
 
 jobs:
