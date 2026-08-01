@@ -59,6 +59,10 @@
   "OqA0z10_kAg": {
    "title": "BulkPlainTshirt Warehouse Live — 2026-06-06 16:51",
    "published": "2026-06-07T17:21:43+00:00"
+  },
+  "MgidUtuRx9M": {
+   "title": "₹500 की &quot;100% Cotton&quot; T-Shirt? 😳 ₹10 का जाल — Burn Test | Factory Sach #3",
+   "published": "2026-08-01T14:30:34+00:00"
   }
  },
  "instagram": {
@@ -101,6 +105,14 @@
   "18079821065304708": {
    "permalink": "https://www.instagram.com/reel/DbV3YXUgFqJ/",
    "ts": "2026-07-28T15:30:41+0000"
+  },
+  "18168779050447221": {
+   "permalink": "https://www.instagram.com/reel/DbfqhQ1isKr/",
+   "ts": "2026-08-01T10:51:15+0000"
+  },
+  "18090821168451633": {
+   "permalink": "https://www.instagram.com/p/DbfhjTMEefd/",
+   "ts": "2026-08-01T09:32:04+0000"
   }
  },
  "facebook": {},
@@ -129,8 +141,13 @@
    "at": "2026-08-01T12:56:15+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-08-01T20:28:50+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-08-01",
- "last_run_ist": "2026-08-01T12:56:15+05:30"
+ "last_run_ist": "2026-08-01T20:28:50+05:30"
 }
