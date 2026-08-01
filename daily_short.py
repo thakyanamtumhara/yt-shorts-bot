@@ -1897,7 +1897,49 @@ def refresh_instagram_token_if_needed():
     return new_token
 
 
-def publish_fb_reel(video_path, description):
+def set_fb_reel_cover(video_id, page_token, cover_path):
+    """Give a Facebook reel our generated cover instead of a frame FB picks.
+
+    The reel publishing endpoint (/{page_id}/video_reels) takes NO cover
+    parameter at any phase — that is why our publisher never set one, and why I
+    wrongly told Ketu that Facebook "can't" do it. Meta's own Reels guide points
+    at a SECOND call for this: POST /{video-id}/thumbnails with the image and
+    is_preferred=true.
+
+    Two traps this handles:
+      • is_preferred MUST be true. Without it the image uploads happily and is
+        simply never shown — looks broken, isn't.
+      • it needs Page video permissions our app may not have been granted; a
+        missing permission returns a generic error that reads like "unsupported".
+        So a failure here is logged loudly but never fatal.
+
+    Called between the start and finish phases: the video_id exists by then and
+    the reel is not yet live, which is the one timing the docs actually support
+    (the thumbnail node has no UPDATE — you cannot swap a cover afterwards).
+    """
+    if not cover_path or not os.path.exists(cover_path):
+        print("   ℹ️ FB Reel: no cover image to set")
+        return False
+    try:
+        with open(cover_path, "rb") as fh:
+            r = requests.post(
+                f"https://graph.facebook.com/{IG_API_VERSION}/{video_id}/thumbnails",
+                data={"is_preferred": "true", "access_token": page_token},
+                files={"source": fh},
+                timeout=120,
+            )
+        if r.status_code == 200 and (r.json().get("success") or r.json().get("id")):
+            print(f"   🖼️ FB Reel: custom cover set on {video_id}")
+            return True
+        print(f"   ⚠️ FB Reel: cover rejected ({r.status_code}) {r.text[:200]}")
+        print("   ℹ️ If this says permissions, the Page token needs the video "
+              "permissions — the reel itself still published fine.")
+    except Exception as e:
+        print(f"   ⚠️ FB Reel: cover upload errored (reel unaffected): {e}")
+    return False
+
+
+def publish_fb_reel(video_path, description, cover_path=None):
     """Cross-post the video as a Facebook Reel on the Sale91 FB Page.
 
     Official 3-step flow (developers.facebook.com/docs/video-api/guides/reels-publishing):
@@ -1955,6 +1997,11 @@ def publish_fb_reel(video_path, description):
             print(f"   ❌ FB Reel: binary upload failed: {up_resp.text[:200]}")
             return None
         print(f"   ⬆️ FB Reel: uploaded {file_size // 1024}KB")
+
+        # Step 2b: cover, BEFORE finish — the reel isn't live yet and the
+        # thumbnail node supports no UPDATE, so this is the only safe window.
+        if cover_path:
+            set_fb_reel_cover(fb_video_id, page_token, cover_path)
 
         # Step 3: publish
         fin_resp = requests.post(
@@ -12895,7 +12942,7 @@ def main():
         # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
         fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"
         print("\n📘 Facebook Reel cross-post...")
-        _fb_vid = publish_fb_reel(output_path, fb_caption)
+        _fb_vid = publish_fb_reel(output_path, fb_caption, cover_path=thumbnail_path)
         # Hand the reel id to social_watch.py. The 3-phase upload can return a
         # video_id and still leave the reel sitting as a DRAFT on the Page —
         # that's the silent failure we want caught, and it's uncheckable unless
