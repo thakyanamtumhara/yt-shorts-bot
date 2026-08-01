@@ -24,7 +24,7 @@ LinkedIn company (needs 1-3 months of approval), X (needs a paid tier).
 
 Usage:  python3 social_watch.py [--dry-run]
 """
-import json, os, re, sys, urllib.request, urllib.error
+import json, os, re, sys, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timedelta, timezone
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -231,16 +231,55 @@ def check_facebook(state):
 
 # ── alerting ──────────────────────────────────────────────────────────────────
 
-def send_telegram(title, message, dry=False):
-    """Reuse the proven notify-telegram workflow in Website-Order-Dashboard —
-    it already points at the chat Ketu actually reads."""
-    if dry:
-        print(f"\n[DRY RUN] would send Telegram:\n  {title}\n  {message}\n")
-        return True
+def _tg_direct(title, message):
+    """Send via the Bot API using this repo's own TELEGRAM_BOT_TOKEN.
+
+    TELEGRAM_CHANNEL_ID here is the PUBLIC Sale91 channel — never send alerts
+    there. TELEGRAM_ALERT_CHAT_ID is Ketu's private chat (the one the APK builds
+    land in). If it isn't set we print candidate chat ids from getUpdates so it
+    can be filled in without guesswork.
+    """
+    tok = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat = (os.environ.get("TELEGRAM_ALERT_CHAT_ID") or "").strip()
+    if not tok:
+        return False, "no TELEGRAM_BOT_TOKEN"
+    if not chat:
+        hint = ""
+        try:
+            d = get_json(f"https://api.telegram.org/bot{tok}/getUpdates?limit=20")
+            seen = {}
+            for u in d.get("result", []):
+                c = ((u.get("message") or u.get("channel_post") or {}).get("chat") or {})
+                if c.get("id"):
+                    seen[c["id"]] = f"{c.get('title') or c.get('username') or c.get('first_name','?')} ({c.get('type')})"
+            if seen:
+                hint = " Candidate chat ids: " + "; ".join(f"{k} = {v}" for k, v in seen.items())
+        except Exception:
+            pass
+        return False, ("TELEGRAM_ALERT_CHAT_ID secret is not set, so alerts have nowhere "
+                       "private to go (TELEGRAM_CHANNEL_ID is the public channel — not used)." + hint)
+    body = urllib.parse.urlencode({
+        "chat_id": chat,
+        "text": f"*{title}*\n\n{message}",
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": "true",
+    }).encode()
+    try:
+        req = urllib.request.Request(f"https://api.telegram.org/bot{tok}/sendMessage",
+                                     data=body, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read()).get("ok", False), "sent"
+    except Exception as e:
+        return False, f"sendMessage failed: {str(e)[:150]}"
+
+
+def _tg_via_dashboard(title, message):
+    """Fallback: the proven notify-telegram workflow in Website-Order-Dashboard.
+    Needs a GH_PAT that can see THAT repo — ours currently 404s, so this is the
+    backup, not the primary."""
     pat = (os.environ.get("GH_PAT") or "").strip()
     if not pat:
-        print("⚠️ no GH_PAT — cannot send Telegram")
-        return False
+        return False, "no GH_PAT"
     body = json.dumps({"ref": "main", "inputs": {"title": title, "message": message}}).encode()
     req = urllib.request.Request(
         "https://api.github.com/repos/thakyanamtumhara/Website-Order-Dashboard"
@@ -251,10 +290,24 @@ def send_telegram(title, message, dry=False):
         method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status in (200, 204)
+            return r.status in (200, 204), "dispatched"
     except Exception as e:
-        print(f"⚠️ Telegram dispatch failed: {e}")
-        return False
+        return False, f"dispatch failed: {str(e)[:120]}"
+
+
+def send_telegram(title, message, dry=False):
+    if dry:
+        print(f"\n[DRY RUN] would send Telegram:\n  {title}\n  {message}\n")
+        return True
+    ok, why = _tg_direct(title, message)
+    if ok:
+        return True
+    print(f"   ℹ️ direct Telegram unavailable: {why}")
+    ok2, why2 = _tg_via_dashboard(title, message)
+    if ok2:
+        return True
+    print(f"   ⚠️ ALERT NOT DELIVERED — {why2}. The alert was:\n      {title}: {message[:300]}")
+    return False
 
 
 def main():
