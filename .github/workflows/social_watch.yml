@@ -21,6 +21,11 @@ on:
         required: false
         default: 'false'
         type: string
+      force_ping:
+        description: 'true = send a test Telegram to prove the alert path works'
+        required: false
+        default: 'false'
+        type: string
 
 concurrency:
   group: social-watch
@@ -51,6 +56,8 @@ jobs:
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             python3 social_watch.py --dry-run
+          elif [ "${{ inputs.force_ping }}" = "true" ]; then
+            python3 social_watch.py --force-ping
           else
             python3 social_watch.py
           fi

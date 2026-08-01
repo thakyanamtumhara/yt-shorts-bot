@@ -312,6 +312,7 @@ def send_telegram(title, message, dry=False):
 
 def main():
     dry = "--dry-run" in sys.argv
+    force = "--force-ping" in sys.argv   # prove the alert path actually delivers
     st = load_state()
     print(f"🔎 social watch — {now_ist().strftime('%d-%b %H:%M IST')}{'  [DRY RUN]' if dry else ''}")
 
@@ -332,6 +333,11 @@ def main():
         print(f"   🔴 {line}")
 
     stamp = now_ist().strftime("%d-%b %H:%M IST")
+    if force:
+        ok = send_telegram("🔔 Watcher test ping",
+                           "If you can read this, social-post alerts reach you.\n"
+                           f"IG ✅ · FB ✅ · YouTube main ✅\n\n_{stamp}_", dry)
+        print(f"   force ping delivered: {ok}")
     if alerts:
         send_telegram("⚠️ Social post check", "\n\n".join(alerts) + f"\n\n_{stamp}_", dry)
     else:
