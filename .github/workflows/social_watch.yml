@@ -1,0 +1,63 @@
+name: Social Post Watch
+
+# Did the posts actually go out, and are they still up?
+#
+# Ketu posts the weekly Factory Sach original BY HAND through a multi-platform
+# wizard; the bot posts the daily Short itself. Either can fail silently — a
+# wizard schedule that never fired, a Facebook reel stuck as a draft, a video
+# pulled by a claim. This notices and pings Telegram.
+#
+# Free: the main-channel check is a public RSS feed (no auth, no quota), and
+# Instagram/Facebook use the token we already own. Repo is public so Actions
+# minutes cost nothing.
+
+on:
+  schedule:
+    - cron: '0 5,14 * * *'     # ~10:30 and ~19:30 IST (GitHub runs crons late; fine here)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = print only, send no Telegram and save no state'
+        required: false
+        default: 'false'
+        type: string
+
+concurrency:
+  group: social-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run the watcher
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python3 social_watch.py --dry-run
+          else
+            python3 social_watch.py
+          fi
+
+      - name: Commit state
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add social_watch_state.json || true
+          git diff --staged --quiet || git commit -m "social watch state [skip ci]"
+          git push || true

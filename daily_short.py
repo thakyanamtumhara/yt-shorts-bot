@@ -12895,7 +12895,23 @@ def main():
         # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
         fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"
         print("\n📘 Facebook Reel cross-post...")
-        publish_fb_reel(output_path, fb_caption)
+        _fb_vid = publish_fb_reel(output_path, fb_caption)
+        # Hand the reel id to social_watch.py. The 3-phase upload can return a
+        # video_id and still leave the reel sitting as a DRAFT on the Page —
+        # that's the silent failure we want caught, and it's uncheckable unless
+        # we remember the id here (it used to be discarded).
+        if _fb_vid:
+            try:
+                _sw = "social_watch_state.json"
+                _st = json.load(open(_sw, encoding="utf-8")) if os.path.exists(_sw) else {}
+                _st.setdefault("facebook", {})[str(_fb_vid)] = {
+                    "queued_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "confirmed": False,
+                }
+                json.dump(_st, open(_sw, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+                print(f"   👁️ FB reel {_fb_vid} handed to social_watch")
+            except Exception as e:
+                print(f"   ⚠️ could not record FB reel id for watching: {e}")
         print("\n✈️ Telegram channel cross-post...")
         post_telegram_channel(output_path, fb_caption)
 
