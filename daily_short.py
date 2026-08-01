@@ -12850,13 +12850,21 @@ def main():
                                 print(f"   ⚠️ Could not restore private status: {e}")
                                 print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
 
-                        # NOTE: YouTube Shorts do NOT support custom thumbnails via the Data API.
-                        # The thumbnails.set endpoint returns success but silently ignores it for Shorts.
-                        # Custom Shorts thumbnails can only be set via YouTube Studio UI or mobile app.
-                        # See: https://issuetracker.google.com/issues/381127084
+                        # thumbnails.set DOES work on this channel, including on Shorts —
+                        # re-tested live 2026-08-01 via yt_thumb_probe.yml on video
+                        # o_DRMvAk-38: the API accepted the upload and the standard +
+                        # maxres renditions appeared where they had not existed before,
+                        # serving our cover. The old "Shorts don't support custom
+                        # thumbnails via the API" note was wrong (or has since been fixed
+                        # by YouTube), and upload_thumbnail() sat orphaned behind it, so
+                        # NO bot video ever got its generated cover. Channel is
+                        # phone-verified (longUploadsStatus=allowed), which this needs.
+                        # Non-fatal: a failure here must never lose the upload.
                         if thumbnail_path:
-                            print("   ℹ️ YouTube Shorts: custom thumbnails not supported via API (use YouTube Studio)")
-                            print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
+                            try:
+                                upload_thumbnail(youtube, vid_id, thumbnail_path)
+                            except Exception as e:
+                                print(f"   ⚠️ Thumbnail step errored (upload kept): {e}")
 
                         # ── 10c. Add to series playlist ──
                         add_to_playlist(youtube, vid_id, fresh_topic)
