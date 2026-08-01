@@ -2384,5 +2384,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2165
     }
+  },
+  {
+    "date": "2026-08-01T10:52:04.416126",
+    "topic": "Cotton Shirt Bhi Banao Bola Customer Ne \u2014 Kya T-Shirt Manufacturer Shirts Mein Enter Kare? Real Talk \ud83e\udd14",
+    "title": "\u20b92 \u0932\u093e\u0916 \u0915\u093e \u0911\u0930\u094d\u0921\u0930 \u0920\u0941\u0915\u0930\u093e \u0926\u093f\u092f\u093e \u2014 T-Shirt Manufacturer Shirts \u0915\u094d\u092f\u094b\u0902 \u0928\u0939\u0940\u0902 \u092c\u0928\u093e\u0924\u0947?",
+    "total_usd": 7.5256,
+    "duration_min": 23.1,
+    "breakdown": {
+      "claude_opus": 0.353,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0254,
+      "veo_clips": 7.04,
+      "whisper": 0.0047,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0075
+    }
   }
 ]
