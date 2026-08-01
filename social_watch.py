@@ -182,10 +182,13 @@ def check_instagram(state):
         return alerts, info
 
     seen = state.setdefault("instagram", {})
+    first_run = not seen          # don't announce the whole backlog on day one
     for it in items:
-        if it["id"] not in seen:
+        if it["id"] not in seen and not first_run:
             info.append(f"Instagram: new post {it.get('permalink','')}")
         seen[it["id"]] = {"permalink": it.get("permalink"), "ts": it.get("timestamp")}
+    if first_run:
+        info.append(f"Instagram: baseline saved ({len(items)} posts).")
 
     # gap check — the bot posts daily, so >48h of silence is a real failure
     try:
