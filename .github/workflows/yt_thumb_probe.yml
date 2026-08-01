@@ -1,0 +1,134 @@
+name: YouTube Thumbnail Probe (diagnostic)
+
+# Settles the question the code currently ASSUMES: can we set a custom thumbnail
+# on the bot channel's Shorts via the Data API, or not?
+#
+# daily_short.py:12858 skips the upload with the note "YouTube Shorts: custom
+# thumbnails not supported via API" and upload_thumbnail() sits orphaned. That
+# claim has never been re-tested. This probe:
+#   1. reports whether the channel is phone-verified (thumbnails.set needs it)
+#   2. prints the CURRENT thumbnail URLs of the last few uploads
+#   3. calls thumbnails.set on one video with a real cover from S3
+#   4. reads the thumbnails back and reports whether they actually changed
+#
+# Read-mostly: the only write is one thumbnail on one existing video, which is
+# reversible and is the improvement we want anyway if it works.
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: 'Video ID to test on (blank = most recent upload)'
+        required: false
+        type: string
+      cover_url:
+        description: 'PNG to set as the thumbnail'
+        required: false
+        default: 'https://www.bulkplaintshirt.com/p/fs-ep3-cover-v4k.png'
+        type: string
+      dry_run:
+        description: 'true = only report current state, do not set anything'
+        required: false
+        default: 'false'
+        type: string
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -q google-api-python-client google-auth google-auth-oauthlib requests
+
+      - name: Restore YouTube credentials
+        run: |
+          mkdir -p /tmp/yt_shorts
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
+
+      - name: Probe
+        env:
+          VIDEO_ID: ${{ inputs.video_id }}
+          COVER_URL: ${{ inputs.cover_url }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          python3 - <<'PY'
+          import os, json, requests
+          from google.oauth2.credentials import Credentials
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          creds = Credentials.from_authorized_user_file("/tmp/yt_shorts/youtube_token.json")
+          yt = build("youtube", "v3", credentials=creds)
+
+          # ── 1. channel identity + verification signals ──
+          ch = yt.channels().list(part="snippet,status,contentDetails", mine=True).execute()
+          item = ch["items"][0]
+          print("=" * 62)
+          print("CHANNEL :", item["snippet"]["title"])
+          print("ID      :", item["id"])
+          st = item.get("status", {})
+          print("status  :", json.dumps(st))
+          print("longUploadsStatus:", st.get("longUploadsStatus"),
+                "  <- 'allowed' means the channel IS phone-verified")
+          uploads = item["contentDetails"]["relatedPlaylists"]["uploads"]
+
+          # ── 2. current thumbnails on recent uploads ──
+          pl = yt.playlistItems().list(part="contentDetails", playlistId=uploads, maxResults=6).execute()
+          vids = [i["contentDetails"]["videoId"] for i in pl["items"]]
+          print("\nRECENT UPLOADS AND THEIR CURRENT THUMBNAILS")
+          vinfo = yt.videos().list(part="snippet,contentDetails", id=",".join(vids)).execute()
+          for v in vinfo["items"]:
+              t = v["snippet"]["thumbnails"]
+              print(f"  {v['id']}  dur={v['contentDetails']['duration']:>8}  "
+                    f"sizes={sorted(t.keys())}")
+              print(f"      default: {t.get('default',{}).get('url','-')}")
+              print(f"      maxres : {t.get('maxres',{}).get('url','-')}  "
+                    f"<- maxres usually only exists when a CUSTOM thumb was set")
+
+          target = (os.environ.get("VIDEO_ID") or "").strip() or vids[0]
+          print(f"\nTARGET: {target}")
+
+          if os.environ.get("DRY_RUN", "").lower() == "true":
+              print("DRY RUN — stopping before the write.")
+              raise SystemExit(0)
+
+          # ── 3. attempt thumbnails.set ──
+          url = os.environ["COVER_URL"].strip()
+          r = requests.get(url, timeout=60); r.raise_for_status()
+          open("/tmp/cover.png", "wb").write(r.content)
+          print(f"downloaded cover: {len(r.content):,} bytes from {url}")
+
+          before = yt.videos().list(part="snippet", id=target).execute()["items"][0]["snippet"]["thumbnails"]
+          print("BEFORE:", json.dumps({k: v["url"] for k, v in before.items()}, indent=1))
+
+          try:
+              media = MediaFileUpload("/tmp/cover.png", mimetype="image/png", resumable=True)
+              resp = yt.thumbnails().set(videoId=target, media_body=media).execute()
+              print("\nthumbnails.set RETURNED:", json.dumps(resp)[:400])
+              api_ok = True
+          except Exception as e:
+              print("\nthumbnails.set RAISED:", type(e).__name__, str(e)[:600])
+              api_ok = False
+
+          # ── 4. did it actually stick? ──
+          import time; time.sleep(20)
+          after = yt.videos().list(part="snippet", id=target).execute()["items"][0]["snippet"]["thumbnails"]
+          print("AFTER :", json.dumps({k: v["url"] for k, v in after.items()}, indent=1))
+
+          changed = {k: (before.get(k, {}).get("url") != after.get(k, {}).get("url"))
+                     for k in set(before) | set(after)}
+          print("\nCHANGED PER SIZE:", json.dumps(changed))
+          print("=" * 62)
+          print("VERDICT:",
+                "API accepted AND thumbnails changed -> IT WORKS, fix the pipeline"
+                if api_ok and any(changed.values()) else
+                "API accepted but nothing changed -> silently ignored, code comment is right"
+                if api_ok else
+                "API rejected -> see the exception above for the real reason")
+          PY
