@@ -246,6 +246,14 @@ def _tg_direct(title, message):
     if not chat:
         hint = ""
         try:
+            wh = get_json(f"https://api.telegram.org/bot{tok}/getWebhookInfo")
+            wurl = (wh.get("result") or {}).get("url") or ""
+            if wurl:
+                hint += (f" NOTE: a webhook is set on this bot ({wurl[:60]}...), so getUpdates "
+                         f"returns nothing — the chat id must be supplied manually.")
+        except Exception:
+            pass
+        try:
             d = get_json(f"https://api.telegram.org/bot{tok}/getUpdates?limit=20")
             seen = {}
             for u in d.get("result", []):
