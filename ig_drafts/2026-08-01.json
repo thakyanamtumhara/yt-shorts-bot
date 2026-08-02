@@ -24,7 +24,8 @@
     "#sale91",
     "#tshirtbusiness"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18138279301585797",
+  "error": null,
+  "posted_at": "2026-08-02T15:02:19.108955+05:30"
 }
