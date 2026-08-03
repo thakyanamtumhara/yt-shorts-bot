@@ -1,0 +1,69 @@
+name: Factory Sach Insights (diagnostic)
+
+# Read-only: pulls IG insights for the three Factory Sach reels so scripts for
+# the next episodes can be steered by real numbers, not vibes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  insights:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Pull insights
+        env:
+          IG_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          IG_BIZ: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request
+
+          TOK = os.environ["IG_TOKEN"].strip()
+          BIZ = os.environ["IG_BIZ"].strip()
+          G = "https://graph.facebook.com/v21.0"
+
+          def get(url):
+              with urllib.request.urlopen(url, timeout=30) as r:
+                  return json.load(r)
+
+          # map permalinks -> media ids from the recent media list
+          want = {
+              "Da4er6nE-1V": "FS#1 price-stack (17-Jul)",
+              "DbN1nr1iu89": "FS#2 print-crack (25-Jul)",
+              "DbdL-IXjNR_": "FS#3 burn-test (31-Jul)",
+          }
+          d = get(f"{G}/{BIZ}/media?fields=id,permalink,timestamp,like_count,comments_count&limit=50&access_token={TOK}")
+          found = {}
+          for it in d.get("data", []):
+              for code, label in want.items():
+                  if code in (it.get("permalink") or ""):
+                      found[code] = (label, it)
+
+          METRICS = "views,reach,likes,comments,shares,saved,total_interactions,ig_reels_avg_watch_time,ig_reels_video_view_total_time"
+          for code, (label, it) in found.items():
+              print("=" * 64)
+              print(label, "| media", it["id"], "| posted", it.get("timestamp"))
+              print("  likes:", it.get("like_count"), " comments:", it.get("comments_count"))
+              try:
+                  ins = get(f"{G}/{it['id']}/insights?metric={METRICS}&access_token={TOK}")
+                  for m in ins.get("data", []):
+                      v = m.get("values", [{}])[0].get("value")
+                      print(f"  {m['name']:32s} {v}")
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()[:300]
+                  print("  insights error:", e.code, body)
+                  # some metric names differ by API version — retry with the safe core set
+                  try:
+                      ins = get(f"{G}/{it['id']}/insights?metric=views,reach,likes,comments,shares,saved&access_token={TOK}")
+                      for m in ins.get("data", []):
+                          v = m.get("values", [{}])[0].get("value")
+                          print(f"  {m['name']:32s} {v}")
+                  except Exception as e2:
+                      print("  core set also failed:", str(e2)[:200])
+
+          missing = [f"{c} ({l})" for c, (l) in
+                     ((c, want[c]) for c in want if c not in found)]
+          if missing:
+              print("NOT FOUND in last 50 media:", missing)
+          PY
