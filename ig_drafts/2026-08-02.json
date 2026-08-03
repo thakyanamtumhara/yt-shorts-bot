@@ -24,7 +24,8 @@
     "#bulkorder",
     "#textilefraud"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18018513191910908",
+  "error": null,
+  "posted_at": "2026-08-03T16:24:50.908170+05:30"
 }
