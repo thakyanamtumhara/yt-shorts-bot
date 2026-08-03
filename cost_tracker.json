@@ -2400,5 +2400,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0075
     }
+  },
+  {
+    "date": "2026-08-03T12:42:29.604609",
+    "topic": "220 GSM \u0932\u093f\u0916\u093e \u0925\u093e \u2014 \u092a\u0930 \u0939\u093e\u0925 \u092e\u0947\u0902 \u0932\u0917\u0940 160 GSM \ud83d\ude24 | GSM Check \u0915\u0930\u0928\u0947 \u0915\u0947 3 Tarike \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e",
+    "title": "220 GSM \u0932\u093f\u0916\u093e \u0925\u093e \u2014 \u0939\u093e\u0925 \u092e\u0947\u0902 \u0906\u0908 160 GSM \ud83d\ude24 \u0918\u0930 \u092a\u0930 \u0910\u0938\u0947 \u092a\u0915\u0921\u093c\u094b",
+    "total_usd": 7.7707,
+    "duration_min": 27.9,
+    "breakdown": {
+      "claude_opus": 0.3325,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0256,
+      "veo_clips": 7.04,
+      "whisper": 0.0047,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2478
+    }
   }
 ]
