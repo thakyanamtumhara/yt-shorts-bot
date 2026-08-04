@@ -2417,5 +2417,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2478
     }
+  },
+  {
+    "date": "2026-08-04T11:37:44.633394",
+    "topic": "Joggers & Sweatpants Manufacturing Start Karna Chahte Ho? \u2014 Reality Check Pehle Suno \ud83c\udfaf",
+    "title": "\u20b92 \u0932\u093e\u0916 \u0915\u0947 Joggers \u092a\u0921\u093c\u0947 \u0930\u0939\u0947 \u2014 T-Shirt \u0938\u0947 Joggers \u092e\u0947\u0902 \u0917\u090f \u092c\u093f\u0928\u093e \u0938\u094b\u091a\u0947 \ud83d\ude30",
+    "total_usd": 7.5143,
+    "duration_min": 18.9,
+    "breakdown": {
+      "claude_opus": 0.3474,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0203,
+      "veo_clips": 7.04,
+      "whisper": 0.0038,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0077
+    }
   }
 ]
