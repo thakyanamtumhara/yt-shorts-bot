@@ -2433,5 +2433,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0077
     }
+  },
+  {
+    "date": "2026-08-05T11:41:36.002246",
+    "topic": "\u20b930K \u0915\u093e Order Barbaad \u2014 Baarish Mein DTF Print Bubble Ho Gaya | Polyester vs Cotton Monsoon Truth \ud83c\udf27\ufe0f",
+    "title": "\u20b930K \u0915\u093e DTF Order \u092c\u0930\u094d\u092c\u093e\u0926 \u2014 \u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 Print Bubble \u0939\u094b \u0917\u092f\u093e \ud83c\udf27\ufe0f",
+    "total_usd": 7.7549,
+    "duration_min": 27.3,
+    "breakdown": {
+      "claude_opus": 0.3231,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0232,
+      "veo_clips": 7.04,
+      "whisper": 0.0044,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2442
+    }
   }
 ]
