@@ -2450,5 +2450,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2442
     }
+  },
+  {
+    "date": "2026-08-06T11:42:00.304545",
+    "topic": "Polo T-Shirt \u092e\u0947\u0902 10 Colours \u0915\u094d\u092f\u094b\u0902 \u0928\u0939\u0940\u0902 \u0906\u0924\u0947? \u2014 Manufacturing \u0915\u093e Asli Sach \ud83c\udfa8",
+    "title": "Polo T-Shirt \u092e\u0947\u0902 10 Colour \u0915\u094d\u092f\u094b\u0902 \u0928\u0939\u0940\u0902 \u092e\u093f\u0932\u0924\u0947? \u2014 \u0905\u0938\u0932\u0940 \u0938\u091a \u091c\u094b \u0915\u094b\u0908 \u0928\u0939\u0940\u0902 \u092c\u0924\u093e\u0924\u093e",
+    "total_usd": 7.5385,
+    "duration_min": 28.2,
+    "breakdown": {
+      "claude_opus": 0.3621,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0286,
+      "veo_clips": 7.04,
+      "whisper": 0.0049,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.008
+    }
   }
 ]
