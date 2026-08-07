@@ -2466,5 +2466,21 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.008
     }
+  },
+  {
+    "date": "2026-08-07T10:17:59.852658",
+    "topic": "Meri Pehli \u20b91 Lakh Ki Galti \u2014 Wrong Fabric Se Poora Order Reject Hua \ud83d\ude30 Business Story",
+    "title": "\u20b91 \u0932\u093e\u0916 \u0915\u093e \u0911\u0930\u094d\u0921\u0930 \u0930\u093f\u091c\u0947\u0915\u094d\u091f \u2014 200 GSM \u092c\u094b\u0932\u093e, 160 GSM \u0928\u093f\u0915\u0932\u093e \ud83d\ude30",
+    "total_usd": 7.5157,
+    "duration_min": 25.4,
+    "breakdown": {
+      "claude_opus": 0.3419,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0259,
+      "veo_clips": 7.04,
+      "whisper": 0.0049,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.008
+    }
   }
 ]
