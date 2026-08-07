@@ -74,6 +74,7 @@ def call(path, body=None, timeout=60):
 def submit(video_url, name, lang="hi"):
     d = call("/project/create", {
         "lang": lang, "preferLength": [0], "videoUrl": video_url, "videoType": 1,
+        "ext": video_url.rsplit(".", 1)[-1].split("?")[0] or "mp4",
         "ratioOfClip": 1, "getClips": 0, "projectName": name,
         "subtitleSwitch": 0, "headlineSwitch": 0, "emojiSwitch": 0,
         "highlightSwitch": 0, "autoBrollSwitch": 0, "removeSilenceSwitch": 0,
