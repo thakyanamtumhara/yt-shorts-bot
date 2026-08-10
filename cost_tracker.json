@@ -2498,5 +2498,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0072
     }
+  },
+  {
+    "date": "2026-08-10T10:35:03.332453",
+    "topic": "240 GSM Oversize Royal Blue \u2014 Kya Sach Mein Itna Thick Milta Hai? Live Weight Test \u2696\ufe0f",
+    "title": "240 GSM \u0911\u0930\u094d\u0921\u0930 \u0915\u093f\u092f\u093e, 180 GSM \u0906\u092f\u093e \u2014 \u20b930,000 \u0921\u0942\u092c\u0947 \u2696\ufe0f",
+    "total_usd": 7.4615,
+    "duration_min": 24.7,
+    "breakdown": {
+      "claude_opus": 0.3135,
+      "replicate_music": 0.05,
+      "tts_sarvam": 0.0074,
+      "veo_clips": 7.04,
+      "whisper": 0.0056,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
