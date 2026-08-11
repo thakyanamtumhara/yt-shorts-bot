@@ -2513,5 +2513,21 @@
       "whisper": 0.0056,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-08-11T10:15:58.417814",
+    "topic": "Boxy Fit T-Shirts Har Jagah Out of Stock Kyun? \u2014 Supplier Ka Sach Jo Koi Nahi Batata \ud83d\ude24 #Shorts",
+    "title": "Boxy Fit \u091f\u0940-\u0936\u0930\u094d\u091f \u0939\u0930 \u091c\u0917\u0939 Out of Stock \u0915\u094d\u092f\u094b\u0902? \u2014 \u0938\u092a\u094d\u0932\u093e\u092f\u0930 \u0915\u093e \u0938\u091a \ud83d\ude24",
+    "total_usd": 7.5073,
+    "duration_min": 23.0,
+    "breakdown": {
+      "claude_opus": 0.3445,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0135,
+      "veo_clips": 7.04,
+      "whisper": 0.0066,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0077
+    }
   }
 ]
