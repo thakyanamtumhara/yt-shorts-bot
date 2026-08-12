@@ -2529,5 +2529,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0077
     }
+  },
+  {
+    "date": "2026-08-12T10:25:28.771796",
+    "topic": "\u20b940 Ki T-Shirt Pe Print Karke Bech Rahe Ho? \u2014 Ye 3 Cheezein Pehle Check Karo Warna Loss Pakka \ud83d\udc80",
+    "title": "\u20b940 \u0915\u0940 \u091f\u0940\u0936\u0930\u094d\u091f \u0928\u0947 Print Business \u0924\u092c\u093e\u0939 \u0915\u093f\u092f\u093e \u2014 50 Returns \ud83d\udc80",
+    "total_usd": 7.7956,
+    "duration_min": 29.5,
+    "breakdown": {
+      "claude_opus": 0.3668,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0149,
+      "veo_clips": 7.04,
+      "whisper": 0.0081,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2458
+    }
   }
 ]
