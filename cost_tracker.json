@@ -2546,5 +2546,21 @@
       "blog_images": 0.025,
       "claude_sonnet": 0.2458
     }
+  },
+  {
+    "date": "2026-08-13T10:22:48.662841",
+    "topic": "Stitching Local vs Brand Level \u2014 \u20b985 Ki T-Shirt Mein Finishing Kaisi Hoti Hai? Asli Sach \ud83d\udd0d",
+    "title": "\u20b985 \u0915\u0940 T-Shirt \u092e\u0947\u0902 Brand Stitching? Customer \u0928\u0947 300 Pcs Reject \u0915\u0930 \u0926\u093f\u090f \ud83d\ude24",
+    "total_usd": 7.5097,
+    "duration_min": 27.5,
+    "breakdown": {
+      "claude_opus": 0.349,
+      "replicate_music": 0.05,
+      "tts_openai": 0.0121,
+      "veo_clips": 7.04,
+      "whisper": 0.0061,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0074
+    }
   }
 ]
