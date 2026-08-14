@@ -1,20 +1,20 @@
 {
  "checks": {
   "last_video_voice": {
-   "ok": false,
+   "ok": true,
    "severity": "CRITICAL",
-   "detail": "last render used openai instead of ElevenLabs — that video is in the WRONG VOICE (2026-08-13 10:22)",
-   "provider": "openai",
-   "at": "2026-08-13 10:22",
-   "title": "₹85 की T-Shirt में Brand Stitching? Customer ने 300 Pcs Reject कर दिए "
+   "detail": "ElevenLabs ✅ (2026-08-14 10:22)",
+   "provider": "elevenlabs",
+   "at": "2026-08-14 10:22",
+   "title": "₹15 मार्जिन पर 10,000 Pcs — ₹1.5 लाख महीना कैसे? 💰"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 151,000/151,000 chars left",
+   "detail": "creator · PVC allowed · 150,580/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 151000,
+   "chars_left": 150580,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -88,7 +88,13 @@
     "last_video_voice",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-14T19:23:54+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-14T10:45:19+05:30"
+ "last_run_ist": "2026-08-14T19:23:54+05:30"
 }
