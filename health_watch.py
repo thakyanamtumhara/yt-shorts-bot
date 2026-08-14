@@ -555,17 +555,20 @@ def main():
         if healed:
             parts.append("*Recovered:*\n" + render(healed))
         send_telegram("⚠️ Pipeline dependency changed", "\n\n".join(parts) + f"\n\n_{stamp}_", dry)
-    elif down:
-        # still broken and already announced — re-ping once a day, not every run
+    elif blocking:
+        # already announced — re-ping once a day, and only for things that stop a
+        # reel. A backup that stays red forever would train Ketu to ignore this.
         today = now_ist().strftime("%Y-%m-%d")
         if st.get("last_still_down_date") != today:
-            send_telegram("🔴 Still down", render(down) + f"\n\n_{stamp}_", dry)
+            send_telegram("🔴 Still down", render(blocking) + f"\n\n_{stamp}_", dry)
             if not dry:
                 st["last_still_down_date"] = today
     else:
         today = now_ist().strftime("%Y-%m-%d")
         if st.get("last_green_date") != today:
-            send_telegram("🟢 Pipeline dependencies all clear", render(results) + f"\n\n_{stamp}_", dry)
+            title = ("🟢 Pipeline dependencies all clear" if not down
+                     else f"🟡 Reels are safe — {len(down)} backup still down")
+            send_telegram(title, render(results) + f"\n\n_{stamp}_", dry)
             if not dry:
                 st["last_green_date"] = today
 

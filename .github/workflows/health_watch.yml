@@ -94,7 +94,7 @@ jobs:
       # Telegram needs TELEGRAM_ALERT_CHAT_ID to exist; a GitHub issue always
       # reaches Ketu by email, so it is the channel that cannot silently fail.
       - name: Raise or update the tracking issue
-        if: ${{ steps.watch.outputs.down != '0' && github.event.inputs.dry_run != 'true' }}
+        if: ${{ steps.watch.outputs.critical != '0' && github.event.inputs.dry_run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -112,7 +112,7 @@ jobs:
           fi
 
       - name: Close the tracking issue when everything is green
-        if: ${{ steps.watch.outputs.down == '0' && github.event.inputs.dry_run != 'true' }}
+        if: ${{ steps.watch.outputs.critical == '0' && github.event.inputs.dry_run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
