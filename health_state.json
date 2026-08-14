@@ -1,0 +1,85 @@
+{
+ "checks": {
+  "last_video_voice": {
+   "ok": false,
+   "severity": "CRITICAL",
+   "detail": "last render used openai instead of ElevenLabs — that video is in the WRONG VOICE (2026-08-13 10:22)",
+   "provider": "openai",
+   "at": "2026-08-13 10:22",
+   "title": "₹85 की T-Shirt में Brand Stitching? Customer ने 300 Pcs Reject कर दिए "
+  },
+  "elevenlabs": {
+   "ok": false,
+   "severity": "CRITICAL",
+   "detail": "plan is 'starter' — Professional Voice Clone is BLOCKED (needs Creator or above). The reel will fall back to a generic voice. Fix: https://elevenlabs.io/app/settings/subscription",
+   "tier": "starter",
+   "can_use_pvc": false,
+   "chars_left": 30000,
+   "char_limit": 30000,
+   "sub_status": "active",
+   "quota_resets": "07 Sep 2026"
+  },
+  "sarvam": {
+   "ok": false,
+   "severity": "WARN",
+   "detail": "402 Payment Required — Sarvam credits are exhausted. Top up: https://dashboard.sarvam.ai/ (this is fallback #1, so the reel drops straight to the generic OpenAI voice)"
+  },
+  "anthropic": {
+   "ok": true,
+   "severity": "CRITICAL",
+   "detail": "key valid, credit available"
+  },
+  "google": {
+   "ok": true,
+   "severity": "CRITICAL",
+   "detail": "key valid · 50 models · veo visible: yes",
+   "veo_models": [
+    "models/veo-3.1-generate-preview",
+    "models/veo-3.1-fast-generate-preview",
+    "models/veo-3.1-lite-generate-preview"
+   ]
+  },
+  "meta_token": {
+   "ok": true,
+   "severity": "CRITICAL",
+   "detail": "valid, never expires",
+   "expires_at": "never"
+  },
+  "youtube": {
+   "ok": true,
+   "severity": "CRITICAL",
+   "detail": "refresh token still works"
+  },
+  "openai": {
+   "ok": true,
+   "severity": "WARN",
+   "detail": "key valid (no balance endpoint exists)"
+  },
+  "replicate": {
+   "ok": true,
+   "severity": "WARN",
+   "detail": "account thakyanamtumhara ok"
+  },
+  "fal": {
+   "ok": true,
+   "severity": "INFO",
+   "detail": "key accepted"
+  },
+  "vizard": {
+   "ok": true,
+   "severity": "INFO",
+   "detail": "key accepted"
+  }
+ },
+ "history": [
+  {
+   "at": "2026-08-14T08:59:49+05:30",
+   "down": [
+    "last_video_voice",
+    "elevenlabs",
+    "sarvam"
+   ]
+  }
+ ],
+ "last_run_ist": "2026-08-14T08:59:49+05:30"
+}
