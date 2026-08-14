@@ -126,9 +126,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
-        run: python health_watch.py --gate
+        run: |
+          python -m py_compile daily_short.py health_watch.py social_watch.py
+          python health_watch.py --gate
 
       - name: Run Daily Short Generator
+        id: generate
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -184,6 +187,16 @@ jobs:
           else
             python daily_short.py
           fi
+
+      # The gate proves the services were alive before we started; this proves
+      # the reel that actually came out is the one we meant to ship.
+      - name: Grade the finished reel
+        if: ${{ always() && steps.generate.conclusion != 'skipped' && github.event.inputs.test_thumbnail != 'true' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python health_watch.py --postrun
 
       - name: Save updated tracking files
         if: always()

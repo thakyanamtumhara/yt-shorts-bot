@@ -76,6 +76,7 @@ jobs:
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
           [ "${{ github.event.inputs.force_ping }}" = "true" ] && ARGS="$ARGS --force-ping"
           [ "${{ github.event.inputs.gate }}" = "true" ] && ARGS="$ARGS --gate"
+          python -m py_compile daily_short.py health_watch.py social_watch.py
           set -o pipefail
           python health_watch.py $ARGS | tee /tmp/health.txt
 

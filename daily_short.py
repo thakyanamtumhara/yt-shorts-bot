@@ -55,6 +55,22 @@ os.makedirs(WORK_DIR, exist_ok=True)
 os.makedirs(f"{WORK_DIR}/bg_music", exist_ok=True)
 os.makedirs(f"{WORK_DIR}/my_clips", exist_ok=True)
 
+# What actually happened this run, for health_watch.py --postrun to grade.
+# Every fallback in this file is a caught exception that keeps going, so the
+# job exits 0 even when the reel came out degraded — this is how four reels
+# shipped in the wrong voice over 10-13 Aug 2026 without a single red run.
+RUN_FLAGS_FILE = f"{WORK_DIR}/run_flags.json"
+RUN_FLAGS = {}
+
+
+def flag(name, value):
+    RUN_FLAGS[name] = value
+    try:
+        with open(RUN_FLAGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(RUN_FLAGS, f, ensure_ascii=False, indent=1)
+    except Exception:
+        pass
+
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                   BUSINESS CONTEXT                                   ║
 # ╚══════════════════════════════════════════════════════════════════════╝
@@ -6925,7 +6941,12 @@ def mix_background_music(voice_audio_clip, duration, mood="calm"):
 
     all_files = glob.glob(f"{BG_MUSIC_FOLDER}/*.mp3") + glob.glob(f"{BG_MUSIC_FOLDER}/*.wav")
     if not all_files:
+        # BG_MUSIC_FOLDER lives under /tmp, so on a CI runner it is empty unless
+        # Replicate actually produced a track — there is no repo fallback here
+        print(f"   ⚠️ No background music in {BG_MUSIC_FOLDER} — shipping a dry voice track")
+        flag("music", False)
         return voice_audio_clip
+    flag("music", True)
 
     # Priority: AI-generated music (ai_*) > mood-matching repo files > any file
     ai_files = [f for f in all_files if os.path.basename(f).startswith("ai_")]
@@ -11650,6 +11671,7 @@ def main():
     if data is None:
         if candidate is not None:
             print(f"   ⚠️ No script scored high enough — using best last attempt")
+            flag("script_approved", False)
             data = candidate
         else:
             raise RuntimeError(f"All {SCRIPT_MAX_ATTEMPTS} script generation attempts failed (JSON parse errors). Topic: {fresh_topic}")
@@ -11741,6 +11763,7 @@ def main():
                     f.write(chunk)
             print("   ✅ Voice: ElevenLabs Hindi (with Hinglish pre-normalization)")
             cost.track_tts("elevenlabs", len(tts_input))
+            flag("tts", "elevenlabs")
             voice_ok = True
         except Exception as e:
             print(f"   ⚠️ ElevenLabs TTS failed: {e}")
@@ -11756,6 +11779,7 @@ def main():
             audio_path = sarvam_tts_to_mp3(tts_input, sarvam_key, audio_path)
             print(f"   ✅ Voice: Sarvam {SARVAM_MODEL} ({SARVAM_SPEAKER})")
             cost.track_tts("sarvam", len(tts_input))
+            flag("tts", "sarvam")
             voice_ok = True
         except Exception as e:
             print(f"   ⚠️ Sarvam TTS failed: {e}")
@@ -11779,6 +11803,7 @@ def main():
             response.stream_to_file(audio_path)
             print(f"   ✅ Voice: OpenAI {TARGET_VOICE} (fallback)")
             cost.track_tts("openai", len(tts_input))
+            flag("tts", "openai")
             voice_ok = True
         except Exception as e:
             print(f"   ❌ OpenAI TTS also failed: {e}")
@@ -12082,6 +12107,7 @@ def main():
             cost.track_kling(kling_clips)
         if got < expected:
             print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
+        flag("clips", {"got": got, "expected": expected, "kling": kling_clips})
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
     # ── 6. Subtitles (Whisper-synced English captions) ──
@@ -12298,6 +12324,7 @@ def main():
         except Exception as _ke:
             karaoke_words = []
             print(f"   ⚠️ Karaoke timing failed: {_ke}")
+        flag("karaoke", bool(karaoke_words))
 
         # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
         try:
@@ -12328,8 +12355,10 @@ def main():
             subtitle_segments = split_segs
         except Exception as _e:
             print(f"   ⚠️ Caption split skipped: {_e}")
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"   ⚠️ Whisper caption sync FAILED ({type(_e).__name__}: {str(_e)[:160]}) — "
+              f"captions fall back to equal-time slicing and the karaoke highlight is dropped")
+        flag("karaoke", False)
 
     # ── 7. Video Assembly ──
     print("   ✂️ Building video...")
@@ -12924,9 +12953,11 @@ def main():
             except Exception as upload_err:
                 print(f"   ❌ YouTube upload failed: {upload_err}")
                 upload_failed = True
+                flag("youtube_upload", False)
         else:
             print("   ❌ YouTube auth failed. Video saved locally.")
             upload_failed = True
+            flag("youtube_upload", False)
 
     # ── 10d. Cross-post to Instagram Reels (independent of YouTube success) ──
     if not TEST_MODE:

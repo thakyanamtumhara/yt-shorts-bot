@@ -127,6 +127,15 @@ def check_elevenlabs():
     if reset:
         extra["quota_resets"] = datetime.fromtimestamp(reset, IST).strftime("%d %b %Y")
 
+    if sub.get("has_open_invoices"):
+        return Result(key, label, sev, False,
+                      f"plan '{tier}' has an UNPAID INVOICE — ElevenLabs will cut access. "
+                      f"Pay it: https://elevenlabs.io/app/settings/subscription", extra)
+
+    if str(sub.get("status", "")).lower() in ("past_due", "incomplete", "free_disabled"):
+        return Result(key, label, sev, False,
+                      f"subscription status is '{sub.get('status')}' — payment problem", extra)
+
     if not can_pvc or tier not in PVC_TIERS:
         return Result(key, label, sev, False,
                       f"plan is '{tier}' — Professional Voice Clone is BLOCKED "
@@ -163,11 +172,15 @@ def check_sarvam():
     status, body = _json_req("https://api.sarvam.ai/text-to-speech",
                              {"api-subscription-key": api_key, "Content-Type": "application/json"},
                              data=payload, method="POST")
+    # Sarvam documents credit exhaustion as 429 insufficient_quota_error, so a
+    # 402 is a billing/plan block one level above that
     if status == 402:
         return Result(key, label, sev, False,
-                      "402 Payment Required — Sarvam credits are exhausted. "
-                      "Top up: https://dashboard.sarvam.ai/ (this is fallback #1, "
-                      "so the reel drops straight to the generic OpenAI voice)")
+                      "402 Payment Required — Sarvam is refusing paid calls (billing/plan level, "
+                      "not just an empty credit meter). Check https://dashboard.sarvam.ai/ — this "
+                      "is fallback #1, so the reel drops straight to the generic OpenAI voice")
+    if status == 429 and "quota" in json.dumps(body).lower():
+        return Result(key, label, sev, False, "429 insufficient_quota — Sarvam credits exhausted")
     if status in (401, 403):
         return Result(key, label, sev, False, f"auth rejected (HTTP {status}) — key may be revoked")
     if status not in (200, 201):
@@ -245,11 +258,23 @@ def check_fal():
     tok = _env("FAL_KEY")
     if not tok:
         return Result(key, label, sev, True, "not configured — skipped")
-    status, _ = _json_req("https://rest.alpha.fal.ai/tokens/", {"Authorization": f"Key {tok}"})
-    if status in (200, 201, 204, 405):
-        return Result(key, label, sev, True, "key accepted")
+    # the only provider here with an exact $ balance, but the endpoint wants an
+    # admin-scope key — a plain key 401s, which is not the same as being broke
+    status, body = _json_req("https://api.fal.ai/v1/account/billing?expand=credits",
+                             {"Authorization": f"Key {tok}"})
+    if status == 200:
+        bal = ((body.get("credits") or {}).get("current_balance"))
+        cur = ((body.get("credits") or {}).get("currency") or "USD")
+        if bal is not None and float(bal) <= 0:
+            return Result(key, label, sev, False,
+                          f"balance is {bal} {cur} — the Kling clip fallback is dead, so a Veo "
+                          f"quota error means looped or blank footage",
+                          {"balance": bal, "currency": cur})
+        return Result(key, label, sev, True, f"balance {bal} {cur}", {"balance": bal})
     if status in (401, 403):
-        return Result(key, label, sev, False, f"auth rejected (HTTP {status})")
+        return Result(key, label, sev, True,
+                      f"balance not readable (HTTP {status} — needs an admin-scope FAL key); "
+                      f"key presence alone does not prove Kling would work")
     return Result(key, label, sev, True, f"inconclusive (HTTP {status}) — not treated as down")
 
 
@@ -393,6 +418,54 @@ def render(results):
     return "\n".join(lines)
 
 
+RUN_FLAGS_FILE = "/tmp/yt_shorts/run_flags.json"
+
+
+def grade_render():
+    """Read what daily_short.py recorded about the render it just finished.
+
+    The preflight gate proves the services were alive at 14:30; this proves the
+    reel that came out is actually the reel we meant to ship.
+    """
+    if not os.path.exists(RUN_FLAGS_FILE):
+        return ["no run_flags.json — daily_short.py did not reach the voice step"], []
+    try:
+        f = json.load(open(RUN_FLAGS_FILE, encoding="utf-8"))
+    except Exception as e:
+        return [f"run_flags.json unreadable ({str(e)[:80]})"], []
+
+    bad, warn = [], []
+    tts = f.get("tts")
+    if tts is None:
+        bad.append("no voice was recorded for this render")
+    elif tts != "elevenlabs":
+        bad.append(f"voice came out as *{tts}*, not the ElevenLabs clone — this reel does not "
+                   f"sound like Ketu")
+
+    if f.get("youtube_upload") is False:
+        bad.append("YouTube upload FAILED — no Short went live (retry_upload.py has the metadata)")
+
+    if f.get("karaoke") is False:
+        bad.append("karaoke captions dropped — Whisper sync failed, captions are evenly sliced "
+                   "and will drift off the voice")
+
+    if f.get("music") is False:
+        warn.append("no background music — the reel ships as a dry voice track")
+
+    if f.get("script_approved") is False:
+        warn.append("script never passed the quality gate — shipped the best failing attempt")
+
+    clips = f.get("clips") or {}
+    got, expected = clips.get("got"), clips.get("expected")
+    if got is not None and expected and got < expected:
+        warn.append(f"only {got}/{expected} Veo clips rendered — the video loops footage to fill "
+                    f"the duration")
+    if clips.get("kling"):
+        warn.append(f"{clips['kling']} clip(s) came from the Kling fallback, not Veo")
+
+    return bad, warn
+
+
 def emit_counts(down, blocking):
     """Machine-readable tail — the workflow must not have to count emoji in prose."""
     print(f"\ndone — {len(down)} down ({len(blocking)} critical).")
@@ -408,6 +481,22 @@ def main():
     gate = "--gate" in sys.argv
     force = "--force-ping" in sys.argv
     stamp = now_ist().strftime("%d-%b %H:%M IST")
+
+    if "--postrun" in sys.argv:
+        bad, warn = grade_render()
+        print(f"🎬 render check — {stamp}")
+        for m in bad:
+            print(f"   🔴 {m}")
+            print(f"::error title=Degraded reel::{m}")
+        for m in warn:
+            print(f"   🟡 {m}")
+            print(f"::warning title=Reel quality::{m}")
+        if not bad and not warn:
+            print("   🟢 reel shipped clean — Ketu's voice, karaoke captions, music, full clips")
+            return 0
+        send_telegram("🔴 Today's reel shipped DEGRADED" if bad else "🟡 Today's reel has issues",
+                      "\n".join(f"• {m}" for m in bad + warn) + f"\n\n_{stamp}_", dry)
+        return 1 if bad else 0
 
     print(f"🩺 health watch — {stamp}{'  [GATE]' if gate else ''}{'  [DRY RUN]' if dry else ''}")
     results = run_all()
