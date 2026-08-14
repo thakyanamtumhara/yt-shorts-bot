@@ -9,20 +9,22 @@
    "title": "₹85 की T-Shirt में Brand Stitching? Customer ने 300 Pcs Reject कर दिए "
   },
   "elevenlabs": {
-   "ok": false,
+   "ok": true,
    "severity": "CRITICAL",
-   "detail": "plan is 'starter' — Professional Voice Clone is BLOCKED (needs Creator or above). The reel will fall back to a generic voice. Fix: https://elevenlabs.io/app/settings/subscription",
-   "tier": "starter",
-   "can_use_pvc": false,
-   "chars_left": 30000,
-   "char_limit": 30000,
+   "detail": "creator · PVC allowed · 151,000/151,000 chars left",
+   "tier": "creator",
+   "can_use_pvc": true,
+   "chars_left": 151000,
+   "char_limit": 151000,
    "sub_status": "active",
-   "quota_resets": "07 Sep 2026"
+   "quota_resets": "14 Sep 2026",
+   "voice_name": "Ketu Original",
+   "voice_category": "professional"
   },
   "sarvam": {
    "ok": false,
    "severity": "WARN",
-   "detail": "402 Payment Required — Sarvam credits are exhausted. Top up: https://dashboard.sarvam.ai/ (this is fallback #1, so the reel drops straight to the generic OpenAI voice)"
+   "detail": "402 Payment Required — Sarvam is refusing paid calls (billing/plan level, not just an empty credit meter). Check https://dashboard.sarvam.ai/ — this is fallback #1, so the reel drops straight to the generic OpenAI voice"
   },
   "anthropic": {
    "ok": true,
@@ -63,7 +65,7 @@
   "fal": {
    "ok": true,
    "severity": "INFO",
-   "detail": "key accepted"
+   "detail": "balance not readable (HTTP 403 — needs an admin-scope FAL key); key presence alone does not prove Kling would work"
   },
   "vizard": {
    "ok": true,
@@ -79,7 +81,14 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-14T10:45:19+05:30",
+   "down": [
+    "last_video_voice",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-14T08:59:49+05:30"
+ "last_run_ist": "2026-08-14T10:45:19+05:30"
 }
