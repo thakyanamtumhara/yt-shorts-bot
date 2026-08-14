@@ -2562,5 +2562,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0074
     }
+  },
+  {
+    "date": "2026-08-14T10:22:03.390074",
+    "topic": "Kam Margin Pe Kaam Karo Ya Zyada? \u2014 \u20b915 Profit Pe 10,000 Pcs Bechne Ki Reality \ud83d\udcb0",
+    "title": "\u20b915 \u092e\u093e\u0930\u094d\u091c\u093f\u0928 \u092a\u0930 10,000 Pcs \u2014 \u20b91.5 \u0932\u093e\u0916 \u092e\u0939\u0940\u0928\u093e \u0915\u0948\u0938\u0947? \ud83d\udcb0",
+    "total_usd": 7.7912,
+    "duration_min": 29.2,
+    "breakdown": {
+      "claude_opus": 0.3676,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0229,
+      "veo_clips": 7.04,
+      "whisper": 0.0041,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.025,
+      "claude_sonnet": 0.2365
+    }
   }
 ]
