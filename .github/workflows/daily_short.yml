@@ -55,6 +55,11 @@ on:
         required: false
         type: string
         default: ''
+      skip_preflight:
+        description: 'Skip the dependency gate (ship even if the premium voice is down)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-short-generation
@@ -100,6 +105,28 @@ jobs:
           mkdir -p /tmp/yt_shorts
           echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
           echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
+
+      # Nothing paid runs until this passes. A degraded voice used to ship
+      # silently for six days (ElevenLabs Creator -> Starter, 10-13 Aug 2026);
+      # now the run stops here instead of burning ~$7.50 of Veo on a bad reel.
+      - name: Preflight dependency gate
+        if: ${{ github.event.inputs.skip_preflight != 'true' }}
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          VIZARD_API_KEY: ${{ secrets.VIZARD_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python health_watch.py --gate
 
       - name: Run Daily Short Generator
         env:
@@ -217,10 +244,12 @@ jobs:
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${RUN_URL}"
-          # 1) Primary alert — ping Ketu on Telegram (GH issues go unwatched)
-          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHANNEL_ID" ]; then
+          # 1) Primary alert — ping Ketu on Telegram (GH issues go unwatched).
+          # TELEGRAM_ALERT_CHAT_ID only: TELEGRAM_CHANNEL_ID is the PUBLIC Sale91
+          # channel and must never receive internal failure notices.
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
             curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TELEGRAM_CHANNEL_ID}" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
               --data-urlencode "text=⚠️ Daily Short pipeline FAILED — $(date -u +'%d %b %Y %H:%M UTC') (trigger: ${{ github.event_name }}). No Short/blog today. Likely causes: Anthropic credit balance empty, Veo/TTS API, or YouTube upload. Logs: ${RUN_URL}" \
               -o /dev/null || true
           fi
@@ -245,4 +274,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}

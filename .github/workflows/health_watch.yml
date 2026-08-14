@@ -20,6 +20,11 @@ on:
         required: false
         type: boolean
         default: false
+      gate:
+        description: 'Run the exact --gate path the daily short uses (fails the job if blocked)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: health-watch
@@ -70,6 +75,8 @@ jobs:
           ARGS=""
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
           [ "${{ github.event.inputs.force_ping }}" = "true" ] && ARGS="$ARGS --force-ping"
+          [ "${{ github.event.inputs.gate }}" = "true" ] && ARGS="$ARGS --gate"
+          set -o pipefail
           python health_watch.py $ARGS | tee /tmp/health.txt
 
       - name: Commit state
