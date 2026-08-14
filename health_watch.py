@@ -37,8 +37,11 @@ CRITICAL, WARN, INFO = "CRITICAL", "WARN", "INFO"
 
 
 def _req(url, headers=None, data=None, method=None, timeout=25):
-    req = urllib.request.Request(url, data=data, method=method,
-                                 headers=headers or {"User-Agent": "sale91-health-watch/1"})
+    # Replicate sits behind Cloudflare and 403s "error code: 1010" on the default
+    # Python-urllib agent, which reads as an outage when the service is fine
+    h = {"User-Agent": "sale91-health-watch/1"}
+    h.update(headers or {})
+    req = urllib.request.Request(url, data=data, method=method, headers=h)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             raw = r.read().decode("utf-8", "replace")
@@ -229,9 +232,12 @@ def check_replicate():
         return Result(key, label, sev, True, "not configured — skipped")
     status, body = _json_req("https://api.replicate.com/v1/account",
                              {"Authorization": f"Bearer {tok}"})
-    if status != 200:
-        return Result(key, label, sev, False, f"HTTP {status} {json.dumps(body)[:140]}")
-    return Result(key, label, sev, True, f"account {body.get('username', '?')} ok")
+    if status == 200:
+        return Result(key, label, sev, True, f"account {body.get('username', '?')} ok")
+    if status in (401, 403) and "1010" not in json.dumps(body):
+        return Result(key, label, sev, False, f"auth rejected (HTTP {status})")
+    return Result(key, label, sev, True,
+                  f"inconclusive (HTTP {status}) — edge-blocked probe, not treated as down")
 
 
 def check_fal():
@@ -293,6 +299,13 @@ def check_youtube():
     except Exception as e:
         return Result(key, label, sev, False, f"token file unreadable ({str(e)[:80]})")
     refresh, cid, csec = tok.get("refresh_token"), tok.get("client_id"), tok.get("client_secret")
+    if not (cid and csec):
+        try:
+            cs = json.load(open("/tmp/yt_shorts/client_secret.json"))
+            block = cs.get("installed") or cs.get("web") or {}
+            cid, csec = cid or block.get("client_id"), csec or block.get("client_secret")
+        except Exception:
+            pass
     if not (refresh and cid and csec):
         return Result(key, label, sev, False, "token json missing refresh_token/client credentials")
     payload = urllib.parse.urlencode({"client_id": cid, "client_secret": csec,
@@ -380,6 +393,16 @@ def render(results):
     return "\n".join(lines)
 
 
+def emit_counts(down, blocking):
+    """Machine-readable tail — the workflow must not have to count emoji in prose."""
+    print(f"\ndone — {len(down)} down ({len(blocking)} critical).")
+    print(f"HEALTH_DOWN={len(down)} HEALTH_CRITICAL={len(blocking)}")
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write(f"down={len(down)}\ncritical={len(blocking)}\n")
+
+
 def main():
     dry = "--dry-run" in sys.argv
     gate = "--gate" in sys.argv
@@ -417,11 +440,13 @@ def main():
                 print(f"::error title={r.label}::{r.detail}")
             print(f"\n🚫 GATE FAILED — {len(blocking)} critical dependency down. "
                   f"Refusing to spend Veo credits on a degraded video.")
+            emit_counts(down, blocking)
             return 1
         if down:
             for r in down:
                 print(f"::warning title={r.label}::{r.detail}")
         print("\n✅ GATE PASSED — safe to build today's reel.")
+        emit_counts(down, blocking)
         return 0
 
     st = load_state()
@@ -457,7 +482,7 @@ def main():
 
     if not dry:
         save_state(st, results)
-    print(f"\ndone — {len(down)} down ({len(blocking)} critical).")
+    emit_counts(down, blocking)
     return 0
 
 

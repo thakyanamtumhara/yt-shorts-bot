@@ -42,6 +42,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Restore YouTube credentials
+        run: |
+          mkdir -p /tmp/yt_shorts
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
+          echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
+
       - name: Run health watch
         id: watch
         env:
@@ -65,9 +71,6 @@ jobs:
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
           [ "${{ github.event.inputs.force_ping }}" = "true" ] && ARGS="$ARGS --force-ping"
           python health_watch.py $ARGS | tee /tmp/health.txt
-          DOWN=$(grep -c '🔴' /tmp/health.txt || true)
-          echo "down=${DOWN:-0}" >> "$GITHUB_OUTPUT"
-          echo "$DOWN dependency check(s) down"
 
       - name: Commit state
         if: ${{ github.event.inputs.dry_run != 'true' }}
