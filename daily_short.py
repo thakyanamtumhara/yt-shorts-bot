@@ -11770,6 +11770,17 @@ def main():
             if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
                 print("   🛑 Test mode + ElevenLabs failed → ABORTING before Veo to save cost.")
                 return
+            # The voice step runs before Veo, so stopping here costs nothing and
+            # keeps a reel in a stranger's voice off the account. Set
+            # VOICE_STRICT=0 to take the fallback anyway.
+            if os.environ.get("VOICE_STRICT", "1").strip() not in ("0", "false", "False"):
+                flag("tts", None)
+                print("   🛑 VOICE_STRICT: the cloned voice is unavailable → ABORTING before Veo. "
+                      "No reel today rather than a reel in the wrong voice.")
+                print("::error title=Cloned voice unavailable::ElevenLabs rejected the PVC voice "
+                      "mid-run. Check the plan at https://elevenlabs.io/app/settings/subscription, "
+                      "then re-run daily_short.yml.")
+                sys.exit(3)
             print("   🔄 Falling back to Sarvam...")
 
     # Fallback 1: Sarvam Bulbul v3 (Indian-native Hinglish)
