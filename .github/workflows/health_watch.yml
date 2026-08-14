@@ -1,0 +1,110 @@
+name: Dependency Health Watch
+
+# 03:30 UTC = 09:00 IST — a full 5.5h before the daily short at 14:30 IST, so a
+# lapsed plan can be fixed before it costs a reel.
+# 12:30 UTC = 18:00 IST — evening re-check.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print alerts instead of sending them'
+        required: false
+        type: boolean
+        default: false
+      force_ping:
+        description: 'Send a test alert to prove delivery works'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: health-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    permissions:
+      contents: write
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run health watch
+        id: watch
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          FB_APP_ID: ${{ secrets.FB_APP_ID }}
+          FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
+          VIZARD_API_KEY: ${{ secrets.VIZARD_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          ARGS=""
+          [ "${{ github.event.inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
+          [ "${{ github.event.inputs.force_ping }}" = "true" ] && ARGS="$ARGS --force-ping"
+          python health_watch.py $ARGS | tee /tmp/health.txt
+          DOWN=$(grep -c '🔴' /tmp/health.txt || true)
+          echo "down=${DOWN:-0}" >> "$GITHUB_OUTPUT"
+          echo "$DOWN dependency check(s) down"
+
+      - name: Commit state
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add health_state.json || true
+          git diff --cached --quiet && exit 0
+          git commit -m "health watch state [skip ci]" || true
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }} || true
+
+      # Telegram needs TELEGRAM_ALERT_CHAT_ID to exist; a GitHub issue always
+      # reaches Ketu by email, so it is the channel that cannot silently fail.
+      - name: Raise or update the tracking issue
+        if: ${{ steps.watch.outputs.down != '0' && github.event.inputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="$(sed -n '1,40p' /tmp/health.txt)
+
+          **Run:** ${RUN_URL}"
+          gh label create dependency-down --color d93f0b --description "a paid dependency is unhealthy" 2>/dev/null || true
+          EXISTING=$(gh issue list --label dependency-down --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY" || true
+          else
+            gh issue create --title "🔴 Pipeline dependency down — $(date -u +'%d %b %Y')" \
+              --body "$BODY" --label dependency-down || true
+          fi
+
+      - name: Close the tracking issue when everything is green
+        if: ${{ steps.watch.outputs.down == '0' && github.event.inputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --label dependency-down --state open --json number --jq '.[].number' 2>/dev/null); do
+            gh issue close "$n" --comment "All dependencies green again." || true
+          done
