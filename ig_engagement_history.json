@@ -1574,11 +1574,20 @@
     "title": "₹40 T-Shirt vs ₹85 — 50 Customers Returned After 2 Washes 💀",
     "topic": "₹40 Ki T-Shirt Pe Print Karke Bech Rahe Ho? — Ye 3 Cheezein Pehle Check Karo Warna Loss Pakka 💀",
     "published_at": "2026-08-12T15:50:34.820764+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹6 PRESHRINK SKIP 50 PRINT",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-08-15T15:07:23.252286+05:30",
+    "hours_since_publish": 71.3,
+    "views": 1640,
+    "reach": 1458,
+    "likes": 20,
+    "comments": 0,
+    "shares": 1,
+    "saves": 9,
+    "avg_watch_time_ms": 12888
   },
   {
     "media_id": "17979734409115832",
@@ -1598,6 +1607,17 @@
     "published_at": "2026-08-14T15:47:04.484357+05:30",
     "checked": false,
     "cover_text": "SAME ₹15 PIECE 6x PROFIT",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
+  },
+  {
+    "media_id": "18025301603683439",
+    "title": "₹35K Loss — 500 Pcs Order 180 GSM but Supplier Sent 140 GSM",
+    "topic": "500 Pcs Order Liya 180 GSM — Supplier Ne 140 GSM Bheja 😤 ₹35K Ka Nuksaan — Ye 1 Test Karo Toh Pakad Loge",
+    "published_at": "2026-08-15T15:10:19.494945+05:30",
+    "checked": false,
+    "cover_text": "₹15 GSM Fraud 500 Pc",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
