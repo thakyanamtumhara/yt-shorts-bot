@@ -190,10 +190,16 @@ VEO_MODEL = (
     if os.environ.get("VEO_FULL", "").strip() in ("1", "true", "yes")
     else "veo-3.1-fast-generate-preview"
 )
-_VEO_HERO_DEFAULT = "1"  # Default ON: hero clip uses full-quality Veo (~$2 extra/video)
+# Default OFF (2026-08-15): for months this flag was billed but never generated — the
+# production loop always used VEO_MODEL for all 5 clips while track_veo charged a full-price
+# hero clip ($7.04/video logged vs ~$4.80 actually spent). The loop now honors the flag for
+# clip #1; own-data shows topic (not clip polish) drives views, so it stays off by default.
+_VEO_HERO_DEFAULT = "0"
+# Positive list (like VEO_FULL/ADD_SUBTITLES): a set-but-EMPTY env var (the usual
+# `${{ vars.X }}` injection when the repo var is undefined) must mean OFF, not ON.
 VEO_HERO_FULL = (
     os.environ.get("VEO_HERO_FULL", _VEO_HERO_DEFAULT).strip().lower()
-    not in ("0", "false", "no", "off")
+    in ("1", "true", "yes", "on")
 )
 VEO_HERO_MODEL = "veo-3.1-generate-preview"
 VEO_ASPECT_RATIO = "9:16"
@@ -373,6 +379,9 @@ except Exception:
 # (generate_ai_thumbnail → "ai", generate_thumbnail → "pil"); read when saving
 # the IG upload record so ig_engagement_history learns which covers work.
 COVER_META = {"cover_text": None, "cover_color": None, "cover_path": None, "cover_face": None}
+# Per-run IG publish metadata (trial reel? collab?) — persisted onto the engagement
+# record by save_ig_upload_record so the learning loop can compare trial vs normal reach.
+IG_POST_META = {"trial": False, "collaborators": None}
 
 # Auto-Pin Comment — posts a CTA comment and pins it on every upload.
 # Rotates daily between question-bait (comment-signal days) and Sale91-link nudges.
@@ -719,12 +728,14 @@ IG_SEO_KEYWORDS = {
 }
 IG_DEFAULT_SEO = "plain t-shirt wholesale for printing business India"
 
+# Sends-first CTAs — sends-per-reach is Instagram's #1 ranking signal (Mosseri) and
+# share-rate is the strongest predictor of views in our own 98-reel history.
 IG_CTA_LINES = [
     "Us dost ko bhejo jo t-shirt business start kar raha hai 📩",
-    "Save kar lo — printing business mein kaam aayega 📌",
-    "Apne printing partner ko ye Reel share karo 🤝",
-    "Comment mein batao — agla video kis topic pe banaye? 👇",
-    "Us bande ko tag karo jo abhi bhi mehenge blanks kharid raha hai 😅",
+    "Apne printing partner ko ye Reel bhejo — uska paisa bachega 🤝",
+    "Jo supplier se maal leta hai, usko ye zaroor forward karo 📤",
+    "Apne business group mein ye Reel daal do — kisi ka nuksan bachega 📩",
+    "Us bande ko bhejo jo abhi bhi bina check kiye blanks kharid raha hai 😅",
 ]
 
 def _match_topic_series(topic):
@@ -1055,7 +1066,9 @@ def refresh_thumbnail_research(claude_client):
             updated = cached.get("updated", "")
             if updated:
                 age = (_datetime.now() - _datetime.fromisoformat(updated)).days
-                if age < THUMBNAIL_RESEARCH_MAX_AGE_DAYS:
+                # example_texts check: a cache without it is the hard-coded defaults that the
+                # old failure path wrote with a fresh timestamp — treat as poisoned and refresh.
+                if age < THUMBNAIL_RESEARCH_MAX_AGE_DAYS and cached.get("example_texts"):
                     print(f"   📋 Thumbnail research cache fresh ({age}d old, max {THUMBNAIL_RESEARCH_MAX_AGE_DAYS}d)")
                     return cached
                 print(f"   🔄 Thumbnail research cache stale ({age}d old), refreshing...")
@@ -1152,7 +1165,14 @@ def refresh_thumbnail_research(claude_client):
             research_text = research_text.split("```")[1]
             if research_text.startswith("json"):
                 research_text = research_text[4:]
-        research = _json.loads(research_text)
+        try:
+            research = _json.loads(research_text)
+        except Exception:
+            # Model wrapped the JSON in prose — extract the outermost object
+            start, end = research_text.find("{"), research_text.rfind("}")
+            if start == -1 or end <= start:
+                raise
+            research = _json.loads(research_text[start:end + 1])
         research["updated"] = _datetime.now().isoformat()
 
         with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
@@ -1161,11 +1181,20 @@ def refresh_thumbnail_research(claude_client):
         return research
 
     except Exception as e:
-        print(f"   ⚠️ Research generation failed: {e}, using defaults")
-        default_patterns["updated"] = _datetime.now().isoformat()
+        # NEVER write defaults to the cache file here. Doing that (pre-Aug-2026 behavior)
+        # stamped a fresh `updated` timestamp on the hard-coded defaults, so a single
+        # failure silenced the whole learning loop for another 7 days — and the loop
+        # stayed dead for weeks without anyone noticing. Now: keep the stale cache on
+        # disk (next run retries), flag the failure, and return the best data we have.
+        print(f"   ⚠️ Research generation failed: {e} — keeping stale cache, will retry next run")
+        flag("thumbnail_research_refresh", False)
         try:
-            with open(THUMBNAIL_RESEARCH_FILE, "w") as f:
-                _json.dump(default_patterns, f, indent=2, ensure_ascii=False)
+            if os.path.exists(THUMBNAIL_RESEARCH_FILE):
+                with open(THUMBNAIL_RESEARCH_FILE, "r") as f:
+                    stale = _json.load(f)
+                # Only trust the stale file if it holds real research (defaults lack example_texts)
+                if stale.get("example_texts"):
+                    return stale
         except Exception:
             pass
         return default_patterns
@@ -2084,6 +2113,71 @@ def post_telegram_channel(video_path, caption):
         return None
 
 
+def _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id):
+    """Best-effort follow-ups after a Reel goes live: first comment + Story reshare.
+    Failures here must never fail the publish — the Reel is already up."""
+    # First comment — carries the order CTA so the caption's first line stays a pure
+    # search phrase. Also gives early commenters something to reply to.
+    try:
+        comment_resp = requests.post(
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_media_id}/comments",
+            data={
+                "message": "📦 Rate list + order: Sale91.com — MOQ sirf 10 pieces, Pan India delivery. Koi sawaal ho toh yahin pooch lo 👇",
+                "access_token": ig_token,
+            },
+            timeout=15,
+        )
+        if comment_resp.status_code == 200:
+            print(f"   💬 First comment posted")
+        else:
+            print(f"   ⚠️ First comment failed: {comment_resp.text[:120]}")
+    except Exception as e:
+        print(f"   ⚠️ First comment error: {e}")
+
+    # Story reshare — posts the reel's cover as a Story for an early-momentum kick from
+    # followers. Skipped for trial reels (they test on NON-followers; a Story would
+    # contaminate the test) and when there is no hosted cover.
+    if IG_POST_META.get("trial"):
+        return
+    if os.environ.get("IG_STORY_RESHARE", "1").strip() in ("0", "false", "no"):
+        return
+    if not cover_url:
+        return
+    try:
+        story_resp = requests.post(
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
+            data={"media_type": "STORIES", "image_url": cover_url, "access_token": ig_token},
+            timeout=30,
+        )
+        if story_resp.status_code != 200:
+            print(f"   ⚠️ Story container failed: {story_resp.text[:120]}")
+            return
+        story_id = story_resp.json().get("id")
+        for _ in range(6):  # image containers are usually ready in seconds
+            st = requests.get(
+                f"https://graph.facebook.com/{IG_API_VERSION}/{story_id}",
+                params={"fields": "status_code", "access_token": ig_token},
+                timeout=15,
+            ).json().get("status_code", "")
+            if st == "FINISHED":
+                break
+            if st == "ERROR":
+                print(f"   ⚠️ Story processing failed")
+                return
+            time.sleep(10)
+        pub = requests.post(
+            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media_publish",
+            data={"creation_id": story_id, "access_token": ig_token},
+            timeout=30,
+        )
+        if pub.status_code == 200:
+            print(f"   📖 Story reshare posted (cover frame)")
+        else:
+            print(f"   ⚠️ Story publish failed: {pub.text[:120]}")
+    except Exception as e:
+        print(f"   ⚠️ Story reshare error: {e}")
+
+
 def cross_post_to_instagram(video_path, title, description, topic, thumbnail_path=None):
     """Cross-post the video to Instagram Reels via the Instagram Graph API.
     Requires INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ID env vars.
@@ -2240,6 +2334,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
         # Reels are auto-shared to feed by default.
 
         # Upload custom cover image (thumbnail) to S3 and set as Instagram Reel cover
+        cover_url = None
         if thumbnail_path and os.path.exists(thumbnail_path):
             for _cover_try in (1, 2, 3):
                 try:
@@ -2275,17 +2370,66 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
         # photorealistic AI video + synthetic audio. Applies the "AI info" label.
         container_data["is_ai_generated"] = "true"
 
+        # Trial Reel days (default Tue+Thu IST): the reel tests on NON-followers only for
+        # 72h and auto-graduates to followers if it performs (SS_PERFORMANCE). Non-followers
+        # are the growth audience — this A/Bs content on cold traffic without burning the
+        # follower feed. Official Graph API param; account qualifies (1k+ followers).
+        IG_POST_META["trial"] = False
+        trial_weekdays = {
+            int(d) for d in (os.environ.get("IG_TRIAL_WEEKDAYS") or "1,3").split(",")
+            if d.strip().lstrip("-").isdigit()
+        }
+        if (not schedule_for_later
+                and datetime.now(pytz.timezone(TIMEZONE)).weekday() in trial_weekdays):
+            container_data["trial_params"] = json.dumps({"graduation_strategy": "SS_PERFORMANCE"})
+            IG_POST_META["trial"] = True
+            print("   🧪 Trial Reel day — publishing as trial (non-followers first, auto-graduate on performance)")
+
+        # Collab posts (~+47% impressions when accepted): comma-separated IG usernames in
+        # the IG_COLLABORATORS secret/env. Invitees must accept in-app before they co-appear.
+        IG_POST_META["collaborators"] = None
+        _collabs = [u.strip().lstrip("@") for u in (os.environ.get("IG_COLLABORATORS", "")).split(",") if u.strip()]
+        if _collabs:
+            container_data["collaborators"] = json.dumps(_collabs[:3])
+            IG_POST_META["collaborators"] = _collabs[:3]
+            print(f"   🤝 Collab invite: {', '.join(_collabs[:3])}")
+
         container_resp = requests.post(
             f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
             data=container_data,
             timeout=30,
         )
 
-        if container_resp.status_code != 200 and "is_ai_generated" in container_data:
-            # Param is new — if this API version rejects it, retry without rather than
-            # losing the post (Meta can still auto-label via C2PA metadata).
-            print(f"   ⚠️ IG container failed with is_ai_generated param ({container_resp.text[:120]}) — retrying without")
-            container_data.pop("is_ai_generated", None)
+        # Transient Graph errors (5xx / is_transient / throttle) are NOT param rejections —
+        # retry the identical payload once before blaming (and sacrificing) optional params.
+        if container_resp.status_code != 200:
+            try:
+                _err = container_resp.json().get("error", {})
+            except Exception:
+                _err = {}
+            if (container_resp.status_code >= 500 or _err.get("is_transient")
+                    or _err.get("code") in (1, 2, 4, 17, 32, 613)):
+                print(f"   ⚠️ IG container transient error ({container_resp.status_code}, code={_err.get('code')}) — retrying same payload in 30s")
+                time.sleep(30)
+                container_resp = requests.post(
+                    f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
+                    data=container_data,
+                    timeout=30,
+                )
+
+        # Newer optional params can be rejected by older API versions/accounts — drop them
+        # one at a time rather than losing the post (Meta can still auto-label via C2PA).
+        for _optional in ("trial_params", "collaborators", "is_ai_generated"):
+            if container_resp.status_code == 200:
+                break
+            if _optional not in container_data:
+                continue
+            print(f"   ⚠️ IG container failed with {_optional} param ({container_resp.text[:120]}) — retrying without")
+            container_data.pop(_optional, None)
+            if _optional == "trial_params":
+                IG_POST_META["trial"] = False
+            elif _optional == "collaborators":
+                IG_POST_META["collaborators"] = None
             container_resp = requests.post(
                 f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
                 data=container_data,
@@ -2373,6 +2517,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
                     print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")
+                    _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id)
                     # Cleanup: delete temp video from S3 (non-blocking)
                     if ig_s3_key:
                         try:
@@ -2391,6 +2536,50 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                     continue
                 else:
                     break  # Different error — don't retry
+
+            # Trial safety net: Meta can accept trial_params at container creation but
+            # reject at media_publish (eligibility/caps checked late). Never lose the
+            # day's reel to the experiment — rebuild WITHOUT trial_params and publish
+            # as a normal reel. The source video is still on S3 at this point.
+            if IG_POST_META.get("trial"):
+                print("   ⚠️ Publish failed on a trial container — republishing as a NORMAL reel")
+                container_data.pop("trial_params", None)
+                IG_POST_META["trial"] = False
+                retry_resp = requests.post(
+                    f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
+                    data=container_data,
+                    timeout=30,
+                )
+                if retry_resp.status_code == 200:
+                    retry_id = retry_resp.json().get("id")
+                    for _chk in range(20):
+                        time.sleep(30)
+                        st = requests.get(
+                            f"https://graph.facebook.com/{IG_API_VERSION}/{retry_id}",
+                            params={"fields": "status_code", "access_token": ig_token},
+                            timeout=15,
+                        ).json().get("status_code", "")
+                        if st in ("FINISHED", "ERROR"):
+                            break
+                    if st == "FINISHED":
+                        pub2 = requests.post(
+                            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media_publish",
+                            data={"creation_id": retry_id, "access_token": ig_token},
+                            timeout=30,
+                        )
+                        if pub2.status_code == 200:
+                            ig_media_id = pub2.json().get("id")
+                            print(f"   ✅ Instagram Reel published (no-trial fallback)! ID: {ig_media_id}")
+                            _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id)
+                            if ig_s3_key:
+                                try:
+                                    boto3.client("s3").delete_object(Bucket=BLOG_S3_BUCKET, Key=ig_s3_key)
+                                except Exception:
+                                    pass
+                            return ig_media_id
+                    print(f"   ⚠️ No-trial fallback also failed (status={st})")
+                else:
+                    print(f"   ⚠️ No-trial fallback container failed: {retry_resp.text[:120]}")
 
             return None
 
@@ -2741,6 +2930,11 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
             rec["cover_color"] = cover_meta.get("cover_color")
             rec["cover_path"] = cover_meta.get("cover_path")
             rec["cover_face"] = cover_meta.get("cover_face")
+        # Publish-mode metadata — lets the learning loop compare trial vs normal reach
+        if IG_POST_META.get("trial"):
+            rec["trial"] = True
+        if IG_POST_META.get("collaborators"):
+            rec["collaborators"] = IG_POST_META["collaborators"]
         records.append(rec)
 
         with open(IG_ENGAGEMENT_FILE, "w") as f:
@@ -3296,7 +3490,10 @@ def check_instagram_engagement():
                 continue
 
             hours_since = (now - pub_time).total_seconds() / 3600
-            if hours_since < IG_ENGAGEMENT_CHECK_DELAY_HOURS:
+            # Trial reels test on non-followers for 72h before graduating — a 48h
+            # snapshot would freeze mid-trial numbers. Wait out the window instead.
+            _delay = 96 if record.get("trial") else IG_ENGAGEMENT_CHECK_DELAY_HOURS
+            if hours_since < _delay:
                 continue  # Too early
 
             media_id = record.get("media_id", "")
@@ -3424,6 +3621,18 @@ def check_instagram_engagement():
                 ig_likes = media_data.get("like_count", 0)
                 ig_comments = media_data.get("comments_count", 0)
 
+                # Retention — the completion/watch-time signal IG ranks on. Separate call
+                # so an unsupported metric name can never break the primary fetch above.
+                ig_avg_watch_ms = None
+                try:
+                    ret_data = _fetch_metrics("ig_reels_avg_watch_time").json()
+                    for metric in ret_data.get("data", []):
+                        if metric.get("name") == "ig_reels_avg_watch_time":
+                            vals = metric.get("values", [{}])
+                            ig_avg_watch_ms = vals[0].get("value") if vals else None
+                except Exception:
+                    pass
+
                 # Update record with engagement data
                 record["checked"] = True
                 record["checked_at"] = now.isoformat()
@@ -3434,6 +3643,8 @@ def check_instagram_engagement():
                 record["comments"] = ig_comments
                 record["shares"] = ig_shares
                 record["saves"] = ig_saves
+                if ig_avg_watch_ms is not None:
+                    record["avg_watch_time_ms"] = ig_avg_watch_ms
                 updated = True
 
                 title_short = record.get("title", "")[:40]
@@ -3464,12 +3675,23 @@ def get_top_performing_ig_topics(n=5):
         if not checked:
             return []
 
-        # Sort by views (primary) and likes (secondary)
-        sorted_entries = sorted(
-            checked,
-            key=lambda e: (e.get("views", 0), e.get("likes", 0)),
-            reverse=True,
-        )
+        # Share-rate primary (shares/reach is IG's top ranking signal AND our own
+        # strongest views predictor: Spearman 0.45 vs likes 0.13 on 98 reels).
+        # Floor of 500 views filters noise outliers (e.g. 6 shares on 344 reach).
+        qualified = [r for r in checked if r.get("views", 0) >= 500 and r.get("reach", 0) > 0]
+        if len(qualified) >= n:
+            sorted_entries = sorted(
+                qualified,
+                key=lambda e: (e.get("shares", 0) / max(e.get("reach", 1), 1), e.get("views", 0)),
+                reverse=True,
+            )
+        else:
+            # Not enough qualified data — fall back to raw views
+            sorted_entries = sorted(
+                checked,
+                key=lambda e: (e.get("views", 0), e.get("likes", 0)),
+                reverse=True,
+            )
 
         return [e["title"] for e in sorted_entries[:n]]
 
@@ -4864,6 +5086,13 @@ collar ki complaint kabhi nahi aayegi... simple hai."
     sample — teeno check karo"). Make it self-contained — numbers + labels, no story
     words — so that 2-3s subtitle frame alone is worth saving. Mirror it in
     script_english with the SAME numbers in the SAME order.
+
+14d. WRITE FOR THE FORWARD — Instagram's #1 ranking signal is how many viewers SEND
+    the reel to someone (and share-rate is our strongest measured views predictor).
+    The knowledge drop must be something a printing/wholesale buyer would forward to
+    his partner or supplier: a cheat exposed, a rate truth, a check that saves money.
+    Phrase the payoff so it is useful to the RECEIVER of the forward ("agar aapka
+    supplier aisa bole toh...") — not just interesting to the viewer.
 
 15. STRUCTURE FOR REELS GRID DISCOVERY — a viewer scrolling Explore/Reels feed sees
     your video next to 30 others. The first 1.5 seconds must look DIFFERENT from
@@ -7145,7 +7374,23 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-=== GOLD DATA: REAL PERFORMANCE FROM OUR MAIN CHANNEL (50K subs) ===
+=== PROVEN WINNER FORMULA (measured on our own 98 Instagram Reels, Aug 2026) ===
+Instagram is the PRIMARY platform (50-150x YouTube views) — when Instagram data below
+conflicts with YouTube or main-channel data, INSTAGRAM WINS.
+- Winning archetype: first-person "supplier cheated you on fabric quality" story —
+  a ₹ loss + a piece count + a GSM number, ending with ONE concrete check the buyer can
+  do himself. Best reel ever: "300 Pcs Ordered 220 GSM — Got 160 GSM — ₹25K Almost
+  Wasted" (88,827 views = 26% of all account views).
+- Relatable amounts win: ₹25K-₹80K losses outperform ₹1 lakh+ stories.
+- Reels that teach a verifiable check get 2-9x the share rate — and shares are what
+  Instagram ranks on. Ask of every candidate: "would a printing buyer FORWARD this
+  to his partner/supplier?"
+BANNED topic types (our measured worst performers — do NOT generate these):
+- Motivational/journey stories ("He 3X'd his business", zero-to-hero arcs) — median 1,282 views.
+- Bare curiosity/question topics with no loss story and no number — median 1,512 views.
+- Generic category advice without a ₹ number or a concrete check.
+
+=== REFERENCE DATA: OUR MAIN CHANNEL (50K subs, YouTube) ===
 These are ACTUAL Shorts with REAL view counts — study what works:
 {chr(10).join(source_with_views) if source_with_views else "No source channel data available."}
 
@@ -7239,8 +7484,14 @@ Score each (1-10):
 3. STORYTELLING FIT — Can this be turned into a compelling 50-sec micro-story with hook?
    High: has natural conflict/problem/surprise. Low: just a definition or list.
 
-4. VIRAL SHAREABILITY — Would someone save this or send it to a fellow business owner?
-   High: actionable tip, surprising fact, money-saving advice. Low: common knowledge.
+4. VIRAL SHAREABILITY — Would someone SEND this to a fellow business owner? (Sends are
+   what Instagram ranks on and our strongest measured views predictor.)
+   High: a cheat/trap exposed with a ₹ loss + a check the buyer can do himself.
+   Low: common knowledge, feel-good content.
+
+AUTOMATIC LOW SCORE (max 15/40) — our measured worst performers on 98 reels:
+- Motivational/journey topics ("He 3X'd his business", zero-to-hero arcs)
+- Bare curiosity/question topics with no loss story and no ₹/GSM/pcs number
 
 OUTPUT THIS JSON ONLY (no markdown):
 {{"score": total_out_of_40, "feedback": "1 sentence — why good or what's wrong"}}"""
@@ -7530,10 +7781,13 @@ YOUR TASK: Generate THREE titles, each platform-tuned:
 
 2. INSTAGRAM title — optimized for Reels Explore page:
    - Max 70 chars
+   - START WITH THE ₹ AMOUNT when the story has one (measured: ₹-first titles
+     median 3,504 views vs 2,708 without; 87.5% of our winners have ₹ in title)
+   - Pack the numbers: ₹ loss + piece count + GSM where the story allows
+   - Keep ₹ amounts relatable (₹25K-₹80K outperforms ₹1 lakh+)
    - Cost/disaster/loss framing OR third-person founder story
-   - Comparison + cost ("X vs Y – the trap" pattern)
+   - NO emoji (measured: our losing reels use emoji MORE than winners)
    - Latin script preferred; mixed Hindi-English fine
-   - Curiosity hook — make them stop scrolling
 
 3. BLOG title — optimized for Google Search + AI search engines (ChatGPT/Claude/Perplexity):
    - Max 80 chars
@@ -12029,6 +12283,7 @@ def main():
                         break
 
         # ── Kling fallback for single Veo test (when Veo rate-limits) ──
+        veo_success = clip_success  # bill Veo only for a Veo-rendered clip, not Kling's
         if not clip_success and KLING_ENABLED:
             print(f"   🔄 Kling fallback: generating 1 real clip...")
             print(f"   ⏳ Clip 1 (Kling):")
@@ -12047,9 +12302,11 @@ def main():
             placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
             downloaded_clips.append(placeholder_path)
 
-        real_count = 1 if clip_success else 0
-        cost.track_veo(real_count, hero_full=VEO_HERO_FULL)
-        print(f"   ✅ {len(downloaded_clips)} clips ready ({real_count} real Veo + {VEO_CLIPS_PER_VIDEO - real_count} blank)")
+        real_count = 1 if veo_success else 0
+        if real_count:
+            cost.track_veo(real_count, hero_full=VEO_HERO_FULL)
+        _real_total = 1 if clip_success else 0
+        print(f"   ✅ {len(downloaded_clips)} clips ready ({_real_total} real + {VEO_CLIPS_PER_VIDEO - _real_total} blank)")
 
     else:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
@@ -12058,11 +12315,19 @@ def main():
 
         use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
         consecutive_failures = 0  # Early termination: stop if Veo is persistently broken
+        hero_generated = False  # True only if clip #1 really rendered on the full-quality model
 
         for i in range(VEO_CLIPS_PER_VIDEO):
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
             clip_success = False
+            # Hero clip: with VEO_HERO_FULL=1 the first clip (the hook) renders on the
+            # full-quality model while the rest stay Fast.
+            clip_model = (
+                VEO_HERO_MODEL
+                if (VEO_HERO_FULL and i == 0 and VEO_MODEL != VEO_HERO_MODEL)
+                else VEO_MODEL
+            )
 
             # ── Early termination: if 2+ consecutive clips failed, Veo is likely broken ──
             if consecutive_failures >= 2 and not KLING_ENABLED:
@@ -12080,7 +12345,7 @@ def main():
                     try:
                         print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
                         operation = veo_client.models.generate_videos(
-                            model=VEO_MODEL,
+                            model=clip_model,
                             prompt=prompt_text,
                             config=types.GenerateVideosConfig(
                                 aspect_ratio=VEO_ASPECT_RATIO,
@@ -12124,6 +12389,8 @@ def main():
                             downloaded_clips.append(clip_path)
                             clip_success = True
                             veo_clips_count += 1
+                            if clip_model == VEO_HERO_MODEL and VEO_MODEL != VEO_HERO_MODEL:
+                                hero_generated = True
                             print("✅")
                             break
                         else:
@@ -12186,7 +12453,9 @@ def main():
         got = len(downloaded_clips)
         veo_count = got - kling_clips
         if veo_count > 0:
-            cost.track_veo(veo_count, hero_full=VEO_HERO_FULL)
+            # Bill what was actually generated — not the flag. Pre-Aug-2026 this passed
+            # VEO_HERO_FULL while no hero clip was ever rendered, overstating every run by ~$2.24.
+            cost.track_veo(veo_count, hero_full=hero_generated)
         if kling_clips > 0:
             cost.track_kling(kling_clips)
         if got < expected:
@@ -12940,15 +13209,17 @@ def main():
     else:
         print("   📤 Uploading to YouTube...")
         youtube = get_youtube_service()
+
+        # ── 10a. Feedback loops — run BEFORE the youtube gate. Instagram is the
+        # primary platform (50-150x YouTube views); its learning loop must not
+        # die just because YouTube auth is down.
         if youtube:
-            # ── 10a. Check engagement for past videos (feedback loop) ──
             print("   📊 Checking past video engagement...")
             check_past_engagement(youtube)
+        print("   📸 Checking Instagram Reel engagement...")
+        check_instagram_engagement()
 
-            # ── 10a-ii. Check Instagram Reel engagement (feedback loop) ──
-            print("   📸 Checking Instagram Reel engagement...")
-            check_instagram_engagement()
-
+        if youtube:
             try:
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
 

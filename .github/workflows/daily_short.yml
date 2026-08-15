@@ -154,6 +154,13 @@ jobs:
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
           GH_PAT: ${{ secrets.GH_PAT }}
           REDDIT_DRAFTS_PAT: ${{ secrets.REDDIT_DRAFTS_PAT }}
+          # IG growth levers (2026-08-15). Trial Reels default Tue+Thu (Python weekday
+          # 1,3); collaborators is a comma-separated username list (secret, optional);
+          # story reshare defaults ON. The || guards matter: an unset repo var injects
+          # empty string, which would otherwise beat the Python-side default.
+          IG_TRIAL_WEEKDAYS: ${{ vars.IG_TRIAL_WEEKDAYS || '1,3' }}
+          IG_STORY_RESHARE: ${{ vars.IG_STORY_RESHARE || '1' }}
+          IG_COLLABORATORS: ${{ secrets.IG_COLLABORATORS }}
           TEST_MODE: ${{ github.event.inputs.test_mode }}
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
