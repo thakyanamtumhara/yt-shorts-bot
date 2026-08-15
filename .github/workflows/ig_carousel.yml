@@ -26,6 +26,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      issues: write   # the failure step opens/comments a tracking issue
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,14 +100,38 @@ jobs:
       - name: Notify on failure
         if: failure()
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          # TELEGRAM_ALERT_CHAT_ID only. Until 15-Aug-2026 this step used
+          # TELEGRAM_CHANNEL_ID — the PUBLIC Sale91 subscriber channel — so the
+          # next failure would have broadcast an internal error to subscribers.
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "::error::❌ IG Carousel post FAILED! Check logs: ${RUN_URL}"
-          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHANNEL_ID" ]; then
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
             curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TELEGRAM_CHANNEL_ID}" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
               --data-urlencode "text=⚠️ IG Carousel post FAILED — $(date -u +'%d %b %Y %H:%M UTC'). No carousel today. Likely causes: blog images missing from S3, IG token expired, or Graph API rejection. Logs: ${RUN_URL}" \
               -o /dev/null || true
+          fi
+          # TELEGRAM_ALERT_CHAT_ID is not set on this repo yet, so the curl above
+          # is a no-op today. A GitHub issue always reaches Ketu by email — same
+          # pattern health_watch.yml uses — so this is the channel that cannot
+          # silently fail. Remove neither; they are belt and braces.
+          gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
+          EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "IG Carousel post failed at $(date -u +'%H:%M UTC %d %b').
+
+          **Run:** ${RUN_URL}" || true
+          else
+            gh issue create \
+              --title "⚠️ IG Carousel post failed — $(date -u +'%d %b %Y')" \
+              --body "The daily Instagram carousel did not publish.
+
+          **Run:** ${RUN_URL}
+
+          Likely causes: blog images missing from S3, IG token expired, or a Graph API rejection." \
+              --label "bot-failure" || true
           fi

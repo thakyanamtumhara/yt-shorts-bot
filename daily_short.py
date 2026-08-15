@@ -2750,6 +2750,21 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
         print(f"   ⚠️ Failed to save IG upload record: {e}")
 
 
+def _prose_word_count(html):
+    """Word count of the visible prose, with markup removed.
+
+    len(html.split()) counts tags, inline CSS and JSON-LD, which inflated every
+    recorded word_count by ~1.8x (5,578 tokens for a 3,031-word article). That
+    number drives read_min on /p/index.html, so the index advertised "31 min
+    read" on articles that read in about 16.
+    """
+    if not html:
+        return 0
+    text = re.sub(r'(?is)<(script|style)\b.*?</\1>', ' ', html)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    return len(text.split())
+
+
 def _reachable_image_urls(urls, timeout=10):
     """Keep only the URLs that actually serve an image right now.
 
@@ -3085,6 +3100,33 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
     except Exception as e:
         print(f"   ⚠️ IG carousel: unexpected error: {e}")
         return None
+
+
+def _recently_posted_ig_slugs(days=14):
+    """Slugs Instagram has actually published in the last `days`, from ig_drafts/.
+
+    Keyed on a non-null media_id, NOT the `posted` flag: _tombstone_ig_draft()
+    sets posted=True on drafts that were retired without ever publishing, so
+    trusting `posted` would wrongly treat those articles as already used.
+    Returns an empty set on any error — the caller then behaves as before, which
+    at worst repeats a post rather than skipping the day entirely.
+    """
+    seen = set()
+    try:
+        cutoff = (datetime.now(pytz.timezone(TIMEZONE)).date() - timedelta(days=days)).isoformat()
+        for fname in os.listdir(IG_CAROUSEL_DRAFTS_DIR):
+            if not fname.endswith(".json") or fname[:-5] < cutoff:
+                continue
+            try:
+                with open(os.path.join(IG_CAROUSEL_DRAFTS_DIR, fname)) as f:
+                    d = json.load(f)
+            except Exception:
+                continue
+            if d.get("media_id") and d.get("blog_slug"):
+                seen.add(d["blog_slug"])
+    except Exception as e:
+        print(f"   ⚠️ IG carousel: could not read posted history ({e}) — not de-duplicating today")
+    return seen
 
 
 # A draft older than this is stale news — tombstone it rather than let it sit at
@@ -8317,20 +8359,38 @@ CRITICAL CHECKLIST — your HTML MUST contain ALL of these:
 REMEMBER: Output ONLY the raw HTML. No markdown fences. No explanation before or after."""
 
 
-def _generate_image_replicate(prompt, aspect_ratio):
-    """Generate a single image via Replicate FLUX Dev. Returns image bytes or None."""
+def _generate_image_replicate(prompt, aspect_ratio, _max_throttle_retries=3):
+    """Generate a single image via Replicate FLUX Dev. Returns image bytes or None.
+
+    Retries on HTTP 429. Below $5 of credit Replicate cuts the account to a
+    burst of 1 prediction, so in a 3-image post the hero succeeds and img1/img2
+    are throttled instantly — which is why every post from 27-Jul to 15-Aug-2026
+    shipped hero-only (fal.ai, the fallback, is balance-locked and cannot cover).
+    The caller's 2-failure cap treats a 429 as a hard failure, so the retry has
+    to live here. Sleep 15s: the burst window refills in ~10s, and the 2s/4s
+    exponential backoff used elsewhere in this file is too short to clear it.
+    """
     import replicate
-    output = replicate.run(
-        "black-forest-labs/flux-dev",
-        input={
-            "prompt": prompt,
-            "num_outputs": 1,
-            "aspect_ratio": aspect_ratio,
-            "output_format": "webp",
-            "output_quality": 85,
-            "guidance": 3.5,
-        },
-    )
+    for attempt in range(_max_throttle_retries):
+        try:
+            output = replicate.run(
+                "black-forest-labs/flux-dev",
+                input={
+                    "prompt": prompt,
+                    "num_outputs": 1,
+                    "aspect_ratio": aspect_ratio,
+                    "output_format": "webp",
+                    "output_quality": 85,
+                    "guidance": 3.5,
+                },
+            )
+            break
+        except Exception as e:
+            throttled = "429" in str(e) or "throttl" in str(e).lower() or "rate limit" in str(e).lower()
+            if not throttled or attempt == _max_throttle_retries - 1:
+                raise
+            print(f"   ⏳ Replicate throttled (429) — waiting 15s, retry {attempt + 1}/{_max_throttle_retries - 1}")
+            time.sleep(15)
     img_output = output[0] if isinstance(output, list) else output
     if hasattr(img_output, 'read'):
         return img_output.read()
@@ -8532,7 +8592,7 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
         first_image_url = image_urls[0] if image_urls else None
         html_content = inject_blog_seo(html_content, title, description, blog_url, today, slug, og_image_url=first_image_url, vid_id=vid_id, vid_url=vid_url)
 
-        word_count = len(html_content.split())
+        word_count = _prose_word_count(html_content)
         print(f"   📝 Blog: Generated ~{word_count} words, slug: {slug}")
         print(f"   📝 Blog: URL will be {blog_url}")
         print(f"   📝 Blog: {len(blog_images)} images to upload")
@@ -9126,7 +9186,7 @@ def process_main_channel_recap():
     sunday_excerpt = _extract_blog_excerpt(blog_html, max_words=200)
     save_blog_history(video["title"], blog_title, blog_slug, blog_url, video["vid_url"],
                       tags=blog_tags, description=video["description"][:200],
-                      word_count=len(blog_html.split()),
+                      word_count=_prose_word_count(blog_html),
                       excerpt=sunday_excerpt)
     print(f"   ✅ Blog published: {blog_url}")
 
@@ -9785,21 +9845,20 @@ def build_blog_index_html(new_post=None):
 
     # Legacy/manual posts that are NOT in blog_history.json but exist on the site.
     # These must always appear in footer for search engine crawlability.
+    # 15-Aug-2026: five entries removed because they now 301 to a winner that is
+    # already in this list — /p/index.html was still advertising them (twice each:
+    # footer <li> AND the JSON-LD ItemList), which the 31-Jul link repair never
+    # touched because this list is hardcoded, not read from blog_history.
     legacy_posts = [
-        ("/p/240gsmtshirt.html", "240gsm Dropshoulder Tshirts"),
         ("/p/DelhiBIGGESTPlainTShirtWarehouse.html", "Delhi's BIGGEST Plain T Shirt Warehouse"),
-        ("/p/Biggest-Plain-Tshirt-Warehouse.html", "Biggest Plain T shirt Warehouse"),
         ("/p/build-tshirt-brand.html", "Build your own t-shirt brand"),
         ("/p/premium-plain-t-shirts-bulk-supplier-india.html", "Premium Plain T-Shirts in Bulk"),
-        ("/p/wholesale-plain-t-shirts.html", "Wholesale Plain T-Shirts for Custom Printing"),
         ("/p/fast-delivery-plain-t-shirts-maharashtra.html", "Fast 2-Day Plain T-Shirt Delivery in Maharashtra"),
         ("/p/plain-t-shirt-wholesale-near-me-delhi-india.html", "Top T Shirt Wholesalers in Delhi"),
         ("/p/dropshipping.html", "B2B Dropshipping Plain T shirt"),
         ("/p/AcidWashTshirt.html", "AcidWash Plain T shirts"),
-        ("/p/Wholesale-Blanks.html", "Wholesale Blanks"),
         ("/p/wholesale-blank-t-shirts.html", "Wholesale Blank T-Shirts"),
         ("/p/Shipping-Method.html", "PAN India Fast Delivery for Wholesale Orders"),
-        ("/p/acid-wash-tshirts.html", "Acid Wash T-Shirts Wholesale India"),
         ("/p/Dropshoulders.html", "Dropshoulder 240gsm"),
         ("/p/plainhoodie.html", "Plain Hoodies 320gsm, 430gsm"),
         ("/p/430gsm-dropshoulder-hoodie.html", "430gsm Dropshoulder Hoodie"),
@@ -9810,6 +9869,20 @@ def build_blog_index_html(new_post=None):
         ("/p/true-bio-rneck.html", "True Bio RNeck T Shirts"),
         ("/p/cloud-dancer-tshirts.html", "Cloud Dancer T shirts"),
     ]
+
+    # Safety net so this hardcoded list cannot rot again: drop any entry that a
+    # later consolidation turned into a 301 loser. Cheap, and it means the next
+    # person who adds a redirect_to does not have to remember this list exists.
+    try:
+        _consolidated = {h['slug'] for h in json.load(open(BLOG_HISTORY_FILE)) if h.get('redirect_to')} \
+            if os.path.exists(BLOG_HISTORY_FILE) else set()
+        _before = len(legacy_posts)
+        legacy_posts = [(u, t) for u, t in legacy_posts
+                        if u.rsplit('/', 1)[-1].removesuffix('.html') not in _consolidated]
+        if len(legacy_posts) != _before:
+            print(f"   🧹 Blog index: dropped {_before - len(legacy_posts)} legacy link(s) that now 301")
+    except Exception as e:
+        print(f"   ⚠️ Blog index: could not filter consolidated legacy links ({e})")
 
     # Combine blog_history.json posts + legacy posts (deduplicate by URL)
     all_link_items = ''
@@ -13018,8 +13091,19 @@ def main():
             # their images already on S3 as {slug}-hero.jpg etc.).
             try:
                 active = sorted(_load_blog_history_active(), key=lambda h: h.get('date', ''), reverse=True)
-                fb = next((h for h in active if h.get('slug') == fallback_slug), None) or (active[0] if active else None)
-                if fb and fb.get('slug'):
+                # Skip anything Instagram has already published. The carousel runs
+                # 7x/week but blogs are only Mon/Wed/Fri, so without this the same
+                # article gets re-posted on every skip day — 13 duplicate groups
+                # (~4 duplicate posts/week) went out between 31-Jul and 14-Aug.
+                # Key on media_id, NOT `posted`: _tombstone_ig_draft sets
+                # posted=True on drafts that never actually published.
+                already = _recently_posted_ig_slugs(days=14)
+                pool = [h for h in active if h.get('slug') not in already]
+                fb = next((h for h in pool if h.get('slug') == fallback_slug), None) or (pool[0] if pool else None)
+                if not fb:
+                    print("   ℹ️ IG carousel: every recent article has already been posted — "
+                          "skipping today's draft rather than repeating one")
+                elif fb.get('slug'):
                     generate_ig_carousel_draft(
                         claude_client=claude,
                         cost_tracker=cost,
@@ -13056,7 +13140,7 @@ def main():
                         excerpt = _extract_blog_excerpt(blog_html, max_words=200) if blog_html else ""
                         save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
                                           tags=yt_tags, description=yt_description,
-                                          word_count=len(blog_html.split()) if blog_html else 0,
+                                          word_count=_prose_word_count(blog_html),
                                           excerpt=excerpt)
                         print(f"   ✅ Blog published: {blog_url}")
 
