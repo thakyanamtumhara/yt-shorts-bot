@@ -37,6 +37,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      issues: write   # the failure step opens/comments a tracking issue
     steps:
       - uses: actions/checkout@v4
 
@@ -70,3 +71,35 @@ jobs:
           git add social_watch_state.json || true
           git diff --staged --quiet || git commit -m "social watch state [skip ci]"
           git push || true
+
+      # Added 15-Aug-2026. This workflow had no failure handling at all, so its
+      # 06-Aug failure (run 31118612342, a 10-minute job timeout) went unnoticed
+      # and its logs had expired by the time anyone looked. A watcher that can
+      # die silently is not a watcher.
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::❌ Social Post Watch FAILED: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Social Post Watch FAILED — $(date -u +'%d %b %Y %H:%M UTC'). Post verification did not run. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
+          gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
+          EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Social Post Watch failed at $(date -u +'%H:%M UTC %d %b').
+
+          **Run:** ${RUN_URL}" || true
+          else
+            gh issue create --title "⚠️ Social Post Watch failed — $(date -u +'%d %b %Y')" \
+              --body "Post verification did not run.
+
+          **Run:** ${RUN_URL}" --label "bot-failure" || true
+          fi
