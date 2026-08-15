@@ -1,0 +1,71 @@
+name: Blog Image Self-Test
+
+# Generates 3 images back-to-back through the real _generate_image_replicate()
+# and reports how many survive. Manual only, ~$0.09 a run, uploads nothing.
+#
+# Why this exists: health_watch only pings /v1/account, which stays green even
+# when image generation is broken. The actual failure mode is a BURST limit —
+# below $5 of Replicate credit the account is cut to one prediction at a time,
+# so the hero succeeds and img1/img2 get an instant 429. That is invisible to a
+# single-call probe and it silently shipped hero-only posts from 27-Jul to
+# 15-Aug-2026. Three sequential calls is the only honest test.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: pip install -q -r requirements.txt
+
+      - name: Generate 3 images back-to-back
+        env:
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+        run: |
+          python3 - <<'PY'
+          import time, traceback
+          from daily_short import _generate_image_replicate
+
+          PROMPTS = [
+              ("hero.webp", "16:9", "Plain cotton t-shirts stacked in an Indian warehouse, bright lighting"),
+              ("img1.webp", "4:3", "Close-up of cotton fabric texture showing GSM weave, soft light"),
+              ("img2.webp", "4:3", "Indian textile factory floor with folded blank t-shirts"),
+          ]
+          ok = 0
+          t0 = time.time()
+          for name, aspect, prompt in PROMPTS:
+              started = time.time()
+              try:
+                  data = _generate_image_replicate(f"{prompt}. professional commercial photography, sharp focus", aspect)
+                  size = len(data) if data else 0
+                  if data and size > 1000:
+                      ok += 1
+                      print(f"✅ {name}: {size//1024} KB in {time.time()-started:.1f}s")
+                  else:
+                      print(f"❌ {name}: returned {size} bytes")
+              except Exception as e:
+                  throttled = "429" in str(e) or "throttl" in str(e).lower()
+                  print(f"❌ {name}: {'THROTTLED (429)' if throttled else 'ERROR'} after "
+                        f"{time.time()-started:.1f}s — {str(e)[:180]}")
+
+          print(f"\n📷 RESULT: {ok}/3 images generated in {time.time()-t0:.0f}s total")
+          if ok == 3:
+              print("✅ Image generation is fully healthy — blog posts will get all 3 images.")
+          elif ok == 1:
+              print("⚠️ Only the hero survived — this is the burst-limit signature. "
+                    "Check the Replicate credit balance is above $5.")
+          else:
+              print("⚠️ Partial or total failure — read the per-image errors above.")
+          raise SystemExit(0 if ok == 3 else 1)
+          PY
