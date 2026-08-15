@@ -9,6 +9,8 @@ name: Publish Queue (17:15 IST daily)
 on:
   schedule:
     - cron: '15 10 * * *'   # 10:15 UTC = 15:45 IST — GitHub runs this cron 47min-2h11m LATE every day (12/12 runs 19-30 Jul), so 15:45 nominal lands 16:32-17:56 IST = inside the 16-18h window. Do NOT 'correct' this back to 17:15.
+    - cron: '20 14 * * *'   # 19:50 IST nominal — evening slot, for reels that must land AFTER a manual YouTube post
+    - cron: '20 15 * * *'   # 20:50 IST nominal — catch-up run, so a file held back by publish_at still goes out the same evening
   workflow_dispatch:
 
 jobs:
@@ -30,6 +32,7 @@ jobs:
           pip install -q requests
           python3 - << 'PY'
           import os, glob, json, time, requests
+          from datetime import datetime, timedelta
 
           files = sorted(glob.glob("publish_queue/*.json"))
           if not files:
@@ -41,8 +44,19 @@ jobs:
           biz = os.environ["IG_BIZ"].strip()
           os.makedirs("publish_queue/done", exist_ok=True)
 
+          # "publish_at": "YYYY-MM-DD HH:MM" in IST holds a file back until its slot.
+          # Missing field = publish on the next run, same as before.
+          now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+          print("now IST:", now_ist.strftime("%Y-%m-%d %H:%M"))
+
           for path in files:
               job = json.load(open(path))
+              at = job.get("publish_at", "").strip()
+              if at:
+                  due = datetime.strptime(at, "%Y-%m-%d %H:%M")
+                  if now_ist < due:
+                      print("holding:", path, "until", at, "IST")
+                      continue
               print("publishing:", path)
               data = {"media_type": "REELS",
                       "video_url": job["video_url"],
