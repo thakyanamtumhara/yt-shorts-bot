@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-15 09:40)",
+   "detail": "ElevenLabs ✅ (2026-08-17 10:00)",
    "provider": "elevenlabs",
-   "at": "2026-08-15 09:40",
-   "title": "500 पीस का ऑर्डर — 180 GSM माँगा, 140 GSM आया 😤 ₹35K डूबे"
+   "at": "2026-08-17 10:00",
+   "title": "₹50,000 का माल Reject — Polo Collar 2 धुलाई में बैठ गया 😡"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 149,702/151,000 chars left",
+   "detail": "creator · PVC allowed · 149,314/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 149702,
+   "chars_left": 149314,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -124,8 +124,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-17T18:51:37+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-17T09:41:42+05:30",
+ "last_run_ist": "2026-08-17T18:51:37+05:30",
  "last_green_date": "2026-08-17"
 }
