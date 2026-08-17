@@ -2595,5 +2595,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0076
     }
+  },
+  {
+    "date": "2026-08-17T10:00:07.033524",
+    "topic": "220 GSM Polo T-Shirt Mangwaya \u2014 Collar 2 Dhulai Mein Baith Gaya \ud83d\ude21 Interlock vs Rib Collar Ka Farak Samjho",
+    "title": "\u20b950,000 \u0915\u093e \u092e\u093e\u0932 Reject \u2014 Polo Collar 2 \u0927\u0941\u0932\u093e\u0908 \u092e\u0947\u0902 \u092c\u0948\u0920 \u0917\u092f\u093e \ud83d\ude21",
+    "total_usd": 5.584,
+    "duration_min": 28.2,
+    "breakdown": {
+      "claude_opus": 0.3545,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0212,
+      "veo_clips": 4.8,
+      "whisper": 0.0041,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2342
+    }
   }
 ]
