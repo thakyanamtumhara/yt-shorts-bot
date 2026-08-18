@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-17 10:00)",
+   "detail": "ElevenLabs ✅ (2026-08-18 09:48)",
    "provider": "elevenlabs",
-   "at": "2026-08-17 10:00",
-   "title": "₹50,000 का माल Reject — Polo Collar 2 धुलाई में बैठ गया 😡"
+   "at": "2026-08-18 09:48",
+   "title": "₹145 में Polo बेचा — ₹0 Profit | असली Cost Breakdown"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 149,314/151,000 chars left",
+   "detail": "creator · PVC allowed · 148,782/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 149314,
+   "chars_left": 148782,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -27,9 +27,9 @@
    "detail": "402 Payment Required — Sarvam is refusing paid calls (billing/plan level, not just an empty credit meter). Check https://dashboard.sarvam.ai/ — this is fallback #1, so the reel drops straight to the generic OpenAI voice"
   },
   "anthropic": {
-   "ok": false,
+   "ok": true,
    "severity": "CRITICAL",
-   "detail": "HTTP 400 You have reached your specified API usage limits. You will regain access on 2026-09-01 at 00:00 UTC."
+   "detail": "key valid, credit available"
   },
   "google": {
    "ok": true,
@@ -137,8 +137,14 @@
     "sarvam",
     "anthropic"
    ]
+  },
+  {
+   "at": "2026-08-18T18:53:46+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-18T09:37:25+05:30",
+ "last_run_ist": "2026-08-18T18:53:46+05:30",
  "last_green_date": "2026-08-17"
 }
