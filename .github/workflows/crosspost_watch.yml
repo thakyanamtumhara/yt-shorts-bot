@@ -1,0 +1,60 @@
+name: Crosspost watch
+
+# Vizard cannot tell us a scheduled post failed — it has no status/list endpoint
+# (probed 2026-08-18: publish-record / publish-list / publish-status / scheduled
+# all 404). So we ask the platforms themselves whether the post actually exists,
+# and shout on Telegram when it does not.
+#
+# Runs twice daily: once after the morning LinkedIn slot, once late evening so
+# the evening X/Facebook slots have landed. Silent when everything is fine.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'    # 12:00 IST — catches the 08:15 LinkedIn slot
+    - cron: '30 17 * * *'   # 23:00 IST — catches the evening IG / X / FB slots
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print instead of sending Telegram'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check scheduled crossposts
+        env:
+          VIZARD_API_KEY: ${{ secrets.VIZARD_API_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python3 tools/crosspost_watch.py --dry-run
+          else
+            python3 tools/crosspost_watch.py
+          fi
+
+      - name: Persist which posts were already confirmed / alerted
+        run: |
+          if [ -n "$(git status --porcelain crosspost_state.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add crosspost_state.json
+            git commit -m "crosspost watch state [skip ci]"
+            git pull --rebase -q origin main || true
+            git push
+          fi

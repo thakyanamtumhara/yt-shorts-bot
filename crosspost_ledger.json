@@ -1,0 +1,59 @@
+{
+ "_comment": "Expected posts. crosspost_watch.py checks each one AFTER its time passes and shouts on Telegram if it cannot find it. Vizard has NO API to report a failed scheduled post (probed 2026-08-18: publish-record / publish-list / publish-status / scheduled all 404), so this ledger plus a platform-side check is the only way to know.",
+ "entries": [
+  {
+   "id": "founder-ig-main",
+   "label": "Founder reel 2:48",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-08-20 18:00",
+   "verify": "api",
+   "match": "उधार"
+  },
+  {
+   "id": "founder-x",
+   "label": "Founder reel — X",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-08-23 19:45",
+   "verify": "manual",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "founder-fb",
+   "label": "Founder reel — Facebook Page",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-08-23 20:15",
+   "verify": "api",
+   "match": "udhaar"
+  },
+  {
+   "id": "founder-li",
+   "label": "Founder reel — LinkedIn",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-08-25 08:15",
+   "verify": "manual",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "founder-ig-clip1",
+   "label": "Clip 1 — the room",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-08-31 18:00",
+   "verify": "api",
+   "match": "कमरे"
+  },
+  {
+   "id": "founder-ig-clip2",
+   "label": "Clip 2 — comfort zone",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-02 18:00",
+   "verify": "api",
+   "match": "comfort zone"
+  }
+ ]
+}
