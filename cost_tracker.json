@@ -2612,5 +2612,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2342
     }
+  },
+  {
+    "date": "2026-08-18T09:48:32.795469",
+    "topic": "220 GSM Polo \u20b9145 Mein Mangwaya \u2014 Asli Price Kitna Hona Chahiye? Rate Breakdown Jo Koi Nahi Batata",
+    "title": "\u20b9145 \u092e\u0947\u0902 Polo \u092c\u0947\u091a\u093e \u2014 \u20b90 Profit | \u0905\u0938\u0932\u0940 Cost Breakdown",
+    "total_usd": 5.3001,
+    "duration_min": 24.8,
+    "breakdown": {
+      "claude_opus": 0.3628,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.029,
+      "veo_clips": 4.8,
+      "whisper": 0.0055,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0078
+    }
   }
 ]
