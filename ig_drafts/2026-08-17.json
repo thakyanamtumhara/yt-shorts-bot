@@ -26,7 +26,8 @@
     "#bulkorderquality",
     "#apparelwholesale"
   ],
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18467674867114359",
+  "error": null,
+  "posted_at": "2026-08-18T13:33:09.404370+05:30"
 }
