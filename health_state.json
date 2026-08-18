@@ -27,9 +27,9 @@
    "detail": "402 Payment Required — Sarvam is refusing paid calls (billing/plan level, not just an empty credit meter). Check https://dashboard.sarvam.ai/ — this is fallback #1, so the reel drops straight to the generic OpenAI voice"
   },
   "anthropic": {
-   "ok": true,
+   "ok": false,
    "severity": "CRITICAL",
-   "detail": "key valid, credit available"
+   "detail": "HTTP 400 You have reached your specified API usage limits. You will regain access on 2026-09-01 at 00:00 UTC."
   },
   "google": {
    "ok": true,
@@ -130,8 +130,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-18T09:37:25+05:30",
+   "down": [
+    "sarvam",
+    "anthropic"
+   ]
   }
  ],
- "last_run_ist": "2026-08-17T18:51:37+05:30",
+ "last_run_ist": "2026-08-18T09:37:25+05:30",
  "last_green_date": "2026-08-17"
 }
