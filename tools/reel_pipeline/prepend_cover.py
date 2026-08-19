@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Prepend the cover as a FULL 1.0 second still.
+"""Prepend the cover as a 0.5 second still.
 
 Usage: python3 prepend_cover.py IN.mp4 COVER.png OUT.mp4
 
-His rule (2026-08-01): on YouTube/FB/LinkedIn/X the platform picks the thumbnail
-from a video frame, so the cover has to be IN the file. A full second, not 0.2s —
-a fifth of a second is too small a target to hit in the frame picker.
+On YouTube/FB/LinkedIn/X the platform picks the thumbnail from a video frame, so
+the cover has to be IN the file. 0.5s: big enough to hit when he drags the frame
+picker, short enough that the video does not open on a frozen still.
 
 Encoded to match the main file's parameters exactly (H.264 High@4.0, yuv420p,
 1080x1920, 30fps, AAC 48k stereo) so the two can be concatenated with STREAM COPY.
@@ -24,9 +24,9 @@ MAIN = os.path.join(HERE, sys.argv[1] if len(sys.argv) > 1 else "input.mp4")
 COVER = os.path.join(HERE, sys.argv[2] if len(sys.argv) > 2 else "cover.png")
 STILL = os.path.join(HERE, "_cover1s.mp4")
 OUT = os.path.join(HERE, sys.argv[3] if len(sys.argv) > 3 else "output.mp4")
-HOLD = 1.0   # FULL second. Never 0.2/0.3/0.5 — Ketu has called that out twice:
-             # he drags in the YouTube frame picker and a third of a second is
-             # too small a target, so he lands on a random mid-word frame.
+HOLD = 0.5   # Ketu's settled number, 19-Aug-2026. He rejected 1.0s ("looks a little
+             # frozen") and 0.2-0.3s is too small a target when he drags in the YouTube
+             # frame picker. 0.5s is both. Do not re-derive this.
 
 
 def probe(path):
