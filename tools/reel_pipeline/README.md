@@ -11,7 +11,16 @@ Flow per episode:
 2. Hand-correct caption lines into `lines.py` (≤5 tokens, see lines_example.py)
 3. `build_reel.py` — edit SRC/OUT/DUR at top. PIL word-pop states → hardlinked
    30fps PNG seq → ONE ffmpeg overlay pass (this ffmpeg has no drawtext).
-   Phone-mic audio chain: highpass+afftdn+loudnorm. Recorder audio: loudnorm only.
+   AUDIO CHAIN — **`highpass=f=60` + two-pass `loudnorm`. NOTHING ELSE.**
+   **Never `afftdn` on Ketu's voice.** He heard it and called it out (19-Aug-2026:
+   "it's looking filtered, it's looking processed"). Measured on his own DJI lav
+   recording, the old highpass=80+afftdn=nf=-28 chain cost -0.8dB at 2.5k, -1.5 at
+   5k, -1.7 at 8k, -2.3 at 12k, and **-10.5dB of room tone in the gaps between
+   words** — that dead-silence-between-words is what reads as "processed". His mic
+   runs ~21dB SNR with no mains hum; there is nothing to denoise. Verify any chain
+   change with `audio_ab.py A.wav B.wav` (per-band RMS + room tone) BEFORE shipping.
+   **Rebuild video and audio in ONE filtergraph** — building audio separately and
+   re-muxing lets per-segment frame rounding drift them apart.
 4. `cover.py` — house cover (Baloo2+RAQM, whole-string draws). BAND_C 0.50 for
    godam-wide framing, ~0.70 for selfie framing (face fills the frame).
 5. **Prepend cover for 0.5s** — `prepend_cover.py IN.mp4 COVER.png OUT.mp4`.
