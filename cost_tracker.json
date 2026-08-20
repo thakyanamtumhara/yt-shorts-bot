@@ -2628,5 +2628,21 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0078
     }
+  },
+  {
+    "date": "2026-08-20T09:47:12.644685",
+    "topic": "220 GSM Likhwa Ke Bhi Dhoka \u2014 Ring Spun vs Open End Yarn Ka Scam \u2014 Haath Se 5 Second Mein Pehchano Asli Quality",
+    "title": "220 GSM \u0932\u093f\u0916\u093e \u0925\u093e \u2014 \u0939\u093e\u0925 \u0932\u0917\u093e\u0924\u0947 \u0939\u0940 \u092a\u0924\u093e \u091a\u0932\u093e \u0927\u094b\u0916\u093e | Ring Spun vs Open End",
+    "total_usd": 5.2912,
+    "duration_min": 22.1,
+    "breakdown": {
+      "claude_opus": 0.3558,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0275,
+      "veo_clips": 4.8,
+      "whisper": 0.0054,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0075
+    }
   }
 ]
