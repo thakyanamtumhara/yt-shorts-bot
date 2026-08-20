@@ -11,6 +11,33 @@
    "match": "कूरियर"
   },
   {
+   "id": "rakhi2-x",
+   "label": "Rakhi urgency — X",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-08-21 19:45",
+   "verify": "manual",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "rakhi2-fb",
+   "label": "Rakhi urgency — Facebook",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-08-21 20:15",
+   "verify": "api",
+   "match": "train"
+  },
+  {
+   "id": "rakhi2-li",
+   "label": "Rakhi urgency — LinkedIn",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-08-25 08:15",
+   "verify": "manual",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
    "id": "founder-yt",
    "label": "Founder story — YouTube full video (Ketu posts by hand)",
    "platform": "youtube",
