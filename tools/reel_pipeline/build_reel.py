@@ -8,7 +8,7 @@ IMG_6180.MOV (4K vertical via rotation tag, 98.14s, phone audio)
 Same pipeline as Factory Sach #3: PIL word-state strips (RAQM shaping),
 hardlinked 30fps PNG sequence, ONE ffmpeg overlay pass (this ffmpeg has no
 drawtext/subtitles filter). Phone mic (no recorder file this time) so the
-audio chain adds highpass + light denoise before loudnorm.
+audio chain is highpass ONLY — never denoise his voice.
 """
 import os, sys, shutil, subprocess
 from PIL import Image, ImageDraw, ImageFont, features
@@ -82,7 +82,7 @@ def main():
     state_path, n_states = {}, 0
     for li, (ls, le, text) in enumerate(LINES):
         toks = text.split()
-        assert len(toks) <= 5, f"line {li}: {text}"
+        assert len(toks) <= 7, f"line {li}: {text}"
         for wi in range(len(toks)):
             p = os.path.join(STATES, f"s_{li:03d}_{wi}.png")
             strip_img(toks, wi).save(p)
@@ -123,7 +123,11 @@ def main():
         "-map", "[v]", "-map", "0:a",
         "-c:v", "libx264", "-preset", "medium", "-crf", "19",
         "-profile:v", "high", "-level", "4.1", "-r", str(FPS),
-        "-af", "highpass=f=80,afftdn=nf=-28,loudnorm=I=-14:TP=-1.5:LRA=11",
+        # NO afftdn. Ketu hears denoising and rejected it (19-Aug-2026) — it cost
+        # -2.3dB at 12k and -10.5dB of room tone. If the cut already carries a
+        # correct two-pass loudnorm, prefer "-c:a", "copy" over re-encoding here:
+        # the AAC pass is what pushed a reel to +0.35 dBTP.
+        "-af", "highpass=f=60,alimiter=limit=0.79:level=disabled",
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
         "-movflags", "+faststart",
         OUT,

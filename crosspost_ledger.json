@@ -2,6 +2,15 @@
  "_comment": "Expected posts. crosspost_watch.py checks each one AFTER its time passes and shouts on Telegram if it cannot find it. Vizard has NO API to report a failed scheduled post (probed 2026-08-18: publish-record / publish-list / publish-status / scheduled all 404), so this ledger plus a platform-side check is the only way to know.",
  "entries": [
   {
+   "id": "rakhi2-ig",
+   "label": "Rakhi train/bus urgency reel (1:32)",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-08-20 18:00",
+   "verify": "api",
+   "match": "कूरियर"
+  },
+  {
    "id": "founder-yt",
    "label": "Founder story — YouTube full video (Ketu posts by hand)",
    "platform": "youtube",
@@ -15,7 +24,7 @@
    "label": "Founder reel 2:48",
    "platform": "instagram",
    "rail": "own-queue",
-   "due_ist": "2026-08-20 18:00",
+   "due_ist": "2026-08-24 18:00",
    "verify": "api",
    "match": "उधार"
   },
