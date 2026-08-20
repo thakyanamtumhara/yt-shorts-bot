@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-18 09:48)",
+   "detail": "ElevenLabs ✅ (2026-08-20 09:47)",
    "provider": "elevenlabs",
-   "at": "2026-08-18 09:48",
-   "title": "₹145 में Polo बेचा — ₹0 Profit | असली Cost Breakdown"
+   "at": "2026-08-20 09:47",
+   "title": "220 GSM लिखा था — हाथ लगाते ही पता चला धोखा | Ring Spun vs Open End"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 148,782/151,000 chars left",
+   "detail": "creator · PVC allowed · 148,278/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 148782,
+   "chars_left": 148278,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -161,8 +161,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-20T18:57:28+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-20T09:37:48+05:30",
+ "last_run_ist": "2026-08-20T18:57:28+05:30",
  "last_green_date": "2026-08-20"
 }
