@@ -20,6 +20,15 @@
    "url": "https://x.com/KetuR_"
   },
   {
+   "id": "rakhi2-yt",
+   "label": "Rakhi urgency — YouTube Short (Ketu posts)",
+   "platform": "youtube",
+   "rail": "manual",
+   "due_ist": "2026-08-20 18:00",
+   "verify": "manual",
+   "url": "https://www.youtube.com/@ownknittedblankwears"
+  },
+  {
    "id": "rakhi2-fb",
    "label": "Rakhi urgency — Facebook",
    "platform": "facebook",
@@ -78,7 +87,7 @@
    "label": "Founder reel — LinkedIn",
    "platform": "linkedin",
    "rail": "vizard",
-   "due_ist": "2026-08-25 08:15",
+   "due_ist": "2026-09-01 08:15",
    "verify": "manual",
    "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
   },
