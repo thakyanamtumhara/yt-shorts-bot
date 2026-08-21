@@ -96,7 +96,7 @@
    "label": "Clip 1 — the room",
    "platform": "instagram",
    "rail": "own-queue",
-   "due_ist": "2026-08-31 18:00",
+   "due_ist": "2026-09-02 18:00",
    "verify": "api",
    "match": "कमरे"
   },
@@ -105,9 +105,81 @@
    "label": "Clip 2 — comfort zone",
    "platform": "instagram",
    "rail": "own-queue",
-   "due_ist": "2026-09-02 18:00",
+   "due_ist": "2026-09-09 18:00",
    "verify": "api",
    "match": "comfort zone"
+  },
+  {
+   "id": "v18-yt",
+   "label": "Personal video 16:38 — YouTube long-form (Ketu posts)",
+   "platform": "youtube",
+   "rail": "manual",
+   "due_ist": "2026-08-31 17:15",
+   "verify": "manual",
+   "url": "https://www.youtube.com/@ownknittedblankwears"
+  },
+  {
+   "id": "v18-ig",
+   "label": "Personal video reel 2:43 — Instagram",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-08-31 18:00",
+   "verify": "api",
+   "match": "कर डालो"
+  },
+  {
+   "id": "v18-x",
+   "label": "Personal video reel — X",
+   "platform": "x",
+   "rail": "manual",
+   "due_ist": "2026-09-03 19:45",
+   "verify": "manual",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "v18-fb",
+   "label": "Personal video reel — Facebook",
+   "platform": "facebook",
+   "rail": "own-queue",
+   "due_ist": "2026-09-03 20:15",
+   "verify": "api",
+   "match": ""
+  },
+  {
+   "id": "v18-li",
+   "label": "Personal video reel — LinkedIn",
+   "platform": "linkedin",
+   "rail": "manual",
+   "due_ist": "2026-09-08 08:15",
+   "verify": "manual",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "v18-ig-c1",
+   "label": "Clip 1 — career pivot",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-07 18:00",
+   "verify": "api",
+   "match": ""
+  },
+  {
+   "id": "v18-ig-c2",
+   "label": "Clip 2 — gym",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-14 18:00",
+   "verify": "api",
+   "match": ""
+  },
+  {
+   "id": "v18-ig-c3",
+   "label": "Clip 3 — dar se aadat",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-16 18:00",
+   "verify": "api",
+   "match": ""
   }
  ]
 }
