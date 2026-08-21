@@ -13,6 +13,18 @@ Encoded to match the main file's parameters exactly (H.264 High@4.0, yuv420p,
 That avoids re-encoding 10 minutes of video, which would take ~15 min and cost a
 generation of quality. Falls back to a full re-encode only if the copy path fails
 verification.
+
+⚠️ 21-Aug-2026: "matched parameters" is NOT enough. Matching resolution/profile/
+level still leaves the two halves with different SPS/PPS (different preset, CRF,
+GOP), and QuickTime/AVFoundation only reads the avcC of the first sample entry.
+ffmpeg re-inits on the inline SPS and decodes every frame without a single error,
+so duration and decode checks both PASS on a file macOS cannot open. Ketu saw it
+as a blank document icon on a 16-minute upload and had to tell me.
+
+So the acceptance test for the copy path is now QuickLook itself — the surface
+that actually broke. If it cannot make a thumbnail, we re-encode. Prefer baking
+the cover into the main filtergraph when you are encoding anyway (that is what
+build_reel.py does, and why no reel or clip has ever had this bug).
 """
 import json
 import os
@@ -35,6 +47,25 @@ def probe(path):
          "format=duration:stream=codec_name,width,height,pix_fmt,profile,level",
          "-of", "json", path], capture_output=True, text=True).stdout)
     return d
+
+
+def quicklook_ok(path, limit=75):
+    """Can macOS actually open this? ffmpeg's opinion is not enough — see module
+    docstring. A timeout counts as failure: that is exactly how the bug presented."""
+    out = os.path.join(HERE, "_qlout")
+    subprocess.run(["rm", "-rf", out])
+    os.makedirs(out)
+    p = subprocess.Popen(["qlmanage", "-t", "-s", "300", "-o", out, path],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for _ in range(limit * 2):
+        if p.poll() is not None:
+            break
+        subprocess.run(["perl", "-e", "select(undef,undef,undef,0.5)"])
+    made = p.poll() is not None and len(os.listdir(out)) > 0
+    if p.poll() is None:
+        p.kill()
+    subprocess.run(["rm", "-rf", out])
+    return made
 
 
 def main():
@@ -70,6 +101,9 @@ def main():
         else:
             # concat must have ADDED the hold, not silently dropped a stream
             ok = abs(after - (before + HOLD)) < 0.45
+    if ok and not quicklook_ok(OUT):
+        print("stream-copy output decodes but macOS cannot read it (mixed SPS)")
+        ok = False
 
     if not ok:
         print("stream-copy concat rejected -> falling back to re-encode")
@@ -77,10 +111,14 @@ def main():
         subprocess.run([
             "ffmpeg", "-v", "error", "-y", "-i", STILL, "-i", MAIN,
             "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
-            "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+            # CRF 23, not 20: compared at 1:1 on hair (the hardest detail in his
+            # footage) they are indistinguishable, and 20 was producing 8.4 Mbps.
+            "-c:v", "libx264", "-preset", "medium", "-crf", "23",
+            "-profile:v", "high", "-level", "4.0", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
             "-movflags", "+faststart", OUT], check=True)
         after = float(probe(OUT)["format"]["duration"])
+        assert quicklook_ok(OUT), "re-encode still unreadable by macOS"
 
     os.remove(lst)
     os.remove(STILL)

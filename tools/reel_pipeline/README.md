@@ -34,10 +34,20 @@ Flow per episode:
        frame 0 must be the cover; 1.0s satisfies this too.
      * Instagram (our Meta queue) -> sets `cover_url` via API, so the baked
        cover is redundant there and only eats into the hook.
-   Cheap way to do it on a long file: encode the still matched to the main
-   file's codec/profile/level/pix_fmt/timescale + silent stereo AAC, then
-   `ffmpeg -f concat -c copy`. No re-encode of the body, no quality loss —
-   a 10-minute 600 MB file takes seconds instead of ~15 minutes.
-   See scratchpad pattern `prepend_cover.py` (founder story, 18-Aug-2026).
+   **Bake the cover into the main filtergraph whenever you are encoding anyway.**
+   Add the PNG as a second input (`-loop 1 -t 0.5 -framerate 30`) plus a 0.5s
+   `anullsrc`, and `concat=n=2:v=1:a=1` in the same graph. One encoder, one SPS,
+   no concat demuxer, no edit list. Costs nothing extra.
+
+   The stream-copy shortcut (`ffmpeg -f concat -c copy`) exists for when the body
+   is already final and re-encoding would cost a generation. ⚠️ It has bitten us:
+   matching resolution/profile/level is NOT enough, because the still still gets
+   its own SPS/PPS from its own preset/CRF/GOP. ffmpeg re-inits on the inline SPS
+   and reports a perfectly clean decode of every frame, while QuickTime — which
+   reads only the first sample entry's avcC — cannot open the file at all. On
+   21-Aug-2026 that shipped a 16-minute YouTube master that showed up as a blank
+   document icon; duration checks and a full `-f null` decode both passed it.
+   `prepend_cover.py` now runs `qlmanage` as the acceptance test and falls back
+   to a re-encode, because that is the surface that actually broke.
 6. X limit: 140s. Longer episodes need a separate sub-140s cut (sort CUTS by
    time; keeps() asserts non-overlap after the scrambled-render bug).
