@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-20 09:47)",
+   "detail": "ElevenLabs ✅ (2026-08-21 09:52)",
    "provider": "elevenlabs",
-   "at": "2026-08-20 09:47",
-   "title": "220 GSM लिखा था — हाथ लगाते ही पता चला धोखा | Ring Spun vs Open End"
+   "at": "2026-08-21 09:52",
+   "title": "₹8 का Tag नहीं लगाया — 800 T-Shirts Reject, लाखों का नुकसान"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 148,278/151,000 chars left",
+   "detail": "creator · PVC allowed · 147,888/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 148278,
+   "chars_left": 147888,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -173,8 +173,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-21T18:56:36+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-21T09:39:01+05:30",
+ "last_run_ist": "2026-08-21T18:56:36+05:30",
  "last_green_date": "2026-08-21"
 }
