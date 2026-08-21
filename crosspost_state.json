@@ -4,7 +4,8 @@
   "note": "confirmed by Ketu 20-Aug: posted Wed 19-Aug"
  },
  "rakhi2-ig": {
-  "alerted": true
+  "resolved": true,
+  "note": "confirmed 21-Aug: moved to publish_queue/done/"
  },
  "rakhi2-yt": {
   "nudged": true

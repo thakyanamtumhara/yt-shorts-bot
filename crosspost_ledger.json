@@ -131,7 +131,7 @@
    "id": "v18-x",
    "label": "Personal video reel — X",
    "platform": "x",
-   "rail": "manual",
+   "rail": "vizard",
    "due_ist": "2026-09-03 19:45",
    "verify": "manual",
    "url": "https://x.com/KetuR_"
@@ -140,7 +140,7 @@
    "id": "v18-fb",
    "label": "Personal video reel — Facebook",
    "platform": "facebook",
-   "rail": "own-queue",
+   "rail": "vizard",
    "due_ist": "2026-09-03 20:15",
    "verify": "api",
    "match": ""
@@ -149,7 +149,7 @@
    "id": "v18-li",
    "label": "Personal video reel — LinkedIn",
    "platform": "linkedin",
-   "rail": "manual",
+   "rail": "vizard",
    "due_ist": "2026-09-08 08:15",
    "verify": "manual",
    "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
