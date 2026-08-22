@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-21 09:52)",
+   "detail": "ElevenLabs ✅ (2026-08-22 09:40)",
    "provider": "elevenlabs",
-   "at": "2026-08-21 09:52",
-   "title": "₹8 का Tag नहीं लगाया — 800 T-Shirts Reject, लाखों का नुकसान"
+   "at": "2026-08-22 09:40",
+   "title": "₹60K का माल बारिश में खराब — Dark Colour T-Shirt Print से पहले ये Test"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 147,888/151,000 chars left",
+   "detail": "creator · PVC allowed · 147,477/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 147888,
+   "chars_left": 147477,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -185,8 +185,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-22T18:39:40+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-22T09:35:18+05:30",
+ "last_run_ist": "2026-08-22T18:39:40+05:30",
  "last_green_date": "2026-08-22"
 }
