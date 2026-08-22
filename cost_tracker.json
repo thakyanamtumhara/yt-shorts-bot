@@ -2661,5 +2661,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.235
     }
+  },
+  {
+    "date": "2026-08-22T09:40:55.755545",
+    "topic": "\u20b960K Royal Blue Batch \u2014 Barish Mein Colour Bleed Ho Gaya \ud83d\ude31 | Dark Colours Mein Ye 1 Test Zaroor Karo",
+    "title": "\u20b960K \u0915\u093e \u092e\u093e\u0932 \u092c\u093e\u0930\u093f\u0936 \u092e\u0947\u0902 \u0916\u0930\u093e\u092c \u2014 Dark Colour T-Shirt Print \u0938\u0947 \u092a\u0939\u0932\u0947 \u092f\u0947 Test \u0915\u0930\u094b",
+    "total_usd": 5.2453,
+    "duration_min": 21.6,
+    "breakdown": {
+      "claude_opus": 0.3164,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0224,
+      "veo_clips": 4.8,
+      "whisper": 0.0041,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0074
+    }
   }
 ]
