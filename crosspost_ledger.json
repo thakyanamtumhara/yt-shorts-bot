@@ -129,30 +129,33 @@
   },
   {
    "id": "v18-x",
-   "label": "Personal video reel — X",
+   "label": "Personal video reel v2 1:24 — X",
    "platform": "x",
    "rail": "vizard",
    "due_ist": "2026-09-03 19:45",
    "verify": "manual",
-   "url": "https://x.com/KetuR_"
+   "url": "https://x.com/KetuR_",
+   "note": "re-booked 22-Aug: Vizard project 33706305 / finalVideoId 68850778 (old 68763002 deleted by Ketu)"
   },
   {
    "id": "v18-fb",
-   "label": "Personal video reel — Facebook",
+   "label": "Personal video reel v2 1:24 — Facebook",
    "platform": "facebook",
    "rail": "vizard",
    "due_ist": "2026-09-03 20:15",
    "verify": "api",
-   "match": ""
+   "match": "",
+   "note": "re-booked 22-Aug: Vizard project 33706305 / finalVideoId 68850778 (old 68763002 deleted by Ketu)"
   },
   {
    "id": "v18-li",
-   "label": "Personal video reel — LinkedIn",
+   "label": "Personal video reel v2 1:24 — LinkedIn",
    "platform": "linkedin",
    "rail": "vizard",
    "due_ist": "2026-09-08 08:15",
    "verify": "manual",
-   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/",
+   "note": "re-booked 22-Aug: Vizard project 33706305 / finalVideoId 68850778 (old 68763002 deleted by Ketu)"
   },
   {
    "id": "v18-ig-c1",
