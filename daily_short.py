@@ -4963,22 +4963,38 @@ Tight and dense — every sentence earns its place. Still a MINI STORY with a
 beginning, middle, and end, just leaner.
 
 STRUCTURE (follow this EVERY time):
-1. HOOK (first sentence — HARD 2-SECOND MANDATE) — The FIRST SENTENCE must be a
-   PATTERN-INTERRUPT built on LOSS-AVERSION or a SHOCKING NUMBER. Max 10 words.
-   It must contain a ₹ amount, a piece count, or a concrete loss.
-   NEVER a greeting, NEVER context-setting, NEVER a definition, NEVER "aaj main
-   batata hoon". Drop the viewer MID-STORY at the moment of damage:
-   - "Ye galti ₹40,000 ki padi."
-   - "500 piece ka order, 2 wash mein barbaad."
-   - "Ek customer ne ₹50,000 ka order cancel kar diya."
-   - "200 GSM bola tha, 160 nikla."
-   Sentence 2 then opens the story ("Hua ye tha ki...").
+1. HOOK (first sentence — HARD 2-SECOND MANDATE) — Max 10 words. A
+   PATTERN-INTERRUPT. NEVER a greeting, NEVER context-setting, NEVER a
+   definition, NEVER "aaj main batata hoon".
 
-2. PROBLEM BUILD-UP (2-3 sentences) — Build the tension, explain what went wrong:
-   - "Problem ye thi ki usne check hi nahi kiya..."
-   - "Fark ye hai ki ek mein combed tha, ek mein nahi..."
-   - "Maine pucha — sample liya tha? Bola nahi, seedha 500 piece order kar diya..."
-   - Add details that make the story feel REAL — quantities, reactions, what happened next
+   🚨 NEVER INVENT A NUMBER, A CUSTOMER, OR AN INCIDENT. 🚨
+   This used to demand a "₹ amount or concrete loss" in every hook, so every
+   script fabricated one — "₹50,000 ka order cancel", "800 t-shirts reject",
+   "₹60,000 ka maal barish mein kharab". None of it ever happened. Ketu caught
+   it on 24-Aug-2026. These go out under his real name, for a real registered
+   business, to real buyers who may quote them back at him. It is not a
+   storytelling technique, it is lying about his company.
+
+   The hook must be TRUE. Build it from something checkable instead:
+   - a fabric/technical fact: "180 GSM pe print through dikhta hai."
+   - a real rate from the price list: "Acid wash 238 rupaye piece."
+   - a question the buyer is already asking: "Combed aur carded mein fark kya?"
+   - a widely-known trade reality: "Open end yarn haath mein khurdura lagta hai."
+   A rupee figure is allowed ONLY if it is a real published rate from the price
+   sheet. Never a loss, never a rejection, never "ek customer ne...".
+   Sentence 2 then opens the explanation.
+
+2. PROBLEM BUILD-UP (2-3 sentences) — Explain the actual mistake buyers make.
+   Speak about it in GENERAL terms — "log aksar...", "bahut baar hota hai ki..."
+   — never as a specific incident with a named customer, an order size and a
+   loss figure attached, because you do not know of any such incident.
+   - "Log aksar sample liye bina hi bulk order kar dete hain."
+   - "Fark ye hai ki ek mein combed hota hai, ek mein nahi."
+   - "Print through dikhne lagta hai, aur pata tab chalta hai jab late ho chuka hai."
+   ❌ DO NOT write "Maine pucha — sample liya tha?", "ek customer ne...",
+   "500 piece ka order barbaad" or any invented quantity/reaction. Making the
+   story "feel REAL" by inventing detail is exactly the fabrication that got
+   this pipeline stopped. General truth beats a specific lie.
 
 3. KNOWLEDGE DROP (3-4 sentences) — The actual gyaan, with practical examples:
    - Explain the concept with REAL comparisons
