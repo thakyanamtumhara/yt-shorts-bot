@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-22 09:40)",
+   "detail": "ElevenLabs ✅ (2026-08-24 10:05)",
    "provider": "elevenlabs",
-   "at": "2026-08-22 09:40",
-   "title": "₹60K का माल बारिश में खराब — Dark Colour T-Shirt Print से पहले ये Test"
+   "at": "2026-08-24 10:05",
+   "title": "₹45K का ऑर्डर Cancel — Royal Blue vs Navy का जाल"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 147,477/151,000 chars left",
+   "detail": "creator · PVC allowed · 147,075/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 147477,
+   "chars_left": 147075,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -209,8 +209,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-24T19:00:54+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-24T09:43:47+05:30",
+ "last_run_ist": "2026-08-24T19:00:54+05:30",
  "last_green_date": "2026-08-24"
 }
