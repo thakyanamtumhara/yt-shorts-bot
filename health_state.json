@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-24 10:05)",
+   "detail": "ElevenLabs ✅ (2026-08-25 09:49)",
    "provider": "elevenlabs",
-   "at": "2026-08-24 10:05",
-   "title": "₹45K का ऑर्डर Cancel — Royal Blue vs Navy का जाल"
+   "at": "2026-08-25 09:49",
+   "title": "₹8 का पॉलीबैग स्किप किया — 600 टीशर्ट में फंगस लगा 💀"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 147,075/151,000 chars left",
+   "detail": "creator · PVC allowed · 146,671/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 147075,
+   "chars_left": 146671,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -221,8 +221,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-25T18:58:33+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-25T09:38:07+05:30",
+ "last_run_ist": "2026-08-25T18:58:33+05:30",
  "last_green_date": "2026-08-25"
 }
