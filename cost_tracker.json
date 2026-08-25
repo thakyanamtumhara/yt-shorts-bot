@@ -2694,5 +2694,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2308
     }
+  },
+  {
+    "date": "2026-08-25T09:49:40.114493",
+    "topic": "\u20b98 Ka Polybag Skip Kiya \u2014 600 T-Shirts Monsoon Mein Fungus Laga | Packaging Mistake Jo Barbaad Karti Hai \ud83d\udc80",
+    "title": "\u20b98 \u0915\u093e \u092a\u0949\u0932\u0940\u092c\u0948\u0917 \u0938\u094d\u0915\u093f\u092a \u0915\u093f\u092f\u093e \u2014 600 \u091f\u0940\u0936\u0930\u094d\u091f \u092e\u0947\u0902 \u092b\u0902\u0917\u0938 \u0932\u0917\u093e \ud83d\udc80",
+    "total_usd": 5.2919,
+    "duration_min": 23.0,
+    "breakdown": {
+      "claude_opus": 0.3629,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.022,
+      "veo_clips": 4.8,
+      "whisper": 0.0041,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0079
+    }
   }
 ]
