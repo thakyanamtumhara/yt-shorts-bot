@@ -1,0 +1,13 @@
+{
+  "target_sub": "r/PrintOnDemand",
+  "posting_time": "Weekday morning, 9-11 AM IST",
+  "title": "Client rejected ₹18k order because I missed one stitch check",
+  "body": "Got burned last week and still annoyed at myself. Client ordered 500 plain tees for bulk printing — whole batch came back rejected. I thought it was a fabric issue, GSM problem, something big. Nope.\n\nTurns out I'd mixed lockstitch and chain stitch on the same order. Side seams were chain stitch instead of lockstitch. Client's printing vendor pulled one thread on a test piece during QC — entire seam unraveled in seconds. Looked like garbage-tier local manufacturing, not brand-level blanks.\n\nI didn't even know these were different things until they pointed it out. Lockstitch locks the thread on both sides so one break won't kill the seam. Chain stitch? One pull and the whole line comes apart.\n\nThe fix sounds stupid simple: flip the shirt, look at the hem. Side seams NEED lockstitch. Takes 10 seconds to check. I'd been inspecting GSM, thread count, fabric weight — everything except the actual stitch type.\n\n₹18k down because I was lazy about one detail.\n\nFull breakdown with photos: https://www.bulkplaintshirt.com/p/lockstitch-vs-chain-stitch-in-bulk-t-shirts-why-a-18k-order.html\n\nHow many of you actually check stitch type on blanks, or is this something most people miss?",
+  "engagement_plan": [
+    "Reply to every comment within 12 hours with genuine personal follow-up.",
+    "Spend 10 minutes commenting helpfully on other posts in r/PrintOnDemand today — focus on quality control and bulk ordering threads (no links).",
+    "Do NOT cross-post to another subreddit today."
+  ],
+  "hero_image_url": "https://www.bulkplaintshirt.com/p/lockstitch-vs-chain-stitch-in-bulk-t-shirts-why-a-18k-order-hero.webp",
+  "blog_url": "https://www.bulkplaintshirt.com/p/lockstitch-vs-chain-stitch-in-bulk-t-shirts-why-a-18k-order.html"
+}

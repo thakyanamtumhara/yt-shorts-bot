@@ -2710,5 +2710,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0079
     }
+  },
+  {
+    "date": "2026-08-26T10:01:01.065692",
+    "topic": "Stitching Brand Level Ya Local? \u2014 \u20b918K Ka Order Return Hua Sirf Lockstitch Missing Hone Se | 2 Checks Under 10 Sec",
+    "title": "\u20b918K \u0915\u093e \u092e\u093e\u0932 \u0938\u093f\u0930\u094d\u092b Lockstitch \u0928 \u0939\u094b\u0928\u0947 \u0938\u0947 \u0935\u093e\u092a\u0938 \u0906\u092f\u093e \ud83d\ude24",
+    "total_usd": 5.5632,
+    "duration_min": 28.6,
+    "breakdown": {
+      "claude_opus": 0.3237,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0236,
+      "veo_clips": 4.8,
+      "whisper": 0.004,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.242
+    }
   }
 ]
