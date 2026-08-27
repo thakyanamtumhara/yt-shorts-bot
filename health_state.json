@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-26 10:01)",
+   "detail": "ElevenLabs ✅ (2026-08-27 19:48)",
    "provider": "elevenlabs",
-   "at": "2026-08-26 10:01",
-   "title": "₹18K का माल सिर्फ Lockstitch न होने से वापस आया 😤"
+   "at": "2026-08-27 19:48",
+   "title": "कान के पास रगड़ो — Combed vs Carded Cotton का फर्क सुनाई देगा 👂"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 146,239/151,000 chars left",
+   "detail": "creator · PVC allowed · 145,845/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 146239,
+   "chars_left": 145845,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -245,8 +245,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-08-28T03:59:20+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-27T19:56:46+05:30",
- "last_green_date": "2026-08-27"
+ "last_run_ist": "2026-08-28T03:59:20+05:30",
+ "last_green_date": "2026-08-28"
 }
