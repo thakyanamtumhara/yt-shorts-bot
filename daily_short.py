@@ -5070,9 +5070,10 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
 1. 6-8 SENTENCES for a 30-35 second Short. Hook hard, build fast, drop knowledge, loop back to the hook at the end.
-2. FIRST SENTENCE = LOSS/NUMBER PATTERN-INTERRUPT — max 10 words, must carry a
-   ₹ amount, piece count, or concrete loss. NEVER a greeting, definition, or
-   context-setting. The story unfolds from sentence 2.
+2. FIRST SENTENCE = PATTERN-INTERRUPT — max 10 words, and it must be TRUE.
+   🚨 NEVER an invented loss, rejection or customer. Use a checkable fact instead:
+   a spec ("180 GSM pe print through dikhta hai"), a real published rate, or a
+   question buyers ask. NEVER a greeting, definition, or context-setting.
 3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
    Give PRACTICAL action: "cut kar lo", "weight kar lo", "try kar lo"
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
@@ -5102,9 +5103,9 @@ collar ki complaint kabhi nahi aayegi... simple hai."
     NOT at the very end. Open a loop, build tension, deliver payoff with ~6-8s of
     script left for "so what to do" — that tail is where SHARES happen.
 
-14. ONE SHOCKING NUMBER per script — Indian B2B Reels viewers SAVE for numbers they
-    can use ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). Bury one
-    surprising number in the middle that makes them want to remember/share.
+14. ONE MEMORABLE NUMBER per script — viewers SAVE for numbers they can USE
+    ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). It must be a real
+    spec, MOQ or published rate — never an invented loss or a damaged quantity.
 
 14b. ₹ AMOUNTS MUST BE NATURAL ROUND NUMBERS THAT INDIANS ACTUALLY SAY.
     Real businessmen in conversation NEVER use awkward decimals like ₹1.2 lakh
@@ -7421,21 +7422,46 @@ CURRENT CONTEXT:
 - Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
 - Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
 
-=== PROVEN WINNER FORMULA (measured on our own 98 Instagram Reels, Aug 2026) ===
+=== 🚨 THE ONE ABSOLUTE RULE: NEVER INVENT AN INCIDENT 🚨 ===
+This block used to say the winning archetype was a first-person story with "a ₹ loss +
+a piece count + a GSM number", and it named an invented example as the best reel ever.
+That single instruction was the SOURCE of every fabrication downstream: the topic it
+produced carried a fake loss, and the title, the script, the blog post and the Instagram
+caption all inherited that premise and elaborated on it. Roughly 60 Instagram posts, the
+whole bot-channel back catalogue and 23 blog titles asserted losses that never happened —
+under a real registered business, to real buyers. Ketu caught it on 24-Aug-2026.
+
+So: a topic MUST NOT contain a rupee loss, a rejected/returned/cancelled order, a ruined
+batch, or any incident presented as something that occurred. Not as a hook, not as an
+example, not "inspired by" the reference data below. If the winning old titles look like
+loss stories, that is because they WERE invented — do not copy the shape.
+
+WHAT TO GENERATE INSTEAD — the part that genuinely worked was never the fake loss, it was
+the VERIFIABLE CHECK. Keep that and drop the fiction:
+- A concrete check the buyer can do himself ("rub it near your ear — scratchy means open
+  end, smooth means ring spun"), stated as a general fact.
+- A real spec comparison: GSM vs GSM, combed vs carded, biowash vs non-bio, reactive vs
+  pigment dye, lockstitch vs chain stitch.
+- A real published rate from sale91.com, as a price — never as a loss.
+- A question buyers actually ask (see AUDIENCE QUESTIONS below — these are real comments).
+- Seasonal buying guidance tied to a real month.
+Rupee figures are allowed ONLY as real prices or real cost differences, never as damage.
+
+BANNED topic types:
+- ANY invented incident, loss, rejection, return or cancellation. This outranks every
+  performance consideration below. A topic that breaks this is rejected no matter how
+  well the shape has historically performed.
+- Motivational/journey stories ("He 3X'd his business", zero-to-hero arcs) — median 1,282 views.
+- Generic category advice with no concrete, checkable takeaway.
+
+=== PERFORMANCE CONTEXT (read with the rule above in mind) ===
 Instagram is the PRIMARY platform (50-150x YouTube views) — when Instagram data below
 conflicts with YouTube or main-channel data, INSTAGRAM WINS.
-- Winning archetype: first-person "supplier cheated you on fabric quality" story —
-  a ₹ loss + a piece count + a GSM number, ending with ONE concrete check the buyer can
-  do himself. Best reel ever: "300 Pcs Ordered 220 GSM — Got 160 GSM — ₹25K Almost
-  Wasted" (88,827 views = 26% of all account views).
-- Relatable amounts win: ₹25K-₹80K losses outperform ₹1 lakh+ stories.
 - Reels that teach a verifiable check get 2-9x the share rate — and shares are what
   Instagram ranks on. Ask of every candidate: "would a printing buyer FORWARD this
-  to his partner/supplier?"
-BANNED topic types (our measured worst performers — do NOT generate these):
-- Motivational/journey stories ("He 3X'd his business", zero-to-hero arcs) — median 1,282 views.
-- Bare curiosity/question topics with no loss story and no number — median 1,512 views.
-- Generic category advice without a ₹ number or a concrete check.
+  to his partner/supplier?" That test does not require a fabricated loss to pass.
+⚠️ The reference titles listed below are historical. Many of them contain invented losses.
+Use them to learn SUBJECT MATTER and FORMAT ONLY — never reuse their incident framing.
 
 === REFERENCE DATA: OUR MAIN CHANNEL (50K subs, YouTube) ===
 These are ACTUAL Shorts with REAL view counts — study what works:
@@ -7533,7 +7559,9 @@ Score each (1-10):
 
 4. VIRAL SHAREABILITY — Would someone SEND this to a fellow business owner? (Sends are
    what Instagram ranks on and our strongest measured views predictor.)
-   High: a cheat/trap exposed with a ₹ loss + a check the buyer can do himself.
+   High: a concrete check the buyer can do himself, or a spec comparison that
+   settles an argument. It does NOT need a rupee loss to score high — and a topic
+   that invents one must be scored 0, not rewarded.
    Low: common knowledge, feel-good content.
 
 AUTOMATIC LOW SCORE (max 15/40) — our measured worst performers on 98 reels:
@@ -7828,11 +7856,11 @@ YOUR TASK: Generate THREE titles, each platform-tuned:
 
 2. INSTAGRAM title — optimized for Reels Explore page:
    - Max 70 chars
-   - START WITH THE ₹ AMOUNT when the story has one (measured: ₹-first titles
-     median 3,504 views vs 2,708 without; 87.5% of our winners have ₹ in title)
-   - Pack the numbers: ₹ loss + piece count + GSM where the story allows
-   - Keep ₹ amounts relatable (₹25K-₹80K outperforms ₹1 lakh+)
-   - Cost/disaster/loss framing OR third-person founder story
+   - A ₹ amount up front performs well, but ONLY if it is a real price or a real
+     cost difference. 🚨 Never a loss, rejection or damaged quantity — those were
+     invented, which is why they are being removed from the back catalogue.
+   - Lead with the spec instead where there is no real price: GSM, fabric, colour count
+   - NO disaster/loss framing. A comparison or a check is the honest equivalent.
    - NO emoji (measured: our losing reels use emoji MORE than winners)
    - Latin script preferred; mixed Hindi-English fine
 
@@ -11241,8 +11269,78 @@ def rewrite_thin_posts(only_slug=None):
     return 0
 
 
+
+def _fabricated_incident_sentences(html_content, title=""):
+    """Sentences asserting a specific loss/rejection incident. Returns a list.
+
+    Narrow by design — three separate false-positive classes were found by running
+    it over all 138 live posts before trusting it:
+      1. the internal-link mesh: every post lists its neighbours BY TITLE, so a
+         clean post got flagged for linking to a dirty one. Stripped by class AND
+         by the visible markers, since not every block carries the class.
+      2. non-monetary "loss": "loss of fine detail", "lost customer trust" are not
+         incidents. The amount and the loss word must now be CLOSE together.
+      3. hypotheticals: "if you ship 1,000 untagged, it can be returned" is honest
+         teaching. Only assertions that it happened are blocked.
+    """
+    import re as _r
+    import html as _h
+    _raw = html_content or ""
+    for _cls in ("bpt-related-fresh", "more-articles", "post-nav", "related"):
+        _raw = _r.sub(r'<(\w+)[^>]*class="[^"]*%s[^"]*"[^>]*>.*?</\1>' % _cls,
+                      " ", _raw, flags=_r.S | _r.I)
+    txt = _r.sub(r"<(script|style)[^>]*>.*?</\1>", " ", _raw, flags=_r.S)
+    txt = _h.unescape(_r.sub(r"<[^>]+>", " ", txt))
+    txt = _r.sub(r"\s+", " ", txt)
+    # belt-and-braces: cut everything from the first nav marker onward
+    for _m in ("More Articles", "Previous Article", "Next Article", "Related Guides"):
+        _k = txt.find(_m)
+        if _k > 0:
+            txt = txt[:_k]
+    if title:
+        txt = title + ". " + txt
+
+    AMT = r"(?:₹|rs\.?\s?)\s?[\d,.]+\s?(?:k|lakh|000)?|\b\d{3,5}\s*(?:pieces|pcs|piece|t-?shirts|tees)\b"
+    LOSS = r"(?:rejected|cancelled|canceled|ruined|destroyed|wasted|returned|scrapped|lost|loss)"
+    # within ~90 chars of each other, either order — keeps "Rs 45,000 was lost"
+    # and "the batch was rejected, costing Rs 45,000", drops "loss of fine detail"
+    NEAR = _r.compile(r"(?:%s)[^.]{0,90}?(?:%s)|(?:%s)[^.]{0,90}?(?:%s)"
+                      % (AMT, LOSS, LOSS, AMT), _r.I)
+    HYPO = _r.compile(r"\b(if|agar|can|could|may|might|would|should|risk|avoid|"
+                      r"prevent|protect|ensure|otherwise|warna)\b", _r.I)
+    ASSERT = _r.compile(r"\b(was|were|got|had|ended up|turned out|resulted in|"
+                        r"cost him|cost them|we have seen|humne)\b", _r.I)
+    NON_MONEY = _r.compile(r"loss of (fine )?detail|lost (customer )?trust|"
+                           r"weight loss|hair loss", _r.I)
+    out = []
+    for sent in _r.split(r"(?<=[.!?])\s+", txt):
+        if len(sent) > 400 or NON_MONEY.search(sent):
+            continue
+        if not NEAR.search(sent):
+            continue
+        if HYPO.search(sent) and not ASSERT.search(sent):
+            continue
+        out.append(sent.strip())
+    return out
+
 def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vid_id=None, tags=None):
     """Upload blog HTML + images to S3, update index.html, map.xml, llms.txt, and invalidate CloudFront."""
+    # ---- fabricated-incident gate -------------------------------------------
+    # The blog prompt has forbidden invented incidents since June 2026, and posts
+    # were fabricated anyway — because the blog INHERITS the Short's title as its
+    # premise, and that prompt used to REQUIRE an invented loss. 21 live posts were
+    # built around cases that never happened. The prompt is a request; this is a gate.
+    # Sentence-level on purpose: a 3,000-word article will legitimately mention a
+    # rate somewhere and "bleeding" somewhere else, so whole-document matching would
+    # false-positive daily. An incident needs both IN THE SAME SENTENCE.
+    _bad = _fabricated_incident_sentences(html_content, title)
+    if _bad:
+        print("   🚫 BLOG BLOCKED — asserts %d incident(s) this pipeline cannot verify:" % len(_bad))
+        for _s in _bad[:4]:
+            print("      • %s" % _s[:150])
+        print("   Nothing published. Fix the topic/title so it does not carry an invented premise.")
+        return None
+
     import boto3
 
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
