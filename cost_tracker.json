@@ -2727,5 +2727,22 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.242
     }
+  },
+  {
+    "date": "2026-08-27T19:48:44.536584",
+    "topic": "Combed vs Carded Cotton \u2014 Kaan Ke Paas Ragdo, Farak Sunaai Dega \ud83d\udc42 Ring Spun Check",
+    "title": "\u0915\u093e\u0928 \u0915\u0947 \u092a\u093e\u0938 \u0930\u0917\u0921\u093c\u094b \u2014 Combed vs Carded Cotton \u0915\u093e \u092b\u0930\u094d\u0915 \u0938\u0941\u0928\u093e\u0908 \u0926\u0947\u0917\u093e \ud83d\udc42",
+    "total_usd": 5.5967,
+    "duration_min": 26.2,
+    "breakdown": {
+      "claude_opus": 0.3604,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0215,
+      "veo_clips": 4.8,
+      "whisper": 0.0036,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2412
+    }
   }
 ]

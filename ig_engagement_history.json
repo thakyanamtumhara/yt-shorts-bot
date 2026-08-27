@@ -1756,11 +1756,20 @@
     "title": "₹45K Order Cancelled — 300 Pcs Royal Blue vs Navy Colour Trap",
     "topic": "Colour Match Nahi Hua — ₹45K Ka Bulk Order Cancel — Royal Blue vs Navy Trap Jo Har Buyer Ke Saath Hota Hai",
     "published_at": "2026-08-24T15:30:10.526986+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "SAME SHADE 300 Pc CANCEL",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-08-28T01:11:16.848418+05:30",
+    "hours_since_publish": 81.7,
+    "views": 2292,
+    "reach": 1915,
+    "likes": 41,
+    "comments": 1,
+    "shares": 2,
+    "saves": 5,
+    "avg_watch_time_ms": 16043
   },
   {
     "media_id": "17979794739073412",
@@ -1781,6 +1790,17 @@
     "published_at": "2026-08-26T15:25:54.787159+05:30",
     "checked": false,
     "cover_text": "₹18 Lockstitch 300 Pc RETURN",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
+  },
+  {
+    "media_id": "18047472482662170",
+    "title": "Combed vs Carded Cotton — Rub Near Your Ear and You'll Hear the Difference",
+    "topic": "Combed vs Carded Cotton — Kaan Ke Paas Ragdo, Farak Sunaai Dega 👂 Ring Spun Check",
+    "published_at": "2026-08-28T01:13:37.843241+05:30",
+    "checked": false,
+    "cover_text": "SAME Cotton 10 Wash PILLING?",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
