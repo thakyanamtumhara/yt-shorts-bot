@@ -3059,7 +3059,7 @@ GOAL: Write a carousel post caption (NOT a Reel caption — different format) th
 OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences):
 
 {{
-  "caption": "<60-80 word caption in this exact structure:\\n\\nLine 1: ONE-LINE HOOK with 1-2 emojis — pain point or surprising number ('Lost ₹40k on a 500-piece order. Here's why.' or 'This GSM mistake destroyed 1000 tees 😬')\\n\\nLines 2-4: 3-4 lines telling the story or lesson. Use specific numbers (₹ amounts, GSM grades, piece counts). Conversational tone, first-person OK ('We learned the hard way...').\\n\\nLine 5: ONE-LINE CTA — 'Save this post if you're sourcing for your next bulk order.' or 'Tag a printer who needs to see this 👇'\\n\\nUse \\\\n for line breaks. 1-2 emojis MAX. NO marketing-pitch words (premium, journey, transform, etc.).>",
+  "caption": "<60-80 word caption in this exact structure:\\n\\n🚨 NEVER INVENT A LOSS, A CUSTOMER, AN ORDER OR A RUPEE FIGURE. This prompt used to demand exactly that — its own examples were 'Lost ₹40k on a 500-piece order' and 'This GSM mistake destroyed 1000 tees', and it told you to write first-person ('We learned the hard way'). So the account published ~60 invented disasters under a real registered business, and Ketu stopped it on 24-Aug-2026. These are read by his actual buyers.\\n\\nLine 1: ONE-LINE HOOK with 1-2 emojis, and it must be TRUE — a fabric/technical fact ('180 GSM pe print through dikhta hai'), a question buyers already ask ('Combed aur carded mein fark kya?'), or a real published rate from sale91.com. Never a loss, never a rejection, never 'ek customer ne...'.\\n\\nLines 2-4: 3-4 lines explaining the thing properly. GSM grades and fabric names are fine — they are checkable. Speak in GENERAL terms ('log aksar sample liye bina order kar dete hain'), never as a specific incident with a quantity and a loss attached. Rupee figures ONLY if they are real rates from the price list.\\n\\nLine 5: ONE-LINE CTA — 'Save this post if you're sourcing for your next bulk order.' or 'Tag a printer who needs to see this 👇'\\n\\nUse \\\\n for line breaks. 1-2 emojis MAX. NO marketing-pitch words (premium, journey, transform, etc.). NEVER name a competitor, marketplace or e-commerce platform.>",
   "hashtags": [
     "<list of 12-15 hashtags total>",
     "<5 niche-specific to the topic — e.g. #240gsm #dtgprinting #screenprinting>",
@@ -3123,6 +3123,37 @@ Return ONLY the JSON object."""
 
 
 def publish_ig_carousel(image_urls, caption, hashtags=None):
+    """Publish an IG carousel. Refuses anything that reads as a fabricated loss.
+
+    Belt-and-braces on top of the prompt fix: three separate generators (Short
+    script, blog, this caption) all used to demand an invented rupee loss, and
+    ~60 such posts went out under Ketu's real business name before he caught it.
+    A prompt is a request; this is a gate.
+    """
+    import re as _re
+    _blob = (caption or "") + " " + " ".join(hashtags or [])
+    _BRANDS = ("flipkart", "amazon", "meesho", "myntra", "ajio", "snapdeal",
+               "delhivery", "bluedart", "dtdc", "shiprocket", "xpressbees")
+    for _b in _BRANDS:
+        if _b in _blob.lower():
+            print("   🚫 IG carousel BLOCKED: names a competitor/marketplace (%s)" % _b)
+            return None
+    # Two independent signals, matched across the WHOLE caption rather than by
+    # proximity: an earlier proximity version missed "Rs 45K bulk order. Cancelled."
+    # (crossed a full stop) and the Hindi "500 पीस ... ₹35K डूबे". Fails SAFE — a
+    # blocked good post costs nothing, a published invented loss costs his name.
+    # [\d,.]+ not [\d,]+ — "₹1.5 lakh lost" slipped through on the decimal.
+    _AMOUNT = _re.compile(r"(₹|rs\.?\s?)\s?[\d,.]+\s?(k|lakh|000)\b"
+                          r"|\b\d{3,5}\s*(pieces|pcs|piece|t-?shirts|tees|पीस|पीसेज)\b", _re.I)
+    _LOSSWORD = _re.compile(r"\b(loss|lost|reject|rejected|cancel|cancelled|refund|"
+                            r"ruin|ruined|destroy|destroyed|waste|wasted|bleed|bled)\b"
+                            r"|डूब|बर्बाद|खराब|रिजेक्ट|कैंसिल|नुकसान|वापस", _re.I)
+    if _AMOUNT.search(_blob) and _LOSSWORD.search(_blob):
+        print("   🚫 IG carousel BLOCKED: caption pairs a quantity/amount with a "
+              "loss word, i.e. it is describing an incident this pipeline cannot "
+              "verify. Caption was:\n      %s" % (caption or "")[:180])
+        return None
+
     """Publish an Instagram carousel via the IG Graph API.
 
     3-step flow per Meta docs:
