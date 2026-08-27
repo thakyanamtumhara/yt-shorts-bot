@@ -5282,9 +5282,11 @@ Write in ROMAN HINGLISH — Hindi words in ENGLISH LETTERS (not Devanagari).
 
 ━━━ HOOK TEXT (for on-screen text overlay) ━━━
 
-Write a 3-6 word LOSS/NUMBER hook text that appears on screen for the first
-2 seconds. It must be PAIRED with the spoken first sentence — same number,
-same loss — so eye and ear hit the same pattern-interrupt together.
+Write a 3-6 word hook text that appears on screen for the first 2 seconds.
+It must be PAIRED with the spoken first sentence — same fact, same number — so
+eye and ear hit the same pattern-interrupt together.
+🚨 It must be TRUE: a spec, a real published rate, or a checkable claim.
+NEVER an invented loss, rejection or damaged quantity.
 
 Good hook texts (number/loss driven, paired with the spoken hook):
 - "₹40,000 KI GALTI"
@@ -5352,9 +5354,9 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
     "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
-    "script_voice": "The ROMAN HINGLISH script. 6-8 sentences for 30-35 seconds spoken. First sentence = loss/number pattern-interrupt (max 10 words). Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
+    "script_voice": "The ROMAN HINGLISH script. 6-8 sentences for 30-35 seconds spoken. First sentence = a TRUE pattern-interrupt (max 10 words) - a spec, a real rate or a checkable fact, NEVER an invented loss. Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
     "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
-    "hook_text": "3-6 words, UPPERCASE, loss/number driven, paired with the spoken first sentence (same number/loss)",
+    "hook_text": "3-6 words, UPPERCASE, driven by a TRUE fact or real rate (never an invented loss), paired with the spoken first sentence",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
     "video_prompt_1": "HOOK scene — opens MID-ACTION, damage/drama already happening in frame 1. 40-80 words.",
     "video_prompt_2": "CONTEXT scene — setting up the situation. 40-80 words.",
@@ -7564,9 +7566,15 @@ Score each (1-10):
    that invents one must be scored 0, not rewarded.
    Low: common knowledge, feel-good content.
 
+AUTOMATIC ZERO — reject outright, whatever else the topic has going for it:
+- ANY invented incident: a rupee loss, a rejected/returned/cancelled order, a
+  ruined batch, "a customer who...". These were fabricated for months and are
+  being removed from the back catalogue. Never score one above 0.
+
 AUTOMATIC LOW SCORE (max 15/40) — our measured worst performers on 98 reels:
 - Motivational/journey topics ("He 3X'd his business", zero-to-hero arcs)
-- Bare curiosity/question topics with no loss story and no ₹/GSM/pcs number
+- Bare curiosity with no concrete, checkable takeaway (a topic WITHOUT a loss
+  story is fine — it just needs a real check, spec or rate to be useful)
 
 OUTPUT THIS JSON ONLY (no markdown):
 {{"score": total_out_of_40, "feedback": "1 sentence — why good or what's wrong"}}"""
