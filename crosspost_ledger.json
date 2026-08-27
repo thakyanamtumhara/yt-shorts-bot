@@ -183,6 +183,86 @@
    "due_ist": "2026-09-16 18:00",
    "verify": "api",
    "match": ""
+  },
+  {
+   "id": "p17-yt-long",
+   "label": "17 products + rate list — MAIN channel long-form",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-08-29 19:00",
+   "verify": "api",
+   "url": "https://youtu.be/rb0bQpWo8eA",
+   "video_id": "rb0bQpWo8eA"
+  },
+  {
+   "id": "p17-s1-acid",
+   "label": "Short: Acid Wash Rs 238",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-08-30 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/N7Y8hjPItfY",
+   "video_id": "N7Y8hjPItfY"
+  },
+  {
+   "id": "p17-s2-roundneck",
+   "label": "Short: Round Neck Rs 107 se",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-01 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/4IBUmLTpZlE",
+   "video_id": "4IBUmLTpZlE"
+  },
+  {
+   "id": "p17-s3-sublimation",
+   "label": "Short: Sublimation 200 GSM Rs 120",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-03 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/-rSkvY8ezng",
+   "video_id": "-rSkvY8ezng"
+  },
+  {
+   "id": "p17-s4-polo",
+   "label": "Short: Polo Rs 187 / Rs 237",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-05 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/VAaemr-GgNA",
+   "video_id": "VAaemr-GgNA"
+  },
+  {
+   "id": "p17-s5-ovr210",
+   "label": "Short: Oversize 210/240 GSM",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-08 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/rGZjVY2KUdY",
+   "video_id": "rGZjVY2KUdY"
+  },
+  {
+   "id": "p17-s6-ovr260",
+   "label": "Short: Oversize 260/180 GSM",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-10 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/GpWmXrYTuV0",
+   "video_id": "GpWmXrYTuV0"
+  },
+  {
+   "id": "p17-s7-winter",
+   "label": "Short: Hoodie / Sweatshirt winter",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-12 18:00",
+   "verify": "api",
+   "url": "https://youtu.be/1Xi7oTsV5wE",
+   "video_id": "1Xi7oTsV5wE"
   }
  ]
 }
