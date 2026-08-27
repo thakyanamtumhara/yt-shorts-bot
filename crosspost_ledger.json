@@ -263,6 +263,57 @@
    "verify": "api",
    "url": "https://youtu.be/1Xi7oTsV5wE",
    "video_id": "1Xi7oTsV5wE"
+  },
+  {
+   "id": "p17-ig-acid",
+   "label": "IG: Acid Wash Rs 238",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-04 18:00",
+   "verify": "api",
+   "match": "कर डालो"
+  },
+  {
+   "id": "p17-ig-polo",
+   "label": "IG: Polo Rs 187/237",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-11 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-ig-winter",
+   "label": "IG: Winter hoodie/sweatshirt",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-18 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-x",
+   "label": "X: 17 products rate list",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-09-10 19:45",
+   "verify": "manual",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "p17-fb",
+   "label": "Facebook: 17 products rate list",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-09-10 20:15",
+   "verify": "api"
+  },
+  {
+   "id": "p17-li",
+   "label": "LinkedIn: full catalogue + rates",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-09-15 08:15",
+   "verify": "manual",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
   }
  ]
 }
