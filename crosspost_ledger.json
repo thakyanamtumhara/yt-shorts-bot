@@ -315,6 +315,46 @@
    "due_ist": "2026-09-15 08:15",
    "verify": "manual",
    "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "p17-ig-roundneck",
+   "label": "IG: Round Neck Rs 107 se",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-06 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-ig-sublimation",
+   "label": "IG: Sublimation 200 GSM Rs 120",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-08 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-ig-ovr210",
+   "label": "IG: Oversize 210/240 GSM",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-13 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-ig-ovr260",
+   "label": "IG: Oversize 260/180 GSM",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-15 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "p17-ig-highlight",
+   "label": "IG: 17 products + ready stock (80s cut of the long-form)",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-01 18:00",
+   "verify": "api"
   }
  ]
 }
