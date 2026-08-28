@@ -1788,11 +1788,20 @@
     "title": "₹18K Order Returned — 500 Pcs Lockstitch Missing, Full Batch Rejected",
     "topic": "Stitching Brand Level Ya Local? — ₹18K Ka Order Return Hua Sirf Lockstitch Missing Hone Se | 2 Checks Under 10 Sec",
     "published_at": "2026-08-26T15:25:54.787159+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹18 Lockstitch 300 Pc RETURN",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-08-29T02:21:59.821638+05:30",
+    "hours_since_publish": 58.9,
+    "views": 1847,
+    "reach": 1632,
+    "likes": 24,
+    "comments": 1,
+    "shares": 9,
+    "saves": 11,
+    "avg_watch_time_ms": 12118
   },
   {
     "media_id": "18047472482662170",
@@ -1801,6 +1810,17 @@
     "published_at": "2026-08-28T01:13:37.843241+05:30",
     "checked": false,
     "cover_text": "SAME Cotton 10 Wash PILLING?",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
+  },
+  {
+    "media_id": "17956850600998386",
+    "title": "Boxy vs Oversized vs Regular — Shoulder Drop Check Before You Order",
+    "topic": "Boxy Fit vs Oversized vs Regular — Kaunsa Fit Kis Customer Ke Liye? Side-by-Side Comparison 👕",
+    "published_at": "2026-08-29T02:24:31.942435+05:30",
+    "checked": false,
+    "cover_text": "SAME Shoulder Boxy नहीं Oversized",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
