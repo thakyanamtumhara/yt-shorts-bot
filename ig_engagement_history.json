@@ -1776,12 +1776,21 @@
     "title": "₹8 Polybag Skip Kiya — 600 T-Shirts Monsoon Mein Fungus Lag Gaya",
     "topic": "₹8 Ka Polybag Skip Kiya — 600 T-Shirts Monsoon Mein Fungus Laga | Packaging Mistake Jo Barbaad Karti Hai 💀",
     "published_at": "2026-08-25T15:19:01.279279+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹5 POLYBAG 600 Pc FUNGUS",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false,
-    "trial": true
+    "trial": true,
+    "checked_at": "2026-08-29T19:59:19.545962+05:30",
+    "hours_since_publish": 100.7,
+    "views": 1518,
+    "reach": 1376,
+    "likes": 17,
+    "comments": 1,
+    "shares": 3,
+    "saves": 9,
+    "avg_watch_time_ms": 12079
   },
   {
     "media_id": "18104033861228813",
@@ -1821,6 +1830,17 @@
     "published_at": "2026-08-29T02:24:31.942435+05:30",
     "checked": false,
     "cover_text": "SAME Shoulder Boxy नहीं Oversized",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
+  },
+  {
+    "media_id": "18103942229601379",
+    "title": "DTF Print vs 70% Humidity — Why Same 160C Fails in Monsoon",
+    "topic": "DTF Print Monsoon Mein Peel Kyun Hota Hai? — Heat Press Temperature + Humidity Ka Asli Connection ⚠️",
+    "published_at": "2026-08-29T20:01:55.970284+05:30",
+    "checked": false,
+    "cover_text": "10° Gap DTF PRINT PEEL",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
