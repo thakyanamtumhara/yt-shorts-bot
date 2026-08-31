@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-08-29 14:32)",
+   "detail": "ElevenLabs ✅ (2026-08-31 17:02)",
    "provider": "elevenlabs",
-   "at": "2026-08-29 14:32",
-   "title": "बारिश में DTF Print क्यों उखड़ता है? — Humidity का खेल समझो"
+   "at": "2026-08-31 17:02",
+   "title": "₹12 का फर्क — छूकर देखो Non-Biowash vs Biowash T-Shirt"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 144,986/151,000 chars left",
+   "detail": "creator · PVC allowed · 144,621/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 144986,
+   "chars_left": 144621,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -293,8 +293,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-01T00:42:16+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-08-31T15:29:27+05:30",
- "last_green_date": "2026-08-31"
+ "last_run_ist": "2026-09-01T00:42:16+05:30",
+ "last_green_date": "2026-09-01"
 }
