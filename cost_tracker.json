@@ -2776,5 +2776,22 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0081
     }
+  },
+  {
+    "date": "2026-08-31T17:02:28.097325",
+    "topic": "Biowash vs Non-Biowash \u2014 \u20b912 Ka Fark, Lekin Feel Mein Zameen Aasmaan Ka Fark \ud83e\udd1a",
+    "title": "\u20b912 \u0915\u093e \u092b\u0930\u094d\u0915 \u2014 \u091b\u0942\u0915\u0930 \u0926\u0947\u0916\u094b Non-Biowash vs Biowash T-Shirt",
+    "total_usd": 5.6446,
+    "duration_min": 28.0,
+    "breakdown": {
+      "claude_opus": 0.3934,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0199,
+      "veo_clips": 4.8,
+      "whisper": 0.0036,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2576
+    }
   }
 ]

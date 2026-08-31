@@ -1,26 +1,46 @@
 {
-  "updated": "2026-08-14T10:13:55.098831",
   "power_words": [
-    "Secret",
-    "Free",
-    "Shocking",
-    "Reality",
-    "Truth",
+    "Scam",
+    "सच",
     "Mistake",
+    "बर्बाद",
+    "Crack",
+    "Loss",
+    "Fake",
+    "Secret",
+    "Reality",
+    "Exposed",
+    "Waste",
+    "धोखा",
+    "Reject",
     "Hack",
-    "Asli",
-    "Sach"
+    "गलती"
   ],
   "best_colors": {
     "text": [
       "#FFD700",
       "#FFFFFF",
       "#FF0000",
-      "#FF6600"
+      "#FF6600",
+      "#00FF00"
     ],
     "stroke": "#000000"
   },
-  "text_rules": "Max 3-4 words, Hinglish, include price/number if relevant, curiosity/urgency",
-  "layout": "Text in the 25-70% vertical band for 9:16, face on one side text on other, rule of thirds",
-  "patterns": "Bold block fonts, high contrast, yellow/white text on dark, price reveals get clicks"
+  "text_rules": "Use 3-5 words max in Hinglish mixing Hindi keywords with English technical/money terms; always include a specific number (₹ price, GSM, or piece count) paired with a negative consequence word (CRACK, WASTE, बर्बाद) to create a curiosity gap that forces the tap.",
+  "layout": "Place all hook text in the center 25%-70% vertical safe zone using large bold sans-serif font with black stroke; use product image or t-shirt close-up as the background with slight dark overlay so yellow (#FFD400) keyword text and white secondary text pop at thumbnail size on mobile.",
+  "patterns": "Top-performing Indian business Reels thumbnails follow a 'specific loss + relatable mistake' formula — a rupee amount or piece count paired with a disaster word (CRACK, REJECT, SCAM) outperforms generic advice thumbnails by 5-10x. Winning covers use high-contrast yellow keyword on dark/product background with no face, keeping text brutally short so it reads instantly at 1-inch mobile preview size. The curiosity gap works best when viewers can't tell WHO made the mistake or HOW it happened without watching — question marks and Hindi words spike engagement because they feel personal to the Indian B2B buyer.",
+  "example_texts": [
+    "₹60K 1000 Pc REJECT",
+    "180 GSM असली या नकली?",
+    "₹30 BLANK PRINT FAIL",
+    "OVERSIZED SECRET ₹12 EXTRA",
+    "500 Pc COLOUR BLEED",
+    "₹40 vs ₹85 सच",
+    "GSM METER ₹200 बचाओ",
+    "GIRLS TEE 3X MARGIN",
+    "POLYESTER TRAP 1 WASH",
+    "₹1L STOCK DEAD 1 गलती"
+  ],
+  "ig_patterns": "High save-rate (1.7%+) Reels covers promise reusable diagnostic knowledge — '3 Checks', 'Feel Cheap? Check These' — using specific piece counts and GSM numbers that buyers bookmark as purchasing checklists. High share-rate (1.8%+) covers expose a common scam or mistake with a question format in Hindi ('लिखा...निकली?') that triggers 'my retailer friend needs to see this' impulse sharing. The winning formula for both saves AND shares is: ₹ loss amount or piece count + technical keyword (GSM, YARN, MOISTURE) + consequence word — all in under 5 words with yellow highlight on the money/technical term.",
+  "updated": "2026-08-31T16:52:17.413985"
 }
