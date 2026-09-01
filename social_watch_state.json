@@ -95,6 +95,10 @@
   "N7Y8hjPItfY": {
    "title": "Acid Wash Oversize T-Shirt Rs 238 | Delhi Wholesale Bulk Rate",
    "published": "2026-08-30T12:30:21+00:00"
+  },
+  "4IBUmLTpZlE": {
+   "title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk",
+   "published": "2026-09-01T12:30:06+00:00"
   }
  },
  "instagram": {
@@ -369,6 +373,18 @@
   "18417687370158130": {
    "permalink": "https://www.instagram.com/p/DctY9_nmrbu/",
    "ts": "2026-08-31T15:17:48+0000"
+  },
+  "18138077566521177": {
+   "permalink": "https://www.instagram.com/reel/Dcv7V1SDjoN/",
+   "ts": "2026-09-01T14:57:11+0000"
+  },
+  "17966376126071477": {
+   "permalink": "https://www.instagram.com/reel/Dcv2PZMlEZS/",
+   "ts": "2026-09-01T14:12:56+0000"
+  },
+  "17887323969458273": {
+   "permalink": "https://www.instagram.com/p/Dcvr238m6-c/",
+   "ts": "2026-09-01T12:41:36+0000"
   }
  },
  "facebook": {},
@@ -692,8 +708,13 @@
    "at": "2026-09-01T15:14:55+05:30",
    "alerts": 1,
    "new": 0
+  },
+  {
+   "at": "2026-09-01T23:06:15+05:30",
+   "alerts": 1,
+   "new": 4
   }
  ],
  "last_green_date": "2026-08-11",
- "last_run_ist": "2026-09-01T15:14:55+05:30"
+ "last_run_ist": "2026-09-01T23:06:15+05:30"
 }
