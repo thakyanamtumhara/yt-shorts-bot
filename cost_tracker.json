@@ -2793,5 +2793,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2576
     }
+  },
+  {
+    "date": "2026-09-01T14:13:35.443051",
+    "topic": "Monsoon \u092e\u0947\u0902 T-Shirt \u0938\u0942\u0916\u0924\u0940 \u0928\u0939\u0940\u0902? \u2014 Polyester-Cotton Blend vs 100% Cotton: September \u092e\u0947\u0902 \u0915\u094c\u0928 \u0938\u093e Fabric Order \u0915\u0930\u0947\u0902 \u0914\u0930 \u0915\u094d\u092f\u094b\u0902",
+    "title": "Monsoon \u092e\u0947\u0902 Cotton \u0938\u0942\u0916\u0940 \u0928\u0939\u0940\u0902 \u2014 Polyester Blend \u0932\u093f\u092f\u093e \u0924\u094b Print \u0916\u093c\u0930\u093e\u092c \ud83d\ude05",
+    "total_usd": 5.2843,
+    "duration_min": 23.4,
+    "breakdown": {
+      "claude_opus": 0.3471,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0278,
+      "veo_clips": 4.8,
+      "whisper": 0.005,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0094
+    }
   }
 ]
