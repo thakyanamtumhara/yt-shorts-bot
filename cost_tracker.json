@@ -2809,5 +2809,21 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0094
     }
+  },
+  {
+    "date": "2026-09-02T13:34:41.418100",
+    "topic": "Polo T-Shirt Collar 2 Dhulai Mein Flat Kyun Hota Hai \u2014 Fusing vs Non-Fusing Collar Real Check",
+    "title": "Polo Collar 2 Dhulai Mein Flat \u2014 Fusing vs Non-Fusing Ka Sach",
+    "total_usd": 5.4674,
+    "duration_min": 27.9,
+    "breakdown": {
+      "claude_opus": 0.3325,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0227,
+      "veo_clips": 4.8,
+      "whisper": 0.004,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.2133
+    }
   }
 ]

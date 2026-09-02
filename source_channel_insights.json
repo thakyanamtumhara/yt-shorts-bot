@@ -1,11 +1,11 @@
 {
-  "fetched_at": "2026-08-31T16:34:30.547606",
+  "fetched_at": "2026-09-02T13:06:49.209826",
   "channel_id": "UCdgOMA7WO48MYimj6q6mvNQ",
   "videos": [
     {
       "video_id": "9d8xNrjTUfk",
       "title": "Quality Check: Our most premium 220 GSM Polo T-shirt is finally here! 💎",
-      "views": 2933,
+      "views": 3002,
       "likes": 90,
       "comments": 28,
       "published": "2026-07-27T15:30:38Z",
@@ -14,11 +14,20 @@
     {
       "video_id": "N7Y8hjPItfY",
       "title": "Acid Wash Oversize T-Shirt Rs 238 | Delhi Wholesale Bulk Rate",
-      "views": 1432,
-      "likes": 18,
-      "comments": 0,
+      "views": 1897,
+      "likes": 21,
+      "comments": 2,
       "published": "2026-08-30T12:30:21Z",
       "duration_seconds": 22
+    },
+    {
+      "video_id": "4IBUmLTpZlE",
+      "title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk",
+      "views": 497,
+      "likes": 16,
+      "comments": 8,
+      "published": "2026-09-01T12:30:06Z",
+      "duration_seconds": 40
     },
     {
       "video_id": "hIx-GcHePWo",
@@ -60,6 +69,11 @@
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
     },
     {
+      "text": "More colors",
+      "likes": 0,
+      "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
+    },
+    {
       "text": "Joggers aur sweat paints bhi banao bayya baggy fitting ma market ma boht demand rehti ha...",
       "likes": 0,
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
@@ -75,17 +89,7 @@
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
     },
     {
-      "text": "More colors",
-      "likes": 0,
-      "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
-    },
-    {
       "text": "Bhai hamari mangana hai kaise mangavaye",
-      "likes": 0,
-      "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
-    },
-    {
-      "text": "Price aur colour kya hai",
       "likes": 0,
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
     },
@@ -95,9 +99,34 @@
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
     },
     {
+      "text": "Price aur colour kya hai",
+      "likes": 0,
+      "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
+    },
+    {
       "text": "Apke watsapp group me add hona hai",
       "likes": 0,
       "video_title": "Quality Check: Our most premium 220 GSM Polo T-shirt is fina"
+    },
+    {
+      "text": "Rate bda diye",
+      "likes": 0,
+      "video_title": "Acid Wash Oversize T-Shirt Rs 238 | Delhi Wholesale Bulk Rat"
+    },
+    {
+      "text": "Bhaiiya 50-60 ke andr dikhao black mai",
+      "likes": 0,
+      "video_title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk"
+    },
+    {
+      "text": "Please bhaiiya 160 gsm dikhao balck mai",
+      "likes": 0,
+      "video_title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk"
+    },
+    {
+      "text": "Bhayya 200 GSM ka Regular true bio wash layiye na",
+      "likes": 0,
+      "video_title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk"
     }
   ]
 }
