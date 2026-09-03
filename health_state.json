@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-02 13:34)",
+   "detail": "ElevenLabs ✅ (2026-09-03 13:32)",
    "provider": "elevenlabs",
-   "at": "2026-09-02 13:34",
-   "title": "Polo Collar 2 Dhulai Mein Flat — Fusing vs Non-Fusing Ka Sach"
+   "at": "2026-09-03 13:32",
+   "title": "500 पीस ऑर्डर करके फँसा — पहले 10 से शुरू करो | Bulk T-Shirt MOQ"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 143,695/151,000 chars left",
+   "detail": "creator · PVC allowed · 143,274/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 143695,
+   "chars_left": 143274,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -329,8 +329,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-03T22:06:52+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-03T13:43:21+05:30",
+ "last_run_ist": "2026-09-03T22:06:52+05:30",
  "last_green_date": "2026-09-03"
 }
