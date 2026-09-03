@@ -1877,11 +1877,20 @@
     "title": "₹12 Difference — Biowash vs Non-Biowash T-Shirt Feel Test for Printing",
     "topic": "Biowash vs Non-Biowash — ₹12 Ka Fark, Lekin Feel Mein Zameen Aasmaan Ka Fark 🤚",
     "published_at": "2026-08-31T22:26:18.515294+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹12 KA FARK, FEEL ALAG",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-09-03T19:00:04.232132+05:30",
+    "hours_since_publish": 68.6,
+    "views": 1719,
+    "reach": 1460,
+    "likes": 10,
+    "comments": 1,
+    "shares": 4,
+    "saves": 8,
+    "avg_watch_time_ms": 11383
   },
   {
     "media_id": "17966376126071477",
@@ -1905,5 +1914,17 @@
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
+  },
+  {
+    "media_id": "18137149510614285",
+    "title": "10 Pc MOQ vs 500 Pc MOQ — Start With This Before Bulk T-Shirt Order",
+    "topic": "Minimum Order Kitna Hona Chahiye Bulk T-Shirt Business Mein? — 50 Pc, 100 Pc ya 500 Pc? Real MOQ Explained",
+    "published_at": "2026-09-03T19:02:33.919456+05:30",
+    "checked": false,
+    "cover_text": "₹2 LESS 500 Pc बिना",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false,
+    "trial": true
   }
 ]

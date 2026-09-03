@@ -2825,5 +2825,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.2133
     }
+  },
+  {
+    "date": "2026-09-03T13:32:56.555736",
+    "topic": "Minimum Order Kitna Hona Chahiye Bulk T-Shirt Business Mein? \u2014 50 Pc, 100 Pc ya 500 Pc? Real MOQ Explained",
+    "title": "500 \u092a\u0940\u0938 \u0911\u0930\u094d\u0921\u0930 \u0915\u0930\u0915\u0947 \u092b\u0901\u0938\u093e \u2014 \u092a\u0939\u0932\u0947 10 \u0938\u0947 \u0936\u0941\u0930\u0942 \u0915\u0930\u094b | Bulk T-Shirt MOQ",
+    "total_usd": 5.2647,
+    "duration_min": 24.5,
+    "breakdown": {
+      "claude_opus": 0.3424,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.023,
+      "veo_clips": 4.8,
+      "whisper": 0.0043,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
