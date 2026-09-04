@@ -5609,7 +5609,7 @@ def upload_to_youtube(youtube, video_path, title, description, tags, topic=""):
     seo_description = f"""{description}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
-📦 Order Plain T-shirts: https://sale91.com
+📦 Order Plain T-shirts: https://sale91.com?utm_source=youtube&utm_medium=shorts_description&utm_campaign=daily_short
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
 🏭 About Sale91.com:
@@ -7976,6 +7976,23 @@ OUTPUT THIS JSON ONLY (no markdown):
 # Blog config
 BLOG_S3_BUCKET = "bulkplaintshirt.com"
 BLOG_BASE_URL = "https://www.bulkplaintshirt.com"
+
+
+def utm(url, source, medium, campaign="organic_content"):
+    """Tag an outbound sale91.com link so GA can attribute the visit.
+
+    Added 4-Sep-2026. Before this, `grep utm_ daily_short.py` returned 0 across
+    267 videos and 138 blog posts — every claim about which content drives traffic
+    to the shop was unfalsifiable. Nothing else in this file is worth optimising
+    until this exists, because there is no way to tell whether a change helped.
+
+    Kept deliberately dumb: no tracking of the individual viewer, just which
+    surface the click came from.
+    """
+    if not url or "utm_" in url:
+        return url
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}utm_source={source}&utm_medium={medium}&utm_campaign={campaign}"
 BLOG_CLOUDFRONT_DIST_ID = "E21QLU9SBUBY7Z"
 BLOG_HISTORY_FILE = "blog_history.json"
 INDEXNOW_API_KEY = "sale91com2025indexnow"  # IndexNow key for Bing/Yandex/AI search
@@ -8240,9 +8257,9 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
     bottom_bar = (
         '<div style="position:fixed;bottom:0;left:0;width:100%;display:flex;z-index:1000;'
         'box-shadow:0 -2px 8px rgba(0,0,0,0.15);">'
-        '<a href="https://sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        '<a href="https://sale91.com?utm_source=blog&utm_medium=sticky_cta&utm_campaign=organic_content" style="flex:1;display:flex;align-items:center;justify-content:center;'
         'min-height:50px;background:#1a1a1a;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">Order Now</a>'
-        '<a href="https://whatsapp.sale91.com" style="flex:1;display:flex;align-items:center;justify-content:center;'
+        '<a href="https://whatsapp.sale91.com?utm_source=blog&utm_medium=sticky_cta_whatsapp&utm_campaign=organic_content" style="flex:1;display:flex;align-items:center;justify-content:center;'
         'min-height:50px;background:#25D366;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;">WhatsApp Us</a>'
         '</div>'
     )
@@ -8634,7 +8651,9 @@ REQUIREMENTS:
      An article that only re-says what other articles already say should not exist.
    - Do NOT re-explain GSM / bio-wash / pre-shrunk basics from scratch — link the first mention
      to https://www.bulkplaintshirt.com/p/FQA.html (one sentence max, then move on)
-   - Mention Sale91.com naturally 2-3 times with links to https://sale91.com
+   - Mention Sale91.com naturally 2-3 times, linking to
+     https://sale91.com?utm_source=blog&utm_medium=article_body&utm_campaign=organic_content
+     (use that FULL url including the utm_ parameters — it is how we attribute traffic)
    - Reference the product catalog: https://www.bulkplaintshirt.com/catalog/
 {video_card_req}   - End with a strong CTA section linking to Sale91.com
 
@@ -10430,8 +10449,8 @@ def build_blog_index_html(new_post=None):
 {footer_links_html}
 
     <div class="bottom-bar">
-        <a class="order" href="https://sale91.com">Order Now</a>
-        <a class="whatsapp" href="https://whatsapp.sale91.com">WhatsApp Us</a>
+        <a class="order" href="https://sale91.com?utm_source=blog&utm_medium=footer_cta&utm_campaign=organic_content">Order Now</a>
+        <a class="whatsapp" href="https://whatsapp.sale91.com?utm_source=blog&utm_medium=footer_cta_whatsapp&utm_campaign=organic_content">WhatsApp Us</a>
     </div>
 
     <script>
@@ -13481,7 +13500,7 @@ def main():
                         # AND drives Shorts viewers to click through to the article.
                         custom_pin = (
                             f"📖 Full guide with photos & FAQs: {blog_url_preview}\n\n"
-                            f"📦 Order plain t-shirts (MOQ 10): https://sale91.com\n\n"
+                            f"📦 Order plain t-shirts (MOQ 10): https://sale91.com?utm_source=youtube&utm_medium=pinned_comment&utm_campaign=daily_short\n\n"
                             f"{get_pin_tail()}"
                         )
                         pin_comment(youtube, vid_id, comment_text=custom_pin)
