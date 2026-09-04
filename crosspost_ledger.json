@@ -363,7 +363,8 @@
    "rail": "api-scheduled",
    "due_ist": "2026-09-05 19:00",
    "verify": "api",
-   "note": "BLOCKED: OAuth token expired 4-Sep"
+   "url": "https://youtu.be/rEOtLcnHTG8",
+   "video_id": "rEOtLcnHTG8"
   },
   {
    "id": "wt-yt-announce",
@@ -371,7 +372,9 @@
    "platform": "youtube",
    "rail": "api-scheduled",
    "due_ist": "2026-09-06 18:00",
-   "verify": "api"
+   "verify": "api",
+   "url": "https://youtu.be/zDmFhdq40ek",
+   "video_id": "zDmFhdq40ek"
   },
   {
    "id": "wt-yt-fits",
@@ -379,7 +382,9 @@
    "platform": "youtube",
    "rail": "api-scheduled",
    "due_ist": "2026-09-09 18:00",
-   "verify": "api"
+   "verify": "api",
+   "url": "https://youtu.be/Im0WUhqiMzU",
+   "video_id": "Im0WUhqiMzU"
   },
   {
    "id": "wt-yt-colours",
@@ -387,7 +392,9 @@
    "platform": "youtube",
    "rail": "api-scheduled",
    "due_ist": "2026-09-11 18:00",
-   "verify": "api"
+   "verify": "api",
+   "url": "https://youtu.be/Hv0hEycCrug",
+   "video_id": "Hv0hEycCrug"
   },
   {
    "id": "wt-yt-delay",
@@ -395,7 +402,9 @@
    "platform": "youtube",
    "rail": "api-scheduled",
    "due_ist": "2026-09-13 18:00",
-   "verify": "api"
+   "verify": "api",
+   "url": "https://youtu.be/a8roL43WdFY",
+   "video_id": "a8roL43WdFY"
   },
   {
    "id": "wt-ig-announce",
