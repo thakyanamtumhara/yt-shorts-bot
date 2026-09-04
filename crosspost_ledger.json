@@ -262,8 +262,9 @@
    "rail": "api-scheduled",
    "due_ist": "2026-09-12 18:00",
    "verify": "api",
-   "url": "https://youtu.be/1Xi7oTsV5wE",
-   "video_id": "1Xi7oTsV5wE"
+   "url": "https://youtu.be/h-MtpeTGhqo",
+   "video_id": "h-MtpeTGhqo",
+   "note": "re-cut 4-Sep: out 356.60 -> 362.20 so the clip actually contains the sweatshirt its title, description and cover promise. Old 1Xi7oTsV5wE deleted."
   },
   {
    "id": "p17-ig-acid",
@@ -288,7 +289,8 @@
    "platform": "instagram",
    "rail": "own-queue",
    "due_ist": "2026-09-18 18:00",
-   "verify": "api"
+   "verify": "api",
+   "note": "asset replaced on S3 (same filename) with the 49.1s re-cut incl. sweatshirt"
   },
   {
    "id": "p17-x",
