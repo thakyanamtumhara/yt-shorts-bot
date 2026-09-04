@@ -7742,8 +7742,15 @@ ENGLISH: {script_english}
 {prompts_section}
 Score each (1-10):
 
-1. HOOK (first 2 seconds) — Does it start with a STORY, customer incident, or surprising fact?
-   Bad: starts with a definition ("GSM matlab..."). Good: "Ek customer aaya tha..." or "Pehle main bhi yahi galti karta tha..."
+1. HOOK (first 2 seconds) — Does it open on something CHECKABLE and concrete?
+   Good: a spec or comparison stated flat ("240 GSM aur 180 GSM, dono haath mein"),
+   a real published rate, a physical test the viewer can do himself, or a question
+   buyers actually ask.
+   Bad: starts with a dictionary definition ("GSM matlab...").
+   🚨 AUTO-SCORE 1 if the hook invents an incident — a customer, an order, a loss, a
+   return, a rejection, a cancellation. "Ek customer aaya tha...", "₹45K ka order
+   cancel...", "600 tshirt mein fungus..." are FABRICATION, not hooks. They are banned
+   in the writer prompt and must be penalised here, not rewarded.
 
 2. NATURAL FEEL — Does it sound like a REAL factory owner talking?
    Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
@@ -7751,8 +7758,9 @@ Score each (1-10):
 3. VALUE — Does the viewer LEARN something useful and specific?
    Bad: vague fluff. Good: specific numbers, practical tips, actionable knowledge.
 
-4. ENDING — Does it trail off naturally like a real person finishing?
-   Bad: abrupt cut or sounds like more is coming. Good: "...bas yehi hai, simple hai."
+4. ENDING — Does it stop cleanly on a short, complete final line?
+   Bad: sounds like more is coming, or drifts into a new topic.
+   Good: a hard 3-6 word stop. The audio fade was deliberately removed to preserve this.
 
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
@@ -7828,16 +7836,19 @@ Above-average share rate: {json.dumps(viral[:5], ensure_ascii=False)}
 IG averages: {json.dumps(ig_summary.get('avg_metrics', {}))}
 
 OBSERVED IG PATTERNS (from our data):
-- Cost/disaster framing engages: "Cost Trap", "Shut Down", "Cost Lakhs"
-- Third-person founder stories work: "He Bought X & Shut Down"
-- Comparison + cost: "Spot Color vs CMYK – Ye Galti Margin Kha Gayi"
-- Mixed Hindi-English titles work fine on IG"""
+- Comparison framing engages: "X vs Y", "Ye Galti", "Asli Farak"
+- A real published rate up front performs well
+- Specs in the title (GSM, colour count, fabric) pull the right buyer
+- Mixed Hindi-English titles work fine on IG
+🚨 Some past winners used invented loss framing ("Cost Lakhs", "Shut Down"). Those were
+   FABRICATED and are being removed. Do NOT copy that pattern, however well it scored."""
     else:
         ig_context = """
 INSTAGRAM AUDIENCE SIGNAL: not enough data yet — use these defaults:
-- Cost/disaster framing
-- Third-person founder stories ("He Bought X")
-- Comparison + cost framing"""
+- Comparison framing ("X vs Y")
+- A real published rate up front
+- A spec the buyer searches (GSM, fabric, colour count)
+🚨 Never invent a loss, order or return to make a title punchier."""
 
     prompt = f"""You are a Shorts/Reels title optimizer for an Indian B2B t-shirt brand
 (Sale91.com — wholesale plain t-shirts, printing services, 50K-sub source channel).
@@ -7859,7 +7870,10 @@ YOUR TASK: Generate THREE titles, each platform-tuned:
 1. YOUTUBE title — optimized for YouTube Shorts:
    - Max 70 chars
    - Search-discoverable keywords (GSM, DTG, printing, t-shirt etc.)
-   - Personal angle / vulnerability or dramatic comparison
+   - A spec, a comparison or a real published rate up front
+   - 🚨 NEVER an invented loss, order, return, rejection, cancellation or damaged
+     quantity. No "₹45K ka order cancel", no "600 tshirt mein fungus", no "wapas aaya".
+     Those were fabricated and are being stripped from the back catalogue.
    - Hindi script (Devanagari) is OK and even encouraged when title is Hindi-heavy
 
 2. INSTAGRAM title — optimized for Reels Explore page:
@@ -7876,7 +7890,7 @@ YOUR TASK: Generate THREE titles, each platform-tuned:
    - Max 80 chars
    - **STRICT: NO Devanagari / Hindi script anywhere — use Latin script ONLY.**
      Hinglish (English-with-Hindi-words-in-Latin-letters) is fine. Pure English is also fine.
-     ✅ Allowed: "Lost ₹40K on Tri-blend Fabric — Why Indian Printers Avoid Cotton+Polyester+Rayon Mix"
+     ✅ Allowed: "Tri-blend Fabric for Bulk Printing — Why Indian Printers Avoid Cotton+Polyester+Rayon Mix"
      ✅ Allowed: "240 GSM Ka Asli Trap — Why Heavier Doesn't Mean Better for Bulk Tshirts"
      ❌ Banned:  "240 GSM का झांसा — असली Quality यहाँ छुपी है"
    - **Front-load English keywords** that Indian B2B printers type into Google:
@@ -11278,7 +11292,7 @@ def rewrite_thin_posts(only_slug=None):
 
 
 
-def _fabricated_incident_sentences(html_content, title=""):
+def _fabricated_incident_sentences(html_content, title="", short_copy=False):
     """Sentences asserting a specific loss/rejection incident. Returns a list.
 
     Narrow by design — three separate false-positive classes were found by running
@@ -11308,25 +11322,63 @@ def _fabricated_incident_sentences(html_content, title=""):
     if title:
         txt = title + ". " + txt
 
-    AMT = r"(?:₹|rs\.?\s?)\s?[\d,.]+\s?(?:k|lakh|000)?|\b\d{3,5}\s*(?:pieces|pcs|piece|t-?shirts|tees)\b"
-    LOSS = r"(?:rejected|cancelled|canceled|ruined|destroyed|wasted|returned|scrapped|lost|loss)"
+    # short_copy=True is for the Short's own title/hook/script — a few words, no nav
+    # blocks, often Devanagari. There the rules can be wide. Blog/IG HTML keeps the
+    # ORIGINAL narrow rules, which were tuned against all 138 live posts in Aug 2026;
+    # widening them there re-introduces the related-post-title bleed as false hits.
+    AMT = (r"(?:₹|rs\.?\s?)\s?[\d,.]+\s?(?:k|lakh|000)?"
+           r"|\b\d{3,5}\s*(?:pieces|pcs|piece|t-?shirts|tees|टीशर्ट|टी-शर्ट|पीस)\b")
+    # Hindi/Hinglish matters as much as English here: the Short titles are written in
+    # Devanagari, and an English-only LOSS list let four fabricated ones through in a
+    # single week (24-30 Aug 2026) — "₹45K का ऑर्डर Cancel", "600 टीशर्ट में फंगस लगा",
+    # "₹18K का माल ... वापस आया", "Customer ने Return किया". Blog rail is Latin-only so
+    # it never exposed the hole.
+    LOSS = (r"(?:rejected|cancelled|canceled|ruined|destroyed|wasted|returned|scrapped"
+            r"|lost|loss)")
+    if short_copy:
+        LOSS = (r"(?:rejected|cancelled|canceled|ruined|destroyed|wasted|returned|scrapped"
+                r"|lost|loss|refunded|bounced|cancel|return|reject"
+                r"|वापस|रिजेक्ट|कैंसिल|रिटर्न|खराब|बर्बाद|डूब|नुकसान|घाटा|फंगस"
+                r"|wapas|reject\w*|cancel\w*|kharab|barbaad|nuksan|ghata|doob\w*|fungus)")
     # within ~90 chars of each other, either order — keeps "Rs 45,000 was lost"
     # and "the batch was rejected, costing Rs 45,000", drops "loss of fine detail"
     NEAR = _r.compile(r"(?:%s)[^.]{0,90}?(?:%s)|(?:%s)[^.]{0,90}?(?:%s)"
                       % (AMT, LOSS, LOSS, AMT), _r.I)
     HYPO = _r.compile(r"\b(if|agar|can|could|may|might|would|should|risk|avoid|"
-                      r"prevent|protect|ensure|otherwise|warna)\b", _r.I)
+                      r"prevent|protect|ensure|otherwise|warna|suppose|imagine|"
+                      r"example|say you|let us say)\b", _r.I)
     ASSERT = _r.compile(r"\b(was|were|got|had|ended up|turned out|resulted in|"
                         r"cost him|cost them|we have seen|humne)\b", _r.I)
     NON_MONEY = _r.compile(r"loss of (fine )?detail|lost (customer )?trust|"
                            r"weight loss|hair loss", _r.I)
+    # Second rule: an incident asserted with NO number at all. "Boxy bheja Oversized
+    # ki jagah — Customer ne Return kiya" carries no amount and no quantity, so the
+    # AMT-near-LOSS rule cannot fire, yet it is exactly the same fabrication. Needs a
+    # named party (customer/order/maal) next to a loss verb, in an ASSERTED form.
+    PARTY = (r"(?:customer|client|buyer|order|consignment|shipment|batch|parcel"
+             r"|कस्टमर|ग्राहक|क्लाइंट|ऑर्डर|आर्डर|माल|खेप|पार्सल)")
+    PARTY_NEAR = _r.compile(r"%s[^.]{0,60}?%s|%s[^.]{0,60}?%s" % (PARTY, LOSS, LOSS, PARTY), _r.I)
+    # Hindi assertion markers — "kiya/hua/gaya/aaya/laga" are the past-tense tells.
+    # NOTE: no \b on the Devanagari side. "किया" ends in the vowel sign ा (category Mn),
+    # which is NOT a \w character, so \b never matches after it and the whole rule
+    # silently failed. Latin alternatives keep \b so "tha" doesn't match inside "that".
+    ASSERT_HI = _r.compile(r"(?:किया|हुआ|हो गया|गए|गया|आया|लगा|पड़ा|दिया|थे|था)"
+                           r"|\b(?:kiya|hua|gaya|gaye|aaya|laga|pada|diya)\b", _r.I)
     out = []
-    for sent in _r.split(r"(?<=[.!?])\s+", txt):
+    # Splitting on the em-dash/pipe separators is for TITLES only. Applying it to blog
+    # HTML changed the verdict on 7 of 38 live pages, because it chops the related-post
+    # link mesh into individual titles and each fabricated neighbour then matches on its
+    # own. Blog keeps the original sentence splitter; only short copy gets the wider one.
+    _split = r"(?<=[.!?।])\s+|\s+[—|]\s+" if short_copy else r"(?<=[.!?])\s+"
+    for sent in _r.split(_split, txt):
         if len(sent) > 400 or NON_MONEY.search(sent):
             continue
-        if not NEAR.search(sent):
+        _money_hit = bool(NEAR.search(sent))
+        _party_hit = short_copy and bool(PARTY_NEAR.search(sent)) and bool(
+            ASSERT.search(sent) or ASSERT_HI.search(sent))
+        if not (_money_hit or _party_hit):
             continue
-        if HYPO.search(sent) and not ASSERT.search(sent):
+        if HYPO.search(sent) and not (ASSERT.search(sent) or ASSERT_HI.search(sent)):
             continue
         out.append(sent.strip())
     return out
@@ -12169,6 +12221,24 @@ def main():
     # titles is a dict {'yt': ..., 'ig': ..., 'best': ...}
     yt_title = titles["yt"]    # Hindi OK — YouTube algo rewards
     ig_title = titles["ig"]    # Mixed OK — Instagram algo rewards
+    # 🚨 HARD GATE — the Short's own copy. A prompt is a request; this is a rule.
+    # The 24-Aug prompt fixes did NOT hold: 4 of the 6 Shorts published after them
+    # still asserted invented incidents ("₹45K ka order Cancel", "600 tshirt mein
+    # fungus laga", "₹18K ka maal wapas aaya", "Customer ne Return kiya"), because
+    # review_script() was still REWARDING a customer-incident hook and the YouTube
+    # title branch had no truth constraint at all. Both are fixed above, but the
+    # detector is what actually enforces it — same function the blog rail uses.
+    for _label, _text in (("yt_title", yt_title), ("ig_title", ig_title),
+                          ("blog_title", blog_title), ("hook", data.get("hook_text", "")),
+                          ("script", script_voice)):
+        _bad = _fabricated_incident_sentences(_text or "", "", short_copy=True)
+        if _bad:
+            flag("fabricated_incident_blocked", True)
+            raise RuntimeError(
+                "FABRICATED INCIDENT in %s — refusing to publish. Offending: %r. "
+                "This is the defect that put fake losses on ~60 IG posts and 46 blog "
+                "posts. Fix the prompt, do not bypass this gate." % (_label, _bad[:2]))
+
     blog_title = titles.get("blog") or titles.get("best") or yt_title  # Latin-only — Google + AI search optimized
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
