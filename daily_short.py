@@ -12240,6 +12240,7 @@ def main():
     # titles is a dict {'yt': ..., 'ig': ..., 'best': ...}
     yt_title = titles["yt"]    # Hindi OK — YouTube algo rewards
     ig_title = titles["ig"]    # Mixed OK — Instagram algo rewards
+    blog_title = titles.get("blog") or titles.get("best") or yt_title  # Latin-only — Google + AI search optimized
     # 🚨 HARD GATE — the Short's own copy. A prompt is a request; this is a rule.
     # The 24-Aug prompt fixes did NOT hold: 4 of the 6 Shorts published after them
     # still asserted invented incidents ("₹45K ka order Cancel", "600 tshirt mein
@@ -12257,8 +12258,6 @@ def main():
                 "FABRICATED INCIDENT in %s — refusing to publish. Offending: %r. "
                 "This is the defect that put fake losses on ~60 IG posts and 46 blog "
                 "posts. Fix the prompt, do not bypass this gate." % (_label, _bad[:2]))
-
-    blog_title = titles.get("blog") or titles.get("best") or yt_title  # Latin-only — Google + AI search optimized
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
 
