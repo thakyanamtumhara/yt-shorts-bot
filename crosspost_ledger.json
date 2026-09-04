@@ -355,6 +355,79 @@
    "rail": "own-queue",
    "due_ist": "2026-09-01 18:00",
    "verify": "api"
+  },
+  {
+   "id": "wt-yt-long",
+   "label": "Women's t-shirt launch — MAIN channel long-form (4:33)",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-05 19:00",
+   "verify": "api",
+   "note": "BLOCKED: OAuth token expired 4-Sep"
+  },
+  {
+   "id": "wt-yt-announce",
+   "label": "Short: Women's t-shirt launch announcement",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-06 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-yt-fits",
+   "label": "Short: Regular + Oversize + Boxy fits",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-09 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-yt-colours",
+   "label": "Short: 8 colours at launch",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-11 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-yt-delay",
+   "label": "Short: why it took so long (yarn rates)",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-13 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-ig-announce",
+   "label": "IG: Women's t-shirt launch announcement",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-05 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-ig-fits",
+   "label": "IG: Regular + Oversize + Boxy fits",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-10 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-ig-colours",
+   "label": "IG: 8 colours at launch",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-12 18:00",
+   "verify": "api"
+  },
+  {
+   "id": "wt-ig-delay",
+   "label": "IG: why it took so long (yarn rates)",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-17 18:00",
+   "verify": "api"
   }
  ]
 }
