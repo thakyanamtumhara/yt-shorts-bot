@@ -8756,11 +8756,28 @@ def _generate_image_replicate(prompt, aspect_ratio, _max_throttle_retries=3):
             )
             break
         except Exception as e:
-            throttled = "429" in str(e) or "throttl" in str(e).lower() or "rate limit" in str(e).lower()
-            if not throttled or attempt == _max_throttle_retries - 1:
+            msg = str(e).lower()
+            # 429 / burst limit — the sub-$5 credit throttle (fixed 15-Aug-2026).
+            throttled = "429" in msg or "throttl" in msg or "rate limit" in msg
+            # Transient network + server faults. Added 05-Sep-2026: the 15-Aug
+            # retry gated on 429 ONLY and consequently never fired once. Every
+            # real failure in the following 3 weeks was "The read operation timed
+            # out", which was re-raised immediately — and because fal.ai is
+            # balance-locked the fallback could not cover, so the 02-Sep post
+            # shipped with zero images and its og:image fell back to a YouTube
+            # thumbnail. Retrying only the polite failure was the wrong half.
+            transient = any(t in msg for t in (
+                "timed out", "timeout", "connection reset", "connection aborted",
+                "temporarily unavailable", "bad gateway", "service unavailable",
+                "remote end closed", "502", "503", "504",
+            ))
+            if not (throttled or transient) or attempt == _max_throttle_retries - 1:
                 raise
-            print(f"   ⏳ Replicate throttled (429) — waiting 15s, retry {attempt + 1}/{_max_throttle_retries - 1}")
-            time.sleep(15)
+            wait = 15 if throttled else 5   # burst window needs ~10s; a blip does not
+            reason = "throttled (429)" if throttled else f"transient error ({str(e)[:60]})"
+            print(f"   ⏳ Replicate {reason} — waiting {wait}s, "
+                  f"retry {attempt + 1}/{_max_throttle_retries - 1}")
+            time.sleep(wait)
     img_output = output[0] if isinstance(output, list) else output
     if hasattr(img_output, 'read'):
         return img_output.read()

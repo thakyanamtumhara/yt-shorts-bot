@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  issues: write   # the failure step opens/comments a tracking issue
 
 jobs:
   watch:
@@ -57,4 +58,37 @@ jobs:
             git commit -m "crosspost watch state [skip ci]"
             git pull --rebase -q origin main || true
             git push
+          fi
+
+      # Added 05-Sep-2026. This workflow was created 18-Aug, AFTER the alerting
+      # sweep that gave daily_short/ig_carousel/social_watch an if: failure()
+      # step — so it inherited none. It then crash-looped for 12 days across 22
+      # runs on one bad ledger date and nobody was told. A watcher that can die
+      # silently is not a watcher.
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::❌ Crosspost watch FAILED: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Crosspost watch FAILED — $(date -u +'%d %b %Y %H:%M UTC'). Scheduled crossposts are NOT being verified. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
+          gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
+          EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Crosspost watch failed at $(date -u +'%H:%M UTC %d %b').
+
+          **Run:** ${RUN_URL}" || true
+          else
+            gh issue create --title "⚠️ Crosspost watch failed — $(date -u +'%d %b %Y')" \
+              --body "Scheduled crossposts are not being verified.
+
+          **Run:** ${RUN_URL}" --label "bot-failure" || true
           fi

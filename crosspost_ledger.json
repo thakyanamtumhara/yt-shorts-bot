@@ -114,9 +114,10 @@
    "label": "Personal video 16:39 — MAIN channel, LIVE youtu.be/AaLMKvRroQ4",
    "platform": "youtube",
    "rail": "manual",
-   "due_ist": "2026-08-22 (PUBLISHED EARLY by Ketu)",
+   "due_ist": "2026-08-22 00:00",
    "verify": "done",
-   "url": "https://www.youtube.com/@BulkPlainTshirt_com"
+   "url": "https://www.youtube.com/@BulkPlainTshirt_com",
+   "note": "PUBLISHED EARLY by Ketu"
   },
   {
    "id": "v18-ig",

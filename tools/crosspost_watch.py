@@ -45,6 +45,27 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def parse_due(entry):
+    """Parse an entry's due_ist, tolerating a trailing hand-typed note.
+
+    Returns an aware datetime, or None if it cannot be read.
+
+    Why this is defensive: on 2026-08-22 a human note was typed straight into
+    the field ("2026-08-22 (PUBLISHED EARLY by Ketu)"). A bare strptime raised,
+    which aborted the whole pass — so this watcher crash-looped for 12 days
+    across 22 runs, and because the loop died on entry 13 of 30, the 17 entries
+    after it were never checked either. One bad row must never blind the rest.
+    """
+    raw = str(entry.get("due_ist") or "").strip()
+    cleaned = raw.split("(")[0].strip()
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(cleaned, fmt).replace(tzinfo=IST)
+        except ValueError:
+            continue
+    return None
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEDGER = os.path.join(REPO, "crosspost_ledger.json")
 STATE = os.path.join(REPO, "crosspost_state.json")
@@ -211,7 +232,11 @@ def main():
         st = state.get(eid, {})
         if st.get("resolved"):
             continue
-        due = datetime.strptime(e["due_ist"], "%Y-%m-%d %H:%M").replace(tzinfo=IST)
+        due = parse_due(e)
+        if due is None:
+            print(f"⚠️  {eid}: unreadable due_ist {e.get('due_ist')!r} — skipping this "
+                  f"entry only (the rest of the ledger still gets checked)")
+            continue
 
         # still in the future -> remember it for the token-expiry pre-flight
         if now < due:

@@ -11,12 +11,22 @@ name: Blog Image Self-Test
 # 15-Aug-2026. Three sequential calls is the only honest test.
 
 on:
+  # Weekly, 03:00 UTC Monday = 08:30 IST — ahead of the 09:00 UTC daily_short so
+  # a dead image provider is known BEFORE the week's first blog day. ~$0.09/run.
+  # Added 05-Sep-2026: manual-only meant nothing watched image health, and
+  # health_watch's Replicate check is a bare /v1/account ping that stayed green
+  # for three weeks while every post shipped hero-only.
+  schedule:
+    - cron: '0 3 * * 1'
   workflow_dispatch:
 
 jobs:
   selftest:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write   # the failure step opens/comments a tracking issue
     steps:
       - uses: actions/checkout@v4
 
@@ -69,3 +79,33 @@ jobs:
               print("⚠️ Partial or total failure — read the per-image errors above.")
           raise SystemExit(0 if ok == 3 else 1)
           PY
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::❌ Blog image self-test FAILED — posts will ship with missing images: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Blog image self-test FAILED — $(date -u +'%d %b %Y %H:%M UTC'). Blog posts will ship with missing images. Check Replicate credit (throttles under \$5) and the fal.ai balance. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
+          gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
+          EXISTING=$(gh issue list --label "bot-failure" --state open --limit 1 --json number --jq '.[0].number // empty' 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Blog image self-test failed at $(date -u +'%H:%M UTC %d %b') — posts will ship with missing images.
+
+          **Run:** ${RUN_URL}" || true
+          else
+            gh issue create --title "⚠️ Blog images failing — $(date -u +'%d %b %Y')" \
+              --body "The 3-image self-test did not return 3/3, so blog posts will ship with missing images.
+
+          Check Replicate credit (it throttles to a burst of 1 under \$5) and the fal.ai balance.
+
+          **Run:** ${RUN_URL}" --label "bot-failure" || true
+          fi
