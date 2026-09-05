@@ -1909,11 +1909,20 @@
     "title": "Polo Collar Flat After 2 Washes — Fusing vs Non-Fusing Real Check",
     "topic": "Polo T-Shirt Collar 2 Dhulai Mein Flat Kyun Hota Hai — Fusing vs Non-Fusing Collar Real Check",
     "published_at": "2026-09-02T18:58:05.055754+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹3 FUSING COLLAR FLAT 2",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-09-05T18:04:07.851131+05:30",
+    "hours_since_publish": 71.1,
+    "views": 2170,
+    "reach": 1857,
+    "likes": 24,
+    "comments": 3,
+    "shares": 6,
+    "saves": 12,
+    "avg_watch_time_ms": 13174
   },
   {
     "media_id": "18137149510614285",
@@ -1926,5 +1935,16 @@
     "cover_path": "ai+pil",
     "cover_face": false,
     "trial": true
+  },
+  {
+    "media_id": "18099232853296163",
+    "title": "Wet Rub Test — Reactive Dye vs Pigment Dye Colour Bleed Check in Rain",
+    "topic": "बारिश में Colour Bleed टेस्ट — Reactive Dye vs Pigment Dye, गीला कपड़ा रगड़ कर खुद Check करो",
+    "published_at": "2026-09-05T18:06:23.803698+05:30",
+    "checked": false,
+    "cover_text": "₹7 DYE 500 Pc BLEED",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false
   }
 ]
