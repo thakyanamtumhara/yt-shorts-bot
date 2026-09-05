@@ -15,5 +15,32 @@
  },
  "founder-x": {
   "nudged": true
+ },
+ "rakhi2-li": {
+  "nudged": true
+ },
+ "founder-ig-main": {
+  "alerted": true
+ },
+ "founder-li": {
+  "nudged": true
+ },
+ "founder-ig-clip1": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DcydVvpEQRN/"
+ },
+ "v18-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DctpEi0lQVP/"
+ },
+ "v18-x": {
+  "nudged": true
+ },
+ "p17-ig-acid": {
+  "alerted": true
+ },
+ "p17-ig-highlight": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dc3mAsVkmbn/"
  }
 }
