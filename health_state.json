@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-05 12:36)",
+   "detail": "ElevenLabs ✅ (2026-09-07 15:07)",
    "provider": "elevenlabs",
-   "at": "2026-09-05 12:36",
-   "title": "बारिश में कपड़ा रगड़ो — Reactive vs Pigment Dye का असली Test"
+   "at": "2026-09-07 15:07",
+   "title": "Combed vs Carded Cotton — Ulta Karke Ragdo, Farak Samjho 🤚"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 142,865/151,000 chars left",
+   "detail": "creator · PVC allowed · 142,409/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 142865,
+   "chars_left": 142409,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -377,8 +377,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-07T23:20:34+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-07T14:03:08+05:30",
+ "last_run_ist": "2026-09-07T23:20:34+05:30",
  "last_green_date": "2026-09-07"
 }
