@@ -2870,5 +2870,20 @@
       "whisper": 0.0046,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-09-08T13:40:31.650382",
+    "topic": "Regular Fit vs Oversized \u2014 Same M Size, Itna Fark Kyun? Tape Lagao Aur Khud Dekho",
+    "title": "Same M Size \u2014 Regular vs Oversized \u092e\u0947\u0902 4 Inch \u0915\u093e \u092b\u0930\u094d\u0915 | Tape \u0938\u0947 Check \u0915\u0930\u094b",
+    "total_usd": 5.2501,
+    "duration_min": 27.8,
+    "breakdown": {
+      "claude_opus": 0.3291,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.022,
+      "veo_clips": 4.8,
+      "whisper": 0.0041,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
