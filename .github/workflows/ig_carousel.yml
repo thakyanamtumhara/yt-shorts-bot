@@ -19,6 +19,11 @@ on:
   schedule:
     - cron: '30 7 * * *'   # 7:30 UTC = 1:00 PM IST every day
   workflow_dispatch:
+    inputs:
+      verify_only:
+        description: Validate queued jobs and live account without creating or publishing media
+        type: boolean
+        default: false
 
 concurrency:
   group: instagram-feed-publish
@@ -92,7 +97,17 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ap-south-1
-        run: python3 tools/curated_feed.py --queue-dir feed_queue --execute
+          VERIFY_ONLY: ${{ inputs.verify_only }}
+        run: |
+          if [ "$VERIFY_ONLY" = true ]; then
+            for job in feed_queue/*.json; do
+              [ -f "$job" ] || continue
+              python3 tools/curated_feed.py --queue-dir feed_queue --job "$job" --dry-run
+            done
+            echo 'handled_today=true' >> "$GITHUB_OUTPUT"
+          else
+            python3 tools/curated_feed.py --queue-dir feed_queue --execute
+          fi
 
       - name: Publish IG carousel
         if: steps.curated.outputs.handled_today != 'true'
@@ -111,7 +126,7 @@ jobs:
           retention-days: 30
 
       - name: Commit posted-state update
-        if: always()
+        if: always() && inputs.verify_only != true
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
