@@ -20,10 +20,14 @@ on:
     - cron: '30 7 * * *'   # 7:30 UTC = 1:00 PM IST every day
   workflow_dispatch:
 
+concurrency:
+  group: instagram-feed-publish
+  cancel-in-progress: false
+
 jobs:
   post-carousel:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: write
       issues: write   # the failure step opens/comments a tracking issue
@@ -78,11 +82,33 @@ jobs:
                   print(f'IG token expires in {days:.1f} days')
           "
 
+      - name: Publish reviewed curated feed first
+        id: curated
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          CURATED_STATE_BUCKET: bulkplaintshirt.com
+          CURATED_STATE_PREFIX: automation-state/ig-curated
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+        run: python3 tools/curated_feed.py --queue-dir feed_queue --execute
+
       - name: Publish IG carousel
+        if: steps.curated.outputs.handled_today != 'true'
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
         run: python3 daily_short.py --mode=ig-carousel-post
+
+      - name: Preserve local feed recovery records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: curated-feed-state-${{ github.run_id }}
+          path: feed_queue/state/*.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Commit posted-state update
         if: always()
@@ -90,6 +116,7 @@ jobs:
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
           git add ig_drafts/ || true
+          if [ -d feed_queue ]; then git add feed_queue/; fi
           git commit -m "IG carousel: posted update [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
           git push origin HEAD:${{ github.ref_name }}

@@ -1,0 +1,62 @@
+name: Private dialogue pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_key:
+        description: Reviewed twenty-second real speaking MP4 under the owned p/ prefix
+        required: true
+        type: string
+      source_sha256:
+        description: SHA-256 of that reviewed source file
+        required: true
+        type: string
+      recipient_public_key:
+        description: Recipient RSA public key PEM, at least 3072 bits
+        required: true
+        type: string
+      execute:
+        description: After checks, make one existing-voice TTS and one HeyGen Precision private attempt
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-dialogue-pilot
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install boto3 cryptography requests
+      - name: Check access and prepare encrypted private sample
+        env:
+          PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          PILOT_SOURCE_KEY: ${{ inputs.source_key }}
+          PILOT_SOURCE_SHA256: ${{ inputs.source_sha256 }}
+          PILOT_EXECUTE: ${{ inputs.execute }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+        run: |
+          args=(--source-key "$PILOT_SOURCE_KEY" --source-sha256 "$PILOT_SOURCE_SHA256")
+          if [ "$PILOT_EXECUTE" = true ]; then args+=(--execute); fi
+          python tools/private_dialogue_pilot.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-dialogue-pilot-encrypted
+          path: private-dialogue-pilot.enc
+          if-no-files-found: error
+          retention-days: 2
