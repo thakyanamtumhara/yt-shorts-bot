@@ -3,6 +3,10 @@ name: Private video pilot
 on:
   workflow_dispatch:
     inputs:
+      source_key:
+        description: Existing owned MP4 under p/ to use as the private test reference
+        required: true
+        type: string
       recipient_public_key:
         description: Recipient RSA public key, PEM, at least 3072 bits
         required: true
@@ -37,6 +41,7 @@ jobs:
       - name: Generate encrypted previews
         env:
           PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          PILOT_SOURCE_KEY: ${{ inputs.source_key }}
           PILOT_AVATAR: ${{ inputs.avatar }}
           PILOT_PORTRAIT_AT: ${{ inputs.portrait_at }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -45,7 +50,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ap-south-1
         run: |
-          args=(--portrait-at "$PILOT_PORTRAIT_AT")
+          args=(--source-key "$PILOT_SOURCE_KEY" --portrait-at "$PILOT_PORTRAIT_AT")
           if [ "$PILOT_AVATAR" = true ]; then args+=(--avatar); fi
           python tools/private_video_pilot.py "${args[@]}"
       - uses: actions/upload-artifact@v4

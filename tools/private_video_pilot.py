@@ -145,7 +145,7 @@ def validate_inputs(source_key, duration, portrait_at, public_pem):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--source-key', default='p/wt-fits-r8k.mp4')
+    ap.add_argument('--source-key', required=True)
     ap.add_argument('--seconds', type=float, default=18.6)
     ap.add_argument('--portrait-at', type=float, default=5)
     ap.add_argument('--avatar', action='store_true')
