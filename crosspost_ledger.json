@@ -440,6 +440,208 @@
    "rail": "own-queue",
    "due_ist": "2026-09-17 18:00",
    "verify": "api"
+  },
+  {
+   "id": "wh26-warehouse-tour-yt",
+   "label": "Warehouse: warehouse-tour — YouTube",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-19 19:00",
+   "verify": "manual",
+   "url": "https://youtu.be/UQBlxoDQ2Dw",
+   "video_id": "UQBlxoDQ2Dw"
+  },
+  {
+   "id": "wh26-stock-proof-yt",
+   "label": "Warehouse: stock-proof — YouTube",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-21 18:00",
+   "verify": "manual",
+   "url": "https://youtu.be/ZZHqqXNd_6A",
+   "video_id": "ZZHqqXNd_6A"
+  },
+  {
+   "id": "wh26-stock-proof-ig",
+   "label": "Warehouse: stock-proof — Instagram",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-19 18:00",
+   "verify": "api",
+   "match": "वेबसाइट पर स्टॉक दिखता है—गोदाम में भी है?"
+  },
+  {
+   "id": "wh26-stock-proof-fb",
+   "label": "Warehouse: stock-proof — facebook",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-09-20 20:15",
+   "verify": "api",
+   "match": "Website stock should connect to a real supplier. Here is why I show ou"
+  },
+  {
+   "id": "wh26-stock-proof-x",
+   "label": "Warehouse: stock-proof — x",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-09-20 20:00",
+   "verify": "manual",
+   "match": "Website stock should connect to a real supplier. Here is why I show ou",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "wh26-stock-proof-li",
+   "label": "Warehouse: stock-proof — linkedin",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-09-22 08:15",
+   "verify": "manual",
+   "match": "Website stock should connect to a real supplier. Here is why I show ou",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "wh26-printing-yt",
+   "label": "Warehouse: printing — YouTube",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-22 18:00",
+   "verify": "manual",
+   "url": "https://youtu.be/IcauWSDc5V0",
+   "video_id": "IcauWSDc5V0"
+  },
+  {
+   "id": "wh26-printing-ig",
+   "label": "Warehouse: printing — Instagram",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-22 18:00",
+   "verify": "api",
+   "match": "Printing business के लिए blank T-shirts."
+  },
+  {
+   "id": "wh26-printing-fb",
+   "label": "Warehouse: printing — facebook",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-09-23 20:15",
+   "verify": "api",
+   "match": "Printing or reselling T-shirts? Start with the right blank. Check curr"
+  },
+  {
+   "id": "wh26-printing-x",
+   "label": "Warehouse: printing — x",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-09-23 20:00",
+   "verify": "manual",
+   "match": "Printing or reselling T-shirts? Start with the right blank. Check curr",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "wh26-printing-li",
+   "label": "Warehouse: printing — linkedin",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-09-23 08:15",
+   "verify": "manual",
+   "match": "Printing or reselling T-shirts? Start with the right blank. Check curr",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "wh26-sample-order-yt",
+   "label": "Warehouse: sample-order — YouTube",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-24 18:00",
+   "verify": "manual",
+   "url": "https://youtu.be/TQLozf1HkEQ",
+   "video_id": "TQLozf1HkEQ"
+  },
+  {
+   "id": "wh26-sample-order-ig",
+   "label": "Warehouse: sample-order — Instagram",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-24 18:00",
+   "verify": "api",
+   "match": "Bulk order से पहले sample check करो."
+  },
+  {
+   "id": "wh26-sample-order-fb",
+   "label": "Warehouse: sample-order — facebook",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-09-25 20:15",
+   "verify": "api",
+   "match": "Before a bulk T-shirt order, check one or two samples and their qualit"
+  },
+  {
+   "id": "wh26-sample-order-x",
+   "label": "Warehouse: sample-order — x",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-09-25 20:00",
+   "verify": "manual",
+   "match": "Before a bulk T-shirt order, check one or two samples and their qualit",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "wh26-sample-order-li",
+   "label": "Warehouse: sample-order — linkedin",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-09-29 08:15",
+   "verify": "manual",
+   "match": "Before a bulk T-shirt order, check one or two samples and their qualit",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "wh26-delivery-yt",
+   "label": "Warehouse: delivery — YouTube",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-09-29 18:00",
+   "verify": "manual",
+   "url": "https://youtu.be/xdOMbGow7lg",
+   "video_id": "xdOMbGow7lg"
+  },
+  {
+   "id": "wh26-delivery-ig",
+   "label": "Warehouse: delivery — Instagram",
+   "platform": "instagram",
+   "rail": "own-queue",
+   "due_ist": "2026-09-29 18:00",
+   "verify": "api",
+   "match": "दिल्ली से आपके शहर तक T-shirts कैसे पहुँचेंगी?"
+  },
+  {
+   "id": "wh26-delivery-fb",
+   "label": "Warehouse: delivery — facebook",
+   "platform": "facebook",
+   "rail": "vizard",
+   "due_ist": "2026-09-30 20:15",
+   "verify": "api",
+   "match": "Delhi T-shirt orders: train, direct-route bus, courier and local optio"
+  },
+  {
+   "id": "wh26-delivery-x",
+   "label": "Warehouse: delivery — x",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-09-30 20:00",
+   "verify": "manual",
+   "match": "Delhi T-shirt orders: train, direct-route bus, courier and local optio",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "wh26-delivery-li",
+   "label": "Warehouse: delivery — linkedin",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-10-01 08:15",
+   "verify": "manual",
+   "match": "Delhi T-shirt orders: train, direct-route bus, courier and local optio",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
   }
  ]
 }
