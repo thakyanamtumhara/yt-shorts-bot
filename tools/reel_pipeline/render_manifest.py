@@ -42,7 +42,7 @@ def caption_sequence(captions, duration, directory, font_path, width, height):
         raise RuntimeError("RAQM is required for correctly shaped Hindi")
     directory.mkdir(parents=True, exist_ok=True)
     strip_height = height // 6
-    font = ImageFont.truetype(str(font_path), int(width * 0.056),
+    font = ImageFont.truetype(str(font_path), int(width * 0.064),
                               layout_engine=ImageFont.Layout.RAQM)
     try:
         font.set_variation_by_axes([700])
@@ -101,6 +101,9 @@ def render(manifest_path, name, draft=False):
     item = next(x for x in manifest["exports"] if x["name"] == name)
     info = probe(source)
     duration = validate_keeps(item["keeps"], float(info["format"]["duration"]))
+    source_offset = item["keeps"][0][0]
+    keeps = [[start - source_offset, end - source_offset] for start, end in item["keeps"]]
+    source_args = ["-ss", str(source_offset), "-t", str(keeps[-1][1]), "-i", str(source)]
     destination = Path(item["output"])
     if draft:
         destination = destination.with_stem(destination.stem + "-draft")
@@ -109,8 +112,8 @@ def render(manifest_path, name, draft=False):
     destination.parent.mkdir(parents=True, exist_ok=True)
     work = destination.parent / (destination.stem + "-build")
     work.mkdir(exist_ok=True)
-    first_pass = audio_graph(item["keeps"]) + ";[voice]loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json[a]"
-    measured_log = run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(source),
+    first_pass = audio_graph(keeps) + ";[voice]loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json[a]"
+    measured_log = run(["ffmpeg", "-hide_banner", "-nostats", *source_args,
                         "-filter_complex", first_pass, "-map", "[a]", "-f", "null", "-"]).stderr
     measurement = json.loads(measured_log[measured_log.rfind("{"):measured_log.rfind("}") + 1])
     (work / "voice-measurement.json").write_text(json.dumps(measurement, indent=2))
@@ -119,12 +122,12 @@ def render(manifest_path, name, draft=False):
                   f"measured_LRA={measurement['input_lra']}:measured_thresh={measurement['input_thresh']}:"
                   f"offset={measurement['target_offset']},aresample=48000")
     width, height = (540, 960) if draft else (1080, 1920)
-    command = ["ffmpeg", "-hide_banner", "-nostats", "-y", "-threads", "2", "-i", str(source),
+    command = ["ffmpeg", "-hide_banner", "-nostats", "-y", "-threads", "2", *source_args,
                "-loop", "1", "-framerate", "30", "-t", "0.5", "-i", item["cover"]]
     graph = []
     graph.append(f"[0:v]scale={width}:{height}:flags=lanczos,setsar=1,split={len(item['keeps'])}" +
                  "".join(f"[source{i}]" for i in range(len(item["keeps"]))))
-    for i, (start, end) in enumerate(item["keeps"]):
+    for i, (start, end) in enumerate(keeps):
         graph.append(f"[source{i}]trim=start={start}:end={end},setpts=PTS-STARTPTS[v{i}]")
         graph.append(f"[0:a]atrim=start={start}:end={end},asetpts=PTS-STARTPTS[a{i}]")
     graph.append("".join(f"[v{i}][a{i}]" for i in range(len(item["keeps"]))) +
@@ -133,10 +136,13 @@ def render(manifest_path, name, draft=False):
     if isinstance(captions, str):
         captions = json.loads(Path(captions).read_text())
     if captions:
+        caption_y = float(item.get("caption_y", 0.74))
+        if not 0.2 <= caption_y <= 0.85:
+            raise ValueError("Caption centre must stay inside the reviewed video area")
         sequence, strip_height = caption_sequence(captions, duration, work / "captions",
                                                   Path(manifest["font"]), width, height)
         command += ["-framerate", "30", "-i", str(sequence)]
-        graph.append(f"[bodyvideo]fps=30[bodyfps];[bodyfps][2:v]overlay=0:{int(height * 0.70) - strip_height // 2}:shortest=1[captioned]")
+        graph.append(f"[bodyvideo]fps=30[bodyfps];[bodyfps][2:v]overlay=0:{int(height * caption_y) - strip_height // 2}:shortest=1[captioned]")
     else:
         graph.append("[bodyvideo]fps=30[captioned]")
     graph += [f"[bodyaudio]highpass=f=60,{normalizer}[cleanvoice]",
