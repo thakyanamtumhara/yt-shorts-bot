@@ -37,7 +37,7 @@ The dry run validates local video duration/dimensions, JPEG/PNG thumbnail, copy,
 
 Keep state outside the public repository. State is atomically saved with mode 0600 and protected by a local process lock. Each upload begins **private with no schedule**. Its returned ID is saved before thumbnail or scheduling calls. Processing delays or follow-up failures can be retried with the same manifest/state, reusing that ID. A changed source, copy, thumbnail or date cannot silently reuse the state. If an upload request ends ambiguously before an ID is recorded, a second insert is blocked; inspect MAIN uploads before recovering the state. Do not delete the state merely to retry.
 
-The uploader prepares a private-hold body in state before applying a schedule, preserves mutable status fields, and reads back the result. The hold operates only on this tool's recorded ID after checking MAIN ownership:
+The uploader prepares a private-hold body in state before applying a schedule, preserves mutable status fields, and reads back the result. YouTube can briefly return stale metadata/status after a successful write. Copy verification after processing and schedule/hold readback allow up to 30 seconds of read-only convergence, checking every 2 seconds. These polls never repeat an upload, thumbnail or status write; a persistent mismatch still stops with the uploaded ID and undo state saved. Ownership failures stop immediately. The hold operates only on this tool's recorded ID after checking MAIN ownership:
 
 ```sh
 /usr/local/bin/python3 tools/upload_main.py --hold-private --state /private/path/upload-state.json --dry-run

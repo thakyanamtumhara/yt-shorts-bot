@@ -21,6 +21,8 @@ from pathlib import Path
 MAIN_CHANNEL = "UCdgOMA7WO48MYimj6q6mvNQ"
 STATE_FORMAT = "upload-main-v1"
 TOKEN_PATH = Path.home() / ".yt_main_token.json"
+READ_WAIT_SECONDS = 30
+READ_POLL_SECONDS = 2
 VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}\Z")
 STATUS_FIELDS = {
     "embeddable", "license", "publicStatsViewable", "selfDeclaredMadeForKids",
@@ -317,6 +319,22 @@ def verify_private(video, publish_at=None):
         raise UploadError("Private/schedule readback did not match; use the recorded private-hold action.")
 
 
+def wait_readback(api, state, validate, video=None):
+    deadline = time.monotonic() + READ_WAIT_SECONDS
+    while True:
+        current = video if video is not None else own_video(api, state)
+        video = None
+        try:
+            validate(current)
+        except UploadError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(READ_POLL_SECONDS, remaining))
+        else:
+            return current
+
+
 def wait_processed(api, state, wait_seconds=180):
     deadline = time.monotonic() + wait_seconds
     while True:
@@ -383,8 +401,7 @@ def schedule_owned(api, store, state, publish_at, video=None, now=None):
     actual = video["status"].get("publishAt")
     if not actual or timestamp(actual, require_future=False) != publish_at:
         api.update_status(state["video_id"], dict(hold, publishAt=publish_at))
-    verified = own_video(api, state)
-    verify_private(verified, publish_at)
+    wait_readback(api, state, lambda current: verify_private(current, publish_at))
     state["phase"] = "scheduled"
     store.save(state)
     return state
@@ -422,7 +439,7 @@ def upload(api, store, plan, wait_seconds=180):
         if file_fingerprint(plan["video_path"]) != {k: plan["source"][k] for k in ("sha256", "size")}:
             raise UploadError("Source changed during upload; the recorded upload remains private.")
     video = wait_processed(api, state, wait_seconds)
-    assert_copy(video, state["metadata"])
+    video = wait_readback(api, state, lambda current: assert_copy(current, state["metadata"]), video)
     if video["status"].get("privacyStatus") != "private":
         raise UploadError("This recorded upload is already public/unlisted; refusing automatic changes.")
     actual = video["status"].get("publishAt")
@@ -439,7 +456,7 @@ def upload(api, store, plan, wait_seconds=180):
         store.save(state)
     if desired:
         return schedule_owned(api, store, state, desired, video)
-    verify_private(own_video(api, state))
+    wait_readback(api, state, verify_private)
     state["phase"] = "private_ready"
     store.save(state)
     return state
@@ -461,7 +478,7 @@ def hold_private(api, store):
     store.save(state)
     if video["status"].get("privacyStatus") != "private" or video["status"].get("publishAt"):
         api.update_status(state["video_id"], status)
-    verify_private(own_video(api, state))
+    wait_readback(api, state, verify_private)
     state["phase"] = "held_private"
     store.save(state)
     return state

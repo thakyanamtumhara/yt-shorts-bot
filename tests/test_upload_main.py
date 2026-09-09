@@ -30,12 +30,18 @@ class FakeYouTube:
         self.thumbnail_error = None
         self.before_thumbnail = None
         self.before_update = None
+        self.after_insert = None
+        self.read_responses = []
+        self.read_count = 0
         self.ignore_schedule = False
 
     def channel_id(self):
         return self.channel
 
     def get_video(self, video_id):
+        self.read_count += 1
+        if self.read_responses:
+            return copy.deepcopy(self.read_responses.pop(0))
         return copy.deepcopy(self.videos.get(video_id))
 
     def insert_video(self, path, body):
@@ -47,6 +53,8 @@ class FakeYouTube:
         video["snippet"]["channelId"] = uploader.MAIN_CHANNEL
         video["status"].update(uploadStatus="processed", license="youtube", embeddable=True)
         self.videos[VIDEO_ID] = video
+        if self.after_insert:
+            self.after_insert()
         return VIDEO_ID
 
     def set_thumbnail(self, video_id, path, mime_type):
@@ -87,6 +95,16 @@ class UploadSafeguards(unittest.TestCase):
         self.probe = patch.object(uploader, "probe_video", return_value={"duration_seconds": 45.0, "width": 1080, "height": 1920})
         self.probe.start()
         self.addCleanup(self.probe.stop)
+        self.elapsed = 0
+        self.clock = patch.object(uploader.time, "monotonic", side_effect=lambda: self.elapsed)
+        self.sleep = patch.object(uploader.time, "sleep", side_effect=self.advance_clock)
+        self.clock.start()
+        self.sleep.start()
+        self.addCleanup(self.clock.stop)
+        self.addCleanup(self.sleep.stop)
+
+    def advance_clock(self, seconds):
+        self.elapsed += seconds
 
     def plan(self, **changes):
         self.data.update(changes)
@@ -112,6 +130,33 @@ class UploadSafeguards(unittest.TestCase):
         self.assertEqual(len(self.api.inserts), 1)
         self.assertEqual(state["phase"], "private_ready")
         self.assertEqual(self.store.path.stat().st_mode & 0o777, 0o600)
+
+    def test_processed_copy_converges_without_repeating_insert(self):
+        def stale_copy():
+            old = copy.deepcopy(self.api.videos[VIDEO_ID])
+            old["snippet"]["title"] = ""
+            self.api.read_responses = [old, old]
+
+        self.api.after_insert = stale_copy
+        state = uploader.upload(self.api, self.store, self.plan())
+        self.assertEqual(state["phase"], "private_ready")
+        self.assertEqual(len(self.api.inserts), 1)
+        self.assertEqual(len(self.api.thumbnails), 1)
+        self.assertEqual(self.api.updates, [])
+        self.assertEqual(self.elapsed, 4)
+
+    def test_persistent_copy_mismatch_stops_at_deadline_with_id_saved(self):
+        def bad_copy():
+            self.api.videos[VIDEO_ID]["snippet"]["title"] = "A different title"
+
+        self.api.after_insert = bad_copy
+        with self.assertRaisesRegex(uploader.UploadError, "metadata differs"):
+            uploader.upload(self.api, self.store, self.plan())
+        self.assertEqual(self.elapsed, uploader.READ_WAIT_SECONDS)
+        self.assertEqual(self.store.read()["video_id"], VIDEO_ID)
+        self.assertEqual(len(self.api.inserts), 1)
+        self.assertEqual(self.api.thumbnails, [])
+        self.assertEqual(self.api.updates, [])
 
     def test_ambiguous_insert_is_never_repeated(self):
         plan = self.plan()
@@ -207,8 +252,48 @@ class UploadSafeguards(unittest.TestCase):
             uploader.upload(self.api, self.store, self.plan(publish_at=FUTURE))
         self.assertEqual(self.store.read()["video_id"], VIDEO_ID)
         self.assertIn("undo", self.store.read())
+        self.assertEqual(self.elapsed, uploader.READ_WAIT_SECONDS)
+        self.assertEqual(len(self.api.updates), 1)
         uploader.hold_private(self.api, self.store)
         self.assertEqual(self.store.read()["phase"], "held_private")
+
+    def test_schedule_readback_converges_with_one_status_write(self):
+        def stale_status(status):
+            self.api.read_responses = [copy.deepcopy(self.api.videos[VIDEO_ID])] * 2
+
+        self.api.before_update = stale_status
+        state = uploader.upload(self.api, self.store, self.plan(publish_at=FUTURE))
+        self.assertEqual(state["phase"], "scheduled")
+        self.assertEqual(len(self.api.inserts), 1)
+        self.assertEqual(len(self.api.updates), 1)
+        self.assertEqual(self.elapsed, 4)
+
+    def test_hold_readback_converges_with_one_hold_write(self):
+        uploader.upload(self.api, self.store, self.plan(publish_at=FUTURE))
+
+        def stale_status(status):
+            self.api.read_responses = [copy.deepcopy(self.api.videos[VIDEO_ID])] * 2
+
+        self.api.before_update = stale_status
+        state = uploader.hold_private(self.api, self.store)
+        self.assertEqual(state["phase"], "held_private")
+        self.assertEqual(len(self.api.updates), 2)
+        self.assertNotIn("publishAt", self.api.updates[-1])
+        self.assertEqual(self.elapsed, 4)
+
+    def test_persistent_hold_readback_stops_at_deadline_without_rewriting(self):
+        uploader.upload(self.api, self.store, self.plan(publish_at=FUTURE))
+
+        def stale_status(status):
+            self.api.read_responses = [copy.deepcopy(self.api.videos[VIDEO_ID])] * 100
+
+        self.api.before_update = stale_status
+        with self.assertRaisesRegex(uploader.UploadError, "readback did not match"):
+            uploader.hold_private(self.api, self.store)
+        self.assertEqual(self.elapsed, uploader.READ_WAIT_SECONDS)
+        self.assertEqual(len(self.api.updates), 2)
+        self.assertEqual(self.store.read()["phase"], "holding_private")
+        self.assertTrue(self.store.read()["held_private"])
 
     def test_hold_requires_recorded_id_and_live_main_ownership(self):
         with self.assertRaisesRegex(uploader.UploadError, "No uploaded video"):
