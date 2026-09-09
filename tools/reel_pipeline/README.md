@@ -51,3 +51,23 @@ Flow per episode:
    to a re-encode, because that is the surface that actually broke.
 6. X limit: 140s. Longer episodes need a separate sub-140s cut (sort CUTS by
    time; keeps() asserts non-overlap after the scrambled-render bug).
+
+## Reviewed batch manifests
+
+`python3 tools/reel_pipeline/render_manifest.py /absolute/path/episode.json EXPORT_NAME`
+renders a reviewed cut list with a 0.5-second cover, optional stable Hindi phrase
+captions, and measured two-pass `highpass=60 + loudnorm` audio. `--draft` renders
+540×960; final output is 1080×1920. It performs no upload or scheduling.
+
+Keep episode manifests and media in a durable private project directory. The
+manifest contains `source`, `font`, and `exports`. Each export has `name`, `output`,
+`cover`, and chronological non-overlapping `keeps` pairs in source seconds.
+Optional `captions` is an array (or a JSON file path) of `{start,end,text}` records
+timed against the edited body before the cover. Caption phrases must fit two
+lines. Every cut still needs speech/context and waveform review; a syntactically
+valid time does not establish a complete thought.
+
+The renderer rejects empty, reversed, overlapping and out-of-source edits. Its
+integration check verifies actual cover frames, retained scenes, silent intro
+and audio frequencies across a removed segment:
+`python3 -m unittest discover -s tests -p test_render_manifest.py -v`.
