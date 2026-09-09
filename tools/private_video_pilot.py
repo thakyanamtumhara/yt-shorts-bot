@@ -9,6 +9,7 @@ import struct
 import subprocess
 import time
 import zipfile
+from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -38,6 +39,9 @@ def probe(path, media_type):
 def request(method, url, **kwargs):
     response = SESSION.request(method, url, timeout=kwargs.pop('timeout', 180), **kwargs)
     if not response.ok:
+        if OUT.exists():
+            (OUT / 'provider-error-private.json').write_text(json.dumps({
+                'status': response.status_code, 'body': response.text[:16000]}))
         raise RuntimeError(f'Provider HTTP {response.status_code}')
     return response
 
@@ -115,6 +119,59 @@ def avatar(duration):
     raise RuntimeError('Avatar exceeded the 12-minute wait; cancellation requested')
 
 
+def replicate_avatar(duration):
+    model_name = 'bytedance/omni-human-1.5'
+    base = 'https://api.replicate.com/v1'
+    headers = {'Authorization': 'Bearer ' + os.environ['REPLICATE_API_TOKEN']}
+    model = request('GET', f'{base}/models/{model_name}', headers=headers).json()
+    version = model.get('latest_version') or {}
+    properties = version.get('openapi_schema', {}).get('components', {}).get('schemas', {}).get('Input', {}).get('properties', {})
+    if not {'image', 'audio', 'fast_mode'}.issubset(properties):
+        raise RuntimeError('Replicate input schema changed; no prediction submitted')
+    run('ffmpeg', '-v', 'error', '-y', '-i', str(OUT / 'voice.wav'), '-c:a', 'libmp3lame',
+        '-b:a', '96k', str(OUT / 'voice-small.mp3'))
+    run('ffmpeg', '-v', 'error', '-y', '-i', str(OUT / 'portrait.jpg'),
+        '-vf', 'scale=720:-2', '-q:v', '5', '-frames:v', '1', str(OUT / 'portrait-small.jpg'))
+    queued = request('POST', f'{base}/models/{model_name}/predictions',
+                     headers={**headers, 'Cancel-After': '12m'}, json={'input': {
+                         'image': data_url(OUT / 'portrait-small.jpg', 'image/jpeg'),
+                         'audio': data_url(OUT / 'voice-small.mp3', 'audio/mpeg'),
+                         'fast_mode': False,
+                         'prompt': 'Static camera. Natural restrained movement. Preserve the exact person, clothing and background. Accurate Hindi lip sync.'}}).json()
+    (OUT / 'avatar-queue-private.json').write_text(json.dumps(queued))
+    urls = queued.get('urls', {})
+    for key in ('get', 'cancel'):
+        if not urls.get(key, '').startswith(base + '/predictions/'):
+            raise RuntimeError('Unexpected prediction endpoint')
+    deadline = time.monotonic() + 720
+    while time.monotonic() < deadline:
+        result = request('GET', urls['get'], headers=headers, timeout=45).json()
+        if result.get('status') == 'succeeded':
+            url = result.get('output')
+            parsed = urlparse(url) if isinstance(url, str) else None
+            if not parsed or parsed.scheme != 'https' or not (parsed.hostname == 'replicate.delivery' or
+                                                             (parsed.hostname or '').endswith('.replicate.delivery')):
+                raise RuntimeError('Unexpected prediction output host')
+            response = request('GET', url, headers=headers, allow_redirects=False)
+            if response.status_code != 200:
+                raise RuntimeError('Prediction output download requires separate redirect review')
+            (OUT / 'avatar.mp4').write_bytes(response.content)
+            actual = probe(OUT / 'avatar.mp4', 'video')
+            if abs(actual - duration) > 2:
+                raise ValueError('Avatar duration differs from the input')
+            return {'model': model_name, 'provider': 'replicate', 'attempts': 1,
+                    'version': version.get('id'), 'license_url': model.get('license_url'),
+                    'commercial_publishing_clearance': 'not established; private review only',
+                    'request_id': queued.get('id'), 'input_seconds': duration, 'output_seconds': actual,
+                    'voice': 'Original recorded voice, not cloned speech'}
+        if result.get('status') in ('failed', 'canceled'):
+            (OUT / 'avatar-result-private.json').write_text(json.dumps(result))
+            raise RuntimeError('Replicate prediction ' + result['status'])
+        time.sleep(12)
+    request('POST', urls['cancel'], headers=headers, timeout=30)
+    raise RuntimeError('Avatar exceeded the 12-minute wait; cancellation requested')
+
+
 def encrypt_output(public_key, destination):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as archive:
@@ -149,6 +206,8 @@ def main():
     ap.add_argument('--seconds', type=float, default=18.6)
     ap.add_argument('--portrait-at', type=float, default=5)
     ap.add_argument('--avatar', action='store_true')
+    ap.add_argument('--avatar-provider', choices=['fal', 'replicate'], default='fal')
+    ap.add_argument('--skip-music', action='store_true')
     args = ap.parse_args()
     public_key = validate_inputs(args.source_key, args.seconds, args.portrait_at,
                                  os.environ['PILOT_PUBLIC_KEY'])
@@ -166,7 +225,11 @@ def main():
         probe(OUT / 'voice.wav', 'audio')
         run('ffmpeg', '-v', 'error', '-y', '-ss', str(args.portrait_at), '-i', str(OUT / 'source.mp4'),
             '-frames:v', '1', '-q:v', '2', str(OUT / 'portrait.jpg'))
-        for name, fn in [('music', music)] + ([('avatar', lambda: avatar(args.seconds))] if args.avatar else []):
+        tasks = [] if args.skip_music else [('music', music)]
+        if args.avatar:
+            generator = replicate_avatar if args.avatar_provider == 'replicate' else avatar
+            tasks.append(('avatar', lambda: generator(args.seconds)))
+        for name, fn in tasks:
             try:
                 meta[name] = {'status': 'succeeded', **fn()}
                 print(name + ': succeeded', flush=True)
@@ -177,7 +240,7 @@ def main():
     finally:
         (OUT / 'metadata.json').write_text(json.dumps(meta, indent=2))
         encrypt_output(public_key, 'private-pilot.enc')
-    if any(meta.get(name, {}).get('status') != 'succeeded' for name in ['music'] + (['avatar'] if args.avatar else [])):
+    if any(meta.get(name, {}).get('status') != 'succeeded' for name, _ in tasks):
         raise SystemExit(1)
 
 

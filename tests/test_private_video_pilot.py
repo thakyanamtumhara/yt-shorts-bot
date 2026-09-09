@@ -5,6 +5,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 import zipfile
 
 from cryptography.exceptions import InvalidTag
@@ -58,6 +59,33 @@ class PilotPrivacyTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pilot.validate_inputs(source, seconds, portrait, self.pem)
         self.assertIsInstance(pilot.validate_inputs('p/wt-fits-r8k.mp4', 18.6, 7.1, self.pem), rsa.RSAPublicKey)
+
+    def test_changed_provider_schema_stops_before_paid_request(self):
+        with patch.dict('os.environ', {'REPLICATE_API_TOKEN': 'test-key'}), \
+             patch.object(pilot, 'request', return_value=Mock(json=lambda: {})) as request:
+            with self.assertRaisesRegex(RuntimeError, 'schema changed'):
+                pilot.replicate_avatar(10.16)
+            self.assertEqual(request.call_count, 1)
+            self.assertEqual(request.call_args.args[0], 'GET')
+
+    def test_unexpected_output_host_never_receives_account_token(self):
+        model = {'latest_version': {'openapi_schema': {'components': {'schemas': {
+            'Input': {'properties': {'image': {}, 'audio': {}, 'fast_mode': {}}}}}}}}
+        queued = {'id': 'test', 'urls': {'get': 'https://api.replicate.com/v1/predictions/test',
+                                       'cancel': 'https://api.replicate.com/v1/predictions/test/cancel'}}
+        completed = {'status': 'succeeded', 'output': 'https://untrusted.invalid/video.mp4'}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(pilot, 'OUT', Path(directory)), \
+             patch.dict('os.environ', {'REPLICATE_API_TOKEN': 'test-key'}), \
+             patch.object(pilot, 'run'), patch.object(pilot, 'data_url', return_value='data:test'), \
+             patch.object(pilot, 'request') as request:
+            request.side_effect = [Mock(json=lambda: model), Mock(json=lambda: queued),
+                                   Mock(json=lambda: completed)]
+            with self.assertRaisesRegex(RuntimeError, 'output host'):
+                pilot.replicate_avatar(10.16)
+            self.assertEqual(request.call_count, 3)
+            self.assertEqual(request.call_args_list[1].kwargs['headers']['Cancel-After'], '12m')
+            self.assertTrue((Path(directory) / 'avatar-queue-private.json').exists())
 
 
 if __name__ == '__main__':
