@@ -2885,5 +2885,22 @@
       "whisper": 0.0041,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-09-09T13:42:16.295819",
+    "topic": "\u20b9120 \u0915\u0940 Sublimation Tee vs \u20b985 \u0915\u0940 \u2014 Polyester GSM Same, Fabric Feel \u0905\u0932\u0917 \u0915\u094d\u092f\u094b\u0902?",
+    "title": "\u20b9120 vs \u20b985 Sublimation Tee \u2014 GSM Same, Feel \u0905\u0932\u0917 \u0915\u094d\u092f\u094b\u0902?",
+    "total_usd": 5.5561,
+    "duration_min": 25.4,
+    "breakdown": {
+      "claude_opus": 0.3398,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0226,
+      "veo_clips": 4.8,
+      "whisper": 0.0044,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2192
+    }
   }
 ]
