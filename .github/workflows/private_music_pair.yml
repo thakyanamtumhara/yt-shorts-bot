@@ -1,0 +1,51 @@
+name: Private music pair
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt_a:
+        description: First reviewed instrumental direction; one generation attempt
+        required: true
+        type: string
+      prompt_b:
+        description: Second reviewed instrumental direction; one generation attempt
+        required: true
+        type: string
+      recipient_public_key:
+        description: Recipient RSA public key PEM, at least 3072 bits
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-music-pair
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install cryptography requests
+      - name: Generate two encrypted instrumental previews
+        env:
+          MUSIC_PROMPT_A: ${{ inputs.prompt_a }}
+          MUSIC_PROMPT_B: ${{ inputs.prompt_b }}
+          PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python -m tools.private_music_pair
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-music-pair-encrypted
+          path: private-music-pair.enc
+          if-no-files-found: error
+          retention-days: 2
