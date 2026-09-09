@@ -1,0 +1,57 @@
+name: Private video pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipient_public_key:
+        description: Recipient RSA public key, PEM, at least 3072 bits
+        required: true
+        type: string
+      avatar:
+        description: Generate one own-face preview using the original recorded voice
+        default: false
+        type: boolean
+      portrait_at:
+        description: Portrait frame time in the existing source, seconds
+        default: '5'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-video-pilot
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install boto3 cryptography requests
+      - name: Generate encrypted previews
+        env:
+          PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          PILOT_AVATAR: ${{ inputs.avatar }}
+          PILOT_PORTRAIT_AT: ${{ inputs.portrait_at }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+        run: |
+          args=(--portrait-at "$PILOT_PORTRAIT_AT")
+          if [ "$PILOT_AVATAR" = true ]; then args+=(--avatar); fi
+          python tools/private_video_pilot.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-video-pilot-encrypted
+          path: private-pilot.enc
+          if-no-files-found: error
+          retention-days: 2
