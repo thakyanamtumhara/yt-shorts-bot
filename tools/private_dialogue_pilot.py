@@ -194,9 +194,10 @@ def upload_file(path, mime, headers):
 
 def make_video(duration, meta):
     shared.run('ffmpeg', '-v', 'error', '-y', '-i', str(OUT / 'source.mp4'), '-t', str(duration),
-               '-map', '0:v:0', '-c:v', 'copy', '-an', '-movflags', '+faststart',
+               '-map', '0:v:0', '-map', '0:a:0', '-c', 'copy', '-movflags', '+faststart',
                str(OUT / 'source-for-lipsync.mp4'))
     input_seconds = shared.probe(OUT / 'source-for-lipsync.mp4', 'video')
+    shared.probe(OUT / 'source-for-lipsync.mp4', 'audio')
     if abs(input_seconds - duration) > 0.1:
         raise ValueError('Source and full speech durations do not match')
     headers = {'Authorization': 'Bearer ' + os.environ['REPLICATE_API_TOKEN']}
