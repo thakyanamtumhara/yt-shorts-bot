@@ -29,10 +29,14 @@ class FakeS3:
     def __init__(self):
         self.objects = {}
         self.puts = []
+        self.gets = []
+        self.lists = []
         self.get_error = None
+        self.list_error = None
         self.reject_state = lambda state: False
 
     def get_object(self, Bucket, Key):
+        self.gets.append({"Bucket": Bucket, "Key": Key})
         if self.get_error:
             raise self.get_error
         if Key not in self.objects:
@@ -57,10 +61,15 @@ class FakeS3:
         return {"ETag": etag}
 
     def list_objects_v2(self, Bucket, Prefix, **kwargs):
-        return {"Contents": [{"Key": key} for key in sorted(self.objects) if key.startswith(Prefix)], "IsTruncated": False}
+        self.lists.append({"Bucket": Bucket, "Prefix": Prefix, **kwargs})
+        if self.list_error:
+            raise self.list_error
+        keys = [key for key in sorted(self.objects) if key.startswith(Prefix)]
+        limit = kwargs.get("MaxKeys", len(keys))
+        return {"Contents": [{"Key": key} for key in keys[:limit]], "IsTruncated": len(keys) > limit}
 
     def state(self, job_id):
-        return json.loads(self.objects["automation-state/ig-curated/" + job_id + ".json"][0])
+        return json.loads(self.objects["p/automation-state-ig-curated/" + job_id + ".json"][0])
 
 
 class FakeInstagram:
@@ -326,12 +335,46 @@ class CuratedFeedSafeguards(unittest.TestCase):
         self.assertIn("git add feed_queue/", workflow)
         self.assertIn("git add ig_drafts/", workflow)
         self.assertIn("CURATED_STATE_BUCKET: bulkplaintshirt.com", workflow)
-        self.assertIn("CURATED_STATE_PREFIX: automation-state/ig-curated", workflow)
+        self.assertIn("CURATED_STATE_PREFIX: p/automation-state-ig-curated", workflow)
         self.assertIn("path: feed_queue/state/*.json", workflow)
 
     def remote(self):
         s3 = FakeS3()
-        return s3, feed.S3StateBackend(s3, "bulkplaintshirt.com", "automation-state/ig-curated")
+        return s3, feed.S3StateBackend(s3, "bulkplaintshirt.com", "p/automation-state-ig-curated")
+
+    def test_missing_remote_state_uses_exact_listing_without_denied_get(self):
+        s3, backend = self.remote()
+        s3.get_error = FakeS3Error("AccessDenied")
+        self.assertEqual(backend.read("checklist.json"), (None, None))
+        self.assertEqual(s3.gets, [])
+        self.assertEqual(s3.lists, [{"Bucket": "bulkplaintshirt.com",
+                                    "Prefix": "p/automation-state-ig-curated/checklist.json", "MaxKeys": 1}])
+
+    def test_prefix_neighbour_is_not_an_existing_state_object(self):
+        s3, backend = self.remote()
+        s3.objects["p/automation-state-ig-curated/checklist.json-extra"] = (b"{}", '"other"')
+        self.assertEqual(backend.read("checklist.json"), (None, None))
+        self.assertEqual(s3.gets, [])
+
+    def test_remote_listing_denied_blocks_before_get(self):
+        s3, backend = self.remote()
+        s3.list_error = FakeS3Error("AccessDenied")
+        with self.assertRaisesRegex(feed.FeedError, "local fallback is forbidden"):
+            backend.read("checklist.json")
+        self.assertEqual(s3.gets, [])
+
+    def test_remote_state_disappearing_after_listing_is_not_a_new_job(self):
+        job = self.job(images=1)
+        s3, backend = self.remote()
+        backend.save("checklist.json", feed.bind_state(None, job, "publish"), None)
+        s3.get_error = FakeS3Error("NoSuchKey")
+        with self.assertRaisesRegex(feed.FeedError, "local fallback is forbidden"):
+            backend.read("checklist.json")
+        self.assertEqual(len(s3.gets), 1)
+
+    def test_state_prefix_outside_permitted_p_path_is_rejected(self):
+        with self.assertRaisesRegex(feed.FeedError, "Unexpected curated state"):
+            feed.S3StateBackend(FakeS3(), "bulkplaintshirt.com", "automation-state/ig-curated")
 
     def test_remote_pending_is_acknowledged_before_each_graph_post(self):
         job = self.job()
@@ -391,11 +434,13 @@ class CuratedFeedSafeguards(unittest.TestCase):
         self.api.created.clear()
         self.api.published.clear()
         s3, backend = self.remote()
+        backend.save("checklist.json", feed.bind_state(None, job, "publish"), None)
         s3.get_error = FakeS3Error("AccessDenied")
         with self.assertRaisesRegex(feed.FeedError, "local fallback is forbidden"):
             self.run_queue(execute=True, state_backend=backend)
         self.assertEqual(self.api.created, [])
         self.assertEqual(self.api.published, [])
+        self.assertEqual(len(s3.gets), 1)
 
     def test_conditional_create_prevents_two_initial_writers(self):
         job = self.job(images=1)

@@ -14,6 +14,15 @@ on:
   schedule:
     - cron: '30 13 * * 0'   # Sunday 13:30 UTC = 19:00 IST
   workflow_dispatch:
+    inputs:
+      verify_only:
+        description: 'Validate reviewed drafts and S3 preconditions without publishing or running the standard recap'
+        type: boolean
+        default: false
+
+concurrency:
+  group: sunday-article-publish
+  cancel-in-progress: false
 
 jobs:
   recap:
@@ -34,7 +43,26 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Install reviewed article dependencies
+        run: pip install -q 'boto3>=1.40.20' cryptography
+
+      - name: Publish due reviewed website article
+        id: reviewed
+        env:
+          REVIEWED_ARTICLE_KEY: ${{ secrets.REVIEWED_ARTICLE_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'ap-south-1'
+          YOUTUBE_API_KEY_1: ${{ secrets.YOUTUBE_API_KEY_1 }}
+        run: |
+          if [ '${{ inputs.verify_only }}' = 'true' ]; then
+            python3 tools/publish_reviewed_article.py --verify-only
+          else
+            python3 tools/publish_reviewed_article.py --execute
+          fi
+
       - name: Install system deps
+        if: steps.reviewed.outputs.handled_today != 'true'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
@@ -45,9 +73,11 @@ jobs:
           echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
 
       - name: Install Python packages
+        if: steps.reviewed.outputs.handled_today != 'true'
         run: pip install -q -r requirements.txt
 
       - name: Run Sunday recap
+        if: steps.reviewed.outputs.handled_today != 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -64,7 +94,7 @@ jobs:
         run: python3 daily_short.py --mode=sunday-recap
 
       - name: Save updated tracking files
-        if: always()
+        if: always() && inputs.verify_only != true
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"

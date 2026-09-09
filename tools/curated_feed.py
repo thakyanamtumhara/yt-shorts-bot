@@ -121,17 +121,18 @@ def validate_assets(job):
 
 class S3StateBackend:
     def __init__(self, client, bucket, prefix):
-        if bucket != "bulkplaintshirt.com" or prefix != "automation-state/ig-curated":
+        if bucket != "bulkplaintshirt.com" or prefix != "p/automation-state-ig-curated":
             raise FeedError("Unexpected curated state bucket or prefix.")
         self.client, self.bucket, self.prefix = client, bucket, prefix + "/"
 
     def read(self, filename):
+        key = self.prefix + filename
         try:
-            response = self.client.get_object(Bucket=self.bucket, Key=self.prefix + filename)
-        except Exception as exc:
-            code = getattr(exc, "response", {}).get("Error", {}).get("Code")
-            if code == "NoSuchKey":
+            page = self.client.list_objects_v2(Bucket=self.bucket, Prefix=key, MaxKeys=1)
+            if not any(item.get("Key") == key for item in page.get("Contents", [])):
                 return None, None
+            response = self.client.get_object(Bucket=self.bucket, Key=key)
+        except Exception:
             raise FeedError("Remote feed state could not be read; local fallback is forbidden.") from None
         try:
             with response["Body"] as body:
@@ -191,7 +192,7 @@ def state_backend_from_environment():
     bucket = os.environ.get("CURATED_STATE_BUCKET", "").strip()
     if not bucket:
         return None
-    prefix = os.environ.get("CURATED_STATE_PREFIX", "automation-state/ig-curated").strip().rstrip("/")
+    prefix = os.environ.get("CURATED_STATE_PREFIX", "p/automation-state-ig-curated").strip().rstrip("/")
     import boto3
     from botocore.config import Config
     client = boto3.client("s3", config=Config(retries={"total_max_attempts": 1}))

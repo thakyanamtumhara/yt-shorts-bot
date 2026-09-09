@@ -15,8 +15,18 @@ on:
         description: Recipient RSA public key PEM, at least 3072 bits
         required: true
         type: string
+      resume_audio_key:
+        description: Optional encrypted original speech pack under p/ (skips all TTS calls)
+        required: false
+        default: ''
+        type: string
+      resume_audio_sha256:
+        description: SHA-256 of the encrypted resume pack; required together with resume_audio_key
+        required: false
+        default: ''
+        type: string
       execute:
-        description: After checks, make one existing-voice TTS and one HeyGen Precision private attempt
+        description: After checks, make one private video attempt; reuse speech when a resume pack is supplied
         default: false
         type: boolean
 
@@ -43,6 +53,9 @@ jobs:
           PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
           PILOT_SOURCE_KEY: ${{ inputs.source_key }}
           PILOT_SOURCE_SHA256: ${{ inputs.source_sha256 }}
+          PILOT_RESUME_AUDIO_KEY: ${{ inputs.resume_audio_key }}
+          PILOT_RESUME_AUDIO_SHA256: ${{ inputs.resume_audio_sha256 }}
+          PRIVATE_DIALOGUE_RESUME_KEY: ${{ secrets.PRIVATE_DIALOGUE_RESUME_KEY }}
           PILOT_EXECUTE: ${{ inputs.execute }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
@@ -51,6 +64,7 @@ jobs:
           AWS_DEFAULT_REGION: ap-south-1
         run: |
           args=(--source-key "$PILOT_SOURCE_KEY" --source-sha256 "$PILOT_SOURCE_SHA256")
+          args+=(--resume-audio-key "$PILOT_RESUME_AUDIO_KEY" --resume-audio-sha256 "$PILOT_RESUME_AUDIO_SHA256")
           if [ "$PILOT_EXECUTE" = true ]; then args+=(--execute); fi
           python tools/private_dialogue_pilot.py "${args[@]}"
       - uses: actions/upload-artifact@v4

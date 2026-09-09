@@ -642,6 +642,42 @@
    "verify": "manual",
    "match": "Delhi T-shirt orders: train, direct-route bus, courier and local optio",
    "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "wh26-buyer-checklist-ig-feed",
+   "label": "Warehouse carousel — instagram",
+   "platform": "instagram",
+   "rail": "curated-feed",
+   "due_ist": "2026-09-20 13:00",
+   "verify": "api",
+   "match": "Bulk T-shirt order से पहले 3 चीजें clear करो:\n\n• अपने size और col"
+  },
+  {
+   "id": "wh26-buyer-checklist-fb-feed",
+   "label": "Warehouse carousel — facebook",
+   "platform": "facebook",
+   "rail": "native-facebook",
+   "due_ist": "2026-09-21 20:15",
+   "verify": "api",
+   "match": "Before a bulk T-shirt order: check your size and colour stock, or"
+  },
+  {
+   "id": "wh26-printing-question-ig-feed",
+   "label": "Warehouse photo — instagram",
+   "platform": "instagram",
+   "rail": "curated-feed",
+   "due_ist": "2026-09-26 13:00",
+   "verify": "api",
+   "match": "Printers और resellers के लिए blank T-shirts.\n\nये photo मेरे Delhi"
+  },
+  {
+   "id": "wh26-printing-question-fb-feed",
+   "label": "Warehouse photo — facebook",
+   "platform": "facebook",
+   "rail": "native-facebook",
+   "due_ist": "2026-09-27 20:15",
+   "verify": "api",
+   "match": "If you print and resell T-shirts, the printing process is useful "
   }
  ]
 }
