@@ -416,13 +416,20 @@ def assess_speech(episode, claim):
                    'Listen through the short silent settling tail. Do not give credit for silence alone. '
                    'This is an editorial hypothesis, not evidence of increased engagement. Final conclusion: ' +
                    episode['ending']['conclusion'])
+    if episode.get('provided_speech'):
+        prompt += ('\nThis audio joins selected new opening/closing speech to the preserved middle. '
+                   'Listen especially at sentence joins: the opening final word must fully release before '
+                   'the next sentence; report clicks, chopped phonemes, doubled sounds, abrupt level/timbre '
+                   'changes or an unnatural gap. Also inspect the entrance into the final print-sample '
+                   'closing and the complete final-word cadence. Do not excuse a join defect because '
+                   'the written script and character alignment are complete.')
     claim.begin(id_, 'audio_qa')
     result = request('POST', GOOGLE + '/interactions', headers={'x-goog-api-key': os.environ['GOOGLE_API_KEY']},
         json={'model': QA_MODEL, 'store': False,
               'input': [{'type': 'text', 'text': prompt}, {'type': 'audio', 'mime_type': 'audio/wav',
                         'data': base64.b64encode((OUT / f'{id_}-speech.wav').read_bytes()).decode()}],
               'response_format': {'type': 'text', 'mime_type': 'application/json', 'schema': schema},
-              'generation_config': {'max_output_tokens': 3000}}).json()
+              'generation_config': {'max_output_tokens': 8000}}).json()
     save(f'{id_}-audio-qa-provider.json', result)
     claim.finish(id_, 'audio_qa', 'returned', result.get('id'))
     if result.get('status') != 'completed':
@@ -471,6 +478,9 @@ def make_video(episode, duration, claim):
     if abs(shared.probe(trimmed, 'video') - duration) > 0.1:
         raise ValueError('Source trim does not match complete speech')
     shared.probe(trimmed, 'audio')
+    if episode.get('provided_speech'):
+        save(f'{id_}-source-for-lipsync-check.json',
+             {'sha256': digest(trimmed.read_bytes()), 'bytes': trimmed.stat().st_size})
     headers = {'Authorization': 'Bearer ' + os.environ['REPLICATE_API_TOKEN']}
     video_url = upload(trimmed, 'video/mp4', headers)
     audio_url = upload(OUT / f'{id_}-speech.wav', 'audio/wav', headers)
@@ -589,6 +599,27 @@ def run_episodes(episodes, durations, claim, resumed_fit_seconds=None, supplied_
         make_video(episode, duration, claim)
 
 
+def compact_refinement_artifact(episodes, succeeded):
+    omitted = {}
+    for episode in episodes:
+        id_ = episode['id']
+        for suffix in ('source.mp4', 'source-for-lipsync.mp4', 'provider.mp4'):
+            path = OUT / (id_ + '-' + suffix)
+            if not path.is_file() or (suffix == 'provider.mp4' and not succeeded):
+                continue
+            info = {'sha256': digest(path.read_bytes()), 'bytes': path.stat().st_size}
+            if suffix == 'source.mp4' and info['sha256'] != episode['source_sha256']:
+                continue
+            if suffix == 'source-for-lipsync.mp4':
+                check = OUT / (id_ + '-source-for-lipsync-check.json')
+                if not check.is_file() or json.loads(check.read_bytes()) != info:
+                    continue
+            omitted[path.name] = info
+    save('reproducible-inputs-and-duplicate-provider.json', omitted)
+    for name in omitted:
+        (OUT / name).unlink()
+
+
 def main():
     parser = argparse.ArgumentParser(description='At most two private, encrypted dialogue examples; no publishing')
     parser.add_argument('--manifest-key', required=True)
@@ -610,6 +641,7 @@ def main():
     meta = {'private_preview': True, 'human_review_required': True, 'public_release_approved': False,
             'mode': 'execute' if args.execute else 'preflight_only', 'status': 'started'}
     result = 1
+    refinement_episodes = []
     try:
         import boto3
         from botocore.config import Config
@@ -617,6 +649,8 @@ def main():
         raw = read_s3(s3, args.manifest_key, args.manifest_sha256, 16 * 1024)
         manifest = json.loads(raw)
         episodes = validate_manifest(manifest)
+        if manifest['format'] == REFINEMENT_FORMAT:
+            refinement_episodes = episodes
         save('manifest-private.json', manifest)
         fingerprint = digest(encoded(manifest))
         meta['manifest_fingerprint'] = fingerprint
@@ -646,21 +680,17 @@ def main():
                 run_episodes(episodes, durations, claim, resumed_seconds, supplied_seconds)
             else:
                 run_episodes(episodes, durations, claim, resumed_seconds)
-            if manifest['format'] == REFINEMENT_FORMAT:
-                omitted = {}
-                for episode in episodes:
-                    for suffix in ('source.mp4', 'source-for-lipsync.mp4', 'provider.mp4'):
-                        path = OUT / (episode['id'] + '-' + suffix)
-                        omitted[path.name] = {'sha256': digest(path.read_bytes()), 'bytes': path.stat().st_size}
-                save('reproducible-inputs-and-duplicate-provider.json', omitted)
-                for name in omitted:
-                    (OUT / name).unlink()
         meta['status'] = 'succeeded'
         result = 0
     except Exception as exc:
         meta.update({'status': 'stopped', 'error_type': type(exc).__name__})
         save('failure-private.json', {'error_type': type(exc).__name__, 'detail': str(exc)[:16000]})
     finally:
+        if refinement_episodes:
+            try:
+                compact_refinement_artifact(refinement_episodes, result == 0)
+            except Exception as exc:
+                save('compaction-error-private.json', {'error_type': type(exc).__name__, 'detail': str(exc)[:2000]})
         save('metadata.json', meta)
         shared.encrypt_output(key, 'private-dialogue-episodes.enc')
     print('Private episodes: ' + meta['status'] + '; inspect the encrypted artifact before any further attempt', flush=True)

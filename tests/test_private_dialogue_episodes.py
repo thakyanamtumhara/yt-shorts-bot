@@ -288,9 +288,29 @@ class EpisodeTests(unittest.TestCase):
         self.assertEqual(base64.b64decode(payload['input'][1]['data']), b'RIFF-private-speech')
         self.assertEqual(payload['input'][1]['mime_type'], 'audio/wav')
         self.assertEqual(payload['response_format']['mime_type'], 'application/json')
+        self.assertEqual(payload['generation_config']['max_output_tokens'], 8000)
         self.assertEqual(self.claim.state['episodes']['fit']['audio_qa']['status'], 'passed')
         saved = json.loads((self.out / 'fit-audio-qa.json').read_bytes())
         self.assertEqual(saved['review_type'], 'machine_native_audio_not_human_listening')
+
+    def test_refined_audio_review_checks_joins_and_incomplete_response_still_blocks_video(self):
+        (self.out / 'fit-speech.wav').write_bytes(b'RIFF-reviewed-joined-speech')
+        incomplete = {'id': 'qa-incomplete', 'status': 'incomplete', 'steps': [{'type': 'model_output',
+                      'content': [{'type': 'text', 'text': '{"heard_text":"cut'}]}]}
+        with patch.object(pilot, 'request', return_value=Mock(json=lambda: incomplete)) as request, \
+             patch.object(pilot, 'make_speech') as tts, patch.object(pilot, 'make_video') as video, \
+             self.assertRaises(ValueError):
+            pilot.run_episodes([self.refinement_episode()], {'fit': 32}, self.claim, supplied_seconds={'fit': 27})
+        self.assertEqual(request.call_count, 1)
+        payload = request.call_args.kwargs['json']
+        self.assertEqual(payload['generation_config']['max_output_tokens'], 8000)
+        self.assertIn('opening final word must fully release', payload['input'][0]['text'])
+        self.assertIn('entrance into the final print-sample', payload['input'][0]['text'])
+        self.assertIn('chopped phonemes', payload['input'][0]['text'])
+        self.assertEqual(self.claim.state['episodes']['fit']['audio_qa']['status'], 'returned')
+        self.assertTrue((self.out / 'fit-audio-qa-provider.json').exists())
+        tts.assert_not_called()
+        video.assert_not_called()
 
     def test_any_audio_uncertainty_defect_or_missing_word_blocks_lips(self):
         pilot.validate_assessment(assessment(), ['फिट', 'कपड़ा'])
@@ -396,6 +416,84 @@ class EpisodeTests(unittest.TestCase):
         preflight.assert_called_once()
         generate.assert_not_called()
         self.assertEqual(len(self.s3.writes), writes_before)
+
+    def compact_fixture(self):
+        source, trimmed = b'verified-own-source', b'verified-source-trim'
+        item = {**self.refinement_episode(), 'source_sha256': pilot.digest(source)}
+        for name, raw in {'fit-source.mp4': source, 'fit-source-for-lipsync.mp4': trimmed,
+                          'fit-provider.mp4': b'provider-diagnostic', 'fit-dialogue.mp4': b'final-video',
+                          'fit-speech.wav': b'complete-voice', 'fit-audio-qa.json': b'qa-evidence',
+                          'failure-private.json': b'original-error'}.items():
+            (self.out / name).write_bytes(raw)
+        pilot.save('fit-source-for-lipsync-check.json', {'sha256': pilot.digest(trimmed), 'bytes': len(trimmed)})
+        return item
+
+    def test_failed_refinement_compacts_only_verified_sources_preserving_all_diagnostics(self):
+        item = self.compact_fixture()
+        pilot.compact_refinement_artifact([item], False)
+        receipt = json.loads((self.out / 'reproducible-inputs-and-duplicate-provider.json').read_text())
+        self.assertEqual(set(receipt), {'fit-source.mp4', 'fit-source-for-lipsync.mp4'})
+        self.assertEqual(receipt['fit-source.mp4']['sha256'], item['source_sha256'])
+        self.assertFalse((self.out / 'fit-source.mp4').exists())
+        self.assertFalse((self.out / 'fit-source-for-lipsync.mp4').exists())
+        for name in ('fit-provider.mp4', 'fit-dialogue.mp4', 'fit-speech.wav', 'fit-audio-qa.json', 'failure-private.json'):
+            self.assertTrue((self.out / name).exists(), name)
+
+    def test_successful_refinement_also_omits_duplicate_provider_after_receipt(self):
+        item = self.compact_fixture()
+        pilot.compact_refinement_artifact([item], True)
+        receipt = json.loads((self.out / 'reproducible-inputs-and-duplicate-provider.json').read_text())
+        self.assertIn('fit-provider.mp4', receipt)
+        self.assertFalse((self.out / 'fit-provider.mp4').exists())
+        self.assertTrue((self.out / 'fit-dialogue.mp4').exists())
+
+    def test_failed_receipt_write_or_unverified_trim_never_deletes_diagnostic(self):
+        item = self.compact_fixture()
+        with patch.object(pilot, 'save', side_effect=OSError('receipt fsync failed')), self.assertRaises(OSError):
+            pilot.compact_refinement_artifact([item], False)
+        self.assertTrue((self.out / 'fit-source.mp4').exists())
+        self.assertTrue((self.out / 'fit-source-for-lipsync.mp4').exists())
+        (self.out / 'fit-source-for-lipsync.mp4').write_bytes(b'partial-failed-trim')
+        pilot.compact_refinement_artifact([item], False)
+        self.assertTrue((self.out / 'fit-source-for-lipsync.mp4').exists())
+        self.assertFalse((self.out / 'fit-source.mp4').exists())
+
+    def test_main_failed_refinement_compacts_before_encrypting_error_and_audio(self):
+        key = AESGCM.generate_key(bit_length=256)
+        source = b'\x00\x00\x00\x18ftypisom' + b'verified-private-source-fixture'
+        item = {**self.refinement_episode(), 'source_sha256': pilot.digest(source)}
+        raw = pilot.encoded({'format': pilot.REFINEMENT_FORMAT, 'episodes': [item]})
+        self.s3.objects['p/manifest.json'] = raw
+        self.s3.objects[item['source_key']] = pilot.SOURCE_MAGIC + b'n' * 12 + AESGCM(key).encrypt(b'n' * 12, source, b'fit')
+        for file in self.out.iterdir():
+            file.unlink()
+        self.out.rmdir()
+        def provided(*args):
+            (self.out / 'fit-speech.wav').write_bytes(b'exact-provided-voice')
+            return 27
+        def fail_review(*args):
+            pilot.save('fit-audio-qa-provider.json', {'status': 'incomplete'})
+            (self.out / 'fit-provider.mp4').write_bytes(b'failed-provider-diagnostic')
+            raise ValueError('Native audio review was incomplete')
+        def encrypted(*args):
+            self.assertFalse((self.out / 'fit-source.mp4').exists())
+            self.assertEqual((self.out / 'fit-speech.wav').read_bytes(), b'exact-provided-voice')
+            self.assertTrue((self.out / 'fit-audio-qa-provider.json').exists())
+            self.assertTrue((self.out / 'failure-private.json').exists())
+            self.assertTrue((self.out / 'fit-provider.mp4').exists())
+            receipt = json.loads((self.out / 'reproducible-inputs-and-duplicate-provider.json').read_text())
+            self.assertEqual(receipt['fit-source.mp4']['sha256'], item['source_sha256'])
+        args = ['runner', '--manifest-key', 'p/manifest.json', '--manifest-sha256', pilot.digest(raw), '--execute']
+        with patch.object(sys, 'argv', args), patch('boto3.client', return_value=self.s3), \
+             patch.dict(os.environ, {'PRIVATE_EPISODES_KEY': base64.b64encode(key).decode()}), \
+             patch.object(pilot.shared, 'validate_inputs', return_value=Mock()), \
+             patch.object(pilot.shared, 'encrypt_output', side_effect=encrypted) as encrypt, \
+             patch.object(pilot, 'source_info', return_value=32), patch.object(pilot, 'preflight'), \
+             patch.object(pilot, 'load_refined_speech', side_effect=provided), \
+             patch.object(pilot, 'run_episodes', side_effect=fail_review), patch.object(pilot, 'request') as request:
+            self.assertEqual(pilot.main(), 1)
+        encrypt.assert_called_once()
+        request.assert_not_called()
 
     def test_private_artifact_roundtrip_contains_sources_speech_and_diagnostics(self):
         key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
