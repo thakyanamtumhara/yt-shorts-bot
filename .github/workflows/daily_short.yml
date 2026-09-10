@@ -267,7 +267,9 @@ jobs:
             /tmp/yt_shorts/SHORT_*.mp4
             /tmp/yt_shorts/thumbnail_*.png
             /tmp/yt_shorts/upload_meta.json
-          retention-days: 3
+            /tmp/yt_shorts/review_manifest.json
+            /tmp/yt_shorts/review_cover.*
+          retention-days: 21
           if-no-files-found: ignore
 
       - name: Notify on failure

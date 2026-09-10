@@ -4483,17 +4483,39 @@ def _devanagari_to_roman_variants(word, max_variants=12):
     return variants
 
 
+def _voice_corpus_speech_body(raw):
+    metadata = {}
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        if not line.startswith("#"):
+            break
+        match = re.fullmatch(r"#\s*(source|media_kind|synthetic)\s*:\s*(.*?)\s*", line)
+        if match:
+            key, value = match.groups()
+            if key in metadata:
+                return None
+            metadata[key] = value.lower()
+    if metadata.get("source") not in {"captions", "captions-oauth", "whisper"}:
+        return None
+    if metadata.get("media_kind", "real-recording") != "real-recording":
+        return None
+    if metadata.get("synthetic", "false") not in {"false", "no", "0"}:
+        return None
+    body = "\n".join(line for line in raw.splitlines() if not line.startswith("#")).strip()
+    return body if re.search(r"[ऄ-हक़-ॡ]", body) else None
+
+
 def build_voice_models():
     """Distill voice_corpus/*.txt into the two committed artifacts:
     voice_vocab.json (his words, frequency-ranked) + learned_pronunciations.json
     (auto roman→Devanagari; hand-curated _TTS_HINGLISH_DEVANAGARI always wins).
-    Speech transcripts (source: captions/whisper) are preferred — description
-    files only count while almost no speech exists yet. Idempotent; re-run
-    every Sunday and after backfills."""
+    Only recorded-speech transcripts are eligible. Keep existing artifacts
+    when none are available. Idempotent; re-run every Sunday and after backfills."""
     import collections
     if not os.path.isdir(VOICE_CORPUS_DIR):
         return
-    speech_texts, other_texts = [], []
+    speech_texts, ignored_files = [], 0
     for fn in sorted(os.listdir(VOICE_CORPUS_DIR)):
         if not fn.endswith(".txt"):
             continue
@@ -4502,14 +4524,15 @@ def build_voice_models():
                 raw = f.read()
         except Exception:
             continue
-        body = "\n".join(l for l in raw.splitlines() if not l.startswith("#"))
-        header = raw[:400]
-        if "# source: captions" in header or "# source: whisper" in header:
+        body = _voice_corpus_speech_body(raw)
+        if body:
             speech_texts.append(body)
         else:
-            other_texts.append(body)  # legacy description-era files
-    corpus = "\n".join(speech_texts if len(speech_texts) >= 3
-                       else speech_texts + other_texts)
+            ignored_files += 1
+    if not speech_texts:
+        print("   🧠 No eligible recorded speech; keeping existing voice models")
+        return
+    corpus = "\n".join(speech_texts)
     words = [w.strip("।॥॰ॐऽ०१२३४५६७८९")
              for w in re.findall(r"[ऀ-ॿ]{2,}", corpus)]
     freq = collections.Counter(w for w in words if len(w) >= 2)
@@ -4549,7 +4572,7 @@ def build_voice_models():
     global _LEARNED_PRON_CACHE
     _LEARNED_PRON_CACHE = None  # force reload on next normalize_for_tts
     print(f"   🧠 voice models: {len(top)} vocab words, {len(learned)} learned pronunciations"
-          f" (from {len(speech_texts)} speech + {len(other_texts)} description files)")
+          f" (from {len(speech_texts)} speech files; {ignored_files} ineligible files ignored)")
 
 
 _LEARNED_PRON_CACHE = None
@@ -4582,51 +4605,40 @@ def extract_voice_corpus_style_hints(max_entries=12):
     ending sentences from the TAIL of his transcripts (his real sign-offs)
     plus his high-frequency vocabulary from voice_vocab.json.
 
-    Returns a string of style guidance, or '' if corpus is too sparse (<4 files).
+    Returns a string of style guidance, or '' with fewer than four speech files.
     """
     if not os.path.isdir(VOICE_CORPUS_DIR):
         return ""
     import re as _re
     all_files = [f for f in os.listdir(VOICE_CORPUS_DIR) if f.endswith(".txt")]
-    if len(all_files) < 4:
-        # Not enough corpus yet — Phase 4 activates after 4 weeks of data
-        return ""
-    # Order: REAL-speech files first (dated Sundays newest-first, then the
-    # back-catalog backfills), description-era files only as last resort.
+    # Order: dated speech newest-first, then the back-catalog backfills.
     # A plain reverse sort would rank every backfill-* above every dated
     # file forever ('b' > '2') and starve out new Sunday transcripts.
-    speech_dated, speech_backfill, described = [], [], []
-    headers = {}
+    speech_dated, speech_backfill = [], []
+    speech_bodies = {}
     for fname in all_files:
         try:
             with open(os.path.join(VOICE_CORPUS_DIR, fname)) as f:
-                headers[fname] = f.read(400)
+                body = _voice_corpus_speech_body(f.read())
         except Exception:
             continue
-        is_speech = ("# source: captions" in headers[fname]
-                     or "# source: whisper" in headers[fname])
-        if not is_speech:
-            described.append(fname)
-        elif _re.match(r"\d{4}-\d{2}-\d{2}\.txt$", fname):
+        if not body:
+            continue
+        speech_bodies[fname] = body
+        if _re.match(r"\d{4}-\d{2}-\d{2}\.txt$", fname):
             speech_dated.append(fname)
         else:
             speech_backfill.append(fname)
-    ordered = (sorted(speech_dated, reverse=True) + sorted(speech_backfill)
-               + sorted(described, reverse=True))
+    ordered = sorted(speech_dated, reverse=True) + sorted(speech_backfill)
+    if len(ordered) < 4:
+        return ""
     # His long-form sign-offs often pitch the website/channel — never feed
     # CTA-flavoured lines back as ending examples (spoken CTA is banned).
     _CTA = _re.compile(r"(?i)subscribe|website|channel|\.com|link|"
                        r"सब्सक्राइब|चैनल|वेबसाइट|लिंक|लाइक|कमेंट|वीडियो")
     endings, n_read = [], 0
     for fname in ordered[:max_entries]:
-        try:
-            with open(os.path.join(VOICE_CORPUS_DIR, fname)) as f:
-                raw = f.read()
-        except Exception:
-            continue
-        body = "\n".join(l for l in raw.splitlines() if not l.startswith("#")).strip()
-        if not body:
-            continue
+        body = speech_bodies[fname]
         n_read += 1
         # Real sign-offs live at the END of a transcript, so look at the tail
         # (the old code read the first 3000 chars — mid-video for a long form)
@@ -13572,6 +13584,7 @@ def main():
             upload_failed = True
             flag("youtube_upload", False)
 
+    ig_media_id = None
     # ── 10d. Cross-post to Instagram Reels (independent of YouTube success) ──
     if not TEST_MODE:
         # Auto-refresh Instagram token if expiring within 7 days
@@ -13739,6 +13752,21 @@ def main():
         with open(meta_path, "w") as f:
             json.dump(meta, f, indent=2)
         print(f"   💾 Upload metadata saved: {meta_path}")
+
+    try:
+        from tools.short_review_archive import save_review_archive
+        review_path = save_review_archive(
+            video_path=output_path, thumbnail_path=thumbnail_path,
+            topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
+            script_voice=script_voice, tts_input=tts_input, script_english=script_english,
+            youtube_id=vid_id, instagram_id=ig_media_id, test_mode=TEST_MODE,
+            run_flags=RUN_FLAGS,
+        )
+        flag('review_archive', True)
+        print(f"   Review archive saved: {review_path}")
+    except Exception as archive_error:
+        flag('review_archive', False)
+        print(f"   Review archive failed: {archive_error}")
 
     # Cleanup (keep video + thumbnail if upload failed)
     for f in downloaded_clips:
