@@ -2902,5 +2902,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.2192
     }
+  },
+  {
+    "date": "2026-09-10T13:34:49.466727",
+    "topic": "200 GSM vs 200 GSM \u2014 \u0926\u094b\u0928\u094b\u0902 \u092e\u0947\u0902 \u20b930 \u0915\u093e \u092b\u0930\u094d\u0915 \u0915\u094d\u092f\u094b\u0902? \u092f\u0947 3 \u091a\u0940\u091c\u093c\u0947\u0902 \u091a\u0947\u0915 \u0915\u0930\u094b \u0915\u093e\u0928 \u0915\u0947 \u092a\u093e\u0938 \u0930\u0917\u0921\u093c \u0915\u0947",
+    "title": "200 GSM vs 200 GSM \u2014 \u20b930 \u092b\u0930\u094d\u0915 \u0915\u094d\u092f\u094b\u0902? \u0915\u093e\u0928 \u0915\u0947 \u092a\u093e\u0938 \u0930\u0917\u0921\u093c \u0915\u0947 \u091a\u0947\u0915 \u0915\u0930\u094b",
+    "total_usd": 5.2231,
+    "duration_min": 20.2,
+    "breakdown": {
+      "claude_opus": 0.3059,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0188,
+      "veo_clips": 4.8,
+      "whisper": 0.0034,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]

@@ -1979,11 +1979,20 @@
     "title": "180 GSM vs 200 GSM — Inside Out Rub Test to Spot Combed vs Carded Cotton",
     "topic": "180 GSM vs 200 GSM — Haath Me Rakho Dono, Ek Trick Se Pehchano Kaun Combed Hai Kaun Carded",
     "published_at": "2026-09-07T20:32:24.940119+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "₹8 COMBED SWAP 500 Pc",
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
-    "cover_face": false
+    "cover_face": false,
+    "checked_at": "2026-09-10T19:02:04.759677+05:30",
+    "hours_since_publish": 70.5,
+    "views": 1837,
+    "reach": 1472,
+    "likes": 19,
+    "comments": 1,
+    "shares": 8,
+    "saves": 10,
+    "avg_watch_time_ms": 12397
   },
   {
     "media_id": "18050137145802419",
@@ -2007,5 +2016,17 @@
     "cover_color": "#FFD400 keyword + #FFFFFF",
     "cover_path": "ai+pil",
     "cover_face": false
+  },
+  {
+    "media_id": "18091355006159379",
+    "title": "200 GSM vs 200 GSM — Why Rs 30 Price Gap? Rub Near Your Ear to Know",
+    "topic": "200 GSM vs 200 GSM — दोनों में ₹30 का फर्क क्यों? ये 3 चीज़ें चेक करो कान के पास रगड़ के",
+    "published_at": "2026-09-10T19:04:18.624219+05:30",
+    "checked": false,
+    "cover_text": "SAME GSM फर्क कैसे पहचानें?",
+    "cover_color": "#FFD400 keyword + #FFFFFF",
+    "cover_path": "ai+pil",
+    "cover_face": false,
+    "trial": true
   }
 ]
