@@ -76,5 +76,16 @@
  "v18-fb": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/1096160086081671/"
+ },
+ "p17-x": {
+  "nudged": true
+ },
+ "p17-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1027897706971163/"
+ },
+ "wt-ig-fits": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdHDYLIDnUm/"
  }
 }
