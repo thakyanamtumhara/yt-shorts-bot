@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-09 13:42)",
+   "detail": "ElevenLabs ✅ (2026-09-10 13:34)",
    "provider": "elevenlabs",
-   "at": "2026-09-09 13:42",
-   "title": "₹120 vs ₹85 Sublimation Tee — GSM Same, Feel अलग क्यों?"
+   "at": "2026-09-10 13:34",
+   "title": "200 GSM vs 200 GSM — ₹30 फर्क क्यों? कान के पास रगड़ के चेक करो"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 140,789/151,000 chars left",
+   "detail": "creator · PVC allowed · 140,102/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 140789,
+   "chars_left": 140102,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -413,8 +413,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-10T22:06:00+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-10T13:48:49+05:30",
+ "last_run_ist": "2026-09-10T22:06:00+05:30",
  "last_green_date": "2026-09-10"
 }
