@@ -1,0 +1,64 @@
+name: Private dialogue episodes
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_key:
+        description: Reviewed private episode manifest under owned p/ prefix
+        required: true
+        type: string
+      manifest_sha256:
+        description: SHA-256 of the exact reviewed manifest bytes
+        required: true
+        type: string
+      recipient_public_key:
+        description: Recipient RSA public key PEM, at least 3072 bits
+        required: true
+        type: string
+      execute:
+        description: One TTS, one native audio review and at most one lip prediction per episode
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-dialogue-episodes
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install boto3 cryptography requests
+      - name: Validate and prepare encrypted private episodes
+        env:
+          PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          EPISODE_MANIFEST_KEY: ${{ inputs.manifest_key }}
+          EPISODE_MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          EPISODE_EXECUTE: ${{ inputs.execute }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PRIVATE_EPISODES_KEY: ${{ secrets.PRIVATE_EPISODES_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+        run: |
+          args=(--manifest-key "$EPISODE_MANIFEST_KEY" --manifest-sha256 "$EPISODE_MANIFEST_SHA256")
+          if [ "$EPISODE_EXECUTE" = true ]; then args+=(--execute); fi
+          python tools/private_dialogue_episodes.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-dialogue-episodes-encrypted
+          path: private-dialogue-episodes.enc
+          if-no-files-found: error
+          retention-days: 2

@@ -984,7 +984,9 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
         return None
     try:
         bg = _thumbnail_background(veo_clip_path)
-        text = cover_text or hook_text or (topic.split("\u2014")[0] if topic else "")
+        from tools.cover_quality import neutral_cover
+        neutral, neutral_latin = neutral_cover(topic)
+        text = cover_text or (neutral if COVER_RAQM else neutral_latin)
         # Latin-safe guard: without RAQM, Devanagari garbles \u2192 drop Hindi
         # words entirely and tidy orphaned punctuation rather than ship broken
         # Hindi. (On CI, RAQM is present, so this rarely triggers.)
@@ -999,6 +1001,8 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
             hl = highlight
         path = compose_cover_text(bg, lines, hl, output_path)
         if path:
+            from tools.cover_quality import render_youtube_cover
+            render_youtube_cover(bg, lines, os.path.splitext(path)[0] + "_youtube.png")
             COVER_META.update({
                 "cover_text": " ".join(lines), "cover_color": "#FFD400 keyword + #FFFFFF",
                 "cover_path": "pil", "cover_face": False,
@@ -1013,6 +1017,9 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
 
 def upload_thumbnail(youtube, video_id, thumbnail_path):
     """Upload custom thumbnail to a YouTube video."""
+    youtube_path = os.path.splitext(thumbnail_path)[0] + "_youtube.png"
+    if os.path.exists(youtube_path):
+        thumbnail_path = youtube_path
     if not os.path.exists(thumbnail_path):
         print(f"   ❌ Thumbnail file not found: {thumbnail_path}")
         return False
@@ -1266,43 +1273,23 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "TASK:\n"
         "You are given a reference frame from the video. Choose the COVER TEXT only. "
         "Our own renderer draws it huge and razor-sharp — you do NOT design or place it, just pick the words.\n\n"
-        "HOUSE FORMAT v2 (2026-07-16 — measured on this account's own 74 reels):\n"
-        "Two stacked lines, split by a single '|', 3-6 words TOTAL. Two approved skeletons — ROTATE them, "
-        "never the same skeleton two days running:\n"
-        "  A. LOSS:    [micro-₹ ≤₹20 cause] + [object] + [failure/batch]  → '₹12 Thread | 500 RETURN'\n"
-        "  B. PARADOX: 'SAME [spec]' | [numbered contradiction]           → 'SAME GSM | ₹60 फर्क?'\n\n"
-        "THE TENSION TEST — the cover MUST pass ALL THREE from its text alone; if any answer is 'nothing', "
-        "pick different words:\n"
-        "  1. OBJECT: what physical thing is named? (thread/tag/yarn/GSM/print/collar/dye/wash — NEVER a "
-        "colour, never 'business'). Line 1 must contain a searchable trade term — cover text is OCR'd into "
-        "Instagram search.\n"
-        "  2. STAKE: what breaks/returns/bleeds money, with a number? (crack/RETURN/bleed/destroyed/fade/"
-        "'cheap feel' + batch size or micro-₹)\n"
-        "  3. ITCH: why must a wholesale buyer resolve it NOW? (contradiction or threat to HIS stock)\n"
-        "  Falsifiable check: could a t-shirt trader LOSE MONEY by not tapping? If no → reject.\n\n"
-        "MEASURED ON THIS ACCOUNT (follow the data):\n"
-        "- Named-pain covers: 0.53% share-rate. Generic curiosity (राज़/सच/गलती with no failure named): "
-        "0.23%. Shares are THE non-follower reach signal — never ship unanchored curiosity.\n"
-        "- Statements out-share bare questions 2.4x. '?' is allowed only welded to a named failure "
-        "('Print Crack क्यों?' = 5,098 views — क्यों EARNED by 'Print Crack').\n"
-        "- Micro-₹ (≤₹20) causes beat lakh-outcomes: '₹1.2 Lakh LOST' style covers sit in the bottom half "
-        "(median 1,642). The big number is the OUTCOME — say it in the video, never on the cover.\n\n"
-        "BANNED (auto-reject):\n"
-        "- राज़/secret/सच/गलती/shock UNLESS the same line names the failure mode\n"
-        "- ₹ ≥1,000, 'K' or 'Lakh' amounts as the hook\n"
-        "- Colour names or product names as line 1 (a colour is not a claim — 'ROYAL BLUE | ₹15 राज़?' "
-        "failed every test above)\n"
-        "- Founder-story frames (he/she/ZERO START — worst share bucket 0.19%)\n"
-        "- Any power-word or skeleton used in the RECENT COVERS list below\n\n"
-        "GOOD (his real winners): '₹6 Tag = RETURN' (top save+share) · 'Print Crack क्यों? | ₹15' · "
-        "'₹12 Thread | 500 RETURN' · 'SAME GSM | ₹60 फर्क?' · '240 GSM | फिर भी Cheap Feel?'\n"
-        "BAD: 'ROYAL BLUE | ₹15 राज़?' (colour≠claim) · 'ZERO START ₹3,000 राज़?' (story+unanchored राज़) · "
-        "'400 TEES ₹8 गलती?' (गलती names no failure) · '3 DIN MEIN STOCK' (nothing breaks).\n\n"
+        "COVER QUALITY RULES:\n"
+        "Two complete short lines separated by |, 3–8 words TOTAL. Name the buyer's actual question "
+        "or useful distinction in plain language. Rotate the focus, not a fixed loss/price template.\n"
+        "The SCRIPT is the only factual basis. Never invent currency, savings, returns, failures, "
+        "batch quantities or test results. No monetary-loss or batch-return hook. Use a number only "
+        "when it appears in the actual script and carries the same meaning; normally omit numbers.\n"
+        "Each line must remain meaningful. Never end on a connector such as बिना, में, का, with or vs. "
+        "If wording is too long, rewrite the whole phrase; do not delete its last words.\n"
+        "Examples: 'DTF PRINT | नमी का असर', 'टी-शर्ट फिट | साइज़ से आगे', "
+        "'POLO COLLAR | क्या जाँचें?', 'प्रिंट से पहले | सैंपल जाँचो'.\n"
+        "Historical high views, shares or saves do not prove the COVER caused performance. "
+        "Ignore older research suggestions that demand money-loss hooks or unsupported numbers.\n\n"
         "ALSO give a LATIN-SAFE version: SAME hook, Hindi word transliterated to Latin (used when Devanagari "
         "can't be shaped). e.g. 'SAME GSM | ₹60 फर्क?' → 'SAME GSM | ₹60 FARAK?'.\n\n"
         "OUTPUT FORMAT — return EXACTLY these lines:\n\n"
         "=== THUMBNAIL BRIEF ===\n"
-        "Thumbnail Text: [line1 | line2 — house format v2, must pass the tension test]\n"
+        "Thumbnail Text: [line1 | line2 — complete useful wording, grounded in the script]\n"
         "Thumbnail Text (Latin-safe): [same hook, no Devanagari]\n"
         "Text Color: [hex] ([name])\n"
         "Face In Design: [Yes / No — Yes only for a customer-story/reaction video]\n"
@@ -1387,22 +1374,16 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
                     "type": "text",
                     "text": (f"REJECTED: \"{thumb_text}\" reuses the power-word '{_repeated}' "
                              f"already on a cover in the last 3 days. Produce a DIFFERENT hook: "
-                             f"other skeleton, different power-word, same tension test.")}]
+                             f"different complete wording, same factual question.")}]
                 continue
             break
 
         if not thumb_text:
             # last-ditch: use the hook/topic; renderer + auto-fit handle length
             thumb_text = (hook_text or topic or "").strip()
-        # No word-count truncation — the renderer auto-fits, so long text just
-        # shrinks instead of getting butchered (old bug: dropped words + dangling
-        # '—'). We only cap absurd length to keep it punchy.
-        if len(thumb_text.split()) > 6:
-            thumb_text = " ".join(thumb_text.split()[:6])
-        if not thumb_latin:
-            import re as _re
-            thumb_latin = _re.sub(r"[ऀ-ॿ‌‍़]+[\?।!.]*", "", thumb_text)
-            thumb_latin = _re.sub(r"\s{2,}", " ", thumb_latin).strip(" -—|?.।")
+        from tools.cover_quality import choose_cover
+        thumb_text, thumb_latin, cover_check = choose_cover(thumb_text, thumb_latin, script_text, topic)
+        print(f"   Cover wording check: {cover_check}")
 
         print(f"   ✅ Cover text: \"{thumb_text}\"  (latin-safe: \"{thumb_latin}\") | {thumb_color}")
         return {
@@ -1411,6 +1392,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
             "text_latin": thumb_latin,
             "color": thumb_color,
             "face": thumb_face,
+            "quality_check": cover_check,
         }
 
     except Exception as e:
@@ -1511,7 +1493,10 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         if not out:
             return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path,
                                       cover_text=cover_text, highlight=highlight)
+        from tools.cover_quality import render_youtube_cover
+        render_youtube_cover(scene, lines, os.path.splitext(out)[0] + "_youtube.png")
         COVER_META.update({
+            "quality_check": brief.get("quality_check"),
             "cover_text": " ".join(lines),
             "cover_color": "#FFD400 keyword + #FFFFFF",
             "cover_path": "ai+pil" if scene is not frame_image else "veo+pil",
@@ -13462,6 +13447,11 @@ def main():
         )
     if not thumbnail_path:
         thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip)
+
+    if not thumbnail_path:
+        raise RuntimeError("No complete cover available; stop before publishing")
+    from tools.cover_quality import prepend_cover
+    COVER_META["opening_cover"] = prepend_cover(output_path, thumbnail_path)
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
