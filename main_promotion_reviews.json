@@ -1,0 +1,107 @@
+{
+  "format": "selective-main-review-v1",
+  "policy_note": "Roughly one strong MAIN candidate per7–10 mature daily AI outputs; skip when no exact asset passes. Weekly Thursday12:30IST review fetches aggregate insights, never generates, uploads, schedules or edits these review decisions. Unknown-origin and real-footage sources are excluded. A rank is a review priority, not approval.",
+  "review_schema": {
+    "approved": "Set decision=approved only after inspecting the exact original master and cover; include reviewed_video_sha256, reviewed_cover_sha256, reviewer, reviewed_at, checks{facts,full_spoken_audio,visuals,buyer_useful,cover}=true and explicit boolean ai_flags{ai_visuals,ai_voice,ai_music,ai_face,containsSyntheticMedia}. AI-face clips are excluded by this selector.",
+    "rejected": "Rejection applies to the source identity, even if an alternative file with this source ID appears. Keep the reviewed evidence SHA and reasons.",
+    "promotions": "Before an eventual MAIN upload, root records instagram_id,bot_youtube_id,video_sha256,status=reserved; after upload add main_youtube_id. Reserved or completed source IDs and hashes are excluded from future selection. This workflow never adds promotions."
+  },
+  "known_sources": [
+    {
+      "workflow_run_id": 34230288154,
+      "instagram_id": "18050137145802419",
+      "bot_youtube_id": "RywFygMg9mY",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/34230288154"
+    },
+    {
+      "workflow_run_id": 33965393384,
+      "instagram_id": "18099232853296163",
+      "bot_youtube_id": "8w-x2eZJ-9k",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33965393384"
+    },
+    {
+      "workflow_run_id": 33759104205,
+      "instagram_id": "18137149510614285",
+      "bot_youtube_id": "eupTvKPn0_E",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33759104205"
+    },
+    {
+      "workflow_run_id": 33633509483,
+      "instagram_id": "18343005499265741",
+      "bot_youtube_id": "jZH5T8WALB4",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33633509483"
+    },
+    {
+      "workflow_run_id": 33515510049,
+      "instagram_id": "17966376126071477",
+      "bot_youtube_id": "TbYA0Ipl20I",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33515510049"
+    },
+    {
+      "workflow_run_id": 33414490926,
+      "instagram_id": "18089256692648722",
+      "bot_youtube_id": "nTgO0GsAmKU",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33414490926"
+    },
+    {
+      "workflow_run_id": 33208400906,
+      "instagram_id": "17956850600998386",
+      "bot_youtube_id": "OWeIge4ypTc",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33208400906"
+    },
+    {
+      "workflow_run_id": 33256614494,
+      "instagram_id": "18103942229601379",
+      "bot_youtube_id": "7tk8TW1C5jQ",
+      "ai_generated": true,
+      "bot_channel_id": "UCHZbA84OiM9COlTQ4JcVgeQ",
+      "provenance": "Both post IDs and AI generation verified in the same daily workflow log on10-Sep-2026",
+      "evidence_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33256614494"
+    }
+  ],
+  "reviews": [
+    {
+      "instagram_id": "18103942229601379",
+      "bot_youtube_id": "7tk8TW1C5jQ",
+      "decision": "rejected",
+      "reviewed_at": "2026-09-10T05:22:13.954052+00:00",
+      "reviewer": "Codex content review",
+      "reviewed_evidence_sha256": "cb8de3ee3e37a3e9142dbcb944fee8db4e2798d63c5fa227db75fda7ebd842d8",
+      "evidence_kind": "Exact published Instagram720x1280recompression; original GitHub master expired",
+      "scope": "Entire source asset is rejected for MAIN promotion; changing only title/cover does not fix speech",
+      "reasons": [
+        "Unverified universal70%humidity threshold for DTF adhesion",
+        "Instructs PET-film preheat3–4seconds without specifying transfer; referenced manufacturer prepresses apparel",
+        "Blanket monsoon increase5–10degrees and160→170 without product/press instructions",
+        "Claims three steps prevent peeling; generated before/after scenes are not a real test"
+      ],
+      "sources": [
+        "https://www.instagram.com/reel/DcoJ-mfCkuC/",
+        "https://blog.transferexpress.com/shipping-dtf-transfers-and-prep-work/",
+        "https://downloadcenter.rolanddg.com/contents/manuals/TY-300_INS_EN/erj1698399782251.html"
+      ]
+    }
+  ],
+  "promotions": []
+}

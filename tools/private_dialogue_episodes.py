@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import time
+import unicodedata
 from urllib.parse import urlparse
 
 import requests
@@ -18,6 +19,17 @@ OUT = Path('dialogue-episodes-output')
 BUCKET = 'bulkplaintshirt.com'
 FORMAT = 'private-dialogue-episodes-v1'
 SOURCE_MAGIC = b'EPISODESOURCE1\n'
+RESUME_FORMAT = 'private-episodes-fit-resume-v1'
+RESUME_MAGIC = b'EPISODESRESUME1\n'
+RESUME_RUN = '34441367242'
+RESUME_FINGERPRINT = '480e148341b8bda3f4ec9370a0e9cf7792ad4139503bccb6a8066679a45ff76e'
+RESUME_FILES = {
+    'fit-speech.wav': '12a41949b751b8c36570de2730f84d6cf6ec110ce98dbda0da6f45cf7c8bcdc6',
+    'fit-speech-timestamps.json': 'd60f6e7d62baaba178b8a1ba0e2bba09d65320a63f96c17807673b6fc5bd9691',
+    'fit-audio-qa.json': 'e84c7475aa791a1a749c30db364093e56c1f134909dabc646ad618f2944c3673',
+    'fit-audio-qa-provider.json': '6779424e540cdbde0ea91bee8e0bf9747830d3da0228cae7a7bc8296008f120d',
+    'fit-tts-receipt.json': 'dae15c44a5a2aee6d275a6d4eb8fcc769c64f63b86fafe0f2b72b94e6dcda5c7',
+    'claim-private.json': 'f65f944551edbc1e08f0e04d7e4385ecfd87d047040c2e3d4070c26c97e85331'}
 VOICE_ID = 'cejtKjfE9sHUZ1FnUYEV'
 VOICE_MODEL = 'eleven_multilingual_v2'
 VIDEO_MODEL = 'heygen/lipsync-precision'
@@ -62,6 +74,19 @@ def key_and_hash(key, sha, suffix):
         raise ValueError('Owned p/ asset key and reviewed SHA-256 required')
 
 
+def contains_word(text, word):
+    def word_character(character):
+        return unicodedata.category(character)[0] in 'LNM' or character in '_\u200c\u200d'
+    return any((match.start() == 0 or not word_character(text[match.start() - 1]))
+               and (match.end() == len(text) or not word_character(text[match.end()]))
+               for match in re.finditer(re.escape(word), text))
+
+
+def review_words(episode):
+    return list(dict.fromkeys([w for w in TERMS if contains_word(episode['script'], w)]
+                             + episode.get('watch_words', [])))
+
+
 def validate_manifest(manifest):
     if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] != FORMAT:
         raise ValueError('Unsupported private episode manifest')
@@ -88,7 +113,7 @@ def validate_manifest(manifest):
             raise ValueError('Staged source must be encrypted')
         words = episode.get('watch_words', [])
         if (not isinstance(words, list) or len(words) > 16
-                or any(not isinstance(w, str) or not 1 <= len(w) <= 40 or w not in script for w in words)
+                or any(not isinstance(w, str) or not 1 <= len(w) <= 40 or not contains_word(script, w) for w in words)
                 or len(set(words)) != len(words)):
             raise ValueError('Pronunciation watch words must be unique literal script phrases')
     return episodes
@@ -183,6 +208,27 @@ class Claim:
         self.state['episodes'][id_][stage].update({'status': status, 'receipt': receipt})
         self.persist()
 
+    def resume_fit(self, original, resume_sha256):
+        response = self.s3.get_object(Bucket=BUCKET, Key=self.key)
+        body = response['Body']
+        try:
+            raw = body.read(16 * 1024 + 1)
+        finally:
+            body.close()
+        if len(raw) > 16 * 1024:
+            raise ValueError('Unexpected resume claim size')
+        remote = json.loads(raw)
+        if remote != original or remote.get('resumed_run_ids'):
+            raise ValueError('Remote claim changed or resume already attempted; no generation')
+        current_run = os.environ['GITHUB_RUN_ID']
+        if current_run == RESUME_RUN:
+            raise ValueError('Resume must use one new explicit corrective workflow run')
+        self.state, self.etag = remote, response['ETag']
+        self.state['resumed_run_ids'] = [current_run]
+        self.state['resume_pack_sha256'] = resume_sha256
+        self.state['episodes']['fit']['audio_qa']['status'] = 'passed'
+        self.persist()
+
 
 def guard_execution():
     if os.environ.get('GITHUB_RUN_ATTEMPT') != '1' or not re.fullmatch(r'\d+', os.environ.get('GITHUB_RUN_ID', '')):
@@ -273,7 +319,7 @@ def validate_assessment(assessment, words):
 
 def assess_speech(episode, claim):
     id_, script = episode['id'], episode['script']
-    words = list(dict.fromkeys([word for word in TERMS if word in script] + episode.get('watch_words', [])))
+    words = review_words(episode)
     prompt = ('Listen directly to the attached Hindi/Hinglish AUDIO as a demanding native-Hindi buyer. '
               'This is machine quality review, not human approval. First transcribe what is actually audible; '
               'do not silently correct a mispronunciation to match the script. Then compare the whole spoken '
@@ -395,10 +441,63 @@ def make_video(episode, duration, claim):
     raise RuntimeError('Twelve-minute wait exceeded; cancellation requested, no retry')
 
 
-def run_episodes(episodes, durations, claim):
+def load_fit_resume(s3, resume_key, resume_sha256, secret, fingerprint, episodes, durations):
+    data = read_s3(s3, resume_key, resume_sha256, 8 * 1024 * 1024)
+    offset = len(RESUME_MAGIC)
+    if len(secret) != 32 or not data.startswith(RESUME_MAGIC) or len(data) < offset + 28:
+        raise ValueError('Invalid encrypted fit resume pack')
+    pack = json.loads(AESGCM(secret).decrypt(data[offset:offset + 12], data[offset + 12:], RESUME_FORMAT.encode()))
+    if (pack.get('format') != RESUME_FORMAT or pack.get('original_run_id') != RESUME_RUN
+            or pack.get('manifest_fingerprint') != RESUME_FINGERPRINT or fingerprint != RESUME_FINGERPRINT
+            or [e['id'] for e in episodes] != ['fit', 'print-sample']
+            or not isinstance(pack.get('files'), dict) or set(pack['files']) != set(RESUME_FILES)):
+        raise ValueError('Resume only supports the reviewed original fit audio run')
+    files = {}
+    for name, expected in RESUME_FILES.items():
+        item = pack['files'][name]
+        raw = base64.b64decode(item['base64'], validate=True)
+        if item.get('sha256') != expected or digest(raw) != expected:
+            raise ValueError('Resume artifact differs from the original reviewed file')
+        files[name] = raw
+    original = json.loads(files['claim-private.json'])
+    tts = json.loads(files['fit-tts-receipt.json'])
+    qa = json.loads(files['fit-audio-qa.json'])
+    provider = json.loads(files['fit-audio-qa-provider.json'])
+    expected_claim = {'format': FORMAT, 'fingerprint': fingerprint, 'run_id': RESUME_RUN, 'episodes': {
+        'fit': {'tts': {'status': 'returned', 'attempts': 1, 'receipt': tts.get('request_id')},
+                'audio_qa': {'status': 'returned', 'attempts': 1, 'receipt': provider.get('id')}},
+        'print-sample': {}}}
+    if (original != expected_claim or not tts.get('request_id') or tts.get('characters') != len(episodes[0]['script'])
+            or qa.get('model') != QA_MODEL or provider.get('model') != QA_MODEL
+            or qa.get('review_type') != 'machine_native_audio_not_human_listening'
+            or provider.get('status') != 'completed'):
+        raise ValueError('Resume receipts or original paid-stage states are inconsistent')
+    texts = [part['text'] for step in provider.get('steps', []) if step.get('type') == 'model_output'
+             for part in step.get('content', []) if part.get('type') == 'text' and isinstance(part.get('text'), str)]
+    if len(texts) != 1 or json.loads(texts[0]) != qa.get('assessment'):
+        raise ValueError('Reviewed assessment does not match original provider response')
+    validate_assessment(qa['assessment'], review_words(episodes[0]))
+    speech = files['fit-speech.wav']
+    if speech[:4] != b'RIFF' or speech[8:12] != b'WAVE':
+        raise ValueError('Resume speech is not the original WAV')
+    for name, raw in files.items():
+        (OUT / ('original-' + name if name == 'claim-private.json' else name)).write_bytes(raw)
+    duration = shared.probe(OUT / 'fit-speech.wav', 'audio')
+    validate_speech(episodes[0]['script'], duration,
+                    json.loads(files['fit-speech-timestamps.json']).get('alignment'), durations['fit'])
+    save('fit-resume-check.json', {'original_run_id': RESUME_RUN, 'seconds': duration,
+                                  'tts_calls_this_run': 0, 'audio_qa_calls_this_run': 0,
+                                  'original_artifact_hashes': RESUME_FILES})
+    return duration, original
+
+
+def run_episodes(episodes, durations, claim, resumed_fit_seconds=None):
     for episode in episodes:
-        duration = make_speech(episode, durations[episode['id']], claim)
-        assess_speech(episode, claim)
+        if episode['id'] == 'fit' and resumed_fit_seconds is not None:
+            duration = resumed_fit_seconds
+        else:
+            duration = make_speech(episode, durations[episode['id']], claim)
+            assess_speech(episode, claim)
         make_video(episode, duration, claim)
 
 
@@ -406,9 +505,15 @@ def main():
     parser = argparse.ArgumentParser(description='At most two private, encrypted dialogue examples; no publishing')
     parser.add_argument('--manifest-key', required=True)
     parser.add_argument('--manifest-sha256', required=True)
+    parser.add_argument('--resume-key', default='')
+    parser.add_argument('--resume-sha256', default='')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     key_and_hash(args.manifest_key, args.manifest_sha256, 'json')
+    if bool(args.resume_key) != bool(args.resume_sha256):
+        raise ValueError('Resume requires both encrypted pack key and SHA-256')
+    if args.resume_key:
+        key_and_hash(args.resume_key, args.resume_sha256, 'enc')
     key = shared.validate_inputs('p/recipient-validation.mp4', 20, 5, os.environ['PILOT_PUBLIC_KEY'])
     if args.execute:
         guard_execution()
@@ -434,11 +539,19 @@ def main():
             encrypted = read_s3(s3, episode['source_key'], None, 250 * 1024 * 1024)
             source.write_bytes(decrypt_source(encrypted, episode, secret))
             durations[episode['id']] = source_info(source)
-        preflight(episodes)
+        resumed_seconds = original_claim = None
+        if args.resume_key:
+            resumed_seconds, original_claim = load_fit_resume(s3, args.resume_key, args.resume_sha256,
+                                                              secret, fingerprint, episodes, durations)
+            meta['resumed_original_run'] = RESUME_RUN
+        preflight([e for e in episodes if not args.resume_key or e['id'] != 'fit'])
         if args.execute:
             claim = Claim(s3, fingerprint, [e['id'] for e in episodes])
-            claim.persist()
-            run_episodes(episodes, durations, claim)
+            if args.resume_key:
+                claim.resume_fit(original_claim, args.resume_sha256)
+            else:
+                claim.persist()
+            run_episodes(episodes, durations, claim, resumed_seconds)
         meta['status'] = 'succeeded'
         result = 0
     except Exception as exc:

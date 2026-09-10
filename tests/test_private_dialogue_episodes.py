@@ -50,7 +50,7 @@ class FakeS3:
 
     def get_object(self, Bucket, Key):
         data = self.objects[Key]
-        return {'ContentLength': len(data), 'Body': io.BytesIO(data)}
+        return {'ContentLength': len(data), 'Body': io.BytesIO(data), 'ETag': self.etags.get(Key)}
 
     def put_object(self, **kwargs):
         if self.fail:
@@ -330,6 +330,158 @@ class EpisodeTests(unittest.TestCase):
         self.assertIn('secrets.PRIVATE_EPISODES_KEY', workflow)
         self.assertNotIn('schedule:', workflow)
         self.assertNotIn('contents: write', workflow)
+
+    def test_devanagari_nukta_and_vowel_marks_cannot_create_phantom_review_words(self):
+        text = 'एम साइज़ में रेगुलर, ओवरसाइज़्ड और बॉक्सी टी-शर्ट का फिट चेक करो।'
+        self.assertIn('साइज', text)
+        self.assertFalse(pilot.contains_word(text, 'साइज'))
+        self.assertFalse(pilot.contains_word(text, 'ओवरसाइज्ड'))
+        self.assertTrue(pilot.contains_word(text, 'साइज़'))
+        self.assertTrue(pilot.contains_word(text, 'ओवरसाइज़्ड'))
+        self.assertFalse(pilot.contains_word('फिटिंग', 'फिट'))
+        self.assertFalse(pilot.contains_word('प्रिंटिंग', 'प्रिंट'))
+        self.assertFalse(pilot.contains_word('प्रिंटर', 'प्रिंट'))
+        self.assertTrue(pilot.contains_word('आप स्क्रीन प्रिंट करते हो?', 'स्क्रीन प्रिंट'))
+        item = {**episode(), 'script': text, 'watch_words': ['एम', 'बॉक्सी']}
+        correct = ['टी-शर्ट', 'फिट', 'साइज़', 'रेगुलर', 'ओवरसाइज़्ड', 'एम', 'बॉक्सी']
+        self.assertEqual(pilot.review_words(item), correct)
+        pilot.validate_assessment(assessment(correct), pilot.review_words(item))
+        with self.assertRaises(ValueError):
+            pilot.validate_assessment(assessment(correct), correct + ['साइज'])
+
+    def fit_resume_fixture(self):
+        items = [episode(), episode('print-sample')]
+        original = {'format': pilot.FORMAT, 'fingerprint': pilot.RESUME_FINGERPRINT,
+                    'run_id': pilot.RESUME_RUN, 'episodes': {'fit': {
+                        'tts': {'attempts': 1, 'status': 'returned', 'receipt': 'original-tts'},
+                        'audio_qa': {'attempts': 1, 'status': 'returned', 'receipt': None}}, 'print-sample': {}}}
+        qa = {'model': pilot.QA_MODEL, 'review_type': 'machine_native_audio_not_human_listening',
+              'assessment': assessment()}
+        provider = {'model': pilot.QA_MODEL, 'status': 'completed', 'steps': [
+                    {'type': 'model_output', 'content': [{'type': 'text', 'text': json.dumps(qa['assessment'])}]}]}
+        files = {'fit-speech.wav': b'RIFF' + b'\x00' * 4 + b'WAVE-original',
+                 'fit-speech-timestamps.json': pilot.encoded({'alignment': alignment()}),
+                 'fit-audio-qa.json': pilot.encoded(qa), 'fit-audio-qa-provider.json': pilot.encoded(provider),
+                 'fit-tts-receipt.json': pilot.encoded({'request_id': 'original-tts', 'characters': len(SCRIPT)}),
+                 'claim-private.json': pilot.encoded(original)}
+        hashes = {name: pilot.digest(raw) for name, raw in files.items()}
+        self.set_patch(pilot, 'RESUME_FILES', hashes)
+        self.set_patch(pilot.shared, 'probe', return_value=22)
+        pack = {'format': pilot.RESUME_FORMAT, 'original_run_id': pilot.RESUME_RUN,
+                'manifest_fingerprint': pilot.RESUME_FINGERPRINT,
+                'files': {name: {'base64': base64.b64encode(raw).decode(), 'sha256': hashes[name]} for name, raw in files.items()}}
+        key = AESGCM.generate_key(bit_length=256)
+        return items, original, files, pack, key
+
+    def load_resume_fixture(self, items, pack, key, fingerprint=None):
+        nonce = b'n' * 12
+        blob = pilot.RESUME_MAGIC + nonce + AESGCM(key).encrypt(nonce, pilot.encoded(pack), pilot.RESUME_FORMAT.encode())
+        self.s3.objects['p/resume.enc'] = blob
+        return pilot.load_fit_resume(self.s3, 'p/resume.enc', pilot.digest(blob), key,
+                                      fingerprint or pilot.RESUME_FINGERPRINT, items, {'fit': 30, 'print-sample': 30})
+
+    def test_resume_reuses_exact_wav_timestamps_and_native_review_without_provider_calls(self):
+        items, original, files, pack, key = self.fit_resume_fixture()
+        with patch.object(pilot, 'request') as request:
+            duration, loaded_claim = self.load_resume_fixture(items, pack, key)
+        request.assert_not_called()
+        self.assertEqual(duration, 22)
+        self.assertEqual(loaded_claim, original)
+        self.assertEqual((self.out / 'fit-speech.wav').read_bytes(), files['fit-speech.wav'])
+        self.assertEqual((self.out / 'fit-audio-qa-provider.json').read_bytes(), files['fit-audio-qa-provider.json'])
+        with patch.object(pilot, 'make_speech', return_value=22) as tts, \
+             patch.object(pilot, 'assess_speech') as qa, patch.object(pilot, 'make_video') as video:
+            pilot.run_episodes(items, {'fit': 30, 'print-sample': 30}, self.claim, duration)
+        self.assertEqual((tts.call_count, qa.call_count, video.call_count), (1, 1, 2))
+        self.assertEqual(tts.call_args.args[0]['id'], 'print-sample')
+        self.assertEqual(qa.call_args.args[0]['id'], 'print-sample')
+        self.assertEqual([call.args[0]['id'] for call in video.call_args_list], ['fit', 'print-sample'])
+
+    def test_changed_resume_run_manifest_or_audio_hash_fails_closed(self):
+        items, original, files, pack, key = self.fit_resume_fixture()
+        for field, value in [('original_run_id', '123'), ('manifest_fingerprint', '0' * 64)]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.load_resume_fixture(items, {**pack, field: value}, key)
+        with self.assertRaises(ValueError):
+            self.load_resume_fixture(items, pack, key, '0' * 64)
+        damaged = json.loads(json.dumps(pack))
+        damaged['files']['fit-speech.wav']['base64'] = base64.b64encode(b'changed-audio').decode()
+        with self.assertRaisesRegex(ValueError, 'original reviewed file'):
+            self.load_resume_fixture(items, damaged, key)
+
+    def test_resume_requires_exact_unmodified_remote_state_and_one_cas_continuation(self):
+        items, original, files, pack, key = self.fit_resume_fixture()
+        claim = pilot.Claim(self.s3, pilot.RESUME_FINGERPRINT, [e['id'] for e in items])
+        self.s3.put_object(Bucket=pilot.BUCKET, Key=claim.key, Body=pilot.encoded(original), IfNoneMatch='*')
+        claim.resume_fit(original, 'a' * 64)
+        stored = json.loads(self.s3.objects[claim.key])
+        self.assertEqual(stored['run_id'], pilot.RESUME_RUN)
+        self.assertEqual(stored['resumed_run_ids'], ['12345'])
+        self.assertEqual(stored['episodes']['fit']['tts'], original['episodes']['fit']['tts'])
+        self.assertEqual(stored['episodes']['fit']['audio_qa']['status'], 'passed')
+        self.assertEqual(stored['episodes']['print-sample'], {})
+        self.assertIn('IfMatch', self.s3.writes[-1])
+        duplicate = pilot.Claim(self.s3, pilot.RESUME_FINGERPRINT, [e['id'] for e in items])
+        with self.assertRaisesRegex(ValueError, 'Remote claim changed'):
+            duplicate.resume_fit(original, 'a' * 64)
+
+    def test_resume_denies_prior_video_or_print_attempt_and_failed_reservation(self):
+        items, original, files, pack, key = self.fit_resume_fixture()
+        claim = pilot.Claim(self.s3, pilot.RESUME_FINGERPRINT, [e['id'] for e in items])
+        for id_, stage in [('fit', 'video'), ('print-sample', 'tts')]:
+            changed = json.loads(json.dumps(original))
+            changed['episodes'][id_][stage] = {'status': 'pending', 'attempts': 1}
+            self.s3.objects[claim.key] = pilot.encoded(changed)
+            with self.assertRaises(ValueError):
+                claim.resume_fit(original, 'a' * 64)
+        self.s3.objects[claim.key] = pilot.encoded(original)
+        self.s3.etags[claim.key] = '"original-etag"'
+        self.s3.fail = True
+        with self.assertRaises(RuntimeError):
+            claim.resume_fit(original, 'a' * 64)
+        self.assertEqual(json.loads(self.s3.objects[claim.key]), original)
+
+    def test_incomplete_resume_arguments_stop_before_storage_or_generation(self):
+        args = ['runner', '--manifest-key', 'p/m.json', '--manifest-sha256', 'a' * 64, '--resume-key', 'p/r.enc']
+        with patch.object(sys, 'argv', args), patch('boto3.client') as client, self.assertRaises(ValueError):
+            pilot.main()
+        client.assert_not_called()
+
+    def test_main_corrective_resume_reserves_once_and_only_print_gets_new_speech_and_review(self):
+        items, original, files, pack, key = self.fit_resume_fixture()
+        source = b'\x00\x00\x00\x18ftypisom-original-source'
+        for item in items:
+            item['source_sha256'] = pilot.digest(source)
+            self.s3.objects[item['source_key']] = pilot.SOURCE_MAGIC + b'n' * 12 + AESGCM(key).encrypt(
+                b'n' * 12, source, item['id'].encode())
+        manifest = pilot.encoded({'format': pilot.FORMAT, 'episodes': items})
+        fingerprint = pilot.digest(manifest)
+        original['fingerprint'] = fingerprint
+        state_key = 'p/automation-state-dialogue-episodes/' + fingerprint + '.json'
+        self.s3.put_object(Bucket=pilot.BUCKET, Key=state_key, Body=pilot.encoded(original), IfNoneMatch='*')
+        self.s3.objects['p/manifest.json'] = manifest
+        for file in self.out.iterdir():
+            file.unlink()
+        self.out.rmdir()
+        args = ['runner', '--manifest-key', 'p/manifest.json', '--manifest-sha256', fingerprint,
+                '--resume-key', 'p/resume.enc', '--resume-sha256', 'a' * 64, '--execute']
+        with patch.object(sys, 'argv', args), patch('boto3.client', return_value=self.s3), \
+             patch.dict(os.environ, {'PRIVATE_EPISODES_KEY': base64.b64encode(key).decode()}), \
+             patch.object(pilot.shared, 'validate_inputs', return_value=Mock()), \
+             patch.object(pilot.shared, 'encrypt_output'), patch.object(pilot, 'source_info', return_value=30), \
+             patch.object(pilot, 'load_fit_resume', return_value=(22, original)), \
+             patch.object(pilot, 'preflight') as preflight, \
+             patch.object(pilot, 'make_speech', return_value=22) as tts, \
+             patch.object(pilot, 'assess_speech') as qa, patch.object(pilot, 'make_video') as video:
+            self.assertEqual(pilot.main(), 0)
+        self.assertEqual([e['id'] for e in preflight.call_args.args[0]], ['print-sample'])
+        self.assertEqual((tts.call_count, qa.call_count, video.call_count), (1, 1, 2))
+        self.assertEqual(tts.call_args.args[0]['id'], 'print-sample')
+        self.assertEqual(qa.call_args.args[0]['id'], 'print-sample')
+        stored = json.loads(self.s3.objects[state_key])
+        self.assertEqual(stored['resumed_run_ids'], ['12345'])
+        self.assertEqual(stored['episodes']['fit']['tts']['attempts'], 1)
+        self.assertEqual(stored['episodes']['fit']['audio_qa']['attempts'], 1)
 
 
 if __name__ == '__main__':

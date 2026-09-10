@@ -4977,7 +4977,8 @@ what TONE, ANGLE, and DEPTH works. Your script should match this audience's expe
 
 ━━━ OWN-CHANNEL PERFORMANCE FEEDBACK ━━━
 This is what's actually worked (and failed) on the bot's recent uploads.
-Mimic the patterns of TOP performers; AVOID the patterns of FLOPS.
+Use this as audience-interest context, not proof that any claim or hook is true.
+Past winners include invented losses and incidents: never copy those narratives.
 {_own_channel_performance_signal()}
 {extract_voice_corpus_style_hints()}
 
@@ -5004,10 +5005,10 @@ STRUCTURE (follow this EVERY time):
    storytelling technique, it is lying about his company.
 
    The hook must be TRUE. Build it from something checkable instead:
-   - a fabric/technical fact: "180 GSM pe print through dikhta hai."
-   - a real rate from the price list: "Acid wash 238 rupaye piece."
+   - a useful buyer question: "Sample par apna print check kiya?"
+   - a current rate only when its exact source is supplied and checked.
    - a question the buyer is already asking: "Combed aur carded mein fark kya?"
-   - a widely-known trade reality: "Open end yarn haath mein khurdura lagta hai."
+   - a practical decision: "Sirf size label se fit decide mat karo."
    A rupee figure is allowed ONLY if it is a real published rate from the price
    sheet. Never a loss, never a rejection, never "ek customer ne...".
    Sentence 2 then opens the explanation.
@@ -5027,8 +5028,11 @@ STRUCTURE (follow this EVERY time):
 3. KNOWLEDGE DROP (3-4 sentences) — The actual gyaan, with practical examples:
    - Explain the concept with REAL comparisons
    - Give a practical test or check the viewer can do themselves
-   - Include specific numbers, methods, or techniques
-   - "Dekho... agar tum 180 GSM loge toh summer ke liye theek hai, par printing ke liye 200 minimum rakho"
+   - Use details supported by the supplied material/process information; numbers are optional.
+   - "Dekho, jis fit aur kapde mein bechna hai, usi sample par apna print check kar lo."
+   Never prescribe a universal GSM minimum, temperature increase, humidity threshold
+   or guaranteed wash result without the particular manufacturer/process evidence.
+   When those instructions are absent, explain what the buyer must check instead.
 
 4. FINAL CLOSER — end on a SHORT, FIRM line, NOT a trail-off. The wrap-up
    sentence may flow, but the LAST line must be 3-6 words, land at full
@@ -5041,51 +5045,42 @@ STRUCTURE (follow this EVERY time):
    - "Sample kar lo."
    - "Yehi tha bhai."
 
-Study these REAL examples from the actual business owner — match this tone PERFECTLY:
+These are newly written TONE EXAMPLES, not quotations or actual customer incidents:
 
-EXAMPLE 1 (GSM explanation — LONGER STYLE):
-"Dekho... ek customer ne mujhe call kiya, bola tshirt bahut patli lag rahi hai,
-quality kharab hai. Maine pucha GSM kya order kiya tha? Bola pata nahi, sasti
-wali mangai thi. Yehi problem hai. GSM bas fabric ka weight hota hai — jyada
-GSM matlab mota fabric, kam GSM matlab patla. Basically kisi bhi kapde ko 1
-square meter mein cut karke weight kar doge toh jo bhi gram mein aayega, wahi
-GSM hai. Toh agar printing ke liye le rahe ho, 200 GSM minimum rakho. 180 pe
-print theek lagta hai par fabric through dikha sakta hai. Aur 220 premium feel
-deta hai par cost badh jayegi. Toh bas... pehle decide karo end use kya hai,
-phir GSM choose karo... simple hai."
+EXAMPLE 1 (fit decision):
+"Same size label dekhkar fit decide mat kar lo. Dekho, pehle ye clear kar lo ki
+aapko regular chahiye ya oversized. Phir sample ki chest aur length apni
+zaroorat se mila lo. Kapda pasand aane par bhi shape alag lag sakta hai.
+Pehle sample check kar lo."
 
-EXAMPLE 2 (Storytelling style — THIS is the target):
-"Ek customer aaya tha, bola collar loose ho gaya 5 wash mein. Maine bola collar
-ribbing ka type check kiya tha? Nahi kiya tha. Dekho... collar mein 2 type ki
-ribbing hoti hai — 1x1 rib aur flat knit. 1x1 rib mein elasticity hoti hai,
-toh wo recover karta hai har wash ke baad. Flat knit mein ye nahi hota, toh
-stretch hoke waisi reh jaati hai. Ab agar tum premium blank le rahe ho, toh 1x1
-rib collar wala lo. Aur ek baat... ribbing ka GSM bhi matter karta hai —
-agar collar ka rib patla hai toh jaldi shape kho dega. Bas itna check kar lo,
-collar ki complaint kabhi nahi aayegi... simple hai."
+EXAMPLE 2 (printing sample):
+"Blank dekhkar final print kaise judge karoge? Jis fit aur kapde mein bechna hai,
+usi ka sample le lo. Apne printer se wahi design aur process try karwa lo jo
+bechne wale ho. Fabric, fit aur print saath mein dekhkar agla decision lo.
+Sample par check kar lo."
 
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
 1. 6-8 SENTENCES for a 30-35 second Short. Hook hard, build fast, drop knowledge, loop back to the hook at the end.
 2. FIRST SENTENCE = PATTERN-INTERRUPT — max 10 words, and it must be TRUE.
    🚨 NEVER an invented loss, rejection or customer. Use a checkable fact instead:
-   a spec ("180 GSM pe print through dikhta hai"), a real published rate, or a
+   a relevant material distinction, a checked current rate, or a
    question buyers ask. NEVER a greeting, definition, or context-setting.
 3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
    Give PRACTICAL action: "cut kar lo", "weight kar lo", "try kar lo"
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
    Don't sugarcoat. Don't be defensive. Accept reality.
-5. COMPARISON STYLE — "jyada GSM matlab mota, kam GSM matlab patla"
+5. COMPARISON STYLE — compare the actual feature being discussed; GSM alone does not prove quality or print suitability.
 6. SIGNATURE ENDINGS (use a DIFFERENT one each video — NEVER repeat the same ending twice in a row):
    "usi ko... bolte hai", "bas...hota hai", "wo jyada theek rahega",
-   "simple hai", "itna kar lo bas", "complaint nahi aayegi", "try karke dekh lo"
+   "simple hai", "itna kar lo bas", "sample check kar lo", "try karke dekh lo"
 7. Use "aap/aapka/aapko" — respectful. NEVER "tu/tera/tujhe/bhai/yaar"
 8. COMPOUND VERBS — "kar lo", "kar doge", "ho jayega", "dikh jayega",
    "leke try kar lo" — NOT "karo", "kiya", "hoga"
 9. NATURAL ENGLISH mix — "basically", "common", "non noticeable",
    "simple", "normal", "quality", "sample", "print", "result"
 10. NO selling, NO website name, NO CTA, NO "hamare yahan se lo"
-11. INCLUDE SPECIFIC DETAILS — numbers (GSM values, piece counts, prices), names of techniques, comparisons.
+11. INCLUDE USEFUL DETAILS — the buyer question, relevant technique or actionable check. Numbers and prices are optional and must retain their verified meaning.
 
 ━━━ IG REELS RETENTION RULES (this script also runs as an Instagram Reel) ━━━
 
@@ -5093,49 +5088,31 @@ collar ki complaint kabhi nahi aayegi... simple hai."
     that the viewer NEEDS resolved. They scroll if they think they already know the
     answer. Make them feel "ek second ruko, ye toh nahi pata tha."
     Examples:
-      - "Ek customer ne ₹50,000 ka order cancel kar diya... pata hai kyu? Ek chhoti si galti."
-      - "200 GSM aur 220 GSM dono same lagte hain... but printing pe ek hi survive karta hai."
+      - "Same size label hai, par fit bhi same hai?"
+      - "Blank dekhkar final print kaise judge karoge?"
 
 13. CLOSE THE LOOP AT 70-80% — reveal the answer/lesson roughly 4/5ths into the script,
     NOT at the very end. Open a loop, build tension, deliver payoff with ~6-8s of
     script left for "so what to do" — that tail is where SHARES happen.
 
-14. ONE MEMORABLE NUMBER per script — viewers SAVE for numbers they can USE
-    ("180 GSM", "₹140 cost", "10 piece MOQ", "3 wash mein fade"). It must be a real
-    spec, MOQ or published rate — never an invented loss or a damaged quantity.
+14. ONE MEMORABLE TAKEAWAY per script — a useful check or distinction is enough.
+    Numbers are optional. Include a quantity, GSM or current rate only when its
+    source and meaning are supported by the supplied information.
 
-14b. ₹ AMOUNTS MUST BE NATURAL ROUND NUMBERS THAT INDIANS ACTUALLY SAY.
-    Real businessmen in conversation NEVER use awkward decimals like ₹1.2 lakh
-    or ₹3.4 lakh — these sound robotic / like a calculator. They use:
+14b. Never invent, round or change a monetary amount to improve the story.
+    If a current source does not establish the exact rate, omit it. Never turn
+    a buying quantity into a returned/damaged batch or an invented profit/loss.
 
-    ✅ ALLOWED:
-      - Whole lakhs/crores: ₹1 lakh, ₹2 lakh, ₹5 lakh, ₹10 lakh, ₹50 lakh, ₹1 crore
-      - Half multiples ONLY: ₹1.5 lakh, ₹2.5 lakh, ₹3.5 lakh, ₹4.5 lakh,
-        ₹0.5 lakh, ₹1.5 crore, ₹2.5 crore (these become डेढ़/ढाई/साढ़े/आधा naturally)
-      - Round thousands: ₹40,000, ₹50,000, ₹80,000, ₹2,00,000 (= 2 lakh)
-      - Specific small prices: ₹49, ₹65, ₹140, ₹185, ₹385 (per-piece rates fine)
-
-    ❌ NEVER USE:
-      - ₹1.2 lakh, ₹1.3 lakh, ₹1.7 lakh, ₹2.3 lakh, ₹3.4 lakh — sound artificial
-      - ₹1.25 lakh, ₹2.75 crore — too precise for casual speech
-      - Anything with .1/.2/.3/.4/.6/.7/.8/.9 decimals on lakh/crore amounts
-
-    If the story needs a precise loss/profit, ROUND to the nearest natural number.
-    A ₹1.2 lakh loss → make it "₹1.5 lakh" or "₹1 lakh" in the script.
-    A ₹3.4 crore turnover → "₹3.5 crore" or "₹3 crore".
-
-14c. ONE SCREENSHOT MOMENT (mid-video, ~50-65% mark) — write ONE dense 1-2 sentence
-    "reference card" the viewer will pause, screenshot, and share: compact rate math
-    ("₹140 fabric + ₹18 stitching + ₹22 print = ₹180 landed"), a GSM-to-use-case map
-    ("160 summer, 200 printing, 240 premium"), or a 3-point check ("bill, GSM,
-    sample — teeno check karo"). Make it self-contained — numbers + labels, no story
-    words — so that 2-3s subtitle frame alone is worth saving. Mirror it in
-    script_english with the SAME numbers in the SAME order.
+14c. ONE SCREENSHOT MOMENT (mid-video) — a concise checklist the buyer can use,
+    such as "fit, kapda, apna print — sample par teeno check kar lo". A precise
+    technical setting needs the applicable manufacturer's evidence; do not make
+    a universal GSM-to-use map or fake cost calculation. Mirror the same meaning
+    in script_english. Do not add numbers merely to make the card look useful.
 
 14d. WRITE FOR THE FORWARD — Instagram's #1 ranking signal is how many viewers SEND
     the reel to someone (and share-rate is our strongest measured views predictor).
     The knowledge drop must be something a printing/wholesale buyer would forward to
-    his partner or supplier: a cheat exposed, a rate truth, a check that saves money.
+    his partner or supplier: a useful distinction, supported instruction or sample check.
     Phrase the payoff so it is useful to the RECEIVER of the forward ("agar aapka
     supplier aisa bole toh...") — not just interesting to the viewer.
 
@@ -5146,11 +5123,11 @@ collar ki complaint kabhi nahi aayegi... simple hai."
 
 16. LOOP-BACK ENDING (CRITICAL FOR REPLAYS) — the FINAL line must semantically
     CONNECT BACK to the opening hook so the video replays seamlessly: reuse the
-    hook's key number, word, or image ("...aur wahi ₹40,000 wali galti kabhi nahi
-    hogi."). A viewer who loops = double watch time. NO spoken CTA anywhere —
+    hook's key subject or question ("Pehle sample ka fit check kar lo.").
+    Keep it useful and complete. NO spoken sales CTA anywhere —
     never say follow/subscribe/website/link/save in the voiceover; the on-screen
     outro card carries that.
-    Specificity = credibility. "200 GSM" is better than "thick fabric".
+    Specificity helps only when it is supported; do not add a number to sound credible.
 
 ━━━ NATURAL ENDING (CRITICAL — listener must FEEL the wrap-up) ━━━
 
@@ -5178,8 +5155,8 @@ REQUIRED STRUCTURE for the last 1-2 sentences:
     naturally as "one-point-five lakh".
 
 EXAMPLE STRUCTURE (correct):
-    [longer wrap sentence]: "Bas itna check karke order karo, har baar
-    quality consistent rahegi."
+    [longer wrap sentence]: "Bas sample par apna intended print check karke
+    agla decision lo."
     [SHORT FINAL SENTENCE]:  "Yehi sab kuch hai."
 
 WRONG (today's video had this — feels mid-thought):
@@ -5233,10 +5210,8 @@ RULES:
    the hook's key number/word/image, so the ending flows straight back into the
    opening when the video replays.
 5. NO spoken CTA — never follow/subscribe/website/link in the voiceover.
-6. NEVER use long narrative phrases like "complaint kabhi nahi aayegi"
-   or "ye galti kabhi nahi hogi" as the FINAL sentence — those are
-   mid-narrative phrases. Use them in the wrap-up sentence BEFORE the
-   final short closer if you want.
+6. NEVER guarantee "complaint kabhi nahi aayegi" or "ye galti kabhi nahi hogi"
+   anywhere in the script. End with a complete check or useful buyer question.
 7. The ending should match Ketu's actual speaking style — direct,
    action-oriented, sometimes with "theek hai" closer.
 
@@ -5251,14 +5226,11 @@ FILLER WORDS (pick 2-3 per script, NOT more):
 - "Aur ek baat," (adding a point)
 - "Ab dekho," (transitioning)
 
-EXAMPLE with fillers (natural flow):
-"Dekho, ek customer ka case batata hoon. 200 piece order kiya, DTG print karwaya,
-2 wash mein print fade ho gaya. Matlab, pre-treatment hi nahi kiya tha. Ab DTG
-mein ye zaroori hota hai, ink fabric mein absorb hone ke liye pre-treatment lagta hai.
-Bina uske ink surface pe rehti hai, wash mein nikal jaati hai. Toh solution simple hai,
-pre-treatment spray ya machine use karo, phir print karo. Cost thoda badhega par
-return zero ho jayega. Aur ek baat, pre-treatment ka coat uniform hona chahiye,
-warna patchy print aayega. Toh bas itna dhyan rakho, complaint nahi aayegi."
+EXAMPLE with fillers (newly written general advice):
+"Dekho, jis kapde aur fit mein bechna hai, usi ka sample check kar lo. Matlab,
+sirf photo dekhkar final print decide mat kar lo. Apne printer ke saath apna
+intended print sample par try kar lo. Aur ek baat, machine aur transfer ki
+instructions alag ho sakti hain. Apne process ki instructions check kar lo."
 
 CRITICAL RULES for fillers and pauses:
 - Use COMMA after fillers, NOT "..." (ellipsis). The TTS engine reads "..." as a very long pause.
@@ -5285,16 +5257,15 @@ eye and ear hit the same pattern-interrupt together.
 🚨 It must be TRUE: a spec, a real published rate, or a checkable claim.
 NEVER an invented loss, rejection or damaged quantity.
 
-Good hook texts (number/loss driven, paired with the spoken hook):
-- "₹40,000 KI GALTI"
-- "500 PIECE BARBAAD"
-- "2 WASH MEIN PRINT KHATAM"
-- "200 BOLA, 160 NIKLA"
+Good hook texts (complete, useful, paired with the spoken question):
+- "SAMPLE PAR APNA PRINT"
+- "SIZE LABEL YA FIT?"
+- "CHEST AUR LENGTH CHECK"
 
-Bad hook texts (no number, no loss, generic):
-- "GSM KA MATLAB KYA HAI"
+Weak hook texts (vague, without the buyer's actual question):
 - "FABRIC QUALITY TIPS"
 - "YE GALTI MAT KARNA"
+A useful buyer question can be strong without money, numbers or a damage story.
 
 ━━━ VIDEO PROMPT RULES ━━━
 
@@ -5306,7 +5277,7 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Include camera angle, lighting, movement, and specific objects
 - Focus on t-shirt/textile/manufacturing/printing industry visuals
 - CRITICAL: Every clip must START with a visible, well-lit scene from frame 1. NO black intros, NO fade-from-black, NO dark openings. Begin with action immediately.
-- CLIP 1 MUST OPEN MID-ACTION — frame 1 is already INSIDE the event: fabric already tearing, print already peeling under a thumb, rejected stack already hitting the table. NO establishing shot, NO hands reaching toward an object, NO scene-setting. The damage/drama is visible in the very first frame.
+- CLIP 1 opens on a relevant, visible product or practical action: hands examining a sample, comparing its shape or preparing the intended print. Never force tearing, peeling, rejected batches or damage into the first frame.
 - Be SPECIFIC: "Close-up of Indian man's hands holding a thick white cotton
   round-neck t-shirt, turning it to show the smooth bio-washed fabric texture,
   warm indoor lighting, slight camera dolly forward" — NOT "a tshirt"
@@ -5314,7 +5285,7 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - NO people's faces (to avoid AI face artifacts)
 - Show HANDS, products, fabrics, machines, packaging — not faces
 - Each prompt should be 40-80 words for best results
-- Describe REALISTIC scenes that could exist in a real Indian textile business
+- Describe realistic ILLUSTRATIONS of a textile concept, not footage of an actual test, customer incident, measured result or this business's proven stock. A generated scene does not establish that a test passed.
 - Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
 
 ━━━ VISUAL CONTINUITY (CRITICAL FOR PERCEIVED QUALITY) ━━━
@@ -5341,11 +5312,11 @@ paste it across all 5), then describe that clip's scene in detail.
 {_get_recent_clip_prompts()}
 
 The 5 clips should follow the story arc:
-- Clip 1: HOOK — opens MID-ACTION on the damage/problem already happening (not about to happen)
+- Clip 1: HOOK — immediately shows the relevant sample, feature or buyer check.
 - Clip 2: CONTEXT — setting the scene, showing the product/situation
 - Clip 3: EXPLANATION — the comparison or process being discussed
-- Clip 4: DEMONSTRATION — showing the technique, test, or method
-- Clip 5: RESOLUTION — the correct result, quality product, or satisfying conclusion
+- Clip 4: ILLUSTRATION — depicts the check or process without inventing a measured outcome.
+- Clip 5: CONCLUSION — reinforces the next useful check, not a guaranteed passing result.
 
 OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
@@ -5355,11 +5326,11 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
     "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
     "hook_text": "3-6 words, UPPERCASE, driven by a TRUE fact or real rate (never an invented loss), paired with the spoken first sentence",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
-    "video_prompt_1": "HOOK scene — opens MID-ACTION, damage/drama already happening in frame 1. 40-80 words.",
+    "video_prompt_1": "HOOK illustration — relevant sample, feature or practical action visible in frame 1; no forced damage. 40-80 words.",
     "video_prompt_2": "CONTEXT scene — setting up the situation. 40-80 words.",
     "video_prompt_3": "EXPLANATION scene — showing the comparison or process. 40-80 words.",
-    "video_prompt_4": "DEMONSTRATION scene — the technique or test being shown. 40-80 words.",
-    "video_prompt_5": "RESOLUTION scene — the correct result or satisfying conclusion. 40-80 words.",
+    "video_prompt_4": "ILLUSTRATION of the technique or check, not evidence of an actual test result. 40-80 words.",
+    "video_prompt_5": "CONCLUSION illustration — reinforces the useful next check without a guaranteed outcome. 40-80 words.",
     "tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"]
 }}
 """
@@ -7753,26 +7724,33 @@ Score each (1-10):
    Bad: sounds like a textbook/script. Good: fillers, compound verbs, blunt honesty.
 
 3. VALUE — Does the viewer LEARN something useful and specific?
-   Bad: vague fluff. Good: specific numbers, practical tips, actionable knowledge.
+   Bad: vague fluff or unsupported universal technical advice. Good: an actionable
+   buyer question, sample check or useful distinction. Numbers are not required.
+   Reject blanket GSM minimums, temperature changes, humidity thresholds or
+   guaranteed results without support for the particular material/process.
 
 4. ENDING — Does it stop cleanly on a short, complete final line?
    Bad: sounds like more is coming, or drifts into a new topic.
-   Good: a hard 3-6 word stop. The audio fade was deliberately removed to preserve this.
+   Good: a complete practical conclusion or specific buyer question. Do not demand
+   a sales CTA or artificially shorten a complete useful thought.
 
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
    Bad: says nothing new. Good: practical tip, surprising fact, common mistake exposed.
 
 6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
    Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
-   Good: prompts that show the EXACT scenario being discussed — the specific fabric, the specific test, the specific machine, the specific problem from the script.
+   Good: relevant illustrative views of the fabric, process or check being discussed.
+   AI-generated scenes are illustrations, not actual customer incidents, measured
+   demonstrations or proof that a material/test passed. Reject invented results.
    If no video prompts provided, score 6 (neutral).
 
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "scores": {{"hook": 1, "natural_feel": 1, "value": 1, "ending": 1, "viral_potential": 1, "visual_alignment": 1}}, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
-- Approve if total_score >= 36 (out of 60)
-- REJECT only if ANY single score is below 4
+- Every score must be an integer from 1 to 10; total_score must equal their sum.
+- Approve only if total_score >= 36 (out of 60) AND every single score is at least 4.
+- Reject invented incidents, unsupported technical prescriptions and simulated proof.
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
     try:
@@ -7783,18 +7761,28 @@ RULES:
         raw = resp.content[0].text.strip()
         if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
         review = json.loads(raw)
-
-        approved = review.get("approved", False)
-        score = review.get("total_score", 0)
-        weakest = review.get("weakest", "unknown")
-        feedback = review.get("feedback", "")
-
-        return approved, score, weakest, feedback
+        if not isinstance(review, dict) or type(review.get("approved")) is not bool:
+            raise ValueError("Review approved must be a JSON boolean")
+        score = review.get("total_score")
+        if type(score) is not int or not 6 <= score <= 60:
+            raise ValueError("Review total_score must be an integer from 6 to 60")
+        scores = review.get("scores")
+        dimensions = {"hook", "natural_feel", "value", "ending", "viral_potential", "visual_alignment"}
+        if not isinstance(scores, dict) or set(scores) != dimensions:
+            raise ValueError("Review must contain all six dimension scores")
+        if any(type(value) is not int or not 1 <= value <= 10 for value in scores.values()):
+            raise ValueError("Review dimension scores must be integers from 1 to 10")
+        if sum(scores.values()) != score:
+            raise ValueError("Review total does not match its dimension scores")
+        weakest, feedback = review.get("weakest"), review.get("feedback")
+        if not all(isinstance(value, str) and value.strip() for value in (weakest, feedback)):
+            raise ValueError("Review weakest and feedback must be nonempty text")
+        approved = review["approved"] and score >= 36 and min(scores.values()) >= 4
+        return approved, score, weakest.strip(), feedback.strip()
 
     except Exception as e:
-        # If review fails, approve by default (don't block pipeline)
-        print(f"   ⚠️ Review failed ({e}), approving by default")
-        return True, 0, "", "review error"
+        print(f"   ⚠️ Review failed ({e}); script remains unapproved")
+        return False, 0, "review_error", "Review failed or returned invalid data; obtain a valid approval before generating media."
 
 
 def optimize_title(claude_client, original_title, script_english, topic):
@@ -12155,7 +12143,7 @@ def main():
 
     # ── 3. Generate Script (with quality gate) ──
     data = None
-    candidate = None  # Track last valid candidate (may be None if all JSON parses fail)
+    candidate = None
     previous_feedback = ""  # Pass rejection reasons to next attempt
     for attempt in range(1, SCRIPT_MAX_ATTEMPTS + 1):
         print(f"   ✍️ Writing script (attempt {attempt}/{SCRIPT_MAX_ATTEMPTS})...")
@@ -12206,10 +12194,12 @@ def main():
                 continue
 
         # Validate required keys exist
-        if "script_voice" not in candidate or "script_english" not in candidate:
+        if not isinstance(candidate, dict) or not all(
+                isinstance(candidate.get(key), str) and candidate[key].strip()
+                for key in ("script_voice", "script_english")):
             print(f"   ⚠️ Missing required keys in JSON (attempt {attempt}), retrying...")
             previous_feedback = "Your JSON was missing required keys (script_voice, script_english). Include ALL required fields."
-            candidate = None  # Don't keep incomplete candidate as fallback
+            candidate = None
             continue
 
         script_voice = candidate["script_voice"]
@@ -12221,7 +12211,7 @@ def main():
         candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]
         approved, score, weakest, feedback = review_script(claude, script_voice, script_english, fresh_topic, candidate_prompts)
 
-        if approved:
+        if approved is True and type(score) is int and 36 <= score <= 60:
             print(f"   ✅ Script APPROVED (score: {score}/60) — {feedback}")
             data = candidate
             break
@@ -12232,14 +12222,10 @@ def main():
             if attempt < SCRIPT_MAX_ATTEMPTS:
                 print(f"      Regenerating with feedback...")
 
-    # Use last attempt if none were approved (don't waste the topic)
     if data is None:
-        if candidate is not None:
-            print(f"   ⚠️ No script scored high enough — using best last attempt")
-            flag("script_approved", False)
-            data = candidate
-        else:
-            raise RuntimeError(f"All {SCRIPT_MAX_ATTEMPTS} script generation attempts failed (JSON parse errors). Topic: {fresh_topic}")
+        flag("script_approved", False)
+        raise RuntimeError(
+            f"No approved script after {SCRIPT_MAX_ATTEMPTS} attempts; stopping before music, voice or video generation. Topic: {fresh_topic}")
 
     script_voice = data["script_voice"]
     # Sanitize script for TTS: collapse 4+ dots to 3 (preserve "..." as prosody hint)

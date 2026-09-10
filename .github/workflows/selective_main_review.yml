@@ -1,0 +1,42 @@
+name: Weekly selective MAIN review (no publishing)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 4'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: selective-main-review
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install read-only client dependency
+        run: python -m pip install 'requests>=2.32,<3'
+      - name: Validate selection safeguards
+        run: python -m unittest discover -s tests -p test_selective_main_review.py
+      - name: Review mature AI Shorts with fresh aggregate insights
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+        run: python tools/selective_main_review.py --fetch-archives --output-dir selective-main-review-output
+      - name: Retain aggregate review and explicit holds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selective-main-review-${{ github.run_id }}
+          path: selective-main-review-output/
+          if-no-files-found: warn
+          retention-days: 90

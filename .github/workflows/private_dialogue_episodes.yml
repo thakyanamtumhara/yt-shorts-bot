@@ -15,6 +15,16 @@ on:
         description: Recipient RSA public key PEM, at least 3072 bits
         required: true
         type: string
+      resume_key:
+        description: Optional encrypted reviewed fit-audio resume pack under p/
+        required: false
+        default: ''
+        type: string
+      resume_sha256:
+        description: SHA-256 required together with resume_key
+        required: false
+        default: ''
+        type: string
       execute:
         description: One TTS, one native audio review and at most one lip prediction per episode
         default: false
@@ -43,6 +53,8 @@ jobs:
           PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
           EPISODE_MANIFEST_KEY: ${{ inputs.manifest_key }}
           EPISODE_MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          EPISODE_RESUME_KEY: ${{ inputs.resume_key }}
+          EPISODE_RESUME_SHA256: ${{ inputs.resume_sha256 }}
           EPISODE_EXECUTE: ${{ inputs.execute }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
@@ -53,6 +65,7 @@ jobs:
           AWS_DEFAULT_REGION: ap-south-1
         run: |
           args=(--manifest-key "$EPISODE_MANIFEST_KEY" --manifest-sha256 "$EPISODE_MANIFEST_SHA256")
+          args+=(--resume-key "$EPISODE_RESUME_KEY" --resume-sha256 "$EPISODE_RESUME_SHA256")
           if [ "$EPISODE_EXECUTE" = true ]; then args+=(--execute); fi
           python tools/private_dialogue_episodes.py "${args[@]}"
       - uses: actions/upload-artifact@v4
