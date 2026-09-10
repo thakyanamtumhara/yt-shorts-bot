@@ -123,6 +123,10 @@
   "Im0WUhqiMzU": {
    "title": "Women's T-Shirt: Regular Fit Aur Oversize Fit | Cotton Lycra",
    "published": "2026-09-09T12:30:39+00:00"
+  },
+  "GpWmXrYTuV0": {
+   "title": "Oversize 260 GSM Moon Patch Rs 190 se | 180 GSM Rs 177 Bulk",
+   "published": "2026-09-10T12:30:05+00:00"
   }
  },
  "instagram": {
@@ -469,6 +473,14 @@
   "17937612480359470": {
    "permalink": "https://www.instagram.com/reel/DdEYkJvjAZL/",
    "ts": "2026-09-09T13:37:40+0000"
+  },
+  "18099421466375353": {
+   "permalink": "https://www.instagram.com/reel/DdHDYLIDnUm/",
+   "ts": "2026-09-10T14:29:45+0000"
+  },
+  "18091355006159379": {
+   "permalink": "https://www.instagram.com/reel/DdG88mJoKz2/",
+   "ts": "2026-09-10T13:34:06+0000"
   }
  },
  "facebook": {},
@@ -877,8 +889,13 @@
    "at": "2026-09-10T14:53:07+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-10T22:59:06+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-09-10",
- "last_run_ist": "2026-09-10T14:53:07+05:30"
+ "last_run_ist": "2026-09-10T22:59:06+05:30"
 }
