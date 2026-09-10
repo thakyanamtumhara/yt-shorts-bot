@@ -1,5 +1,6 @@
 import ast
 import json
+import re
 from pathlib import Path
 import textwrap
 from types import SimpleNamespace
@@ -13,7 +14,7 @@ DIMENSIONS=('hook','natural_feel','value','ending','viral_potential','visual_ali
 
 
 def load_function(name,namespace=None):
-    scope={'json':json,**(namespace or {})}
+    scope={'json':json,'re':re,**(namespace or {})}
     node=next(n for n in TREE.body if isinstance(n,ast.FunctionDef) and n.name==name)
     exec(compile(ast.Module(body=[node],type_ignores=[]),str(ROOT/'daily_short.py'),'exec'),scope)
     return scope[name]
@@ -49,6 +50,18 @@ class DailyReviewSchemaTest(unittest.TestCase):
     def test_explicit_rejection_stays_rejected_even_with_high_score(self):
         result=self.call(valid_review(approved=False,scores=dict.fromkeys(DIMENSIONS,9),total_score=54))
         self.assertEqual(result[:2],(False,54))
+
+    def test_published_editing_label_is_blocked_before_reviewer_call(self):
+        for phrase in ('Screenshot Moment: chest and length.', 'SCREENSHOT-MOMENT', 'स्क्रीनशॉट मोमेंट: चेस्ट और लंबाई।'):
+            for voice, english in ((phrase, 'Check the sample.'), ('Sample check kar lo.', phrase)):
+                with self.subTest(voice=voice, english=english):
+                    client=client_for(valid_review())
+                    self.assertEqual(self.review(client,voice,english,'fit')[:3],(False,0,'production_marker'))
+                    client.messages.create.assert_not_called()
+
+    def test_ordinary_screenshot_reference_is_not_the_editing_label(self):
+        client=client_for(valid_review())
+        self.assertTrue(self.review(client,'Size chart ka screenshot dekh lo.','Check the size chart screenshot.','fit')[0])
 
     def test_api_error_is_unapproved(self):
         result=self.review(client_for(error=RuntimeError('temporarily unavailable')),'voice','english','topic')

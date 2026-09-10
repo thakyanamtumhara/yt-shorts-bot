@@ -5108,6 +5108,8 @@ Sample par check kar lo."
     technical setting needs the applicable manufacturer's evidence; do not make
     a universal GSM-to-use map or fake cost calculation. Mirror the same meaning
     in script_english. Do not add numbers merely to make the card look useful.
+    "Screenshot moment" is an editing instruction, never spoken dialogue or
+    subtitle text. Write only the useful checklist itself in those fields.
 
 14d. WRITE FOR THE FORWARD — Instagram's #1 ranking signal is how many viewers SEND
     the reel to someone (and share-rate is our strongest measured views predictor).
@@ -7692,6 +7694,10 @@ Return ONLY the topic text, nothing else."""}]
 def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, score: int, weakest: str, feedback: str)."""
+
+    if any(re.search(r'screenshot[\s_-]*moment|स्क्रीन\s*शॉट\s*(?:मोमेंट|मुमेंट)', text, re.I)
+           for text in (script_voice, script_english)):
+        return False, 0, "production_marker", "Remove the editing label 'screenshot moment' from speech and subtitles; keep only the useful buyer checklist."
 
     prompts_section = ""
     if video_prompts:

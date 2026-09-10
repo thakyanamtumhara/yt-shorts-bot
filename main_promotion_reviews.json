@@ -101,6 +101,27 @@
         "https://blog.transferexpress.com/shipping-dtf-transfers-and-prep-work/",
         "https://downloadcenter.rolanddg.com/contents/manuals/TY-300_INS_EN/erj1698399782251.html"
       ]
+    },
+    {
+      "instagram_id": "17956850600998386",
+      "bot_youtube_id": "OWeIge4ypTc",
+      "decision": "rejected",
+      "reviewed_at": "2026-09-10T05:57:52.128024+00:00",
+      "reviewer": "Codex full-asset content review",
+      "reviewed_evidence_sha256": "fe2d4ea70da3f886971b461ddee68cd8b6551f857868500979c97907990be786",
+      "evidence_kind": "Exact published Instagram720x1280recompression; full speech extracted locally and relevant burned captions inspected",
+      "scope": "Entire current source rejected for MAIN promotion. Customer-return incident is in the BOTtitle, NOT the recovered speech.",
+      "reasons": [
+        "Known unsupported customer-return event in BOTtitle; full speech does not substantiate it",
+        "Spoken production cue Screenshot Moment and English checklist remain in the actual dialogue; cue also visible in burned captions",
+        "Unverified universal boxy1–2inch and oversized3–4inch shoulder-drop prescriptions, with no identified garment/size-chart reference",
+        "Closing shoulder-drop check promises fit will not go wrong; one measurement cannot establish the whole fit"
+      ],
+      "sources": [
+        "https://www.instagram.com/reel/DcmQ-aCFCQH/",
+        "https://www.youtube.com/watch?v=OWeIge4ypTc",
+        "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/33208400906"
+      ]
     }
   ],
   "promotions": []
