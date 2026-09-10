@@ -67,6 +67,11 @@ class FakeS3:
 
 
 class EpisodeTests(unittest.TestCase):
+    def ending_episode(self):
+        conclusion = 'तो पहले सैंपल का फिट तय करो, फिर उसी हिसाब से आगे खरीदो।'
+        return {**episode(), 'script': SCRIPT + ' ' + conclusion,
+                'ending': {'conclusion': conclusion, 'speed': 0.94, 'settle_seconds': 0.65}}
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -115,6 +120,53 @@ class EpisodeTests(unittest.TestCase):
                 pilot.decrypt_source(blob, changed, key)
         with self.assertRaises(InvalidTag):
             pilot.decrypt_source(blob[:-1] + bytes([blob[-1] ^ 1]), item, key)
+
+    def test_ending_format_requires_reviewed_final_conclusion_and_bounded_delivery(self):
+        item = self.ending_episode()
+        self.assertEqual(pilot.validate_manifest({'format': pilot.ENDING_FORMAT, 'episodes': [item]}), [item])
+        with self.assertRaises(ValueError):
+            pilot.validate_manifest({'format': pilot.FORMAT, 'episodes': [item]})
+        invalid = [episode(), {**item, 'script': item['script'] + ' आप क्या करते हो?'},
+                   {**item, 'ending': {**item['ending'], 'speed': 0.7}},
+                   {**item, 'ending': {**item['ending'], 'speed': float('nan')}},
+                   {**item, 'ending': {**item['ending'], 'settle_seconds': 5}},
+                   {**item, 'ending': {**item['ending'], 'conclusion': 'आप क्या करते हो?'}}]
+        for changed in invalid:
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                pilot.validate_manifest({'format': pilot.ENDING_FORMAT, 'episodes': [changed]})
+
+    def test_ending_speech_preserves_full_alignment_then_adds_tail_before_lipsync(self):
+        item = self.ending_episode()
+        data = {'audio_base64': base64.b64encode(b'ID3-fixture').decode(),
+                'alignment': alignment(item['script'], 34)}
+        (self.out / 'fit-speech.wav').write_bytes(b'original-normalized-audio')
+        with patch.object(pilot, 'request', return_value=Mock(json=lambda: data, headers={})) as request, \
+             patch.object(pilot.shared, 'run') as run, \
+             patch.object(pilot.shared, 'probe', side_effect=[34, 34.65]):
+            self.assertAlmostEqual(pilot.make_speech(item, 45, self.claim), 34.65)
+        self.assertEqual(request.call_args.kwargs['json']['text'], item['script'])
+        self.assertEqual(request.call_args.kwargs['json']['voice_settings']['speed'], 0.94)
+        self.assertIn(pilot.AUDIO_FILTER, run.call_args_list[0].args)
+        self.assertIn('apad=pad_dur=0.65', run.call_args_list[1].args)
+        self.assertNotIn('-t', run.call_args_list[1].args)
+        check = json.loads((self.out / 'fit-speech-check.json').read_text())
+        self.assertEqual((check['spoken_seconds'], check['settle_seconds']), (34, 0.65))
+
+    def test_ending_never_truncates_to_fit_source_or_accepts_transcript_completeness_as_closure(self):
+        pilot.validate_speech(SCRIPT, 34, alignment(duration=34), 44.35, 44.35)
+        with self.assertRaises(ValueError):
+            pilot.validate_speech(SCRIPT, 44.5, alignment(duration=44.5), 44.35, 44.35)
+        good = {**assessment(), 'topic_resolved': True, 'ending_sounds_final': True}
+        pilot.validate_assessment(good, ['फिट', 'कपड़ा'], require_closure=True)
+        for bad in [assessment(), {**good, 'topic_resolved': False}, {**good, 'ending_sounds_final': False}]:
+            with self.assertRaises(ValueError):
+                pilot.validate_assessment(bad, ['फिट', 'कपड़ा'], require_closure=True)
+        info = {'format': {'duration': '45'}, 'streams': [
+            {'codec_type': 'video', 'width': 720, 'height': 1280}, {'codec_type': 'audio'}]}
+        with patch.object(pilot, 'media_info', return_value=info):
+            self.assertEqual(pilot.source_info(Path('fixture.mp4'), 45), 45)
+            with self.assertRaises(ValueError):
+                pilot.source_info(Path('fixture.mp4'))
 
     def test_duration_alignment_and_complete_script_are_required_without_truncation(self):
         pilot.validate_speech(SCRIPT, 22, alignment(), 30)
