@@ -19,6 +19,8 @@ OUT = Path('dialogue-episodes-output')
 BUCKET = 'bulkplaintshirt.com'
 FORMAT = 'private-dialogue-episodes-v1'
 ENDING_FORMAT = 'private-dialogue-endings-v2'
+REFINEMENT_FORMAT = 'private-dialogue-refinement-v3'
+SPEECH_MAGIC = b'REFINEVOICE1\n'
 SOURCE_MAGIC = b'EPISODESOURCE1\n'
 RESUME_FORMAT = 'private-episodes-fit-resume-v1'
 RESUME_MAGIC = b'EPISODESRESUME1\n'
@@ -89,9 +91,10 @@ def review_words(episode):
 
 
 def validate_manifest(manifest):
-    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT):
+    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT, REFINEMENT_FORMAT):
         raise ValueError('Unsupported private episode manifest')
-    ending_mode = manifest['format'] == ENDING_FORMAT
+    ending_mode = manifest['format'] in (ENDING_FORMAT, REFINEMENT_FORMAT)
+    refinement = manifest['format'] == REFINEMENT_FORMAT
     episodes = manifest['episodes']
     if not isinstance(episodes, list) or not 1 <= len(episodes) <= 2:
         raise ValueError('Only one or two private episodes are allowed')
@@ -100,6 +103,8 @@ def validate_manifest(manifest):
         required = {'id', 'source_key', 'source_sha256', 'script', 'source_has_original_audio', 'source_encrypted'}
         if ending_mode:
             required.add('ending')
+        if refinement:
+            required.update(('provided_speech', 'source_seconds'))
         if not isinstance(episode, dict) or not required <= set(episode) or set(episode) - required - {'watch_words'}:
             raise ValueError('Episode fields differ from the reviewed manifest contract')
         if episode['id'] not in ('fit', 'print-sample') or episode['id'] in ids:
@@ -120,6 +125,13 @@ def validate_manifest(manifest):
                     or type(ending['speed']) not in (int, float) or not 0.90 <= ending['speed'] <= 1.0
                     or type(ending['settle_seconds']) not in (int, float) or not 0.5 <= ending['settle_seconds'] <= 1.2):
                 raise ValueError('Ending preview needs one final spoken conclusion, bounded pace and settling time')
+        if refinement:
+            supplied = episode['provided_speech']
+            if not isinstance(supplied, dict) or set(supplied) != {'key', 'sha256'}:
+                raise ValueError('Refinement needs an authenticated provided-speech pack')
+            key_and_hash(supplied['key'], supplied['sha256'], 'enc')
+            if type(episode['source_seconds']) not in (int, float) or not 30 <= episode['source_seconds'] <= 45:
+                raise ValueError('Refinement source must have a reviewed 30–45s duration')
         if episode['source_has_original_audio'] is not True:
             raise ValueError('Reviewed source must retain its original recorded audio')
         if episode['source_encrypted'] is not True:
@@ -297,9 +309,15 @@ def make_speech(episode, source_seconds, claim):
     claim.finish(id_, 'tts', 'returned', receipt['request_id'])
     shared.run('ffmpeg', '-v', 'error', '-y', '-i', str(OUT / f'{id_}-speech-raw.mp3'),
                '-af', AUDIO_FILTER, '-ar', '44100', '-ac', '1', str(OUT / f'{id_}-speech.wav'))
+    return finish_speech(episode, source_seconds, data.get('alignment'), AUDIO_FILTER)
+
+
+def finish_speech(episode, source_seconds, alignment, processing):
+    id_, script = episode['id'], episode['script']
+    ending = episode.get('ending')
     duration = shared.probe(OUT / f'{id_}-speech.wav', 'audio')
     tail = ending['settle_seconds'] if ending else 0
-    validate_speech(script, duration, data.get('alignment'), source_seconds - tail, 45 - tail if ending else 30)
+    validate_speech(script, duration, alignment, source_seconds - tail, 45 - tail if ending else 30)
     spoken_seconds = duration
     if ending:
         original = OUT / f'{id_}-speech-unpadded.wav'
@@ -311,8 +329,32 @@ def make_speech(episode, source_seconds, claim):
             raise ValueError('Settling tail changed or would exceed the original footage')
     save(f'{id_}-speech-check.json', {'seconds': duration, 'exact_alignment': True,
                                     'spoken_seconds': spoken_seconds, 'settle_seconds': tail,
-                                    'script_sha256': digest(script.encode()), 'filter': AUDIO_FILTER})
+                                    'script_sha256': digest(script.encode()), 'filter': processing})
     return duration
+
+
+def load_refined_speech(s3, episode, secret, source_seconds):
+    item = episode['provided_speech']
+    data = read_s3(s3, item['key'], item['sha256'], 10 * 1024 * 1024)
+    offset = len(SPEECH_MAGIC)
+    if len(secret) != 32 or not data.startswith(SPEECH_MAGIC) or len(data) < offset + 28:
+        raise ValueError('Invalid refined-speech pack')
+    raw = AESGCM(secret).decrypt(data[offset:offset + 12], data[offset + 12:],
+                                (episode['id'] + '-speech').encode())
+    pack = json.loads(raw)
+    if (not isinstance(pack, dict) or set(pack) != {'format', 'script', 'wav_base64', 'alignment'}
+            or pack['format'] != 'private-refined-speech-v1' or pack['script'] != episode['script']):
+        raise ValueError('Provided speech differs from the reviewed script or format')
+    wav = base64.b64decode(pack['wav_base64'], validate=True)
+    if not 1000 <= len(wav) <= 8 * 1024 * 1024 or wav[:4] != b'RIFF' or wav[8:12] != b'WAVE':
+        raise ValueError('Provided speech must be a bounded original WAV')
+    id_ = episode['id']
+    (OUT / f'{id_}-speech.wav').write_bytes(wav)
+    save(f'{id_}-speech-timestamps.json', {'alignment': pack['alignment']})
+    seconds = finish_speech(episode, source_seconds, pack['alignment'], 'provided_reviewed_pcm_unchanged')
+    save(f'{id_}-provided-speech-check.json', {'input_wav_sha256': digest(wav),
+         'pack_sha256': item['sha256'], 'exact_script': True, 'tts_calls_this_run': 0})
+    return seconds
 
 
 QA_SCHEMA = {'type': 'object', 'properties': {
@@ -532,9 +574,14 @@ def load_fit_resume(s3, resume_key, resume_sha256, secret, fingerprint, episodes
     return duration, original
 
 
-def run_episodes(episodes, durations, claim, resumed_fit_seconds=None):
+def run_episodes(episodes, durations, claim, resumed_fit_seconds=None, supplied_seconds=None):
     for episode in episodes:
-        if episode['id'] == 'fit' and resumed_fit_seconds is not None:
+        if episode.get('provided_speech'):
+            duration = supplied_seconds[episode['id']]
+            claim.begin(episode['id'], 'provided_speech')
+            claim.finish(episode['id'], 'provided_speech', 'verified', episode['provided_speech']['sha256'])
+            assess_speech(episode, claim)
+        elif episode['id'] == 'fit' and resumed_fit_seconds is not None:
             duration = resumed_fit_seconds
         else:
             duration = make_speech(episode, durations[episode['id']], claim)
@@ -574,25 +621,40 @@ def main():
         fingerprint = digest(encoded(manifest))
         meta['manifest_fingerprint'] = fingerprint
         durations = {}
+        supplied_seconds = {}
         secret = base64.b64decode(os.environ['PRIVATE_EPISODES_KEY'], validate=True)
         for episode in episodes:
             source = OUT / (episode['id'] + '-source.mp4')
             encrypted = read_s3(s3, episode['source_key'], None, 250 * 1024 * 1024)
             source.write_bytes(decrypt_source(encrypted, episode, secret))
-            durations[episode['id']] = source_info(source, 45 if episode.get('ending') else 30)
+            durations[episode['id']] = source_info(source, episode.get('source_seconds', 45 if episode.get('ending') else 30))
+            if episode.get('provided_speech'):
+                supplied_seconds[episode['id']] = load_refined_speech(s3, episode, secret, durations[episode['id']])
         resumed_seconds = original_claim = None
         if args.resume_key:
             resumed_seconds, original_claim = load_fit_resume(s3, args.resume_key, args.resume_sha256,
                                                               secret, fingerprint, episodes, durations)
             meta['resumed_original_run'] = RESUME_RUN
-        preflight([e for e in episodes if not args.resume_key or e['id'] != 'fit'])
+        preflight([e for e in episodes if not e.get('provided_speech') and (not args.resume_key or e['id'] != 'fit')])
         if args.execute:
             claim = Claim(s3, fingerprint, [e['id'] for e in episodes])
             if args.resume_key:
                 claim.resume_fit(original_claim, args.resume_sha256)
             else:
                 claim.persist()
-            run_episodes(episodes, durations, claim, resumed_seconds)
+            if supplied_seconds:
+                run_episodes(episodes, durations, claim, resumed_seconds, supplied_seconds)
+            else:
+                run_episodes(episodes, durations, claim, resumed_seconds)
+            if manifest['format'] == REFINEMENT_FORMAT:
+                omitted = {}
+                for episode in episodes:
+                    for suffix in ('source.mp4', 'source-for-lipsync.mp4', 'provider.mp4'):
+                        path = OUT / (episode['id'] + '-' + suffix)
+                        omitted[path.name] = {'sha256': digest(path.read_bytes()), 'bytes': path.stat().st_size}
+                save('reproducible-inputs-and-duplicate-provider.json', omitted)
+                for name in omitted:
+                    (OUT / name).unlink()
         meta['status'] = 'succeeded'
         result = 0
     except Exception as exc:

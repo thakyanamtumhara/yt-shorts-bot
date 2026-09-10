@@ -1,0 +1,63 @@
+name: Private delivery audition
+
+on:
+  workflow_dispatch:
+    inputs:
+      pack_key:
+        description: Reviewed encrypted audio audition pack under owned p/ prefix
+        required: true
+        type: string
+      pack_sha256:
+        description: SHA-256 of the exact encrypted input pack
+        required: true
+        type: string
+      recipient_public_key:
+        description: Recipient RSA public key PEM, at least 3072 bits
+        required: true
+        type: string
+      execute:
+        description: At most five TTS snippets and two native audio comparisons, no video or publishing
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-delivery-audition
+  cancel-in-progress: false
+
+jobs:
+  audition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install boto3 cryptography requests
+      - name: Generate bounded private audio audition
+        env:
+          PILOT_PUBLIC_KEY: ${{ inputs.recipient_public_key }}
+          DELIVERY_PACK_KEY: ${{ inputs.pack_key }}
+          DELIVERY_PACK_SHA256: ${{ inputs.pack_sha256 }}
+          DELIVERY_EXECUTE: ${{ inputs.execute }}
+          PRIVATE_DELIVERY_KEY: ${{ secrets.PRIVATE_DELIVERY_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+        run: |
+          args=(--pack-key "$DELIVERY_PACK_KEY" --pack-sha256 "$DELIVERY_PACK_SHA256")
+          if [ "$DELIVERY_EXECUTE" = true ]; then args+=(--execute); fi
+          python tools/private_delivery_audition.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-delivery-audition-encrypted
+          path: private-delivery-audition.enc
+          if-no-files-found: error
+          retention-days: 2

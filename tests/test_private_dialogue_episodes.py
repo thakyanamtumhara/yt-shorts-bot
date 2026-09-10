@@ -168,6 +168,57 @@ class EpisodeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pilot.source_info(Path('fixture.mp4'))
 
+    def refinement_episode(self):
+        return {**self.ending_episode(), 'source_seconds': 32,
+                'provided_speech': {'key': 'p/speech.enc', 'sha256': 'b' * 64}}
+
+    def test_refinement_requires_exact_provided_audio_contract_and_reviewed_source_duration(self):
+        item = self.refinement_episode()
+        self.assertEqual(pilot.validate_manifest({'format': pilot.REFINEMENT_FORMAT, 'episodes': [item]}), [item])
+        for changed in [self.ending_episode(), {**item, 'source_seconds': True},
+                        {**item, 'source_seconds': float('nan')}, {**item, 'source_seconds': 29},
+                        {**item, 'provided_speech': {**item['provided_speech'], 'url': 'https://example.com'}}]:
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                pilot.validate_manifest({'format': pilot.REFINEMENT_FORMAT, 'episodes': [changed]})
+        with self.assertRaises(ValueError):
+            pilot.validate_manifest({'format': pilot.ENDING_FORMAT, 'episodes': [item]})
+
+    def test_refined_audio_authenticates_pack_script_and_bytes_before_any_provider_call(self):
+        item = self.refinement_episode()
+        key, nonce = AESGCM.generate_key(bit_length=256), b'n' * 12
+        wav = b'RIFF' + b'\0' * 4 + b'WAVE' + b'original-reviewed-audio' * 100
+        pack = {'format': 'private-refined-speech-v1', 'script': item['script'],
+                'wav_base64': base64.b64encode(wav).decode(), 'alignment': alignment(item['script'])}
+        def stage(payload):
+            raw = pilot.SPEECH_MAGIC + nonce + AESGCM(key).encrypt(nonce, pilot.encoded(payload), b'fit-speech')
+            self.s3.objects['p/speech.enc'] = raw
+            item['provided_speech']['sha256'] = pilot.digest(raw)
+        stage(pack)
+        with patch.object(pilot, 'request') as request, patch.object(pilot, 'finish_speech', return_value=22.65) as finish:
+            self.assertEqual(pilot.load_refined_speech(self.s3, item, key, 32), 22.65)
+        request.assert_not_called()
+        self.assertEqual((self.out / 'fit-speech.wav').read_bytes(), wav)
+        self.assertEqual(finish.call_args.args[2], pack['alignment'])
+        stage({**pack, 'script': item['script'] + ' बदला।'})
+        with patch.object(pilot, 'finish_speech') as finish, self.assertRaises(ValueError):
+            pilot.load_refined_speech(self.s3, item, key, 32)
+        finish.assert_not_called()
+        stage(pack)
+        item['provided_speech']['sha256'] = '0' * 64
+        with self.assertRaises(ValueError):
+            pilot.load_refined_speech(self.s3, item, key, 32)
+
+    def test_refinement_skips_tts_but_requires_new_whole_audio_review_before_lipsync(self):
+        item = self.refinement_episode()
+        with patch.object(pilot, 'make_speech') as tts, \
+             patch.object(pilot, 'assess_speech', side_effect=ValueError('Unnatural join')) as review, \
+             patch.object(pilot, 'make_video') as video, self.assertRaises(ValueError):
+            pilot.run_episodes([item], {'fit': 32}, self.claim, supplied_seconds={'fit': 26})
+        tts.assert_not_called()
+        review.assert_called_once()
+        video.assert_not_called()
+        self.assertEqual(self.claim.state['episodes']['fit']['provided_speech']['status'], 'verified')
+
     def test_duration_alignment_and_complete_script_are_required_without_truncation(self):
         pilot.validate_speech(SCRIPT, 22, alignment(), 30)
         for duration, times in [(30.01, alignment()), (9.9, alignment()),
