@@ -172,6 +172,69 @@ class EpisodeTests(unittest.TestCase):
         return {**self.ending_episode(), 'source_seconds': 32,
                 'provided_speech': {'key': 'p/speech.enc', 'sha256': 'b' * 64}}
 
+    def continuous_episode(self):
+        return {**self.ending_episode(), 'source_seconds': 32}
+
+    def test_continuous_contract_is_one_fit_with_reviewed_source_and_no_supplied_audio(self):
+        item = self.continuous_episode()
+        manifest = {'format': pilot.CONTINUOUS_FORMAT, 'episodes': [item]}
+        self.assertEqual(pilot.validate_manifest(manifest), [item])
+        for changed in [self.ending_episode(), self.refinement_episode(), {**item, 'id': 'print-sample'},
+                        {**item, 'source_seconds': 29}, {**item, 'source_seconds': 46},
+                        {**item, 'source_seconds': True}, {**item, 'source_seconds': float('nan')}]:
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                pilot.validate_manifest({**manifest, 'episodes': [changed]})
+        with self.assertRaises(ValueError):
+            pilot.validate_manifest({**manifest, 'episodes': [item, item]})
+        for old_format in (pilot.FORMAT, pilot.ENDING_FORMAT, pilot.REFINEMENT_FORMAT):
+            with self.subTest(old_format=old_format), self.assertRaises(ValueError):
+                pilot.validate_manifest({'format': old_format, 'episodes': [item]})
+        info = {'streams': [{'codec_type': 'video', 'height': 1920, 'width': 1080}, {'codec_type': 'audio'}],
+                'format': {'duration': '32.0'}}
+        with patch.object(pilot, 'media_info', return_value=info):
+            self.assertEqual(pilot.source_info(Path('reviewed.mp4'), item['source_seconds']), 32)
+
+    def test_continuous_pipeline_runs_one_full_tts_then_qa_then_first_video(self):
+        item = self.continuous_episode()
+        order = []
+        def speech(*args):
+            order.append('tts')
+            self.assertEqual(args[:2], (item, 32))
+            return 27
+        with patch.object(pilot, 'make_speech', side_effect=speech) as tts, \
+             patch.object(pilot, 'assess_speech', side_effect=lambda *args: order.append('qa')) as qa, \
+             patch.object(pilot, 'make_video', side_effect=lambda *args: order.append('video')) as video, \
+             patch.object(pilot, 'load_refined_speech') as supplied:
+            pilot.run_episodes([item], {'fit': 32}, self.claim)
+        self.assertEqual(order, ['tts', 'qa', 'video'])
+        self.assertEqual((tts.call_count, qa.call_count, video.call_count), (1, 1, 1))
+        supplied.assert_not_called()
+        with patch.object(pilot, 'make_speech', return_value=27) as tts, \
+             patch.object(pilot, 'assess_speech', side_effect=ValueError('Tone or pronunciation failed')), \
+             patch.object(pilot, 'make_video') as video, self.assertRaises(ValueError):
+            pilot.run_episodes([item], {'fit': 32}, self.claim)
+        tts.assert_called_once()
+        video.assert_not_called()
+
+    def test_continuous_tts_uses_exact_existing_voice_recipe_and_denies_second_submission(self):
+        item = self.continuous_episode()
+        response = Mock(headers={'request-id': 'one-continuous-voice', 'character-cost': str(len(item['script']))})
+        response.json.return_value = {'audio_base64': base64.b64encode(b'original-tts-bytes').decode(),
+                                      'alignment': alignment(item['script'], 27)}
+        with patch.object(pilot, 'request', return_value=response) as request, patch.object(pilot.shared, 'run'), \
+             patch.object(pilot, 'finish_speech', return_value=27.65) as finish:
+            self.assertEqual(pilot.make_speech(item, 32, self.claim), 27.65)
+            with self.assertRaises(ValueError):
+                pilot.make_speech(item, 32, self.claim)
+        self.assertEqual(request.call_count, 1)
+        payload = request.call_args.kwargs['json']
+        self.assertEqual(payload['text'], item['script'])
+        self.assertEqual(payload['model_id'], 'eleven_multilingual_v2')
+        self.assertIn(pilot.VOICE_ID, request.call_args.args[1])
+        self.assertEqual(payload['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0.0,
+                                                    'use_speaker_boost': True, 'speed': item['ending']['speed']})
+        self.assertEqual(finish.call_args.args, (item, 32, response.json.return_value['alignment'], pilot.AUDIO_FILTER))
+
     def test_refinement_requires_exact_provided_audio_contract_and_reviewed_source_duration(self):
         item = self.refinement_episode()
         self.assertEqual(pilot.validate_manifest({'format': pilot.REFINEMENT_FORMAT, 'episodes': [item]}), [item])
@@ -459,10 +522,16 @@ class EpisodeTests(unittest.TestCase):
         self.assertFalse((self.out / 'fit-source.mp4').exists())
 
     def test_main_failed_refinement_compacts_before_encrypting_error_and_audio(self):
+        for format_ in (pilot.REFINEMENT_FORMAT, pilot.CONTINUOUS_FORMAT):
+            with self.subTest(format=format_):
+                self.assert_failed_refinement_compacts(format_)
+
+    def assert_failed_refinement_compacts(self, format_):
         key = AESGCM.generate_key(bit_length=256)
         source = b'\x00\x00\x00\x18ftypisom' + b'verified-private-source-fixture'
-        item = {**self.refinement_episode(), 'source_sha256': pilot.digest(source)}
-        raw = pilot.encoded({'format': pilot.REFINEMENT_FORMAT, 'episodes': [item]})
+        item = self.refinement_episode() if format_ == pilot.REFINEMENT_FORMAT else self.continuous_episode()
+        item = {**item, 'source_sha256': pilot.digest(source)}
+        raw = pilot.encoded({'format': format_, 'episodes': [item]})
         self.s3.objects['p/manifest.json'] = raw
         self.s3.objects[item['source_key']] = pilot.SOURCE_MAGIC + b'n' * 12 + AESGCM(key).encrypt(b'n' * 12, source, b'fit')
         for file in self.out.iterdir():
@@ -472,6 +541,7 @@ class EpisodeTests(unittest.TestCase):
             (self.out / 'fit-speech.wav').write_bytes(b'exact-provided-voice')
             return 27
         def fail_review(*args):
+            (self.out / 'fit-speech.wav').write_bytes(b'exact-provided-voice')
             pilot.save('fit-audio-qa-provider.json', {'status': 'incomplete'})
             (self.out / 'fit-provider.mp4').write_bytes(b'failed-provider-diagnostic')
             raise ValueError('Native audio review was incomplete')
@@ -489,11 +559,12 @@ class EpisodeTests(unittest.TestCase):
              patch.object(pilot.shared, 'validate_inputs', return_value=Mock()), \
              patch.object(pilot.shared, 'encrypt_output', side_effect=encrypted) as encrypt, \
              patch.object(pilot, 'source_info', return_value=32), patch.object(pilot, 'preflight'), \
-             patch.object(pilot, 'load_refined_speech', side_effect=provided), \
+             patch.object(pilot, 'load_refined_speech', side_effect=provided) as load_speech, \
              patch.object(pilot, 'run_episodes', side_effect=fail_review), patch.object(pilot, 'request') as request:
             self.assertEqual(pilot.main(), 1)
         encrypt.assert_called_once()
         request.assert_not_called()
+        self.assertEqual(load_speech.call_count, 1 if format_ == pilot.REFINEMENT_FORMAT else 0)
 
     def test_private_artifact_roundtrip_contains_sources_speech_and_diagnostics(self):
         key = rsa.generate_private_key(public_exponent=65537, key_size=3072)

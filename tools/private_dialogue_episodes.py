@@ -20,6 +20,7 @@ BUCKET = 'bulkplaintshirt.com'
 FORMAT = 'private-dialogue-episodes-v1'
 ENDING_FORMAT = 'private-dialogue-endings-v2'
 REFINEMENT_FORMAT = 'private-dialogue-refinement-v3'
+CONTINUOUS_FORMAT = 'private-dialogue-continuous-refinement-v4'
 SPEECH_MAGIC = b'REFINEVOICE1\n'
 SOURCE_MAGIC = b'EPISODESOURCE1\n'
 RESUME_FORMAT = 'private-episodes-fit-resume-v1'
@@ -91,13 +92,16 @@ def review_words(episode):
 
 
 def validate_manifest(manifest):
-    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT, REFINEMENT_FORMAT):
+    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT):
         raise ValueError('Unsupported private episode manifest')
-    ending_mode = manifest['format'] in (ENDING_FORMAT, REFINEMENT_FORMAT)
+    ending_mode = manifest['format'] in (ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT)
     refinement = manifest['format'] == REFINEMENT_FORMAT
+    continuous = manifest['format'] == CONTINUOUS_FORMAT
     episodes = manifest['episodes']
     if not isinstance(episodes, list) or not 1 <= len(episodes) <= 2:
         raise ValueError('Only one or two private episodes are allowed')
+    if continuous and (len(episodes) != 1 or not isinstance(episodes[0], dict) or episodes[0].get('id') != 'fit'):
+        raise ValueError('Continuous refinement is one private FIT performance only')
     ids = set()
     for episode in episodes:
         required = {'id', 'source_key', 'source_sha256', 'script', 'source_has_original_audio', 'source_encrypted'}
@@ -105,6 +109,8 @@ def validate_manifest(manifest):
             required.add('ending')
         if refinement:
             required.update(('provided_speech', 'source_seconds'))
+        if continuous:
+            required.add('source_seconds')
         if not isinstance(episode, dict) or not required <= set(episode) or set(episode) - required - {'watch_words'}:
             raise ValueError('Episode fields differ from the reviewed manifest contract')
         if episode['id'] not in ('fit', 'print-sample') or episode['id'] in ids:
@@ -130,6 +136,7 @@ def validate_manifest(manifest):
             if not isinstance(supplied, dict) or set(supplied) != {'key', 'sha256'}:
                 raise ValueError('Refinement needs an authenticated provided-speech pack')
             key_and_hash(supplied['key'], supplied['sha256'], 'enc')
+        if refinement or continuous:
             if type(episode['source_seconds']) not in (int, float) or not 30 <= episode['source_seconds'] <= 45:
                 raise ValueError('Refinement source must have a reviewed 30–45s duration')
         if episode['source_has_original_audio'] is not True:
@@ -478,7 +485,7 @@ def make_video(episode, duration, claim):
     if abs(shared.probe(trimmed, 'video') - duration) > 0.1:
         raise ValueError('Source trim does not match complete speech')
     shared.probe(trimmed, 'audio')
-    if episode.get('provided_speech'):
+    if 'source_seconds' in episode:
         save(f'{id_}-source-for-lipsync-check.json',
              {'sha256': digest(trimmed.read_bytes()), 'bytes': trimmed.stat().st_size})
     headers = {'Authorization': 'Bearer ' + os.environ['REPLICATE_API_TOKEN']}
@@ -649,7 +656,7 @@ def main():
         raw = read_s3(s3, args.manifest_key, args.manifest_sha256, 16 * 1024)
         manifest = json.loads(raw)
         episodes = validate_manifest(manifest)
-        if manifest['format'] == REFINEMENT_FORMAT:
+        if manifest['format'] in (REFINEMENT_FORMAT, CONTINUOUS_FORMAT):
             refinement_episodes = episodes
         save('manifest-private.json', manifest)
         fingerprint = digest(encoded(manifest))
