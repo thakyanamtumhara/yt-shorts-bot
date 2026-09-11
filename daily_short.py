@@ -12872,43 +12872,8 @@ def main():
         print("❌ No usable clips")
         return
 
-    total_clip_duration = sum(v.duration for v in video_objects)
-    if total_clip_duration >= total_duration:
-        cd = total_duration / len(video_objects)
-        trimmed = [v.subclip(0, min(cd, v.duration)) for v in video_objects]
-    else:
-        # Loop clips cyclically to fill duration (instead of slow-mo)
-        looped = []
-        accumulated = 0
-        idx = 0
-        max_iterations = len(video_objects) * 20  # Safety: prevent infinite loop
-        while accumulated < total_duration and idx < max_iterations:
-            clip = video_objects[idx % len(video_objects)]
-            if clip.duration <= 0:
-                print(f"   ⚠️ Clip {idx} has zero duration — skipping")
-                idx += 1
-                continue
-            remaining = total_duration - accumulated
-            if clip.duration <= remaining:
-                looped.append(clip)
-                accumulated += clip.duration
-            else:
-                looped.append(clip.subclip(0, remaining))
-                accumulated += remaining
-            idx += 1
-        trimmed = looped
-        print(f"   🔁 Clips looped ({len(video_objects)} clips → {len(looped)} segments to fill {total_duration:.1f}s)")
-
-    if CLIP_FADE_DURATION > 0 and len(trimmed) > 1:
-        # Use padding_and_crossfade for clean transitions (no black gaps)
-        try:
-            base_video = concatenate_videoclips(trimmed, method="compose", padding=-CLIP_FADE_DURATION)
-        except Exception:
-            base_video = concatenate_videoclips(trimmed, method="chain")
-    else:
-        base_video = concatenate_videoclips(trimmed, method="chain")
-    if base_video.duration > total_duration:
-        base_video = base_video.subclip(0, total_duration)
+    from tools.daily_visual_timeline import assemble_visual_timeline
+    base_video = assemble_visual_timeline(video_objects, total_duration, CLIP_FADE_DURATION)
 
     print(f"   🎬 Ken Burns zoom applied to all clips")
 
