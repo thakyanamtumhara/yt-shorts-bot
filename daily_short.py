@@ -4272,6 +4272,10 @@ def get_video_speech_text(video_id, allow_whisper=True, whisper_model="small",
     → OAuth captions API → yt-dlp+Whisper. Returns (text, source_label) or
     (None, None). The description fallback stays with the callers — it is
     NOT speech and must be labelled as such in the corpus."""
+    from tools.spoken_style import eligible_recorded_source
+    if not eligible_recorded_source(video_id, SOURCE_CHANNEL_ID, SOURCE_CHANNEL_API_KEY):
+        print("   Speech source excluded: synthetic, unavailable or not MAIN.")
+        return None, None
     text = fetch_transcript_unauthenticated(video_id)
     if text and len(text) > 200:
         return text, "captions"
@@ -4470,6 +4474,9 @@ def _devanagari_to_roman_variants(word, max_variants=12):
 
 
 def _voice_corpus_speech_body(raw):
+    from tools.spoken_style import corpus_source_excluded
+    if corpus_source_excluded(raw):
+        return None
     metadata = {}
     for line in raw.splitlines():
         if not line.strip():
@@ -4955,6 +4962,7 @@ def _own_channel_performance_signal():
 
 
 def get_script_prompt(topic):
+    from tools.spoken_style import style_prompt
     from tools.daily_topic_selection import evidence_prompt
     lesson_evidence = evidence_prompt(topic)
     return f"""
@@ -4979,7 +4987,7 @@ This is what's actually worked (and failed) on the bot's recent uploads.
 Use this as audience-interest context, not proof that any claim or hook is true.
 Past winners include invented losses and incidents: never copy those narratives.
 {_own_channel_performance_signal()}
-{extract_voice_corpus_style_hints()}
+{style_prompt("roman")}
 
 ━━━ CRITICAL: SPEAKING STYLE ━━━
 
@@ -7495,6 +7503,12 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
 def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, score: int, weakest: str, feedback: str)."""
+
+    from tools.spoken_style import vocabulary_issues
+    wording = vocabulary_issues(script_voice)
+    if wording:
+        feedback = " ".join(", ".join(item["words"]) + ": " + item["suggestion"] for item in wording)
+        return False, 0, "spoken_wording", feedback
 
     from tools.daily_topic_selection import evidence_prompt, unsupported_shortcut
     lesson_evidence = evidence_prompt(topic)
