@@ -1,0 +1,13 @@
+{
+  "format": "speech-source-exclusions-v1",
+  "purpose": "Known synthetic MAIN uploads cannot become real-speech exemplars, even if their disclosure is later edited. Add IDs with source asset hashes when AI dialogues are uploaded.",
+  "youtube_ids": {
+    "anoWcm-H0BA": {
+      "media_kind": "ai-dialogue",
+      "episode_id": "WH09",
+      "reason": "Explicitly selected AI-dialogue upload on MAIN; containsSyntheticMedia=true at upload. Never a recorded-speech exemplar.",
+      "recorded_on": "2026-09-11",
+      "selected_master_sha256": "54cb827819a6f61bf7c64f396a52f5a04c1ad07630036e4c21f667f7707ae8c9"
+    }
+  }
+}

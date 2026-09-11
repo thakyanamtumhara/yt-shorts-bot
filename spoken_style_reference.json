@@ -1,0 +1,175 @@
+{
+  "format": "recorded-spoken-style-v1",
+  "created_on": "2026-09-11",
+  "purpose": "Prompt grounding and a small user-preference vocabulary gate, not model training or a pronunciation guarantee. New useful technical words remain allowed.",
+  "sources": {
+    "warehouse": {
+      "media_kind": "real-recording",
+      "synthetic": false,
+      "speaker": "Ketu",
+      "reviewed_source": true,
+      "original_recording": "temp_video_for_share.mp4",
+      "related_main_video_id": "UQBlxoDQ2Dw",
+      "timestamp_basis": "original_raw_seconds_not_edited_youtube_timeline",
+      "reference_excerpt_sha256": "1a0d0d95420fb0b679958c48b30b16798631000cd8317c33bb3974371c1b2798",
+      "transcript_sha256": "c7f73d914c4bda0458eb467c5112def2659821841cbb202fd9baed16e0a3cc0d",
+      "transcript_method": "Existing normalized local ASR and editorial source checks; not a new listening or pronunciation approval."
+    },
+    "women": {
+      "media_kind": "real-recording",
+      "synthetic": false,
+      "speaker": "Ketu",
+      "reviewed_source": true,
+      "original_recording": "womens tshirt.MP4",
+      "related_main_video_id": "rEOtLcnHTG8",
+      "timestamp_basis": "original_raw_seconds_not_edited_youtube_timeline",
+      "reference_excerpt_sha256": "3ba640aec442d4d9bda9c90aef87e5163ebb04fb57b140e8c56f2b7a61aa3bad",
+      "transcript_sha256": "44835a50af2fd10c38d629c147c7da4c26c372b5938b4c303100ea875984cac7",
+      "transcript_method": "Existing normalized local ASR and editorial source checks; not a new listening or pronunciation approval."
+    },
+    "p17": {
+      "media_kind": "real-recording",
+      "synthetic": false,
+      "speaker": "Ketu",
+      "reviewed_source": true,
+      "original_recording": "17product.MP4",
+      "related_main_video_id": "N-BkGLrnvyY",
+      "timestamp_basis": "original_raw_seconds_not_edited_youtube_timeline",
+      "reference_excerpt_sha256": "7b30655d39caec7fda098c4ce1849bae66f4af66492a31239ac633887f87ecbc",
+      "transcript_sha256": "edccfd110a2c7e009584d4dd25a1427ca384f1a6dc9dd3cc0eb806f058e30fde",
+      "transcript_method": "Existing normalized local ASR and editorial source checks; not a new listening or pronunciation approval."
+    }
+  },
+  "examples": [
+    {
+      "source_id": "warehouse",
+      "start_seconds": 24.42,
+      "end_seconds": 30.58,
+      "hindi": "ये आप मेरे पीछे देख सकते होगे…",
+      "roman": "Ye aap mere peeche dekh sakte hoge…",
+      "lesson": "Point to the concrete thing before explaining it.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "warehouse",
+      "start_seconds": 63.3,
+      "end_seconds": 70.56,
+      "hindi": "अगर आप प्रिंट करके रिसेल करते हो… तो…",
+      "roman": "Agar aap print karke resell karte ho… toh…",
+      "lesson": "Use a practical if/then situation without inventing a customer incident.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "warehouse",
+      "start_seconds": 318.32,
+      "end_seconds": 320.98,
+      "hindi": "और देखो… उसकी क्वालिटी वगैरह चेक करो।",
+      "roman": "Aur dekho… uski quality wagairah check karo.",
+      "lesson": "Use familiar business words and direct verbs; do not copy the source sales pitch.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "warehouse",
+      "start_seconds": 322.14,
+      "end_seconds": 323.74,
+      "hindi": "तो आपको ज़्यादा समझ में आएगा।",
+      "roman": "Toh aapko zyada samajh mein aayega.",
+      "lesson": "Finish with what the buyer will understand.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "warehouse",
+      "start_seconds": 171.86,
+      "end_seconds": 180.2,
+      "hindi": "ये सब दिखाने का कारण ये है कि…",
+      "roman": "Ye sab dikhane ka kaaran ye hai ki…",
+      "lesson": "Explain the reason in ordinary speech.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "women",
+      "start_seconds": 59.6,
+      "end_seconds": 69.85,
+      "hindi": "एक अच्छा फैब्रिक बनाएँगे। अच्छे फैब्रिक से फिर अच्छी टी-शर्ट्स बनेंगी।",
+      "roman": "Ek achha fabric banayenge. Achhe fabric se phir achhi T-shirts banengi.",
+      "lesson": "Connect process to the resulting garment; this is a historical plan, not new product proof.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "p17",
+      "start_seconds": 229.2,
+      "end_seconds": 251.0,
+      "hindi": "…थोड़ा सा हम लोग देख के बनाते हैं… ताकि रुआ वगैरह का इश्यू न हो।",
+      "roman": "…thoda sa hum log dekh ke banate hain… taaki rua wagairah ka issue na ho.",
+      "lesson": "Explain purpose using taaki; source product claim must not become a universal guarantee.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    },
+    {
+      "source_id": "p17",
+      "start_seconds": 115.3,
+      "end_seconds": 136.0,
+      "hindi": "एग्जैक्टली मुझे वेबसाइट चेक करनी पड़ेगी।",
+      "roman": "Exactly mujhe website check karni padegi.",
+      "lesson": "Say when a fact needs checking instead of inventing precision.",
+      "quote_status": "normalized_fragment; ellipses mark omitted speech; ranges are source navigation, not new cut decisions"
+    }
+  ],
+  "preferred_patterns": [
+    "देखो / dekho",
+    "मतलब / matlab",
+    "अगर … तो … / agar … toh …",
+    "ताकि … / taaki …",
+    "कपड़ा / kapda",
+    "फैब्रिक / fabric",
+    "फील / feel",
+    "समझ में आएगा / samajh mein aayega",
+    "चेक करो / check karo",
+    "मान लो / maan lo"
+  ],
+  "rules": [
+    "Explain one concrete concept, its reason and its practical consequence in familiar Hindi/Hinglish.",
+    "Keep natural business words; do not translate every technical term into formal Hindi. Explain a necessary unfamiliar term simply.",
+    "Use complete connected sentences and a finished buyer conclusion. Do not sprinkle filler or ठीक है after every sentence.",
+    "Do not copy historical rates, stock claims, website pitches or guarantees from style examples. Style evidence is not product evidence.",
+    "Do not treat absent words as forbidden: the hard gate only covers the specifically rejected words and close spellings.",
+    "Generated dialogue, daily BOT narration, descriptions, comments and sales copy are not speech-style sources."
+  ],
+  "rejected_words": [
+    {
+      "id": "formal_instruction",
+      "forms": [
+        "हिदायत",
+        "हिदायतें",
+        "हिदायतों",
+        "hidayat",
+        "hidaayat",
+        "hidayatein",
+        "hidayaton"
+      ],
+      "suggestion": "Use the direct action, or ध्यान रखो / dhyan rakho when a reminder is actually needed. Do not replace a precise garment care condition with a vague reminder."
+    },
+    {
+      "id": "formal_softness",
+      "forms": [
+        "मुलायमियत",
+        "मुलायमीयत",
+        "मुलाइमियत",
+        "mulayamiyat",
+        "mulaymiyat",
+        "mulaimiyat",
+        "mulayamiyath"
+      ],
+      "suggestion": "If you mean softness, use a simple phrase such as कपड़ा कितना सॉफ्ट लगता है / kapda kitna soft lagta hai. This example is an editorial rewrite, not a claimed quotation."
+    },
+    {
+      "id": "dictation_variant",
+      "forms": [
+        "मालूमियत",
+        "मलूमियत",
+        "malumiyat",
+        "maloomiyat"
+      ],
+      "suggestion": "Clarify the intended meaning in the sentence: जानकारी / jaankari for information, or a plain fabric-feel phrase for softness. The screenshot word was मुलायमियत; do not silently conflate the meanings."
+    }
+  ]
+}

@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import private_video_pilot as shared
+from spoken_style import require_spoken_style
 
 
 OUT = Path('dialogue-episodes-output')
@@ -131,6 +132,7 @@ def validate_manifest(manifest):
                 or not 45 <= len(script.split()) <= (110 if ending_mode else 55) or not re.search('[ऄ-हक़-ॡ]', script)
                 or re.search(r'https?://|www\.', script) or script[-1:] not in '।?!'):
             raise ValueError('Script must be exact complete Hindi within the selected private format bounds')
+        require_spoken_style(script)
         if ending_mode:
             ending = episode['ending']
             if (not isinstance(ending, dict) or set(ending) != {'conclusion', 'speed', 'settle_seconds'}
