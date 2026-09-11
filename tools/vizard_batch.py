@@ -74,7 +74,7 @@ def check_asset(url, size):
             raise BatchError("Hosted asset does not begin with an MP4 file-type box")
 
 
-def load_manifest(path, probe=probe_video):
+def load_manifest(path, probe=probe_video, platforms=PLATFORMS):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     if set(data) != {"name", "local_video_path", "video_url", "legs"}:
         raise BatchError("Manifest requires exactly name, local_video_path, video_url and legs")
@@ -86,8 +86,10 @@ def load_manifest(path, probe=probe_video):
     if video.stat().st_size > 512 * 1024 * 1024:
         raise BatchError("Video exceeds X's 512 MB upload limit")
     owned_url(data["video_url"])
-    if not isinstance(data["legs"], dict) or set(data["legs"]) != set(PLATFORMS):
-        raise BatchError("Exactly three legs are required: fb, x and li")
+    if not platforms or len(set(platforms)) != len(platforms) or not set(platforms).issubset(PLATFORMS):
+        raise BatchError("Choose unique supported destination platforms")
+    if not isinstance(data["legs"], dict) or set(data["legs"]) != set(platforms):
+        raise BatchError("Manifest legs must exactly match the requested platforms: " + ", ".join(platforms))
     for platform, leg in data["legs"].items():
         if not isinstance(leg, dict) or set(leg) != {"post", "when_ist"}:
             raise BatchError(f"{platform}: requires exactly post and when_ist")
@@ -172,7 +174,7 @@ def validate_pending(manifest, state, now):
         raise BatchError("Create outcome is unconfirmed; inspect Vizard before any manual recovery")
     if state.get("create_status") == "blocked":
         raise BatchError("Create was not confirmed; saved receipt requires manual inspection")
-    for platform in PLATFORMS:
+    for platform in manifest["legs"]:
         leg_state = state["legs"].get(platform, {})
         if leg_state.get("status") in {"started", "blocked"}:
             raise BatchError(f"{platform}: publish outcome needs manual inspection; automatic duplicate blocked")
@@ -202,7 +204,7 @@ def run(manifest, fingerprint, state_path, *, execute=False, api=vizard.call,
         asset_check(manifest["video_url"], manifest["size"])
         if not execute:
             return {"mode": "dry-run", "name": manifest["name"], "duration": manifest["duration"],
-                    "legs": {p: state["legs"].get(p, {}).get("status", "pending") for p in PLATFORMS}}
+                    "legs": {p: state["legs"].get(p, {}).get("status", "pending") for p in manifest["legs"]}}
         if not state.get("projectId"):
             validate_pending(manifest, state, now)
             body = {"lang": "hi", "preferLength": [0], "videoUrl": manifest["video_url"],
@@ -243,7 +245,7 @@ def run(manifest, fingerprint, state_path, *, execute=False, api=vizard.call,
                 if now() + poll_seconds > deadline:
                     raise BatchError("Processing timed out; rerun resumes the saved project without creating another")
                 sleep(poll_seconds)
-        for platform in PLATFORMS:
+        for platform in manifest["legs"]:
             if state["legs"].get(platform, {}).get("status") == "accepted":
                 continue
             validate_pending(manifest, state, now)
@@ -265,13 +267,15 @@ def run(manifest, fingerprint, state_path, *, execute=False, api=vizard.call,
             if state["legs"][platform]["status"] != "accepted":
                 raise BatchError(f"{platform}: publish not confirmed; inspect saved receipt before recovery")
         return {"mode": "execute", "projectId": state["projectId"], "finalVideoId": state["finalVideoId"],
-                "legs": {p: state["legs"][p]["status"] for p in PLATFORMS}}
+                "legs": {p: state["legs"][p]["status"] for p in manifest["legs"]}}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--state", required=True, help="Private durable JSON; reuse this exact path on every retry")
+    parser.add_argument("--platform", action="append", choices=PLATFORMS,
+                        help="Explicit destination subset; default remains fb, x and li")
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--wait-seconds", type=int, default=1200)
     args = parser.parse_args()
@@ -280,7 +284,7 @@ def main():
             raise BatchError("--wait-seconds cannot be negative")
         if Path(args.state).expanduser().resolve().is_relative_to(Path(__file__).resolve().parents[1]):
             raise BatchError("Keep --state outside the public repository; it contains private publishing receipts")
-        manifest, fingerprint = load_manifest(args.manifest)
+        manifest, fingerprint = load_manifest(args.manifest, platforms=tuple(args.platform) if args.platform else PLATFORMS)
         result = run(manifest, fingerprint, args.state, execute=args.execute, wait_seconds=args.wait_seconds)
         print(json.dumps(result, indent=2))
         return 0

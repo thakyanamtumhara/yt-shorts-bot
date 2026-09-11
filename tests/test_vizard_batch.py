@@ -67,6 +67,24 @@ class VizardBatchTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertFalse(self.state_path.exists())
 
+    def test_explicit_linkedin_only_never_submits_other_platforms(self):
+        self.raw["legs"] = {"li": self.raw["legs"]["li"]}
+        self.manifest_path.write_text(json.dumps(self.raw))
+        manifest, fingerprint = batch.load_manifest(self.manifest_path, probe=lambda path: 10.5, platforms=("li",))
+        kwargs = dict(execute=True, api=self.api, asset_check=lambda url, size: None, now=lambda: self.now)
+        result = batch.run(manifest, fingerprint, self.state_path, **kwargs)
+        self.assertEqual(result["legs"], {"li": "accepted"})
+        posts = [body for path, body in self.calls if path == "/project/publish-video"]
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0]["socialAccountId"], batch.vizard.ACCOUNTS["li"][0])
+        batch.run(manifest, fingerprint, self.state_path, **kwargs)
+        self.assertEqual(len([path for path, _ in self.calls if path == "/project/publish-video"]), 1)
+
+    def test_destination_subset_must_be_explicit(self):
+        self.raw["legs"] = {"li": self.raw["legs"]["li"]}
+        with self.assertRaisesRegex(batch.BatchError, "exactly match"):
+            self.load()
+
     def test_invalid_date_blocks_before_create(self):
         for invalid in ("", "2030-02-30 20:00", "2030-01-01T20:00", "2030-1-1 20:00", None):
             with self.subTest(invalid=invalid):
