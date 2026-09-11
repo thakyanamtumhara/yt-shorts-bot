@@ -1,0 +1,78 @@
+name: Reviewed AI Instagram Reels
+
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preflight validates only; prepare creates an unpublished container; publish_due releases due selected jobs
+        type: choice
+        options: [preflight, prepare, publish_due]
+        default: preflight
+      job_id:
+        description: Reviewed job ID, required only for prepare
+        type: string
+        required: false
+
+concurrency:
+  group: reviewed-ai-instagram-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reviewed-reels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install verification dependencies
+        run: |
+          pip install requests Pillow 'boto3>=1.36.0'
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: Validate or execute selected release
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}
+          REVIEWED_AI_GRAPH_VERSION: v26.0
+          REVIEWED_AI_STATE_BUCKET: bulkplaintshirt.com
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+          REQUESTED_MODE: ${{ inputs.mode }}
+          JOB_ID: ${{ inputs.job_id }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          mode="${REQUESTED_MODE:-preflight}"
+          if [ "$EVENT_NAME" = schedule ]; then mode=publish_due; fi
+          case "$mode" in
+            preflight)
+              python3 tools/reviewed_ai_reels.py
+              ;;
+            prepare)
+              [[ "$JOB_ID" =~ ^[a-z0-9][a-z0-9-]{0,79}$ ]] || exit 2
+              test -f "reviewed_ai_reels/$JOB_ID.json"
+              python3 tools/reviewed_ai_reels.py --job "reviewed_ai_reels/$JOB_ID.json" --prepare-only --execute --state "$RUNNER_TEMP/reviewed-ai-prepare/$JOB_ID.json"
+              ;;
+            publish_due)
+              test "$GITHUB_REF" = refs/heads/main
+              python3 tools/reviewed_ai_reels.py --execute
+              ;;
+            *) exit 2 ;;
+          esac
+      - name: Preserve identifier-only recovery records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-ai-reel-state-${{ github.run_id }}
+          path: |
+            reviewed_ai_reels/state/*.json
+            ${{ runner.temp }}/reviewed-ai-prepare/*.json
+          if-no-files-found: ignore
+          retention-days: 30
