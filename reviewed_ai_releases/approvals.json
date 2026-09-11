@@ -1,0 +1,31 @@
+{
+  "batch_id": "warehouse-20260911",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-09-11T04:08:05.404382+00:00",
+  "videos": [
+    {
+      "id": "WH09",
+      "version": "1.0",
+      "sha256": "54cb827819a6f61bf7c64f396a52f5a04c1ad07630036e4c21f667f7707ae8c9",
+      "public_release_approved": true
+    },
+    {
+      "id": "WH04",
+      "version": "1.0",
+      "sha256": "7dc6b1ba787a9e61b7911678d7e2c06fac12b59e413adadaa2f140d8d7c7e6ed",
+      "public_release_approved": true
+    },
+    {
+      "id": "WH06",
+      "version": "1.1",
+      "sha256": "7184fa19d914633e63907e4badc8e9b921efcbd96e1e9bba14e2bfcce1322826",
+      "public_release_approved": true
+    },
+    {
+      "id": "WH08",
+      "version": "1.0",
+      "sha256": "bbef77864513d3df95fb1e1a28a06d22bc9aade202eb0a74145a76242ebd6b15",
+      "public_release_approved": true
+    }
+  ]
+}

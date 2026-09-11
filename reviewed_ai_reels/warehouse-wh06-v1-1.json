@@ -1,0 +1,19 @@
+{
+  "id": "warehouse-wh06-v1-1",
+  "status": "reviewed",
+  "account_id": "17841407981790313",
+  "publish_at": "2026-09-27T15:00:00+05:30",
+  "caption": "धोने के बाद आप पहले क्या देखते हो—नाप, कपड़े का फील या प्रिंट?\n\nAI-assisted dialogue using my own footage and voice. The spoken script and lip movements are AI-generated. Background music is AI-generated. The warehouse background is original.\n\n#PlainTShirt #TShirtBusiness",
+  "video_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh06-video-7184fa19d914633e.mp4",
+  "video_sha256": "7184fa19d914633e63907e4badc8e9b921efcbd96e1e9bba14e2bfcce1322826",
+  "cover_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh06-cover-071c569a1fb87c88.png",
+  "cover_sha256": "071c569a1fb87c881076430392e46859b63bbe1caef08c4089666f67fb1f2687",
+  "is_ai_generated": true,
+  "user_selection": {
+    "batch_id": "warehouse-20260911",
+    "id": "WH06",
+    "version": "1.1",
+    "sha256": "7184fa19d914633e63907e4badc8e9b921efcbd96e1e9bba14e2bfcce1322826",
+    "approved": true
+  }
+}

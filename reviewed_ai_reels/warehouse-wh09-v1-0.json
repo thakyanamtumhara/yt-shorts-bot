@@ -1,0 +1,19 @@
+{
+  "id": "warehouse-wh09-v1-0",
+  "status": "reviewed",
+  "account_id": "17841407981790313",
+  "publish_at": "2026-09-23T15:00:00+05:30",
+  "caption": "कपड़ा चुनते समय आप सबसे पहले क्या चेक करते हो—GSM या हाथ में कपड़ा कैसा लगता है?\n\nAI-assisted dialogue using my own footage and voice. The spoken script and lip movements are AI-generated. Background music is AI-generated. The warehouse background is original.\n\n#PlainTShirt #TShirtBusiness",
+  "video_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh09-video-54cb827819a6f61b.mp4",
+  "video_sha256": "54cb827819a6f61bf7c64f396a52f5a04c1ad07630036e4c21f667f7707ae8c9",
+  "cover_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh09-cover-c5ad33ce923d0ed2.png",
+  "cover_sha256": "c5ad33ce923d0ed2db984da1305e65acd659c2e9f47410b6f291e7c5be9317dd",
+  "is_ai_generated": true,
+  "user_selection": {
+    "batch_id": "warehouse-20260911",
+    "id": "WH09",
+    "version": "1.0",
+    "sha256": "54cb827819a6f61bf7c64f396a52f5a04c1ad07630036e4c21f667f7707ae8c9",
+    "approved": true
+  }
+}

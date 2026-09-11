@@ -142,6 +142,16 @@ class ReviewedReelTests(unittest.TestCase):
         self.run_job(store=local, prepare_only=True)
         self.assertEqual(len(self.api.posts), 1)
 
+    def test_durable_prepare_reuses_container_across_fresh_runner_directories(self):
+        self.backend.mode = 'prepare_only'
+        first = r.StateStore(self.dir / 'runner-one' / (HASH + '.json'), self.backend)
+        second = r.StateStore(self.dir / 'runner-two' / (HASH + '.json'), self.backend)
+        self.run_job(store=first, prepare_only=True)
+        result = self.run_job(store=second, prepare_only=True)
+        self.assertEqual(result['parent_id'], '123')
+        self.assertEqual([p[0] for p in self.api.posts], ['create'])
+        with self.assertRaises(r.Error): self.run_job(store=second, prepare_only=False)
+
     def test_prepare_state_cannot_be_promoted(self):
         local = r.StateStore(self.dir / 'prepare.json')
         result = self.run_job(store=local, prepare_only=True)
@@ -151,6 +161,12 @@ class ReviewedReelTests(unittest.TestCase):
     def test_publication_requires_durable_backend(self):
         with self.assertRaises(r.Error): self.run_job(store=r.StateStore(self.dir / 'local.json'))
         self.assertEqual(self.api.posts, [])
+
+    def test_preflight_checks_actual_native_label_route(self):
+        self.api.probe_label = None
+        with self.assertRaises(r.Error): self.run_job(execute=False)
+        self.assertEqual(self.api.posts, [])
+        self.assertEqual(self.backend.records, {})
 
     def test_disappearing_live_native_disclosure_route_blocks_before_post(self):
         self.api.probe_label = None
@@ -259,6 +275,16 @@ class S3Tests(unittest.TestCase):
             def list_objects_v2(self, **kw): return {'Contents': [{'Key': kw['Prefix']}]}
             def get_object(self, **kw): raise PermissionError('403')
         with self.assertRaises(r.Error): r.S3Backend(S3()).read(HASH + '.json')
+
+    def test_remote_prepare_namespace_cannot_write_publish_state(self):
+        class S3:
+            def put_object(self, **kw): self.kw = kw; return {'ETag': 'new'}
+        client = S3(); backend = r.S3Backend(client, mode='prepare_only')
+        state = r.bind_state(None, JOB, 'prepare_only')
+        backend.save(HASH + '.json', state, None)
+        self.assertEqual(client.kw['Key'], r.PREFIX + '/prepare/' + HASH + '.json')
+        with self.assertRaises(r.Error): backend.save(HASH + '.json', r.bind_state(None, JOB, 'publish'), None)
+        with self.assertRaises(r.Error): r.S3Backend(client).save(HASH + '.json', state, None)
 
     def test_only_sanitized_state_is_saved_conditionally(self):
         class S3:

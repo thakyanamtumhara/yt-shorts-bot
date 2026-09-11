@@ -1,0 +1,19 @@
+{
+  "id": "warehouse-wh08-v1-0",
+  "status": "reviewed",
+  "account_id": "17841407981790313",
+  "publish_at": "2026-09-30T15:00:00+05:30",
+  "caption": "टी-शर्ट खरीदते समय आप कौन सी डिटेल की फोटो सबसे पहले देखते हो?\n\nAI-assisted dialogue using my own footage and voice. The spoken script and lip movements are AI-generated. Background music is AI-generated. The warehouse background is original.\n\n#PlainTShirt #TShirtBusiness",
+  "video_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh08-video-bbef77864513d3df.mp4",
+  "video_sha256": "bbef77864513d3df95fb1e1a28a06d22bc9aade202eb0a74145a76242ebd6b15",
+  "cover_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh08-cover-ac78799285a87035.png",
+  "cover_sha256": "ac78799285a87035ded5472407c10f481087cc0605f52ffac49127cfbc0e024f",
+  "is_ai_generated": true,
+  "user_selection": {
+    "batch_id": "warehouse-20260911",
+    "id": "WH08",
+    "version": "1.0",
+    "sha256": "bbef77864513d3df95fb1e1a28a06d22bc9aade202eb0a74145a76242ebd6b15",
+    "approved": true
+  }
+}

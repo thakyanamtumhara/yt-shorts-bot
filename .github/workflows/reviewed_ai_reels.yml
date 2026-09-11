@@ -58,7 +58,7 @@ jobs:
             prepare)
               [[ "$JOB_ID" =~ ^[a-z0-9][a-z0-9-]{0,79}$ ]] || exit 2
               test -f "reviewed_ai_reels/$JOB_ID.json"
-              python3 tools/reviewed_ai_reels.py --job "reviewed_ai_reels/$JOB_ID.json" --prepare-only --execute --state "$RUNNER_TEMP/reviewed-ai-prepare/$JOB_ID.json"
+              python3 tools/reviewed_ai_reels.py --job "reviewed_ai_reels/$JOB_ID.json" --prepare-only --durable-prepare --execute --state "$RUNNER_TEMP/reviewed-ai-prepare/$JOB_ID.json"
               ;;
             publish_due)
               test "$GITHUB_REF" = refs/heads/main

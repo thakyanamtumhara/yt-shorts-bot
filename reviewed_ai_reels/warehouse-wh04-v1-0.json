@@ -1,0 +1,19 @@
+{
+  "id": "warehouse-wh04-v1-0",
+  "status": "reviewed",
+  "account_id": "17841407981790313",
+  "publish_at": "2026-09-25T15:00:00+05:30",
+  "caption": "आपके काम में किस खर्च का सही हिसाब लगाना सबसे मुश्किल होता है?\n\nAI-assisted dialogue using my own footage and voice. The spoken script and lip movements are AI-generated. Background music is AI-generated. The warehouse background is original.\n\n#PlainTShirt #TShirtBusiness",
+  "video_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh04-video-7dc6b1ba787a9e61.mp4",
+  "video_sha256": "7dc6b1ba787a9e61b7911678d7e2c06fac12b59e413adadaa2f140d8d7c7e6ed",
+  "cover_url": "https://www.bulkplaintshirt.com/p/warehouse-ai-selected-20260911/wh04-cover-7066803160a58bda.png",
+  "cover_sha256": "7066803160a58bda6ab62f5c9212bd41c90769c5c4d6fa90872cfb7b6f9a820c",
+  "is_ai_generated": true,
+  "user_selection": {
+    "batch_id": "warehouse-20260911",
+    "id": "WH04",
+    "version": "1.0",
+    "sha256": "7dc6b1ba787a9e61b7911678d7e2c06fac12b59e413adadaa2f140d8d7c7e6ed",
+    "approved": true
+  }
+}

@@ -130,10 +130,11 @@ def validate_assets(job):
 
 
 class S3Backend:
-    def __init__(self, client, bucket=BUCKET, prefix=PREFIX):
-        if bucket != BUCKET or prefix != PREFIX:
+    def __init__(self, client, bucket=BUCKET, prefix=PREFIX, mode='publish'):
+        if bucket != BUCKET or prefix != PREFIX or mode not in ('publish', 'prepare_only'):
             raise Error('Unexpected reviewed-AI state destination.')
-        self.client, self.bucket, self.prefix = client, bucket, prefix + '/'
+        self.mode = mode
+        self.client, self.bucket, self.prefix = client, bucket, prefix + ('/prepare/' if mode == 'prepare_only' else '/')
 
     def read(self, filename):
         key = self.prefix + filename
@@ -152,7 +153,7 @@ class S3Backend:
             raise Error('Remote reviewed-AI state unavailable or invalid; no local fallback or mutation.') from None
 
     def save(self, filename, state, etag):
-        if state.get('mode') != 'publish' or set(state) - STATE_FIELDS:
+        if state.get('mode') != self.mode or set(state) - STATE_FIELDS:
             raise Error('Remote state accepts only release identifiers, hashes and status evidence.')
         condition = {'IfMatch': etag} if etag is not None else {'IfNoneMatch': '*'}
         try:
@@ -164,7 +165,7 @@ class S3Backend:
             raise Error('Conditional release-state write failed or is ambiguous; no next Graph POST.') from None
 
 
-def backend_from_environment():
+def backend_from_environment(mode='publish'):
     if os.environ.get('REVIEWED_AI_STATE_BUCKET') != BUCKET:
         raise Error('Durable reviewed-AI S3 state is required for queued publication.')
     import boto3
@@ -173,7 +174,7 @@ def backend_from_environment():
     members = client.meta.service_model.operation_model('PutObject').input_shape.members
     if not {'IfMatch', 'IfNoneMatch'}.issubset(members):
         raise Error('boto3 must support conditional S3 writes.')
-    return S3Backend(client)
+    return S3Backend(client, mode=mode)
 
 
 class Instagram:
@@ -251,8 +252,10 @@ def verify_published(api, job, store, state):
 
 
 def run_job(api, job, store, execute=False, prepare_only=False, clock=utc_now, assets_check=validate_assets):
-    if prepare_only and store.backend is not None:
-        raise Error('Unpublished prepare-only state must be separate and local.')
+    if prepare_only and store.backend is not None and getattr(store.backend, 'mode', None) != 'prepare_only':
+        raise Error('Unpublished prepare-only state must use a separate local or durable prepare namespace.')
+    if not prepare_only and store.backend is not None and getattr(store.backend, 'mode', 'publish') != 'publish':
+        raise Error('Prepare-only state cannot be used for publication.')
     if execute and not prepare_only and store.backend is None:
         raise Error('Public execution requires conditional durable S3 state.')
     state = bind_state(store.read(), job, 'prepare_only' if prepare_only else 'publish')
@@ -261,10 +264,10 @@ def run_job(api, job, store, execute=False, prepare_only=False, clock=utc_now, a
         raise Error('Release is not due; no container or publication before its time.')
     require_account(api)
     assets_check(job)
-    if not execute:
-        return {'dry_run': True, 'job_id': job['id'], 'native_ai_required': True, 'publish_at': job['publish_at'], 'video_sha256': job['video_sha256']}
     if not prepare_only:
         require_disclosure_route(api)
+    if not execute:
+        return {'dry_run': True, 'job_id': job['id'], 'native_ai_required': True, 'native_ai_route_verified': not prepare_only, 'publish_at': job['publish_at'], 'video_sha256': job['video_sha256']}
     if state.get('media_id'):
         return verify_published(api, job, store, state)
     store.save(state)
@@ -310,7 +313,10 @@ def main(argv=None):
     parser.add_argument('--state', type=Path)
     parser.add_argument('--prepare-only', action='store_true')
     parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--durable-prepare', action='store_true')
     args = parser.parse_args(argv)
+    if args.durable_prepare and not args.prepare_only:
+        parser.error('--durable-prepare requires --prepare-only.')
     if args.prepare_only and (not args.job or not args.state):
         parser.error('Prepare-only requires --job and a separate local --state.')
     if args.state and not args.prepare_only:
@@ -324,7 +330,11 @@ def main(argv=None):
         with queue_lock(args.queue_dir):
             if args.job:
                 job = load_job(args.job, approvals)
-                store = StateStore(args.state or args.queue_dir / 'state' / (job['video_sha256'] + '.json'))
+                backend = backend_from_environment(mode='prepare_only') if args.durable_prepare else None
+                state_path = args.state or args.queue_dir / 'state' / (job['video_sha256'] + '.json')
+                if args.durable_prepare:
+                    state_path = state_path.parent / (job['video_sha256'] + '.json')
+                store = StateStore(state_path, backend)
                 result = run_job(Instagram(), job, store, execute=args.execute, prepare_only=args.prepare_only)
             else:
                 result = run_queue(args.queue_dir, approvals, backend_from_environment(), execute=args.execute)
