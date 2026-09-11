@@ -222,6 +222,24 @@ class EpisodeTests(unittest.TestCase):
         self.assertEqual(tts.call_count, 1)
         video.assert_not_called()
 
+    def test_motion_batch_uses_new_ids_without_reopening_old_batch_contract(self):
+        first = {**self.continuous_episode(), 'id': 'wh09'}
+        second = {**self.continuous_episode(), 'id': 'wh13'}
+        manifest = {'format': pilot.MOTION_FORMAT, 'episodes': [first, second]}
+        self.assertEqual(pilot.validate_manifest(manifest), [first, second])
+        for id_ in ('fit', 'wh01', 'wh03', 'wh08', 'wh14', '../wh09'):
+            with self.subTest(id=id_), self.assertRaises(ValueError):
+                pilot.validate_manifest({**manifest, 'episodes': [{**first, 'id': id_}]})
+        for format_ in (pilot.FORMAT, pilot.ENDING_FORMAT, pilot.REFINEMENT_FORMAT,
+                        pilot.CONTINUOUS_FORMAT, pilot.BATCH_FORMAT):
+            with self.subTest(format=format_), self.assertRaises(ValueError):
+                pilot.validate_manifest({'format': format_, 'episodes': [first]})
+        for episodes in ([first, first], [first, second, {**first, 'id': 'wh10'}],
+                         [{**first, 'source_seconds': 29}], [{**first, 'source_seconds': 46}],
+                         [{**first, 'source_has_original_audio': False}]):
+            with self.subTest(episodes=episodes), self.assertRaises(ValueError):
+                pilot.validate_manifest({**manifest, 'episodes': episodes})
+
     def test_continuous_pipeline_runs_one_full_tts_then_qa_then_first_video(self):
         item = self.continuous_episode()
         order = []
