@@ -1,0 +1,146 @@
+{
+  "format": "daily-topic-facts-v1",
+  "reviewed": true,
+  "reviewed_on": "2026-09-11",
+  "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted.",
+  "audience_evidence": "Own public-comment audit 10-Sep-2026 found fabric-label, biowash, heavy-GSM feel and print-suitability questions. Own-site GSC 10-Aug–6-Sep had 2201 impressions/37 clicks for 240 gsm t shirt; this is not global volume or YouTube search data. Seed questions are editorial formulations, not claimed verbatim customer quotes.",
+  "facts": {
+    "combing_short_fibres": {
+      "claim": "Combing is an additional fibre preparation step that removes short fibres before yarn spinning. Carding aligns and cleans fibres; combing and spinning are different stages.",
+      "source_url": "https://cottonworks.com/learning-hub/yarn-manufacturing/fiber-preparation-for-spinning/",
+      "source_title": "CottonWorks: Fiber Preparation for Spinning",
+      "checked_on": "2026-09-11",
+      "limits": "Do not identify carded/combed or ring/open-end yarn by rubbing sound, feel alone or an AI close-up. No claim about a specific supplied T-shirt without its specification."
+    },
+    "knit_loop_stretch": {
+      "claim": "Knitted fabric consists of intermeshing yarn loops. Movement of those loops supplies stretch and flexibility. A knitted structure can stretch without that observation establishing added elastane.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
+      "source_title": "CottonWorks: Knit Basics",
+      "checked_on": "2026-09-11",
+      "limits": "The final sentence is the direct buyer inference from loop construction. Stretch alone does not establish fibre composition, recovery quality or preshrinking."
+    },
+    "jersey_face_back": {
+      "claim": "In single jersey, the technical face shows the legs of loops as vertical V-like columns; the reverse shows the loop crowns more prominently in horizontal rows. Face and back therefore differ.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
+      "source_title": "CottonWorks: Knit Basics",
+      "checked_on": "2026-09-11",
+      "limits": "Teach construction, not a pass/fail quality test. Do not label generated close-ups as a microscope view of actual stock."
+    },
+    "pique_tuck_structure": {
+      "claim": "Tuck stitches create the cellular texture used in pique constructions, common in polo shirts. Pique is a knit construction, rather than a fibre-composition label.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
+      "source_title": "CottonWorks: Knit Basics",
+      "checked_on": "2026-09-11",
+      "limits": "The distinction between construction and fibre label is a buyer inference. Do not promise a universal temperature, breathability score or printing suitability."
+    },
+    "french_terry_fleece": {
+      "claim": "In the described cotton constructions, French terry retains un-napped loops or floats on the inside. Brushing or napping the interior creates the fleecy surface of fleece.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/single-and-double-knits/",
+      "source_title": "CottonWorks: Single & Double Knits",
+      "checked_on": "2026-09-11",
+      "limits": "Explain this construction/finishing distinction, not universal warmth, GSM or superiority. Do not infer exact fibre composition from appearance."
+    },
+    "rib_width_stretch": {
+      "claim": "Basic rib alternates face and back wales. Under widthwise stretch its structure opens like an accordion; this extensibility suits neck, wrist and waistband trims.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/single-and-double-knits/",
+      "source_title": "CottonWorks: Single & Double Knits",
+      "checked_on": "2026-09-11",
+      "limits": "Rib structure alone does not certify stretch recovery or wash durability. Do not prescribe universal collar measurements or promise it cannot become loose."
+    },
+    "interlock_vs_jersey": {
+      "claim": "Interlock connects two rib structures and has a similar appearance on both sides. Single jersey has distinct face and reverse appearances; their structures differ.",
+      "source_url": "https://cottonworks.com/learning-hub/knitting/single-and-double-knits/",
+      "source_title": "CottonWorks: Single & Double Knits",
+      "checked_on": "2026-09-11",
+      "limits": "Do not infer fibre, treatment, exact weight, price or print performance from the construction alone."
+    },
+    "cotton_count_direction": {
+      "claim": "English cotton count, Ne, is an indirect yarn-numbering system: a higher Ne number describes finer yarn. Direct systems such as denier work in the opposite direction.",
+      "source_url": "https://cottonworks.com/learning-hub/yarn-manufacturing/yarn-ply-counts-and-treatments/",
+      "source_title": "CottonWorks: Yarn Ply, Counts and Treatments",
+      "checked_on": "2026-09-11",
+      "limits": "Always name Ne or English cotton count. This is yarn size, not a fabric-GSM or finished-product quality ranking."
+    },
+    "biopolish_surface": {
+      "claim": "Cellulase biopolishing removes protruding microfibrils from cellulose-based fabric surfaces, reducing fuzz and improving surface smoothness. This is a surface-finishing process.",
+      "source_url": "https://www.novonesis.com/en/biosolutions/industrial-bioprocessing/textile/biopolishing/cellusoft-cotton",
+      "source_title": "Novonesis: Cellusoft for cotton",
+      "checked_on": "2026-09-11",
+      "limits": "Do not infer that visible fuzz proves no biowash, or guarantee zero pilling, no shrinkage or a number of washes. No specific chemical product or treatment setting is recommended."
+    },
+    "compaction_shrinkage": {
+      "claim": "Compaction compresses fabric structure to reduce later length shrinkage. Residual shrinkage concerns dimensional change and is assessed through defined laundering and measurement conditions.",
+      "source_url": "https://cottonworks.com/wp-content/uploads/2017/11/ISP_1009_Guide_to_Improved_Shrinkage_Performance_of_Cotton_Fabrics.pdf",
+      "source_title": "Cotton Incorporated: Guide to Improved Shrinkage Performance of Cotton Fabrics",
+      "checked_on": "2026-09-11",
+      "limits": "Stretch-and-release does not certify preshrinking. No zero-shrink guarantee, fixed percentage or universal care instruction; follow the actual garment care specification."
+    },
+    "fabric_mass_per_area": {
+      "claim": "Fabric mass per unit area measures the mass of a defined area of fabric. It is a different quantity from the total weight of a finished garment.",
+      "source_url": "https://store.astm.org/d3776_d3776m-20r25.html",
+      "source_title": "ASTM D3776/D3776M-20(2025): public abstract for Fabric Mass Per Unit Area",
+      "checked_on": "2026-09-11",
+      "limits": "Use the public definition only, not an invented home certification procedure. The garment-weight distinction is dimensional reasoning. Weight alone does not establish fibre identity, finishing or all quality attributes. Do not prescribe a universal GSM minimum."
+    },
+    "stitch_construction_jobs": {
+      "claim": "A twin-needle 406 coverseam is commonly used to hem knitted garments. Three-thread 504 overedge can join fabric plies as well as finish edges; two-thread 503 serging is not suitable for a loaded joining seam.",
+      "source_url": "https://www.coats.com/en-us/info-hub/basic-stitch-types/",
+      "source_title": "Coats: Basic Stitch Types",
+      "checked_on": "2026-09-11",
+      "limits": "Describe specified common constructions, not every T-shirt. Two visible rows alone cannot identify the stitch or certify quality; no universal strength claim. Tubular garments may lack side seams."
+    }
+  },
+  "seed_lessons": [
+    {
+      "topic": "बिना लाइक्रा के भी टी-शर्ट खिंचती क्यों है?",
+      "buyer_question": "Does a stretchy T-shirt always contain Lycra?",
+      "lesson": "A knitted T-shirt is made from intermeshing yarn loops. Those loops can move and open, so structure itself supplies stretch; that observation cannot identify the fibre blend.",
+      "buyer_decision": "Treat fibre composition and the feel of stretch as separate specifications.",
+      "intent_key": "knit_stretch_not_fibre_identity",
+      "fact_ids": [
+        "knit_loop_stretch"
+      ]
+    },
+    {
+      "topic": "फ्रेंच टेरी और फ्लीस में अंदर की सतह क्यों अलग है?",
+      "buyer_question": "What is the inside-surface difference between French terry and fleece?",
+      "lesson": "The described French terry construction keeps its inner loops or floats unbrushed. Napping those inner yarns creates the fleecy surface, so the finish explains their different interior feel.",
+      "buyer_decision": "Choose the interior surface for the intended garment, instead of treating both names as the same cloth.",
+      "intent_key": "french_terry_unbrushed_vs_napped",
+      "fact_ids": [
+        "french_terry_fleece"
+      ]
+    },
+    {
+      "topic": "धागे में तीस या चालीस काउंट: बड़ा नंबर, पतला धागा?",
+      "buyer_question": "Why can a higher cotton yarn count mean a finer yarn?",
+      "lesson": "English cotton count is an indirect yarn-size system. A higher Ne value means finer yarn, whereas a direct system such as denier increases with yarn size.",
+      "buyer_decision": "Name the yarn-count system before comparing two numbers; do not substitute yarn count for finished fabric weight.",
+      "intent_key": "english_cotton_count_direction",
+      "fact_ids": [
+        "cotton_count_direction"
+      ]
+    },
+    {
+      "topic": "रिब वाला गला ज्यादा फैलता कैसे है?",
+      "buyer_question": "Why is rib used on necklines and cuffs?",
+      "lesson": "Rib alternates face and back rows of loops. When stretched across its width the structure opens like an accordion, creating extensibility useful for necklines and cuffs.",
+      "buyer_decision": "Understand the structural reason for choosing rib, without assuming it guarantees wash recovery.",
+      "intent_key": "rib_accordion_structure",
+      "fact_ids": [
+        "rib_width_stretch"
+      ]
+    },
+    {
+      "topic": "बायोवॉश और प्री-श्रंक एक ही चीज़ हैं क्या?",
+      "buyer_question": "Do biowash and preshrinking describe the same treatment?",
+      "lesson": "Biopolishing acts on protruding surface fibres. Compaction acts on fabric structure to reduce later shrinkage. These address different properties rather than being two names for one treatment.",
+      "buyer_decision": "Compare surface finishing and shrinkage control separately when reading a fabric specification.",
+      "intent_key": "biopolish_vs_compaction_distinct",
+      "fact_ids": [
+        "biopolish_surface",
+        "compaction_shrinkage"
+      ]
+    }
+  ]
+}

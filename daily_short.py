@@ -4762,12 +4762,17 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
             data = resp.json()
 
             for item in data.get("items", []):
-                comment_text = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+                comment_snippet = item["snippet"]["topLevelComment"]["snippet"]
+                if comment_snippet.get("authorChannelId", {}).get("value") == SOURCE_CHANNEL_ID:
+                    continue
+                comment_text = comment_snippet["textDisplay"]
                 like_count = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", 0)
                 # Only keep meaningful comments (>10 chars, not just emojis)
                 if len(comment_text) > 10:
                     all_comments.append({
                         "text": comment_text[:200],  # Truncate long comments
+                        "video_id": video["video_id"],
+                        "is_owner": False,
                         "likes": like_count,
                         "video_title": video["title"][:60],
                     })
@@ -4798,28 +4803,17 @@ def fetch_source_channel_comments(max_videos=5, max_comments_per_video=20):
 
 
 def get_audience_questions(n=10):
-    """Extract audience questions/requests from source channel comments.
-    Returns formatted string for use in prompts."""
     comments = fetch_source_channel_comments()
-    if not comments:
-        return "No comment data available."
-
-    # Filter for questions (comments with ?, kaise, kya, kyu, etc.)
-    question_words = ["?", "kaise", "kya", "kyu", "kyun", "konsa", "kaunsa", "kitna",
-                      "how", "what", "why", "which", "best", "suggest", "recommend",
-                      "bata", "batao", "samjhao", "explain"]
-    questions = [c for c in comments if any(w in c["text"].lower() for w in question_words)]
-
-    # If not enough questions, include most-liked comments
-    if len(questions) < 3:
-        questions = comments[:n]
-    else:
-        questions = questions[:n]
-
-    lines = []
-    for q in questions:
-        lines.append(f"  - \"{q['text'][:100]}\" ({q['likes']} likes, on: {q['video_title']})")
-    return "\n".join(lines) if lines else "No relevant comments found."
+    questions = []
+    for comment in comments:
+        text = comment.get("text", "")
+        if comment.get("is_owner") is True or re.search(r"https?://|sale91\.com|whatsapp", text, re.I):
+            continue
+        if "?" in text or re.search(
+                r"\b(?:kaise|kya|kyu|kyun|konsa|kaunsa|kitna|how|what|why|which|suggest|recommend|batao|samjhao|explain)\b|कैसे|क्या|क्यों|कितना|कौन", text, re.I):
+            questions.append(comment)
+    lines = [f"  - {q['text'][:200]!r} (on: {q['video_title']})" for q in questions[:n]]
+    return "\n".join(lines) if lines else "No specific buyer questions in the available comment sample."
 
 
 def get_source_channel_posting_patterns():
@@ -4960,6 +4954,8 @@ def _own_channel_performance_signal():
 
 
 def get_script_prompt(topic):
+    from tools.daily_topic_selection import evidence_prompt
+    lesson_evidence = evidence_prompt(topic)
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
 (a B2B plain t-shirt manufacturer) but the script must NOT sell anything.
@@ -4967,12 +4963,14 @@ You also need to describe 5 AI video clips that will play during the Short.
 
 BUSINESS CONTEXT (use this knowledge, but do NOT promote the brand in voice):
 {BUSINESS_CONTEXT}
+This legacy context is not evidence of current prices, stock or treatment of a
+particular product. The approved lesson facts below control technical claims.
 
 TOPIC: {topic}
-
-━━━ AUDIENCE INTELLIGENCE (from our main channel with 50K subs) ━━━
-These are PROVEN top-performing video titles from our existing audience — use this to understand
-what TONE, ANGLE, and DEPTH works. Your script should match this audience's expectations:
+{lesson_evidence}
+━━━ MAIN-CHANNEL SUBJECT CONTEXT ━━━
+These cached titles provide subject context. Their total views mix video ages and may
+include advertising; they do not prove organic demand, buyer conversion or technical claims:
 {json.dumps(get_source_channel_top_topics(5), ensure_ascii=False) if get_source_channel_top_topics(5) else "No source data yet — write based on general B2B textile audience."}
 
 ━━━ OWN-CHANNEL PERFORMANCE FEEDBACK ━━━
@@ -5066,8 +5064,9 @@ Sample par check kar lo."
    🚨 NEVER an invented loss, rejection or customer. Use a checkable fact instead:
    a relevant material distinction, a checked current rate, or a
    question buyers ask. NEVER a greeting, definition, or context-setting.
-3. THEORY AVOID — no enzyme processes, no chemistry, no Wikipedia.
-   Give PRACTICAL action: "cut kar lo", "weight kar lo", "try kar lo"
+3. TEACH THE REASON — explain one supported fabric concept in everyday language.
+   Combing, enzyme finishing and knit structure are useful when the buyer understands
+   what changes and why it matters. Avoid jargon dumps and generic checklists.
 4. HONEST and BLUNT — "kuch bhi nahi kar sakte", "ye common hai"
    Don't sugarcoat. Don't be defensive. Accept reality.
 5. COMPARISON STYLE — compare the actual feature being discussed; GSM alone does not prove quality or print suitability.
@@ -5103,8 +5102,9 @@ Sample par check kar lo."
     If a current source does not establish the exact rate, omit it. Never turn
     a buying quantity into a returned/damaged batch or an invented profit/loss.
 
-14c. ONE SCREENSHOT MOMENT (mid-video) — a concise checklist the buyer can use,
-    such as "fit, kapda, apna print — sample par teeno check kar lo". A precise
+14c. ONE SCREENSHOT MOMENT (mid-video) — the lesson in a short useful phrase,
+    such as the structural or finishing distinction just explained. Do not force
+    every subject into a three-item checklist. A precise
     technical setting needs the applicable manufacturer's evidence; do not make
     a universal GSM-to-use map or fake cost calculation. Mirror the same meaning
     in script_english. Do not add numbers merely to make the card look useful.
@@ -7350,140 +7350,56 @@ def extract_ambient_audio(clip_paths, total_duration):
 TOPIC_MAX_CANDIDATES = 5  # Generate this many candidates, pick the best
 TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
-def search_trending_topics(anthropic_client):
-    """Use Claude to brainstorm trending topics based on real channel data + AI knowledge.
-    Feeds in: source channel top Shorts with view counts, audience questions,
-    thumbnail research patterns, category performance, and seasonal context."""
+def search_trending_topics(anthropic_client, topic_history=()):
+    from tools.daily_topic_selection import load_bank
+    bank = load_bank()
+    prompt = f"""Select useful instructional topics for Indian T-shirt printing businesses,
+new clothing brands and wholesale buyers. Propose up to ten DISTINCT lesson briefs.
+A viewer must understand a fabric mechanism, construction or meaningful distinction,
+and its practical consequence. A checklist telling people to check, ask or confirm
+without explaining why is not a lesson. No forced story, invented incident or sales CTA.
 
-    # Gather all gold data
-    source_videos = fetch_source_channel_insights()
-    source_with_views = []
-    if source_videos:
-        for v in source_videos[:15]:
-            source_with_views.append(f"- {v['title']} ({v['views']:,} views, {v['likes']:,} likes)")
+REVIEWED PRIMARY-SOURCE FACT BANK (only these facts may support a lesson):
+{json.dumps(bank['facts'], ensure_ascii=False)}
 
-    audience_qs = get_audience_questions(10)
+OBSERVED BUYER INTEREST, not proof of technical facts:
+{bank['audience_evidence']}
+Current MAIN comment questions (a limited sample, not search volume):
+{get_audience_questions(10)}
+Instagram subject-interest references: {json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False)}
+Historical titles may contain fabricated incidents and unsupported tricks. Never copy
+those claims. Share/reach is an interest signal, not sales; paid/organic exposure is
+unknown. MAIN total views also include possible advertising and different video ages.
 
-    # Category performance — which categories get the most views
-    cat_ranking = get_source_channel_category_ranking()
-    own_cats = get_top_performing_categories()
+RECENT TOPICS — compare the lesson and buyer decision, not only title wording:
+{json.dumps(list(topic_history)[-30:], ensure_ascii=False)}
 
-    # Thumbnail research — power words and example texts that work
-    thumb_research = {}
-    if os.path.exists(THUMBNAIL_RESEARCH_FILE):
-        try:
-            with open(THUMBNAIL_RESEARCH_FILE, "r") as f:
-                thumb_research = json.load(f)
-        except Exception:
-            pass
+Prefer a fresh instructional angle answering an actual buyer uncertainty. Do not invent
+prices, technical settings, test outcomes, seasonal demand or evidence. No ear-rub yarn
+identification, fuzz-based biowash certification, or stretch-based preshrink test.
+Combing, biopolishing, knitting and shrinkage are useful concepts to explain simply.
+Do not confuse them or hide the explanation behind 'sample check kar lo'.
 
-    prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt manufacturer (Sale91.com).
-
-Your job: generate 10 FRESH topic ideas that are likely to get MAXIMUM VIEWS.
-
-STRATEGY:
-1. STUDY the real data below — these are ACTUAL Shorts that got real views on our channel
-2. Identify PATTERNS — what topics, formats, and angles get the most views?
-3. Generate NEW topics that follow winning patterns but with FRESH angles
-4. Use audience questions as direct topic inspiration — viewers literally asked for these
-5. Consider seasonal trends and search intent
-
-CURRENT CONTEXT:
-- Month: {datetime.now(pytz.timezone(TIMEZONE)).strftime('%B %Y')}
-- Season in India: {_get_india_season()}
-- Business: B2B plain t-shirt manufacturer in Tiruppur/Delhi
-- Audience: Custom printing businesses (DTG, DTF, screen print), merch brands, bulk buyers
-
-=== 🚨 THE ONE ABSOLUTE RULE: NEVER INVENT AN INCIDENT 🚨 ===
-This block used to say the winning archetype was a first-person story with "a ₹ loss +
-a piece count + a GSM number", and it named an invented example as the best reel ever.
-That single instruction was the SOURCE of every fabrication downstream: the topic it
-produced carried a fake loss, and the title, the script, the blog post and the Instagram
-caption all inherited that premise and elaborated on it. Roughly 60 Instagram posts, the
-whole bot-channel back catalogue and 23 blog titles asserted losses that never happened —
-under a real registered business, to real buyers. Ketu caught it on 24-Aug-2026.
-
-So: a topic MUST NOT contain a rupee loss, a rejected/returned/cancelled order, a ruined
-batch, or any incident presented as something that occurred. Not as a hook, not as an
-example, not "inspired by" the reference data below. If the winning old titles look like
-loss stories, that is because they WERE invented — do not copy the shape.
-
-WHAT TO GENERATE INSTEAD — the part that genuinely worked was never the fake loss, it was
-the VERIFIABLE CHECK. Keep that and drop the fiction:
-- A concrete check the buyer can do himself ("rub it near your ear — scratchy means open
-  end, smooth means ring spun"), stated as a general fact.
-- A real spec comparison: GSM vs GSM, combed vs carded, biowash vs non-bio, reactive vs
-  pigment dye, lockstitch vs chain stitch.
-- A real published rate from sale91.com, as a price — never as a loss.
-- A question buyers actually ask (see AUDIENCE QUESTIONS below — these are real comments).
-- Seasonal buying guidance tied to a real month.
-Rupee figures are allowed ONLY as real prices or real cost differences, never as damage.
-
-BANNED topic types:
-- ANY invented incident, loss, rejection, return or cancellation. This outranks every
-  performance consideration below. A topic that breaks this is rejected no matter how
-  well the shape has historically performed.
-- Motivational/journey stories ("He 3X'd his business", zero-to-hero arcs) — median 1,282 views.
-- Generic category advice with no concrete, checkable takeaway.
-
-=== PERFORMANCE CONTEXT (read with the rule above in mind) ===
-Instagram is the PRIMARY platform (50-150x YouTube views) — when Instagram data below
-conflicts with YouTube or main-channel data, INSTAGRAM WINS.
-- Reels that teach a verifiable check get 2-9x the share rate — and shares are what
-  Instagram ranks on. Ask of every candidate: "would a printing buyer FORWARD this
-  to his partner/supplier?" That test does not require a fabricated loss to pass.
-⚠️ The reference titles listed below are historical. Many of them contain invented losses.
-Use them to learn SUBJECT MATTER and FORMAT ONLY — never reuse their incident framing.
-
-=== REFERENCE DATA: OUR MAIN CHANNEL (50K subs, YouTube) ===
-These are ACTUAL Shorts with REAL view counts — study what works:
-{chr(10).join(source_with_views) if source_with_views else "No source channel data available."}
-
-=== TOP PERFORMING VIDEOS ON OUR SHORTS CHANNEL ===
-{json.dumps(get_top_performing_topics(5), ensure_ascii=False) if get_top_performing_topics(5) else "New channel — no data yet."}
-
-=== BEST PERFORMING CATEGORIES (by average views) ===
-Main channel: {', '.join(cat_ranking[:5]) if cat_ranking else 'No data'}
-Own channel: {', '.join(own_cats[:5]) if own_cats else 'No data yet'}
-Instagram: {', '.join(get_top_performing_ig_categories()[:5]) if get_top_performing_ig_categories() else 'No IG data yet'}
-
-=== TOP PERFORMING INSTAGRAM REELS ===
-{json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False) if get_top_performing_ig_topics(5) else "No Instagram engagement data yet."}
-
-=== AUDIENCE QUESTIONS (real comments — viewers WANT these topics explained) ===
-{audience_qs if audience_qs else "No audience questions available."}
-
-=== THUMBNAIL/HOOK PATTERNS THAT GET CLICKS ===
-Power words: {json.dumps(thumb_research.get('power_words', []), ensure_ascii=False)}
-Example texts that work: {json.dumps(thumb_research.get('example_texts', []), ensure_ascii=False)}
-What patterns perform best: {thumb_research.get('patterns', 'No data yet')}
-
-RULES:
-- Each topic must be in Hindi conversational (Hinglish) style
-- Practical knowledge, storytelling format — no selling
-- Each topic should be specific and contain a hook element
-- Generate topics that COMPLEMENT the winners above — similar patterns, fresh angles
-- At least 2-3 topics should be inspired by real audience questions
-- At least 2-3 should follow the highest-viewed video patterns
-
-OUTPUT: Return ONLY a JSON array of 10 topic strings, nothing else.
-Example: ["Topic 1 — detail", "Topic 2 — detail", ...]"""
-
+Return a JSON array of objects, no markdown. Each object must contain:
+- topic: short conversational Hindi/Hinglish title, without invented rates
+- buyer_question: the uncertainty this answers (editorial wording, not a fake quote)
+- lesson: 2-3 sentences explaining the supported concept and consequence
+- buyer_decision: one resulting practical choice, not a generic check list
+- intent_key: stable English snake_case for the exact lesson, unchanged for paraphrases
+- fact_ids: 1-3 exact keys from the bank that support the explanation
+Use the supplied limits. Return [] if no distinct supported lesson is available."""
     try:
         resp = anthropic_client.messages.create(
-            model="claude-opus-4-6", max_tokens=800,
-            messages=[{"role": "user", "content": prompt}]
-        )
+            model="claude-opus-4-6", max_tokens=2400,
+            messages=[{"role": "user", "content": prompt}])
         raw = resp.content[0].text.strip()
-        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
         topics = json.loads(raw)
-        if isinstance(topics, list) and len(topics) > 0:
-            print(f"   🔍 Generated {len(topics)} trending topic candidates")
-            return topics
-    except Exception as e:
-        print(f"   ⚠️ Trending topic search failed: {e}")
-
-    return []
+        return topics[:10] if isinstance(topics, list) else []
+    except Exception:
+        print("   Topic brainstorming unavailable; only reviewed seed lessons may be considered.")
+        return []
 
 
 def _get_india_season():
@@ -7500,67 +7416,47 @@ def _get_india_season():
 
 
 def review_topic(claude_client, topic, topic_history):
-    """Claude reviews a topic candidate for search potential, freshness, and content fit.
-    Returns (score, feedback) where score is out of 40."""
-
-    recent_topics = topic_history[-20:] if len(topic_history) > 20 else topic_history
-
-    review_prompt = f"""You are a YouTube Shorts content strategist for an Indian B2B t-shirt brand (Sale91.com).
-
-Review this topic candidate and score it for a YouTube Short:
-
-TOPIC: {topic}
-
-RECENTLY USED TOPICS (avoid similar ones):
-{json.dumps(recent_topics[-10:], ensure_ascii=False)}
-
-WHAT OUR AUDIENCE IS ASKING (real comments — bonus points if topic answers these):
-{get_audience_questions(5)}
-
-Score each (1-10):
-
-1. SEARCH POTENTIAL — Would printing business owners actively search for this on YouTube?
-   High: specific problem ("DTG print dhul gaya 2 wash mein — kya galti ki?")
-   Low: vague/generic ("fabric ke baare mein jaano")
-
-2. FRESHNESS — Is this genuinely different from recently used topics? Not repetitive?
-   High: new angle, untouched subtopic. Low: similar to a recent topic.
-
-3. STORYTELLING FIT — Can this be turned into a compelling 50-sec micro-story with hook?
-   High: has natural conflict/problem/surprise. Low: just a definition or list.
-
-4. VIRAL SHAREABILITY — Would someone SEND this to a fellow business owner? (Sends are
-   what Instagram ranks on and our strongest measured views predictor.)
-   High: a concrete check the buyer can do himself, or a spec comparison that
-   settles an argument. It does NOT need a rupee loss to score high — and a topic
-   that invents one must be scored 0, not rewarded.
-   Low: common knowledge, feel-good content.
-
-AUTOMATIC ZERO — reject outright, whatever else the topic has going for it:
-- ANY invented incident: a rupee loss, a rejected/returned/cancelled order, a
-  ruined batch, "a customer who...". These were fabricated for months and are
-  being removed from the back catalogue. Never score one above 0.
-
-AUTOMATIC LOW SCORE (max 15/40) — our measured worst performers on 98 reels:
-- Motivational/journey topics ("He 3X'd his business", zero-to-hero arcs)
-- Bare curiosity with no concrete, checkable takeaway (a topic WITHOUT a loss
-  story is fine — it just needs a real check, spec or rate to be useful)
-
-OUTPUT THIS JSON ONLY (no markdown):
-{{"score": total_out_of_40, "feedback": "1 sentence — why good or what's wrong"}}"""
-
+    from tools.daily_topic_selection import load_bank, validate_brief, review_result
     try:
+        brief = validate_brief(topic, load_bank(), topic_history)
+        review_prompt = f"""Review one proposed educational T-shirt Short. It must teach a
+specific fabric mechanism or distinction and the buyer consequence, in simple language.
+Do not reward a generic list of checks, a repeated lesson, or an unsupported physical trick.
+
+PROPOSED LESSON WITH ITS ONLY ALLOWED SOURCE FACTS:
+{json.dumps(brief, ensure_ascii=False)}
+
+RECENT TOPICS — repeated intent is a rejection even if words, price or GSM changed:
+{json.dumps(list(topic_history)[-30:], ensure_ascii=False)}
+
+Score four dimensions 0-10, total out of 40:
+buyer_interest: answers a relevant buyer uncertainty; views alone are not proof.
+freshness: teaches a materially different idea or decision from recent output.
+learning_value: explains what happens or why, not merely 'check the sample'.
+shareability: useful enough to pass to another buyer, without drama or a fake story.
+A short clear explanation can be excellent. A definition plus its practical consequence
+is allowed; do not require a conflict or a mystery. The lesson must be supported by the
+cited fact text, not merely mention a valid source ID. Prices, universal settings, stock,
+customer incidents and simulated test results are unsupported unless supplied (they are
+not in this bank). Ear rub, fuzz and stretch recovery do not certify yarn/finishing.
+
+Return JSON only:
+{{"score": 0, "scores": {{"buyer_interest": 0, "freshness": 0,
+"learning_value": 0, "shareability": 0}}, "facts_supported": false,
+"teaches_specific_lesson": false, "duplicate_of": null,
+"feedback": "one concise sentence explaining the decision"}}
+Every score is an integer; total must equal their sum. duplicate_of must be null only
+if the buyer lesson is distinct, otherwise the matching recent title. Support and
+learning flags must be literal booleans. Do not approve a topic just to fill the day."""
         resp = claude_client.messages.create(
-            model="claude-opus-4-6", max_tokens=200,
-            messages=[{"role": "user", "content": review_prompt}]
-        )
+            model="claude-opus-4-6", max_tokens=500,
+            messages=[{"role": "user", "content": review_prompt}])
         raw = resp.content[0].text.strip()
-        if raw.startswith("```"): raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
-        result = json.loads(raw)
-        return result.get("score", 0), result.get("feedback", "")
-    except Exception as e:
-        print(f"   ⚠️ Topic review failed: {e}")
-        return 30, "review error — approved by default"
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
+        return review_result(json.loads(raw))
+    except Exception:
+        return 0, "Topic review unavailable or invalid; no approval."
 
 
 def _topic_blog_viable(topic, claude_client=None):
@@ -7580,120 +7476,30 @@ def _topic_blog_viable(topic, claude_client=None):
 
 
 def smart_pick_topic(claude_client, topic_bank, topic_history):
-    """Smart topic selection:
-    1. If unused topics in bank, pick from them but validate with Claude
-    2. If bank exhausted, generate trending topics and pick the best one
-    On blog days, topics must pass the blog-cluster viability pre-check.
-    Returns the selected topic string."""
-
-    unused = [t for t in topic_bank if t not in topic_history]
-
-    if unused:
-        # Prefer topics from high-performing categories (engagement-based)
-        # Source channel (50K subs) is ALWAYS primary for topic ranking
-        top_cats = get_source_channel_category_ranking()
-        cat_source = "source channel (primary)"
-        if not top_cats:
-            top_cats = get_top_performing_categories()
-            cat_source = "own channel (fallback)"
-
-        if top_cats:
-            # Sort unused topics: ones matching top categories come first
-            def _cat_priority(topic):
-                t_lower = topic.lower()
-                for rank, cat in enumerate(top_cats):
-                    cat_data = TOPIC_SERIES_TAGS.get(cat, {})
-                    if any(kw in t_lower for kw in cat_data.get("keywords", [])):
-                        return rank  # Lower = higher priority
-                return len(top_cats)  # No match = lowest priority
-            prioritized = sorted(unused, key=_cat_priority)
-            # Pick from top 30% (biased towards high-performing categories)
-            pool_size = max(3, len(prioritized) // 3)
-            pool = prioritized[:pool_size]
-            print(f"   📊 Top categories by engagement ({cat_source}): {', '.join(top_cats[:3])}")
-        else:
-            prioritized = unused[:]
-            pool = unused[:]
-
-        # Walk the pool in random order and take the first topic that can also
-        # become a blog today; widen past the engagement-biased pool if needed
-        # (on blog days freshness beats category bias). Cap the scan so the
-        # ambiguous-band Claude judge can't burn unbounded calls.
-        random.shuffle(pool)
-        scan = pool + [t for t in prioritized if t not in pool]
-        candidate = None
-        for t in scan[:12]:
-            if _topic_blog_viable(t, claude_client):
-                candidate = t
-                break
-        if candidate is None:
-            # No blog-viable topic found — pick normally; the publish gate
-            # will skip the blog (video/reel still ship).
-            candidate = random.choice(pool)
-
-        score, feedback = review_topic(claude_client, candidate, topic_history)
-        print(f"   📋 Bank topic score: {score}/40 — {feedback}")
-        if score >= TOPIC_MIN_SCORE:
-            return candidate
-        # If bank topic scored low, try 2 more from bank (blog-viable only)
-        for _ in range(2):
-            alt = random.choice(unused)
-            if alt != candidate and _topic_blog_viable(alt, claude_client):
-                alt_score, alt_feedback = review_topic(claude_client, alt, topic_history)
-                print(f"   📋 Alt bank topic score: {alt_score}/40 — {alt_feedback}")
-                if alt_score > score:
-                    candidate, score, feedback = alt, alt_score, alt_feedback
-        if score >= 20:  # Accept if reasonably good
-            return candidate
-
-    # Bank exhausted or all scored low — generate fresh trending topics
-    print("   🧠 Generating fresh trending topics with AI search...")
-    trending = search_trending_topics(claude_client)
-
-    if not trending:
-        # Absolute fallback: single topic using source channel inspiration
-        print("   🔄 Fallback: single topic generation with source channel data...")
-        source_titles = get_source_channel_top_topics(5)
-        aud_qs = get_audience_questions(3)
-        try:
-            resp = claude_client.messages.create(
-                model="claude-opus-4-6", max_tokens=200,
-                messages=[{"role": "user", "content": f"""Generate 1 new YouTube Shorts topic for a B2B plain t-shirt manufacturer.
-Style: practical knowledge, no selling. Hindi conversational.
-Already used: {json.dumps(topic_history[-10:])}
-Top performing Shorts on our channel: {json.dumps(source_titles, ensure_ascii=False) if source_titles else 'No data'}
-Top performing Instagram Reels: {json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False) if get_top_performing_ig_topics(5) else 'No IG data'}
-Audience questions: {aud_qs if aud_qs else 'No data'}
-Generate a topic inspired by the winning patterns above but with a fresh angle. Consider what works on BOTH YouTube and Instagram.
-Return ONLY the topic text, nothing else."""}]
-            )
-            return resp.content[0].text.strip()
-        except Exception as e:
-            print(f"   ⚠️ Fallback topic generation failed: {e}")
-            return "Plain T-Shirt Quality Check — GSM aur Fabric Basics"
-
-    # Score all trending candidates and pick the best (blog-viable first;
-    # fall back to the unfiltered list if nothing viable — blog will skip)
-    best_topic = trending[0]
-    best_score = 0
-    candidates_to_review = [t for t in trending if t not in topic_history and _topic_blog_viable(t, claude_client)][:TOPIC_MAX_CANDIDATES]
-    if not candidates_to_review:
-        candidates_to_review = [t for t in trending if t not in topic_history][:TOPIC_MAX_CANDIDATES]
-
-    for t in candidates_to_review:
-        score, feedback = review_topic(claude_client, t, topic_history)
-        print(f"   🔍 Candidate: {t[:50]}... → {score}/40 ({feedback})")
-        if score > best_score:
-            best_score = score
-            best_topic = t
-
-    print(f"   ✅ Best topic selected (score: {best_score}/40): {best_topic[:60]}...")
-    return best_topic
+    from tools.daily_topic_selection import load_bank, choose_topic
+    bank = load_bank()
+    candidates = search_trending_topics(claude_client, topic_history)
+    # Legacy bare titles, including the exhausted incident bank, are not evidence.
+    candidates = candidates + bank.get("seed_lessons", [])
+    topic = choose_topic(
+        candidates, bank=bank, history=topic_history,
+        review=lambda brief: review_topic(claude_client, brief, topic_history),
+        viable=lambda title: _topic_blog_viable(title, claude_client),
+        min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES)
+    flag("topic_lesson", topic.brief)
+    flag("topic_approved", True)
+    return topic
 
 
 def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
     """Claude reviews its own script like a human content creator would.
     Returns (approved: bool, score: int, weakest: str, feedback: str)."""
+
+    from tools.daily_topic_selection import evidence_prompt, unsupported_shortcut
+    lesson_evidence = evidence_prompt(topic)
+    shortcut = unsupported_shortcut(script_voice) or unsupported_shortcut(script_english)
+    if shortcut:
+        return False, 0, "unsupported_shortcut", shortcut
 
     if any(re.search(r'screenshot[\s_-]*moment|स्क्रीन\s*शॉट\s*(?:मोमेंट|मुमेंट)', text, re.I)
            for text in (script_voice, script_english)):
@@ -7711,6 +7517,7 @@ Remember: this is B2B educational content for printing businesses, NOT entertain
 A factory owner explaining something practical IS valuable — don't expect Bollywood drama.
 
 TOPIC: {topic}
+{lesson_evidence}
 HINDI SCRIPT: {script_voice}
 ENGLISH: {script_english}
 {prompts_section}
@@ -7731,7 +7538,10 @@ Score each (1-10):
 
 3. VALUE — Does the viewer LEARN something useful and specific?
    Bad: vague fluff or unsupported universal technical advice. Good: an actionable
-   buyer question, sample check or useful distinction. Numbers are not required.
+   explanation of a fabric mechanism or useful distinction and its buyer consequence.
+   Numbers are not required. A list of things to check without teaching why is weak.
+   When an approved lesson is supplied, every technical claim must stay within its
+   primary-source facts and limits; reject extra claims even if they sound familiar.
    Reject blanket GSM minimums, temperature changes, humidity thresholds or
    guaranteed results without support for the particular material/process.
 
@@ -7751,17 +7561,20 @@ Score each (1-10):
    If no video prompts provided, score 6 (neutral).
 
 OUTPUT THIS JSON ONLY (no markdown):
-{{"approved": true/false, "scores": {{"hook": 1, "natural_feel": 1, "value": 1, "ending": 1, "viral_potential": 1, "visual_alignment": 1}}, "total_score": sum_of_6_scores, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
+{{"approved": true/false, "scores": {{"hook": 1, "natural_feel": 1, "value": 1, "ending": 1, "viral_potential": 1, "visual_alignment": 1}}, "total_score": sum_of_6_scores, "lesson_supported": true/false, "specific_lesson_delivered": true/false, "weakest": "which area is weakest", "feedback": "1-2 sentences on what's wrong (if rejected) or what's great (if approved)"}}
 
 RULES:
 - Every score must be an integer from 1 to 10; total_score must equal their sum.
 - Approve only if total_score >= 36 (out of 60) AND every single score is at least 4.
 - Reject invented incidents, unsupported technical prescriptions and simulated proof.
+- lesson_supported means every technical claim is within the supplied facts and
+  their limits; specific_lesson_delivered means the viewer learns the explanation,
+  rather than merely hearing instructions to check or ask. Both must be true.
 - Educational B2B content scoring 6-7 per area is GOOD — don't expect 9s and 10s"""
 
     try:
         resp = claude_client.messages.create(
-            model="claude-opus-4-6", max_tokens=300,
+            model="claude-opus-4-6", max_tokens=400,
             messages=[{"role": "user", "content": review_prompt}]
         )
         raw = resp.content[0].text.strip()
@@ -7784,6 +7597,9 @@ RULES:
         if not all(isinstance(value, str) and value.strip() for value in (weakest, feedback)):
             raise ValueError("Review weakest and feedback must be nonempty text")
         approved = review["approved"] and score >= 36 and min(scores.values()) >= 4
+        if lesson_evidence and (review.get("lesson_supported") is not True
+                                or review.get("specific_lesson_delivered") is not True):
+            return False, score, "lesson_evidence", "The approved explanation and source limits must both pass review. " + feedback.strip()
         return approved, score, weakest.strip(), feedback.strip()
 
     except Exception as e:
@@ -12129,15 +11945,9 @@ def main():
     # ── 1b. Fetch source channel insights (read-only, cached 24h) ──
     fetch_source_channel_insights()
 
-    # ── 2. Pick Topic (Smart: trending search + Claude review gate) ──
-    topic_history = []
-    if os.path.exists(TOPIC_HISTORY_FILE):
-        try:
-            with open(TOPIC_HISTORY_FILE, "r") as f:
-                topic_history = json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"   ⚠️ Could not read topic history ({e}), starting fresh")
-            topic_history = []
+    # ── 2. Pick a distinct lesson with reviewed facts ──
+    from tools.daily_topic_selection import load_topic_history
+    topic_history = load_topic_history(TOPIC_HISTORY_FILE)
 
     print("   🎯 Smart topic selection (with quality gate)...")
     fresh_topic = smart_pick_topic(claude, TOPIC_BANK, topic_history)
