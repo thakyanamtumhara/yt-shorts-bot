@@ -30,6 +30,7 @@ import re
 import time
 import pytz
 from datetime import datetime, timedelta
+from tools.instagram_ai_disclosure import create_ai_container, raise_for_disclosure_rejection
 
 from openai import OpenAI
 # Fix Pillow 10+ compatibility with MoviePy
@@ -2166,6 +2167,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
     Uses a 2-step flow: create media container → publish."""
     if not CROSS_POST_INSTAGRAM:
         return None
+    IG_POST_META.pop("ai_disclosure", None)
 
     ig_token = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
     ig_business_id = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
@@ -2348,8 +2350,6 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             container_data["published"] = "false"
             container_data["scheduled_publish_time"] = str(schedule_timestamp)
 
-        # Meta AI-disclosure param (added to Graph API Jun 2026) — required for
-        # photorealistic AI video + synthetic audio. Applies the "AI info" label.
         container_data["is_ai_generated"] = "true"
 
         # Trial Reel days (default Tue+Thu IST): the reel tests on NON-followers only for
@@ -2376,10 +2376,12 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             IG_POST_META["collaborators"] = _collabs[:3]
             print(f"   🤝 Collab invite: {', '.join(_collabs[:3])}")
 
-        container_resp = requests.post(
+        container_resp = create_ai_container(
+            requests,
             f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
             data=container_data,
             timeout=30,
+            audit=IG_POST_META,
         )
 
         # Transient Graph errors (5xx / is_transient / throttle) are NOT param rejections —
@@ -2393,15 +2395,15 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                     or _err.get("code") in (1, 2, 4, 17, 32, 613)):
                 print(f"   ⚠️ IG container transient error ({container_resp.status_code}, code={_err.get('code')}) — retrying same payload in 30s")
                 time.sleep(30)
-                container_resp = requests.post(
+                container_resp = create_ai_container(
+                    requests,
                     f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
                     data=container_data,
                     timeout=30,
+                    audit=IG_POST_META,
                 )
 
-        # Newer optional params can be rejected by older API versions/accounts — drop them
-        # one at a time rather than losing the post (Meta can still auto-label via C2PA).
-        for _optional in ("trial_params", "collaborators", "is_ai_generated"):
+        for _optional in ("trial_params", "collaborators"):
             if container_resp.status_code == 200:
                 break
             if _optional not in container_data:
@@ -2412,10 +2414,12 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 IG_POST_META["trial"] = False
             elif _optional == "collaborators":
                 IG_POST_META["collaborators"] = None
-            container_resp = requests.post(
+            container_resp = create_ai_container(
+                requests,
                 f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
                 data=container_data,
                 timeout=30,
+                audit=IG_POST_META,
             )
 
         if container_resp.status_code != 200:
@@ -2427,6 +2431,9 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             return None
 
         container_id = container_resp.json().get("id")
+        if not container_id:
+            print("   ❌ Instagram container returned no ID; publishing stopped")
+            return None
         print(f"   📦 Instagram container created: {container_id}")
 
         # Step 3: Wait for processing (Instagram processes video async)
@@ -2495,6 +2502,8 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                     data={"creation_id": container_id, "access_token": ig_token},
                     timeout=30,
                 )
+                if publish_resp.status_code != 200:
+                    raise_for_disclosure_rejection(publish_resp)
 
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
@@ -2527,10 +2536,12 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 print("   ⚠️ Publish failed on a trial container — republishing as a NORMAL reel")
                 container_data.pop("trial_params", None)
                 IG_POST_META["trial"] = False
-                retry_resp = requests.post(
+                retry_resp = create_ai_container(
+                    requests,
                     f"https://graph.facebook.com/{IG_API_VERSION}/{ig_business_id}/media",
                     data=container_data,
                     timeout=30,
+                    audit=IG_POST_META,
                 )
                 if retry_resp.status_code == 200:
                     retry_id = retry_resp.json().get("id")
@@ -2921,6 +2932,8 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
             rec["trial"] = True
         if IG_POST_META.get("collaborators"):
             rec["collaborators"] = IG_POST_META["collaborators"]
+        if IG_POST_META.get("ai_disclosure"):
+            rec["ai_disclosure"] = dict(IG_POST_META["ai_disclosure"])
         records.append(rec)
 
         with open(IG_ENGAGEMENT_FILE, "w") as f:
@@ -3174,10 +3187,7 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
         try:
             c_data = {"image_url": image_urls[0], "caption": full_caption,
                       "is_ai_generated": "true", "access_token": ig_token}
-            resp = requests.post(f"{base}/media", data=c_data, timeout=30)
-            if resp.status_code != 200 and "is_ai_generated" in c_data:
-                c_data.pop("is_ai_generated")
-                resp = requests.post(f"{base}/media", data=c_data, timeout=30)
+            resp = create_ai_container(requests, f"{base}/media", data=c_data, timeout=30)
             if resp.status_code != 200:
                 print(f"   ❌ IG single photo: container failed: {resp.text[:200]}")
                 return None
