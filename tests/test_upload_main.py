@@ -206,6 +206,55 @@ class UploadSafeguards(unittest.TestCase):
             uploader.upload(self.api, self.store, self.plan())
         self.assertEqual(len(self.api.inserts), 1)
 
+    def test_resume_only_missing_state_stops_before_api_or_insert(self):
+        plan = self.plan()
+        with patch.object(self.api, "channel_id", side_effect=AssertionError("API must not be called")):
+            with self.assertRaisesRegex(uploader.UploadError, "Resume-only requires"):
+                uploader.upload(self.api, self.store, plan, resume_only=True)
+        self.assertFalse(self.store.path.exists())
+        self.assertEqual(self.api.inserts, [])
+        stderr = io.StringIO()
+        with patch.object(uploader, "YouTube") as client, redirect_stderr(stderr):
+            code = uploader.main(["--manifest", str(self.manifest), "--state", str(self.store.path), "--resume-only", "--execute"])
+        self.assertEqual(code, 1)
+        client.assert_not_called()
+        self.assertFalse(self.store.path.exists())
+
+    def test_resume_only_existing_id_finishes_without_another_insert(self):
+        plan = self.plan()
+        self.api.thumbnail_error = RuntimeError("thumbnail unavailable")
+        with self.assertRaises(RuntimeError):
+            uploader.upload(self.api, self.store, plan)
+        self.api.thumbnail_error = None
+        state = uploader.upload(self.api, self.store, plan, resume_only=True)
+        self.assertEqual(state["video_id"], VIDEO_ID)
+        self.assertEqual(state["phase"], "private_ready")
+        self.assertEqual(len(self.api.inserts), 1)
+
+    def test_resume_only_rejects_missing_id_and_uncertain_or_invalid_state(self):
+        plan = self.plan()
+        uploader.upload(self.api, self.store, plan)
+        original = self.store.read()
+        for updates in ({"video_id": None}, {"video_id": "invalid"}, {"phase": "upload_outcome_uncertain"}, {"phase": "upload_started"}, {"phase": "validated"}):
+            with self.subTest(updates=updates):
+                state = dict(original, **updates)
+                self.store.save(state)
+                with self.assertRaisesRegex(uploader.UploadError, "Resume-only requires"):
+                    uploader.upload(self.api, self.store, plan, resume_only=True)
+        self.assertEqual(len(self.api.inserts), 1)
+        self.assertEqual(self.api.updates, [])
+
+    def test_resume_only_still_requires_exact_manifest_and_source(self):
+        plan = self.plan()
+        uploader.upload(self.api, self.store, plan)
+        changed = self.plan(title="Different title")
+        with self.assertRaisesRegex(uploader.UploadError, "Metadata or thumbnail changed"):
+            uploader.upload(self.api, self.store, changed, resume_only=True)
+        self.video.write_bytes(b"different source video")
+        with self.assertRaisesRegex(uploader.UploadError, "Source fingerprint changed"):
+            uploader.upload(self.api, self.store, self.plan(), resume_only=True)
+        self.assertEqual(len(self.api.inserts), 1)
+
     def test_changed_metadata_cannot_reuse_id(self):
         uploader.upload(self.api, self.store, self.plan())
         with self.assertRaisesRegex(uploader.UploadError, "Metadata or thumbnail changed"):

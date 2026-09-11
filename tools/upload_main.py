@@ -496,6 +496,14 @@ def check_retry(state, plan):
         raise UploadError("Previous upload outcome is uncertain. Inspect MAIN uploads; a second insert is blocked.")
 
 
+def require_resume_state(state, plan):
+    if (not state or not isinstance(state.get("video_id"), str)
+            or not VIDEO_ID.fullmatch(state["video_id"])
+            or state.get("phase") not in {"uploaded", "private_ready", "scheduling", "scheduled"}):
+        raise UploadError("Resume-only requires an existing state with a confirmed uploaded video ID; no new upload or uncertain upload is allowed.")
+    check_retry(state, plan)
+
+
 def schedule_owned(api, store, state, publish_at, video=None, now=None):
     require_ai_release_selection(state["metadata"], state["source"]["sha256"])
     require_main(api)
@@ -543,8 +551,10 @@ def schedule_owned(api, store, state, publish_at, video=None, now=None):
     return state
 
 
-def upload(api, store, plan, wait_seconds=180):
+def upload(api, store, plan, wait_seconds=180, resume_only=False):
     state = store.read()
+    if resume_only:
+        require_resume_state(state, plan)
     if state:
         check_retry(state, plan)
     require_main(api)
@@ -637,6 +647,7 @@ def main(argv=None):
     actions.add_argument("--hold-private", action="store_true")
     actions.add_argument("--schedule-at", metavar="ISO_TIMESTAMP")
     parser.add_argument("--state", required=True, type=Path)
+    parser.add_argument("--resume-only", action="store_true", help="Require this manifest's existing confirmed upload; never insert a new video.")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--execute", action="store_true")
     modes.add_argument("--dry-run", action="store_true")
@@ -645,6 +656,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.execute and args.offline:
         parser.error("--offline is only available for dry runs")
+    if args.resume_only and not args.manifest:
+        parser.error("--resume-only requires --manifest")
     if not 0 <= args.wait_seconds <= 600:
         parser.error("--wait-seconds must be between 0 and 600")
     try:
@@ -652,6 +665,8 @@ def main(argv=None):
         store = StateStore(args.state)
         with store.locked():
             state = store.read()
+            if args.resume_only:
+                require_resume_state(state, plan)
             if state and plan:
                 check_retry(state, plan)
             if not plan and not state:
@@ -680,7 +695,7 @@ def main(argv=None):
                 print(json.dumps(summary, ensure_ascii=False, indent=2))
                 return 0
             if plan:
-                state = upload(api, store, plan, args.wait_seconds)
+                state = upload(api, store, plan, args.wait_seconds, resume_only=args.resume_only)
             elif args.hold_private:
                 state = hold_private(api, store)
             else:
