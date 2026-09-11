@@ -7,6 +7,7 @@ import unittest
 from contextlib import redirect_stderr
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from PIL import Image
@@ -127,12 +128,11 @@ class UploadSafeguards(unittest.TestCase):
         self.probe.start()
         self.addCleanup(self.probe.stop)
         self.elapsed = 0
-        self.clock = patch.object(uploader.time, "monotonic", side_effect=lambda: self.elapsed)
-        self.sleep = patch.object(uploader.time, "sleep", side_effect=self.advance_clock)
+        self.clock = patch.object(uploader, "time", SimpleNamespace(
+            monotonic=lambda: self.elapsed, sleep=self.advance_clock,
+        ))
         self.clock.start()
-        self.sleep.start()
         self.addCleanup(self.clock.stop)
-        self.addCleanup(self.sleep.stop)
 
     def advance_clock(self, seconds):
         self.elapsed += seconds
