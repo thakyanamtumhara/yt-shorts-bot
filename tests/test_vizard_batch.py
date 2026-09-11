@@ -11,6 +11,8 @@ import urllib.error
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import vizard_batch as batch
 
+original = batch.load_manifest
+
 
 class VizardBatchTests(unittest.TestCase):
     def setUp(self):
@@ -84,6 +86,50 @@ class VizardBatchTests(unittest.TestCase):
         self.raw["legs"] = {"li": self.raw["legs"]["li"]}
         with self.assertRaisesRegex(batch.BatchError, "exactly match"):
             self.load()
+
+    def prepare_reuse_source(self):
+        self.raw["legs"] = {"li": self.raw["legs"]["li"]}
+        self.manifest_path.write_text(json.dumps(self.raw))
+        source, fingerprint = batch.load_manifest(self.manifest_path, probe=lambda path: 10.5, platforms=("li",))
+        batch.run(source, fingerprint, self.state_path, execute=True, api=self.api,
+                  asset_check=lambda url, size: None, now=lambda: self.now)
+        target = dict(source)
+        target["legs"] = {"x": {"post": "AI-edited dialogue in my own footage. Sample first.",
+                              "publishTime": batch.vizard.ist_millis("2030-01-02 20:00")[0],
+                              "socialAccountId": batch.vizard.ACCOUNTS["x"][0]}}
+        return target
+
+    def test_reuses_confirmed_exact_ingestion_for_x_without_resending_linkedin(self):
+        target = self.prepare_reuse_source()
+        with patch.object(batch, "probe_video", return_value=10.5):
+            with patch.object(batch, "load_manifest", wraps=lambda p, **kw: original(p, probe=lambda path: 10.5, **kw)):
+                reuse = batch.reuse_ingest(target, self.manifest_path, self.state_path)
+        self.assertNotIn("legs", reuse)
+        self.state_path = self.directory / "x-state.json"
+        self.calls = []
+        kwargs = dict(execute=True, api=self.api, asset_check=lambda url, size: None,
+                      now=lambda: self.now, reused_ingest=reuse)
+        batch.run(target, "x-fingerprint", self.state_path, **kwargs)
+        batch.run(target, "x-fingerprint", self.state_path, **kwargs)
+        self.assertEqual([path for path, _ in self.calls], ["/project/publish-video"])
+        self.assertEqual(self.calls[0][1]["socialAccountId"], batch.vizard.ACCOUNTS["x"][0])
+
+    def test_reuse_rejects_changed_media_url_or_same_platform(self):
+        target = self.prepare_reuse_source()
+        for key, value in (("video_sha256", "0" * 64), ("video_url", "https://www.bulkplaintshirt.com/p/other.mp4"),
+                           ("legs", {"li": {}})):
+            changed = {**target, key: value}
+            with self.subTest(key=key), patch.object(batch, "load_manifest", wraps=lambda p, **kw: original(p, probe=lambda path: 10.5, **kw)), self.assertRaises(batch.BatchError):
+                batch.reuse_ingest(changed, self.manifest_path, self.state_path)
+
+    def test_reuse_rejects_unconfirmed_or_mismatched_receipts(self):
+        target = self.prepare_reuse_source()
+        saved = json.loads(self.state_path.read_text())
+        for key, value in (("fingerprint", "wrong"), ("create_status", "started"),
+                           ("finalVideoId", 999), ("query_receipt", {"code": 1000})):
+            self.state_path.write_text(json.dumps({**saved, key: value}))
+            with self.subTest(key=key), patch.object(batch, "load_manifest", wraps=lambda p, **kw: original(p, probe=lambda path: 10.5, **kw)), self.assertRaises(batch.BatchError):
+                batch.reuse_ingest(target, self.manifest_path, self.state_path)
 
     def test_invalid_date_blocks_before_create(self):
         for invalid in ("", "2030-02-30 20:00", "2030-01-01T20:00", "2030-1-1 20:00", None):

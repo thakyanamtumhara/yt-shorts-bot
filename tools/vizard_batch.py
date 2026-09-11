@@ -196,8 +196,35 @@ def error_receipt(exc):
     return result
 
 
+def reuse_ingest(manifest, source_manifest_path, source_state_path):
+    source_raw = json.loads(Path(source_manifest_path).read_text())
+    source, fingerprint = load_manifest(source_manifest_path, platforms=tuple(source_raw.get("legs", {})))
+    saved = json.loads(Path(source_state_path).read_text())
+    if saved.get("version") != 1 or saved.get("fingerprint") != fingerprint:
+        raise BatchError("Source state does not match its original manifest and video")
+    if source["video_sha256"] != manifest["video_sha256"] or source["video_url"] != manifest["video_url"]:
+        raise BatchError("Reused ingestion must reference the same exact video bytes and URL")
+    if set(source["legs"]) & set(manifest["legs"]):
+        raise BatchError("Reused ingestion must add different destination platforms")
+    request = saved.get("create_request", {})
+    videos = saved.get("query_receipt", {}).get("videos", [])
+    if (saved.get("create_status") != "accepted" or not valid_id(saved.get("projectId"))
+            or not valid_id(saved.get("finalVideoId"))
+            or request.get("videoUrl") != manifest["video_url"] or request.get("getClips") != 0
+            or saved.get("query_receipt", {}).get("code") != 2000 or len(videos) != 1
+            or videos[0].get("videoId") != saved["finalVideoId"]
+            or saved.get("create_receipt", {}).get("projectId") != saved["projectId"]):
+        raise BatchError("Source ingestion has no confirmed single finished video")
+    if any(request.get(key) != 0 for key in ("subtitleSwitch", "headlineSwitch", "emojiSwitch",
+            "highlightSwitch", "autoBrollSwitch", "removeSilenceSwitch")):
+        raise BatchError("Reused ingestion must preserve the finished edit")
+    return {key: saved[key] for key in ("create_status", "create_request", "create_receipt",
+                                       "projectId", "query_receipt", "finalVideoId")}
+
+
 def run(manifest, fingerprint, state_path, *, execute=False, api=vizard.call,
-        asset_check=check_asset, now=time.time, sleep=time.sleep, poll_seconds=30, wait_seconds=1200):
+        asset_check=check_asset, now=time.time, sleep=time.sleep, poll_seconds=30, wait_seconds=1200,
+        reused_ingest=None):
     with State(state_path, fingerprint) as store:
         state = store.data
         validate_pending(manifest, state, now)
@@ -205,6 +232,14 @@ def run(manifest, fingerprint, state_path, *, execute=False, api=vizard.call,
         if not execute:
             return {"mode": "dry-run", "name": manifest["name"], "duration": manifest["duration"],
                     "legs": {p: state["legs"].get(p, {}).get("status", "pending") for p in manifest["legs"]}}
+        if reused_ingest:
+            if state.get("projectId") and (state["projectId"] != reused_ingest["projectId"]
+                    or state.get("finalVideoId") != reused_ingest["finalVideoId"]):
+                raise BatchError("Target state already references a different ingestion")
+            if not state.get("projectId"):
+                state.update(reused_ingest)
+                state["reused_ingestion"] = True
+                store.save()
         if not state.get("projectId"):
             validate_pending(manifest, state, now)
             body = {"lang": "hi", "preferLength": [0], "videoUrl": manifest["video_url"],
@@ -276,6 +311,8 @@ def main():
     parser.add_argument("--state", required=True, help="Private durable JSON; reuse this exact path on every retry")
     parser.add_argument("--platform", action="append", choices=PLATFORMS,
                         help="Explicit destination subset; default remains fb, x and li")
+    parser.add_argument("--reuse-manifest", help="Original manifest for already ingested exact media")
+    parser.add_argument("--reuse-state", help="Original durable state; adds different platforms only")
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--wait-seconds", type=int, default=1200)
     args = parser.parse_args()
@@ -285,7 +322,11 @@ def main():
         if Path(args.state).expanduser().resolve().is_relative_to(Path(__file__).resolve().parents[1]):
             raise BatchError("Keep --state outside the public repository; it contains private publishing receipts")
         manifest, fingerprint = load_manifest(args.manifest, platforms=tuple(args.platform) if args.platform else PLATFORMS)
-        result = run(manifest, fingerprint, args.state, execute=args.execute, wait_seconds=args.wait_seconds)
+        if bool(args.reuse_manifest) != bool(args.reuse_state):
+            raise BatchError("--reuse-manifest and --reuse-state must be supplied together")
+        reuse = reuse_ingest(manifest, args.reuse_manifest, args.reuse_state) if args.reuse_state else None
+        result = run(manifest, fingerprint, args.state, execute=args.execute,
+                     wait_seconds=args.wait_seconds, reused_ingest=reuse)
         print(json.dumps(result, indent=2))
         return 0
     except (BatchError, OSError, ValueError, KeyError) as exc:
