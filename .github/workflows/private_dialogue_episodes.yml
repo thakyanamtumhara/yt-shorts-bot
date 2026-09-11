@@ -34,7 +34,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: private-dialogue-episodes
+  group: private-dialogue-episodes-${{ inputs.manifest_sha256 }}
   cancel-in-progress: false
 
 jobs:

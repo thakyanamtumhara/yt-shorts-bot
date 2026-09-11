@@ -194,6 +194,34 @@ class EpisodeTests(unittest.TestCase):
         with patch.object(pilot, 'media_info', return_value=info):
             self.assertEqual(pilot.source_info(Path('reviewed.mp4'), item['source_seconds']), 32)
 
+    def test_warehouse_batch_keeps_two_episode_bound_and_exact_source_contract(self):
+        first = {**self.continuous_episode(), 'id': 'wh03'}
+        second = {**self.continuous_episode(), 'id': 'wh04'}
+        manifest = {'format': pilot.BATCH_FORMAT, 'episodes': [first, second]}
+        self.assertEqual(pilot.validate_manifest(manifest), [first, second])
+        invalids = [[first, second, {**first, 'id': 'wh05'}], [first, first],
+                    [{**first, 'id': 'wh09'}], [{**first, 'id': '../escape'}],
+                    [{**first, 'id': 'fit'}], [{**first, 'source_seconds': 29}],
+                    [{**first, 'source_seconds': float('nan')}],
+                    [{**first, 'provided_speech': {'key': 'p/s.enc', 'sha256': 'b' * 64}}]]
+        for items in invalids:
+            with self.subTest(items=items), self.assertRaises(ValueError):
+                pilot.validate_manifest({**manifest, 'episodes': items})
+        for old_format in (pilot.FORMAT, pilot.ENDING_FORMAT, pilot.REFINEMENT_FORMAT, pilot.CONTINUOUS_FORMAT):
+            with self.subTest(old_format=old_format), self.assertRaises(ValueError):
+                pilot.validate_manifest({'format': old_format, 'episodes': [first]})
+
+    def test_warehouse_batch_review_failure_cannot_submit_video_or_next_episode(self):
+        items = [{**self.continuous_episode(), 'id': id_} for id_ in ('wh03', 'wh04')]
+        claim = pilot.Claim(self.s3, 'c' * 64, ['wh03', 'wh04'])
+        claim.persist()
+        with patch.object(pilot, 'make_speech', return_value=27) as tts, \
+             patch.object(pilot, 'assess_speech', side_effect=ValueError('Pronunciation failed')), \
+             patch.object(pilot, 'make_video') as video, self.assertRaises(ValueError):
+            pilot.run_episodes(items, {'wh03': 32, 'wh04': 32}, claim)
+        self.assertEqual(tts.call_count, 1)
+        video.assert_not_called()
+
     def test_continuous_pipeline_runs_one_full_tts_then_qa_then_first_video(self):
         item = self.continuous_episode()
         order = []
