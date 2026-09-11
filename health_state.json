@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-10 13:34)",
+   "detail": "ElevenLabs ✅ (2026-09-11 13:32)",
    "provider": "elevenlabs",
-   "at": "2026-09-10 13:34",
-   "title": "200 GSM vs 200 GSM — ₹30 फर्क क्यों? कान के पास रगड़ के चेक करो"
+   "at": "2026-09-11 13:32",
+   "title": "French Terry vs Fleece — अंदर की सतह में असली फर्क क्या है?"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 138,297/151,000 chars left",
+   "detail": "creator · PVC allowed · 137,963/151,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 138297,
+   "chars_left": 137963,
    "char_limit": 151000,
    "sub_status": "active",
    "quota_resets": "14 Sep 2026",
@@ -425,8 +425,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-11T22:11:07+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-11T13:43:27+05:30",
+ "last_run_ist": "2026-09-11T22:11:07+05:30",
  "last_green_date": "2026-09-11"
 }
