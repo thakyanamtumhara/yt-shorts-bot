@@ -328,6 +328,27 @@ class EpisodeTests(unittest.TestCase):
         video.assert_not_called()
         self.assertEqual(self.claim.state['episodes']['fit']['provided_speech']['status'], 'verified')
 
+    def test_motion_recovery_reuses_exact_audio_and_submits_sequentially_without_tts(self):
+        items = [{**self.refinement_episode(), 'id': id_} for id_ in ('wh10', 'wh12')]
+        manifest = {'format': pilot.MOTION_RECOVERY_FORMAT, 'episodes': items}
+        self.assertEqual(pilot.validate_manifest(manifest), items)
+        for changed in ({**items[0], 'id': 'wh09'}, {**items[0], 'id': 'fit'},
+                        {k: v for k, v in items[0].items() if k != 'provided_speech'}):
+            with self.assertRaises(ValueError):
+                pilot.validate_manifest({**manifest, 'episodes': [changed]})
+        claim = pilot.Claim(self.s3, 'd' * 64, ['wh10', 'wh12'])
+        claim.persist()
+        order = []
+        with patch.object(pilot, 'make_speech') as tts, \
+             patch.object(pilot, 'assess_speech', side_effect=lambda e, c: order.append((e['id'], 'qa'))), \
+             patch.object(pilot, 'make_video', side_effect=lambda e, d, c: order.append((e['id'], 'video'))):
+            pilot.run_episodes(items, {'wh10': 32, 'wh12': 31}, claim,
+                               supplied_seconds={'wh10': 22, 'wh12': 29})
+        tts.assert_not_called()
+        self.assertEqual(order, [('wh10', 'qa'), ('wh10', 'video'), ('wh12', 'qa'), ('wh12', 'video')])
+        self.assertNotIn('tts', claim.state['episodes']['wh10'])
+        self.assertEqual(claim.state['episodes']['wh12']['provided_speech']['status'], 'verified')
+
     def test_duration_alignment_and_complete_script_are_required_without_truncation(self):
         pilot.validate_speech(SCRIPT, 22, alignment(), 30)
         for duration, times in [(30.01, alignment()), (9.9, alignment()),

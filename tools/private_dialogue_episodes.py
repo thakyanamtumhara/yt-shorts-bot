@@ -23,6 +23,7 @@ REFINEMENT_FORMAT = 'private-dialogue-refinement-v3'
 CONTINUOUS_FORMAT = 'private-dialogue-continuous-refinement-v4'
 BATCH_FORMAT = 'private-warehouse-review-v5'
 MOTION_FORMAT = 'private-warehouse-motion-v6'
+MOTION_RECOVERY_FORMAT = 'private-warehouse-motion-recovery-v7'
 SPEECH_MAGIC = b'REFINEVOICE1\n'
 SOURCE_MAGIC = b'EPISODESOURCE1\n'
 RESUME_FORMAT = 'private-episodes-fit-resume-v1'
@@ -94,10 +95,10 @@ def review_words(episode):
 
 
 def validate_manifest(manifest):
-    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT):
+    if not isinstance(manifest, dict) or set(manifest) != {'format', 'episodes'} or manifest['format'] not in (FORMAT, ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT, MOTION_RECOVERY_FORMAT):
         raise ValueError('Unsupported private episode manifest')
-    ending_mode = manifest['format'] in (ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT)
-    refinement = manifest['format'] == REFINEMENT_FORMAT
+    ending_mode = manifest['format'] in (ENDING_FORMAT, REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT, MOTION_RECOVERY_FORMAT)
+    refinement = manifest['format'] in (REFINEMENT_FORMAT, MOTION_RECOVERY_FORMAT)
     continuous = manifest['format'] == CONTINUOUS_FORMAT
     batch = manifest['format'] in (BATCH_FORMAT, MOTION_FORMAT)
     episodes = manifest['episodes']
@@ -119,6 +120,8 @@ def validate_manifest(manifest):
         allowed_ids = ('wh03', 'wh04', 'wh05', 'wh06', 'wh07', 'wh08') if batch else ('fit', 'print-sample')
         if manifest['format'] == MOTION_FORMAT:
             allowed_ids = ('wh09', 'wh10', 'wh11', 'wh12', 'wh13')
+        if manifest['format'] == MOTION_RECOVERY_FORMAT:
+            allowed_ids = ('wh10', 'wh12')
         if episode['id'] not in allowed_ids or episode['id'] in ids:
             raise ValueError('Only unique episode IDs from the reviewed format are allowed')
         ids.add(episode['id'])
@@ -662,7 +665,7 @@ def main():
         raw = read_s3(s3, args.manifest_key, args.manifest_sha256, 16 * 1024)
         manifest = json.loads(raw)
         episodes = validate_manifest(manifest)
-        if manifest['format'] in (REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT):
+        if manifest['format'] in (REFINEMENT_FORMAT, CONTINUOUS_FORMAT, BATCH_FORMAT, MOTION_FORMAT, MOTION_RECOVERY_FORMAT):
             refinement_episodes = episodes
         save('manifest-private.json', manifest)
         fingerprint = digest(encoded(manifest))
