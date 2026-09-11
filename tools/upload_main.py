@@ -31,7 +31,7 @@ STATUS_FIELDS = {
 MANIFEST_FIELDS = {
     "video_path", "title", "description", "description_path", "tags",
     "thumbnail_path", "publish_at", "contains_synthetic_media", "ai_music",
-    "ai_face", "ai_voice", "language", "category_id",
+    "ai_face", "ai_voice", "language", "category_id", "user_selection",
 }
 
 
@@ -133,6 +133,32 @@ def probe_thumbnail(path):
     return {"mime_type": "image/jpeg" if expected == "mjpeg" else "image/png", "width": width, "height": height}
 
 
+def validate_user_selection(selection, source_sha256):
+    if not isinstance(selection, dict) or set(selection) != {
+        "batch_id", "video_id", "version", "sha256", "approval_method", "approved_at",
+    }:
+        raise UploadError("An exact user selection needs batch, video, version, hash and approval provenance.")
+    if selection["approval_method"] != "user_exact_selection":
+        raise UploadError("AI-face release requires an explicit user selection, not a machine review.")
+    if any(not isinstance(selection[k], str) or not selection[k].strip() for k in selection):
+        raise UploadError("User-selection fields must be nonempty strings.")
+    if not re.fullmatch(r"[a-f0-9]{64}", selection["sha256"]) or selection["sha256"] != source_sha256:
+        raise UploadError("The selected video hash does not match this exact media file.")
+    approved = timestamp(selection["approved_at"], require_future=False)
+    if datetime.fromisoformat(approved.replace("Z", "+00:00")) > utc_now():
+        raise UploadError("The user-selection timestamp cannot be in the future.")
+    return copy.deepcopy(selection)
+
+
+def require_ai_release_selection(metadata, source_sha256):
+    if metadata.get("ai_face", False):
+        if not metadata.get("user_selection"):
+            raise UploadError("AI-face videos are private-only until an exact user selection is recorded.")
+        validate_user_selection(metadata["user_selection"], source_sha256)
+        if not metadata.get("contains_synthetic_media"):
+            raise UploadError("Selected AI-face releases require synthetic-media disclosure.")
+
+
 def load_manifest(path, now=None):
     path = Path(path).resolve()
     data = read_json(path)
@@ -172,8 +198,6 @@ def load_manifest(path, now=None):
     if not isinstance(category, str) or not category.isdigit():
         raise UploadError("category_id must be a numeric string.")
     publish_at = timestamp(data["publish_at"], now) if data.get("publish_at") is not None else None
-    if data.get("ai_face", False) and publish_at:
-        raise UploadError("AI-face videos are private-only in this uploader; scheduling requires separate review/adoption work.")
     source = file_fingerprint(video)
     source.update(probe_video(video))
     thumb = probe_thumbnail(thumbnail)
@@ -184,6 +208,10 @@ def load_manifest(path, now=None):
         "contains_synthetic_media": synthetic, "ai_face": data.get("ai_face", False),
         "thumbnail_sha256": thumb["sha256"],
     }
+    if "user_selection" in data:
+        metadata["user_selection"] = validate_user_selection(data["user_selection"], source["sha256"])
+    if publish_at:
+        require_ai_release_selection(metadata, source["sha256"])
     return {
         "video_path": video, "thumbnail_path": thumbnail, "source": source,
         "thumbnail": thumb, "metadata": metadata, "metadata_sha256": digest(metadata),
@@ -377,8 +405,7 @@ def check_retry(state, plan):
 
 
 def schedule_owned(api, store, state, publish_at, video=None, now=None):
-    if state["metadata"].get("ai_face", False):
-        raise UploadError("AI-face videos are private-only in this uploader; scheduling requires separate review/adoption work.")
+    require_ai_release_selection(state["metadata"], state["source"]["sha256"])
     require_main(api)
     if not state.get("thumbnail_uploaded"):
         raise UploadError("Finish the thumbnail upload with the same manifest and state before scheduling.")
@@ -401,7 +428,10 @@ def schedule_owned(api, store, state, publish_at, video=None, now=None):
     actual = video["status"].get("publishAt")
     if not actual or timestamp(actual, require_future=False) != publish_at:
         api.update_status(state["video_id"], dict(hold, publishAt=publish_at))
-    wait_readback(api, state, lambda current: verify_private(current, publish_at))
+    def validate_scheduled(current):
+        verify_private(current, publish_at)
+        assert_copy(current, state["metadata"])
+    wait_readback(api, state, validate_scheduled)
     state["phase"] = "scheduled"
     store.save(state)
     return state
@@ -520,8 +550,8 @@ def main(argv=None):
             if not plan and not state:
                 raise UploadError("This action requires an existing state file with its uploaded ID.")
             publish_at = timestamp(args.schedule_at) if args.schedule_at else None
-            if publish_at and state["metadata"].get("ai_face", False):
-                raise UploadError("AI-face videos are private-only in this uploader; scheduling requires separate review/adoption work.")
+            if publish_at:
+                require_ai_release_selection(state["metadata"], state["source"]["sha256"])
             api = None if args.offline else YouTube()
             if api:
                 require_main(api)

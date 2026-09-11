@@ -222,6 +222,49 @@ class UploadSafeguards(unittest.TestCase):
         self.assertEqual(self.api.updates, [])
         self.assertEqual(self.api.videos[VIDEO_ID]["status"]["privacyStatus"], "private")
 
+    def selection(self, **changes):
+        result = {
+            "batch_id": "warehouse-20260911", "video_id": "WH09", "version": "1.0",
+            "sha256": uploader.file_fingerprint(self.video)["sha256"],
+            "approved_at": "2026-09-11T00:00:00Z", "approval_method": "user_exact_selection",
+        }
+        result.update(changes)
+        return result
+
+    def test_selected_ai_face_schedules_exact_file_and_hold_preserves_disclosure(self):
+        plan = self.plan(ai_face=True, publish_at=FUTURE, user_selection=self.selection())
+        state = uploader.upload(self.api, self.store, plan)
+        self.assertEqual(state["phase"], "scheduled")
+        self.assertEqual(state["metadata"]["user_selection"]["sha256"], state["source"]["sha256"])
+        self.assertTrue(self.api.videos[VIDEO_ID]["status"]["containsSyntheticMedia"])
+        uploader.hold_private(self.api, self.store)
+        self.assertNotIn("publishAt", self.api.videos[VIDEO_ID]["status"])
+        self.assertTrue(self.api.videos[VIDEO_ID]["status"]["containsSyntheticMedia"])
+
+    def test_selection_for_other_render_is_rejected(self):
+        with self.assertRaisesRegex(uploader.UploadError, "selected video hash"):
+            self.plan(ai_face=True, publish_at=FUTURE, user_selection=self.selection(sha256="0" * 64))
+        self.assertEqual(self.api.inserts, [])
+
+    def test_machine_review_cannot_authorize_ai_release(self):
+        with self.assertRaisesRegex(uploader.UploadError, "explicit user selection"):
+            self.plan(ai_face=True, publish_at=FUTURE, user_selection=self.selection(approval_method="machine_pass"))
+
+    def test_changed_state_source_cannot_use_earlier_selection(self):
+        uploader.upload(self.api, self.store, self.plan(ai_face=True, user_selection=self.selection()))
+        state = self.store.read()
+        state["source"]["sha256"] = "1" * 64
+        with self.assertRaisesRegex(uploader.UploadError, "selected video hash"):
+            uploader.schedule_owned(self.api, self.store, state, FUTURE)
+        self.assertEqual(self.api.updates, [])
+
+    def test_schedule_readback_requires_disclosure_to_remain_true(self):
+        plan = self.plan(ai_face=True, publish_at=FUTURE, user_selection=self.selection())
+        self.api.before_update = lambda status: status.update(containsSyntheticMedia=False)
+        with self.assertRaisesRegex(uploader.UploadError, "metadata differs"):
+            uploader.upload(self.api, self.store, plan)
+        self.assertNotEqual(self.store.read()["phase"], "scheduled")
+
     def test_schedule_prepares_undo_then_hold_cancels_and_verifies(self):
         plan = self.plan(publish_at=FUTURE)
 
