@@ -2028,5 +2028,27 @@
     "cover_path": "ai+pil",
     "cover_face": false,
     "trial": true
+  },
+  {
+    "media_id": "17893295151415500",
+    "title": "French Terry vs Fleece — Inside Surface Check Before You Print",
+    "topic": "फ्रेंच टेरी और फ्लीस में अंदर की सतह क्यों अलग है?",
+    "published_at": "2026-09-11T18:58:19.114902+05:30",
+    "checked": false,
+    "cover_text": "ANDAR KI SURFACE BRUSHED या नहीं?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "terry_vs_fleece",
+    "cover_labels": [
+      "अंदर लूप",
+      "ब्रश की सतह"
+    ],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18344310238266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]
