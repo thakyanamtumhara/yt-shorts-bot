@@ -332,12 +332,104 @@ def private_status(status):
     return result
 
 
-def assert_copy(video, metadata):
+def native_ai_acknowledged(state, metadata):
+    if not state or not state.get("native_ai_writes"):
+        return False
+    receipt = state["native_ai_writes"][-1]
+    response = receipt.get("response", {})
+    return (receipt.get("channel_id") == MAIN_CHANNEL
+                and receipt.get("video_id") == state.get("video_id")
+                and receipt.get("source_sha256") == state.get("source", {}).get("sha256")
+                and receipt.get("metadata_sha256") == digest(metadata)
+                and receipt.get("outcome") == "acknowledged"
+                and receipt.get("request_sha256") == digest(receipt.get("request"))
+                and receipt.get("request", {}).get("id") == state.get("video_id")
+                and receipt.get("request", {}).get("status", {}).get("containsSyntheticMedia") is True
+                and receipt.get("response_sha256") == digest(response)
+                and response.get("id") == state.get("video_id")
+                and response.get("status", {}).get("containsSyntheticMedia") is True)
+
+
+def assert_copy(video, metadata, state=None, check_disclosure=True):
     snippet, status = video.get("snippet", {}), video.get("status", {})
     if (snippet.get("title") != metadata["title"] or snippet.get("description", "") != metadata["description"]
-            or sorted(snippet.get("tags", [])) != sorted(metadata["tags"])
-            or bool(status.get("containsSyntheticMedia", False)) != metadata["contains_synthetic_media"]):
+            or sorted(snippet.get("tags", [])) != sorted(metadata["tags"])):
         raise UploadError("Uploaded metadata differs from the recorded copy; refusing automatic follow-up.")
+    if not check_disclosure:
+        return
+    if "containsSyntheticMedia" in status:
+        if type(status["containsSyntheticMedia"]) is not bool or status["containsSyntheticMedia"] is not metadata["contains_synthetic_media"]:
+            raise UploadError("Uploaded metadata differs: explicit native AI disclosure does not match.")
+    elif metadata["contains_synthetic_media"] and not native_ai_acknowledged(state, metadata):
+        raise UploadError("Native AI disclosure is omitted by GET and no matching official update acknowledgment is recorded.")
+
+
+def update_native_ai_status_once(api, store, state, status, operation):
+    request = {"id": state["video_id"], "status": copy.deepcopy(status)}
+    identity = {
+        "channel_id": MAIN_CHANNEL, "video_id": state["video_id"],
+        "source_sha256": state["source"]["sha256"],
+        "metadata_sha256": state["metadata_sha256"],
+        "operation": operation, "request_sha256": digest(request),
+        "schedule_generation": state.get("schedule_generation", 0) if operation == "schedule" else 0,
+    }
+    writes = state.setdefault("native_ai_writes", [])
+    for prior in writes:
+        if all(prior.get(key) == value for key, value in identity.items()):
+            if prior.get("outcome") == "acknowledged" and native_ai_acknowledged(state, state["metadata"]):
+                return
+            raise UploadError("This native AI status write has already been attempted without a verified acknowledgment; no automatic repeat is allowed.")
+    receipt = dict(identity, request=request, requested_at=utc_now().isoformat(), outcome="intent_saved")
+    writes.append(receipt)
+    store.save(state)
+    try:
+        response = api.update_status(state["video_id"], status)
+    except Exception:
+        receipt["outcome"] = "outcome_uncertain"
+        store.save(state)
+        raise
+    response = response if isinstance(response, dict) else {}
+    returned_status = response.get("status") if isinstance(response.get("status"), dict) else {}
+    public_status = {key: copy.deepcopy(value) for key, value in returned_status.items()
+                     if key in STATUS_FIELDS or key == "publishAt"}
+    receipt["response"] = {"id": response.get("id"), "status": public_status}
+    receipt["response_sha256"] = digest(receipt["response"])
+    receipt["received_at"] = utc_now().isoformat()
+    acknowledged = response.get("id") == state["video_id"] and returned_status.get("containsSyntheticMedia") is True
+    receipt["outcome"] = "acknowledged" if acknowledged else "returned_without_native_ai_ack"
+    store.save(state)
+    if response.get("id") is not None and response["id"] != state["video_id"]:
+        raise UploadError("Status-update response identifies a different video; the response was saved and follow-up stopped.")
+    if "containsSyntheticMedia" in returned_status and returned_status["containsSyntheticMedia"] is not True:
+        raise UploadError("Status-update response did not accept native AI disclosure as true; follow-up stopped.")
+
+
+def ensure_native_ai_ack(api, store, state, video):
+    assert_copy(video, state["metadata"], check_disclosure=False)
+    status = video.get("status", {})
+    if "containsSyntheticMedia" in status or not state["metadata"]["contains_synthetic_media"] or native_ai_acknowledged(state, state["metadata"]):
+        assert_copy(video, state["metadata"], state)
+        return video
+    latest = state.get("native_ai_writes", [])[-1:]
+    if latest and latest[0].get("metadata_sha256") == state["metadata_sha256"]:
+        raise UploadError("This native AI status write has already been attempted without a verified acknowledgment; no automatic repeat is allowed.")
+    if (video.get("id") != state.get("video_id") or video.get("snippet", {}).get("channelId") != MAIN_CHANNEL
+            or status.get("privacyStatus") != "private" or status.get("uploadStatus") != "processed"):
+        raise UploadError("Native AI acknowledgment requires the exact owned, processed private upload.")
+    require_main(api)
+    update = private_status(status)
+    state["undo"] = {"action": "hold-private", "video_id": state["video_id"],
+                     "status": dict(update, containsSyntheticMedia=True)}
+    expected_publish_at = None
+    if status.get("publishAt"):
+        expected_publish_at = timestamp(status["publishAt"])
+        update["publishAt"] = expected_publish_at
+    update["containsSyntheticMedia"] = True
+    update_native_ai_status_once(api, store, state, update, "confirm-native-ai")
+    def validate_acknowledged(current):
+        verify_private(current, expected_publish_at)
+        assert_copy(current, state["metadata"], state)
+    return wait_readback(api, state, validate_acknowledged)
 
 
 def verify_private(video, publish_at=None):
@@ -417,20 +509,34 @@ def schedule_owned(api, store, state, publish_at, video=None, now=None):
         raise UploadError("Scheduling requires this recorded video to still be private.")
     if video.get("status", {}).get("uploadStatus") != "processed":
         raise UploadError("Wait for this recorded upload to finish processing before scheduling.")
-    assert_copy(video, state["metadata"])
+    video = ensure_native_ai_ack(api, store, state, video)
     hold = private_status(video["status"])
+    if state["metadata"]["contains_synthetic_media"]:
+        hold["containsSyntheticMedia"] = True
     state["undo"] = {"action": "hold-private", "video_id": state["video_id"], "status": hold}
+    actual = video["status"].get("publishAt")
+    schedule_differs = not actual or timestamp(actual, require_future=False) != publish_at
+    metadata_date_differs = state["metadata"].get("publish_at") != publish_at
+    if (state["metadata"]["contains_synthetic_media"] and (schedule_differs or metadata_date_differs)
+            and (state.get("phase") != "scheduling" or metadata_date_differs)):
+        state["schedule_generation"] = state.get("schedule_generation", 0) + 1
     state["metadata"]["publish_at"] = publish_at
     state["metadata_sha256"] = digest(state["metadata"])
     state["held_private"] = False
     state["phase"] = "scheduling"
     store.save(state)
-    actual = video["status"].get("publishAt")
-    if not actual or timestamp(actual, require_future=False) != publish_at:
-        api.update_status(state["video_id"], dict(hold, publishAt=publish_at))
+    missing_current_ack = (state["metadata"]["contains_synthetic_media"]
+                           and "containsSyntheticMedia" not in video["status"]
+                           and not native_ai_acknowledged(state, state["metadata"]))
+    if schedule_differs or missing_current_ack:
+        status = dict(hold, publishAt=publish_at)
+        if state["metadata"]["contains_synthetic_media"]:
+            update_native_ai_status_once(api, store, state, status, "schedule")
+        else:
+            api.update_status(state["video_id"], status)
     def validate_scheduled(current):
         verify_private(current, publish_at)
-        assert_copy(current, state["metadata"])
+        assert_copy(current, state["metadata"], state)
     wait_readback(api, state, validate_scheduled)
     state["phase"] = "scheduled"
     store.save(state)
@@ -469,7 +575,7 @@ def upload(api, store, plan, wait_seconds=180):
         if file_fingerprint(plan["video_path"]) != {k: plan["source"][k] for k in ("sha256", "size")}:
             raise UploadError("Source changed during upload; the recorded upload remains private.")
     video = wait_processed(api, state, wait_seconds)
-    video = wait_readback(api, state, lambda current: assert_copy(current, state["metadata"]), video)
+    video = wait_readback(api, state, lambda current: assert_copy(current, state["metadata"], check_disclosure=False), video)
     if video["status"].get("privacyStatus") != "private":
         raise UploadError("This recorded upload is already public/unlisted; refusing automatic changes.")
     actual = video["status"].get("publishAt")
@@ -478,6 +584,7 @@ def upload(api, store, plan, wait_seconds=180):
         raise UploadError("The confirmed remote schedule was removed; use an explicit --schedule-at action to restore it.")
     if actual and timestamp(actual, require_future=False) != desired:
         raise UploadError("The remote schedule changed; use an explicit --schedule-at or --hold-private action.")
+    video = ensure_native_ai_ack(api, store, state, video)
     if not state.get("thumbnail_uploaded"):
         if file_fingerprint(plan["thumbnail_path"])["sha256"] != plan["thumbnail"]["sha256"]:
             raise UploadError("Thumbnail changed after validation; refusing the follow-up.")

@@ -75,6 +75,37 @@ class FakeYouTube:
         self.videos[video_id]["status"] = new_status
 
 
+class MissingNativeGETYouTube(FakeYouTube):
+    def __init__(self):
+        super().__init__()
+        self.get_ai_value = None
+        self.ack_mode = "true"
+        self.omit_schedule_ack = False
+        self.update_attempts = 0
+
+    def get_video(self, video_id):
+        video = super().get_video(video_id)
+        if video:
+            if self.get_ai_value is None:
+                video["status"].pop("containsSyntheticMedia", None)
+            else:
+                video["status"]["containsSyntheticMedia"] = self.get_ai_value
+        return video
+
+    def update_status(self, video_id, status):
+        self.update_attempts += 1
+        super().update_status(video_id, status)
+        response = copy.deepcopy(self.videos[video_id])
+        mode = "missing" if self.omit_schedule_ack and status.get("publishAt") else self.ack_mode
+        if mode == "missing":
+            response["status"].pop("containsSyntheticMedia", None)
+        elif mode == "false":
+            response["status"]["containsSyntheticMedia"] = False
+        elif mode == "wrong-id":
+            response["id"] = "ZYXWVUTSRQP"
+        return response
+
+
 class UploadSafeguards(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -437,6 +468,171 @@ class UploadSafeguards(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertNotIn("do-not-log-this-token", stderr.getvalue())
         self.assertIn("response bodies omitted", stderr.getvalue())
+
+
+class NativeAIResponseEvidence(unittest.TestCase):
+    setUp = UploadSafeguards.setUp
+    advance_clock = UploadSafeguards.advance_clock
+    plan = UploadSafeguards.plan
+    selection = UploadSafeguards.selection
+
+    def missing_api(self):
+        self.api = MissingNativeGETYouTube()
+        return self.api
+
+    def seed_existing_private(self, plan):
+        self.api.insert_video(plan["video_path"], uploader.initial_body(plan["metadata"]))
+        self.api.inserts.clear()
+        state = {"format": uploader.STATE_FORMAT, "channel_id": uploader.MAIN_CHANNEL,
+                 "source": plan["source"], "metadata": copy.deepcopy(plan["metadata"]),
+                 "metadata_sha256": plan["metadata_sha256"], "phase": "uploaded", "video_id": VIDEO_ID}
+        self.store.save(state)
+        return state
+
+    def test_existing_upload_get_omission_uses_exact_status_ack_then_thumbnail_schedule(self):
+        self.missing_api()
+        plan = self.plan(ai_face=True, user_selection=self.selection(), publish_at=FUTURE)
+        self.seed_existing_private(plan)
+        def intent_before_write(status):
+            receipt = self.store.read()["native_ai_writes"][-1]
+            self.assertEqual(receipt["outcome"], "intent_saved")
+            self.assertEqual(receipt["request"]["status"], status)
+            self.assertEqual(receipt["source_sha256"], plan["source"]["sha256"])
+            self.assertEqual(receipt["metadata_sha256"], self.store.read()["metadata_sha256"])
+            self.assertTrue(self.store.read()["undo"]["status"]["containsSyntheticMedia"])
+        self.api.before_update = intent_before_write
+        state = uploader.upload(self.api, self.store, plan)
+        self.assertEqual(state["phase"], "scheduled")
+        self.assertEqual(self.api.inserts, [])
+        self.assertEqual(self.api.thumbnails, [VIDEO_ID])
+        self.assertEqual(len(self.api.updates), 2)
+        self.assertNotIn("publishAt", self.api.updates[0])
+        self.assertEqual(self.api.updates[1]["publishAt"], FUTURE)
+        self.assertTrue(all(s["containsSyntheticMedia"] is True for s in self.api.updates))
+        self.assertEqual([r["operation"] for r in state["native_ai_writes"]], ["confirm-native-ai", "schedule"])
+        self.assertTrue(uploader.native_ai_acknowledged(state, state["metadata"]))
+        again = uploader.upload(self.api, self.store, plan)
+        self.assertEqual(state["native_ai_writes"], again["native_ai_writes"])
+        self.assertEqual(state["schedule_generation"], again["schedule_generation"])
+        self.assertEqual(self.api.inserts, [])
+        self.assertEqual(len(self.api.updates), 2)
+        self.assertEqual(len(self.api.thumbnails), 1)
+
+    def test_explicit_get_false_cannot_be_overridden_with_an_ack(self):
+        self.missing_api()
+        plan = self.plan(ai_face=True, user_selection=self.selection())
+        state = uploader.upload(self.api, self.store, plan)
+        self.api.get_ai_value = False
+        with self.assertRaisesRegex(uploader.UploadError, "explicit native AI disclosure"):
+            uploader.schedule_owned(self.api, self.store, state, FUTURE)
+        self.assertEqual(len(self.api.updates), 1)
+
+    def test_initial_get_false_stops_before_confirmation_or_thumbnail(self):
+        self.missing_api().get_ai_value = False
+        plan = self.plan(ai_face=True, user_selection=self.selection())
+        self.seed_existing_private(plan)
+        with self.assertRaisesRegex(uploader.UploadError, "explicit native AI disclosure"):
+            uploader.upload(self.api, self.store, plan)
+        self.assertEqual(self.api.updates, [])
+        self.assertEqual(self.api.thumbnails, [])
+
+    def test_missing_or_false_or_wrong_id_update_ack_cannot_schedule_or_repeat(self):
+        for mode in ("missing", "false", "wrong-id"):
+            with self.subTest(mode=mode):
+                self.store.path.unlink(missing_ok=True)
+                self.missing_api().ack_mode = mode
+                plan = self.plan(ai_face=True, user_selection=self.selection(), publish_at=FUTURE)
+                self.seed_existing_private(plan)
+                with self.assertRaises(uploader.UploadError):
+                    uploader.upload(self.api, self.store, plan)
+                self.assertEqual(self.api.update_attempts, 1)
+                self.assertEqual(self.api.thumbnails, [])
+                with self.assertRaises(uploader.UploadError):
+                    uploader.upload(self.api, self.store, plan)
+                self.assertEqual(self.api.update_attempts, 1)
+                self.assertEqual(self.api.inserts, [])
+                self.assertEqual(self.store.read()["video_id"], VIDEO_ID)
+
+    def test_ambiguous_confirmation_does_not_retry_or_reupload(self):
+        self.missing_api()
+        plan = self.plan(ai_face=True, user_selection=self.selection())
+        self.seed_existing_private(plan)
+        self.api.before_update = lambda _: (_ for _ in ()).throw(TimeoutError("unknown outcome"))
+        with self.assertRaises(TimeoutError):
+            uploader.upload(self.api, self.store, plan)
+        self.assertEqual(self.store.read()["native_ai_writes"][-1]["outcome"], "outcome_uncertain")
+        self.api.before_update = None
+        with self.assertRaisesRegex(uploader.UploadError, "already been attempted"):
+            uploader.upload(self.api, self.store, plan)
+        self.assertEqual(self.api.update_attempts, 1)
+        self.assertEqual(self.api.inserts, [])
+
+    def test_schedule_needs_its_own_ack_when_get_omits(self):
+        self.missing_api().omit_schedule_ack = True
+        plan = self.plan(ai_face=True, user_selection=self.selection(), publish_at=FUTURE)
+        with self.assertRaisesRegex(uploader.UploadError, "no matching official update acknowledgment"):
+            uploader.upload(self.api, self.store, plan)
+        state = self.store.read()
+        self.assertEqual(state["phase"], "scheduling")
+        self.assertEqual(state["native_ai_writes"][0]["outcome"], "acknowledged")
+        self.assertEqual(state["native_ai_writes"][-1]["outcome"], "returned_without_native_ai_ack")
+        self.assertFalse(uploader.native_ai_acknowledged(state, state["metadata"]))
+        with self.assertRaises(uploader.UploadError):
+            uploader.upload(self.api, self.store, plan)
+        self.assertEqual(self.api.update_attempts, 2)
+        self.assertEqual(len(self.api.inserts), 1)
+        uploader.hold_private(self.api, self.store)
+        self.assertNotIn("publishAt", self.api.videos[VIDEO_ID]["status"])
+
+    def test_confirmation_readback_still_requires_correct_owner_copy_and_private_state(self):
+        for change in ("owner", "title", "privacy"):
+            with self.subTest(change=change):
+                self.store.path.unlink(missing_ok=True)
+                self.missing_api()
+                plan = self.plan(ai_face=True, user_selection=self.selection())
+                self.seed_existing_private(plan)
+                def mutate(status):
+                    if change == "owner": self.api.videos[VIDEO_ID]["snippet"]["channelId"] = "another-channel"
+                    elif change == "title": self.api.videos[VIDEO_ID]["snippet"]["title"] = "Changed copy"
+                    else: status["privacyStatus"] = "public"
+                self.api.before_update = mutate
+                with self.assertRaises(uploader.UploadError):
+                    uploader.upload(self.api, self.store, plan)
+                self.assertEqual(self.api.thumbnails, [])
+                self.assertEqual(self.api.update_attempts, 1)
+
+    def test_schedule_get_date_still_required_despite_true_ack(self):
+        self.missing_api().ignore_schedule = True
+        with self.assertRaisesRegex(uploader.UploadError, "readback did not match"):
+            uploader.upload(self.api, self.store, self.plan(ai_face=True, user_selection=self.selection(), publish_at=FUTURE))
+        self.assertNotEqual(self.store.read()["phase"], "scheduled")
+        self.assertEqual(self.api.update_attempts, 2)
+
+    def test_receipt_cannot_be_used_for_wrong_video_channel_source_metadata_or_response(self):
+        self.missing_api()
+        state = uploader.upload(self.api, self.store, self.plan(ai_music=True))
+        for key in ("video_id", "channel_id", "source_sha256", "metadata_sha256", "response_sha256", "request_sha256"):
+            with self.subTest(key=key):
+                changed = copy.deepcopy(state)
+                changed["native_ai_writes"][-1][key] = "wrong"
+                self.assertFalse(uploader.native_ai_acknowledged(changed, changed["metadata"]))
+        self.assertFalse(uploader.native_ai_acknowledged(state, dict(state["metadata"], title="Different title")))
+
+    def test_saved_request_or_caption_alone_cannot_stand_in_for_server_ack(self):
+        self.missing_api()
+        state = uploader.upload(self.api, self.store, self.plan(ai_music=True))
+        state["native_ai_writes"][-1].pop("response")
+        state["metadata"]["description"] = "AI-generated content"
+        self.assertFalse(uploader.native_ai_acknowledged(state, state["metadata"]))
+
+    def test_explicit_new_schedule_after_private_hold_can_reuse_ack_workflow(self):
+        self.missing_api()
+        state = uploader.upload(self.api, self.store, self.plan(ai_face=True, user_selection=self.selection(), publish_at=FUTURE))
+        uploader.hold_private(self.api, self.store)
+        state = uploader.schedule_owned(self.api, self.store, self.store.read(), FUTURE)
+        self.assertEqual(state["phase"], "scheduled")
+        self.assertEqual(self.api.videos[VIDEO_ID]["status"]["publishAt"], FUTURE)
+        self.assertEqual(len(self.api.inserts), 1)
 
 
 if __name__ == "__main__":
