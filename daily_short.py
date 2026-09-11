@@ -976,10 +976,8 @@ def _thumbnail_background(veo_clip_path, enhance=True):
 
 
 def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
-                       cover_text=None, highlight=None):
-    """Fallback cover: striking Veo frame (or gradient) + our crisp PIL text
-    layer (compose_cover_text). Big, one keyword yellow, heavy outline, always
-    inside the safe band. Returns the PNG path or None."""
+                       cover_text=None, highlight=None, script_text=""):
+    """Render a complete buyer question with supported comparison labels or its scene."""
     if not GENERATE_THUMBNAIL:
         return None
     try:
@@ -999,13 +997,14 @@ def generate_thumbnail(hook_text, topic, output_path=None, veo_clip_path=None,
         lines, hl = _cover_lines_from_text(text)
         if highlight and any(highlight in l for l in lines):
             hl = highlight
-        path = compose_cover_text(bg, lines, hl, output_path)
+        from tools.daily_cover_layout import render_buyer_cover
+        path = output_path or f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
+        layout_meta = render_buyer_cover(bg, lines, path, topic=topic, script=script_text)
         if path:
-            from tools.cover_quality import render_youtube_cover
-            render_youtube_cover(bg, lines, os.path.splitext(path)[0] + "_youtube.png")
             COVER_META.update({
-                "cover_text": " ".join(lines), "cover_color": "#FFD400 keyword + #FFFFFF",
-                "cover_path": "pil", "cover_face": False,
+                "cover_text": " ".join(lines), "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+                "cover_path": "illustration-buyer-b" if layout_meta["comparison_illustrated"] else "pil-buyer-b", "cover_face": False,
+                "layout": layout_meta,
             })
             print(f"   \U0001F5BC\uFE0F Thumbnail generated: {os.path.basename(path)} | \"{' / '.join(lines)}\"")
         return path
@@ -1272,7 +1271,9 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         f"{recent_covers_context}\n"
         "TASK:\n"
         "You are given a reference frame from the video. Choose the COVER TEXT only. "
-        "Our own renderer draws it huge and razor-sharp — you do NOT design or place it, just pick the words.\n\n"
+        "Our renderer uses the approved B direction: a clear buyer question above understandable "
+        "comparison labels when the lesson supports them. Choose concise everyday words; "
+        "do not force a comparison, GSM, or light/heavy wording onto an unrelated lesson.\n\n"
         "COVER QUALITY RULES:\n"
         "Two complete short lines separated by |, 3–8 words TOTAL. Name the buyer's actual question "
         "or useful distinction in plain language. Rotate the focus, not a fixed loss/price template.\n"
@@ -1286,7 +1287,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "Historical high views, shares or saves do not prove the COVER caused performance. "
         "Ignore older research suggestions that demand money-loss hooks or unsupported numbers.\n\n"
         "ALSO give a LATIN-SAFE version: SAME hook, Hindi word transliterated to Latin (used when Devanagari "
-        "can't be shaped). e.g. 'SAME GSM | ₹60 फर्क?' → 'SAME GSM | ₹60 FARAK?'.\n\n"
+        "can't be shaped). e.g. 'ज़्यादा GSM | बेहतर कपड़ा?' → 'ZYADA GSM | BEHTAR KAPDA?'.\n\n"
         "OUTPUT FORMAT — return EXACTLY these lines:\n\n"
         "=== THUMBNAIL BRIEF ===\n"
         "Thumbnail Text: [line1 | line2 — complete useful wording, grounded in the script]\n"
@@ -1295,16 +1296,11 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "Face In Design: [Yes / No — Yes only for a customer-story/reaction video]\n"
         "=== END BRIEF ===\n\n"
         "IMPORTANT:\n"
-        "- Look at the reference image carefully and describe it accurately\n"
-        "- Give SPECIFIC placement instructions based on what you see (not generic)\n"
-        "- Best performing text colors for Indian YouTube: Yellow (#FFD700), White (#FFFFFF), Red (#FF0000), Orange (#FF6600)\n"
-        "- The designer will keep the base image EXACTLY as-is and only add text on top\n"
-        "- Text + any face must live in the 25%-70% vertical band — that band survives BOTH YT Shorts UI AND\n"
-        "  the Instagram profile-grid 4:5 crop. Nothing critical above 25% or below 70%.\n"
-        "- FACE IS A JUDGMENT CALL: customer-story/reaction content benefits from a clear face making eye\n"
-        "  contact; technical/specs/how-to content performs better with a bold product close-up as the hero.\n"
-        "  State your decision in the 'Face In Design' field — the designer has detailed conditional face\n"
-        "  rules and will execute your call.\n\n"
+        "- Describe only the distinction that the full script explains.\n"
+        "- The renderer supplies cream/navy and blue/yellow contrast, measured text bounds, "
+        "and topic-specific labels from the reviewed lesson; do not invent labels, values or tests.\n"
+        "- A complete useful question matters more than a sensational word.\n"
+        "- New layout clarity is a preference, not measured proof of more engagement.\n\n"
         f"TOPIC: {topic}\n"
         f"HOOK: {hook_text}\n"
         f"SCRIPT:\n{script_text[:1500]}\n"
@@ -1431,7 +1427,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         )
         if not brief:
             print("   ⚠️ Cover: brief failed → basic fallback")
-            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path, script_text=script_text)
 
         # Pick the cover text: Devanagari version only if we can shape it (RAQM),
         # else the Latin-safe version the brief also returned.
@@ -1440,7 +1436,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             cover_text = brief.get("text_latin") or cover_text
         lines, highlight = _cover_lines_from_text(cover_text)
         if not lines:
-            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path, script_text=script_text)
 
         # 3. Gemini paints a TEXT-FREE hero scene (background only). If it fails
         #    or is unavailable, the Veo frame is already a fine background.
@@ -1489,18 +1485,19 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                     print(f"   ⚠️ Gemini ({model_name}) failed: {str(_ge)[:120]} → next")
 
         # 4. Composite the crisp text (this is what guarantees clarity)
-        out = compose_cover_text(scene, lines, highlight)
+        from tools.daily_cover_layout import render_buyer_cover
+        out = f"{WORK_DIR}/thumbnail_{random.randint(100,999)}.png"
+        layout_meta = render_buyer_cover(scene, lines, out, topic=topic, script=script_text)
         if not out:
             return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path,
-                                      cover_text=cover_text, highlight=highlight)
-        from tools.cover_quality import render_youtube_cover
-        render_youtube_cover(scene, lines, os.path.splitext(out)[0] + "_youtube.png")
+                                      cover_text=cover_text, highlight=highlight, script_text=script_text)
         COVER_META.update({
             "quality_check": brief.get("quality_check"),
             "cover_text": " ".join(lines),
-            "cover_color": "#FFD400 keyword + #FFFFFF",
-            "cover_path": "ai+pil" if scene is not frame_image else "veo+pil",
-            "cover_face": brief.get("face", False),
+            "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+            "cover_path": "illustration-buyer-b" if layout_meta["comparison_illustrated"] else ("ai+pil-buyer-b" if scene is not frame_image else "veo+pil-buyer-b"),
+            "cover_face": False if layout_meta['comparison_illustrated'] else brief.get("face", False),
+            "layout": layout_meta,
         })
         print(f"   ✅ Cover ready: \"{' / '.join(lines)}\"  ({os.path.basename(out)})")
         return out
@@ -1508,7 +1505,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
     except Exception as e:
         print(f"   ⚠️ AI thumbnail pipeline failed: {e}")
         try:
-            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path)
+            return generate_thumbnail(hook_text, topic, veo_clip_path=veo_clip_path, script_text=script_text)
         except Exception:
             return None
 
@@ -2915,6 +2912,10 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None):
             rec["cover_color"] = cover_meta.get("cover_color")
             rec["cover_path"] = cover_meta.get("cover_path")
             rec["cover_face"] = cover_meta.get("cover_face")
+            if isinstance(cover_meta.get("layout"), dict):
+                rec["cover_layout"] = cover_meta["layout"].get("layout")
+                rec["cover_comparison"] = cover_meta["layout"].get("comparison_key")
+                rec["cover_labels"] = cover_meta["layout"].get("labels", [])
         # Publish-mode metadata — lets the learning loop compare trial vs normal reach
         if IG_POST_META.get("trial"):
             rec["trial"] = True
@@ -13213,7 +13214,7 @@ def main():
             genai_client=veo_client, cost_tracker=cost
         )
     if not thumbnail_path:
-        thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip)
+        thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip, script_text=script_voice)
 
     if not thumbnail_path:
         raise RuntimeError("No complete cover available; stop before publishing")
