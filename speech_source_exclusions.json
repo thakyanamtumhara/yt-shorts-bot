@@ -5,9 +5,30 @@
     "anoWcm-H0BA": {
       "media_kind": "ai-dialogue",
       "episode_id": "WH09",
-      "reason": "Explicitly selected AI-dialogue upload on MAIN; containsSyntheticMedia=true at upload. Never a recorded-speech exemplar.",
+      "reason": "Selected AI dialogue created from recorded footage; synthetic-media flag requested on upload. Never a real-speech exemplar.",
       "recorded_on": "2026-09-11",
       "selected_master_sha256": "54cb827819a6f61bf7c64f396a52f5a04c1ad07630036e4c21f667f7707ae8c9"
+    },
+    "ULO0MW7a_cc": {
+      "media_kind": "ai-dialogue",
+      "episode_id": "WH04",
+      "reason": "Selected AI dialogue created from recorded footage; synthetic-media flag requested on upload. Never a real-speech exemplar.",
+      "recorded_on": "2026-09-11",
+      "selected_master_sha256": "7dc6b1ba787a9e61b7911678d7e2c06fac12b59e413adadaa2f140d8d7c7e6ed"
+    },
+    "l1P2CkqrqPQ": {
+      "media_kind": "ai-dialogue",
+      "episode_id": "WH06",
+      "reason": "Selected AI dialogue created from recorded footage; synthetic-media flag requested on upload. Never a real-speech exemplar.",
+      "recorded_on": "2026-09-11",
+      "selected_master_sha256": "7184fa19d914633e63907e4badc8e9b921efcbd96e1e9bba14e2bfcce1322826"
+    },
+    "D3UnAtIs0Ag": {
+      "media_kind": "ai-dialogue",
+      "episode_id": "WH08",
+      "reason": "Selected AI dialogue created from recorded footage; synthetic-media flag requested on upload. Never a real-speech exemplar.",
+      "recorded_on": "2026-09-11",
+      "selected_master_sha256": "bbef77864513d3df95fb1e1a28a06d22bc9aade202eb0a74145a76242ebd6b15"
     }
   }
 }
