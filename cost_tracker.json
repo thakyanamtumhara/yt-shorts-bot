@@ -2933,5 +2933,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.2146
     }
+  },
+  {
+    "date": "2026-09-12T12:54:36.421788",
+    "topic": "\u0927\u093e\u0917\u0947 \u092e\u0947\u0902 \u0924\u0940\u0938 \u092f\u093e \u091a\u093e\u0932\u0940\u0938 \u0915\u093e\u0909\u0902\u091f: \u092c\u0921\u093c\u093e \u0928\u0902\u092c\u0930, \u092a\u0924\u0932\u093e \u0927\u093e\u0917\u093e?",
+    "title": "\u0927\u093e\u0917\u0947 \u0915\u093e \u0915\u093e\u0909\u0902\u091f 30 vs 40 \u2014 \u092c\u0921\u093c\u093e \u0928\u0902\u092c\u0930 \u092a\u0924\u0932\u093e \u0927\u093e\u0917\u093e? Ne vs Denier",
+    "total_usd": 5.2283,
+    "duration_min": 22.7,
+    "breakdown": {
+      "claude_opus": 0.3123,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0174,
+      "veo_clips": 4.8,
+      "whisper": 0.0036,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
