@@ -3688,42 +3688,27 @@ def check_instagram_engagement():
         print(f"   ⚠️ Instagram engagement check failed: {e}")
 
 
-def get_top_performing_ig_topics(n=5):
-    """Return top N performing topics on Instagram based on engagement data.
-    Used to understand what content resonates differently on Instagram vs YouTube."""
-    if not os.path.exists(IG_ENGAGEMENT_FILE):
-        return []
-
+def get_ig_topic_interest_signals(n=5):
+    from tools.topic_audience_signals import topic_interest
     try:
-        with open(IG_ENGAGEMENT_FILE, "r") as f:
-            records = json.load(f)
+        if not os.path.exists(IG_ENGAGEMENT_FILE):
+            return topic_interest([], n=n)
+        with open("main_promotion_reviews.json", encoding="utf-8") as source:
+            ledger = json.load(source)
+        if ledger.get("format") != "selective-main-review-v1" or not isinstance(ledger.get("reviews"), list):
+            raise ValueError("Content review exclusions unavailable")
+        rejected = [row["instagram_id"] for row in ledger["reviews"] if row.get("decision") == "rejected"]
+        with open(IG_ENGAGEMENT_FILE, encoding="utf-8") as source:
+            return topic_interest(json.load(source), n=n, excluded_media_ids=rejected)
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        report = topic_interest([], n=n)
+        report["unavailable"] = "Instagram measurement history could not be validated; no performance claim."
+        return report
 
-        checked = [r for r in records if r.get("checked") and not r.get("check_failed")]
-        if not checked:
-            return []
 
-        # Share-rate primary (shares/reach is IG's top ranking signal AND our own
-        # strongest views predictor: Spearman 0.45 vs likes 0.13 on 98 reels).
-        # Floor of 500 views filters noise outliers (e.g. 6 shares on 344 reach).
-        qualified = [r for r in checked if r.get("views", 0) >= 500 and r.get("reach", 0) > 0]
-        if len(qualified) >= n:
-            sorted_entries = sorted(
-                qualified,
-                key=lambda e: (e.get("shares", 0) / max(e.get("reach", 1), 1), e.get("views", 0)),
-                reverse=True,
-            )
-        else:
-            # Not enough qualified data — fall back to raw views
-            sorted_entries = sorted(
-                checked,
-                key=lambda e: (e.get("views", 0), e.get("likes", 0)),
-                reverse=True,
-            )
-
-        return [e["title"] for e in sorted_entries[:n]]
-
-    except Exception:
-        return []
+def get_top_performing_ig_topics(n=5):
+    return [row["historical_title_unverified"]
+            for row in get_ig_topic_interest_signals(n)["leads"]]
 
 
 def get_top_performing_ig_categories():
@@ -7371,6 +7356,7 @@ TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
 def search_trending_topics(anthropic_client, topic_history=()):
     from tools.daily_topic_selection import load_bank
+    from tools.topic_audience_signals import prompt_signals
     bank = load_bank()
     prompt = f"""Select useful instructional topics for Indian T-shirt printing businesses,
 new clothing brands and wholesale buyers. Propose up to ten DISTINCT lesson briefs.
@@ -7385,7 +7371,8 @@ OBSERVED BUYER INTEREST, not proof of technical facts:
 {bank['audience_evidence']}
 Current MAIN comment questions (a limited sample, not search volume):
 {get_audience_questions(10)}
-Instagram subject-interest references: {json.dumps(get_top_performing_ig_topics(5), ensure_ascii=False)}
+Instagram subject-interest measurements (chosen early-life window; preserve the limits):
+{json.dumps(prompt_signals(get_ig_topic_interest_signals(5)), ensure_ascii=False)}
 Historical titles may contain fabricated incidents and unsupported tricks. Never copy
 those claims. Share/reach is an interest signal, not sales; paid/organic exposure is
 unknown. MAIN total views also include possible advertising and different video ages.

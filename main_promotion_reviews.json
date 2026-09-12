@@ -1,10 +1,10 @@
 {
   "format": "selective-main-review-v1",
-  "policy_note": "Roughly one strong MAIN candidate per7–10 mature daily AI outputs; skip when no exact asset passes. Weekly Thursday12:30IST review fetches aggregate insights, never generates, uploads, schedules or edits these review decisions. Unknown-origin and real-footage sources are excluded. A rank is a review priority, not approval.",
+  "policy_note": "Only one strongest MAIN candidate per complete group of7–10 mature daily AI outputs, even if all pass quality; skip weak groups. A reserved winner consumes its full group. Weekly Thursday12:30IST review is read-only. Standing12-Sep-2026 authorization lets the agent schedule a fully reviewed group winner without asking again; quality eligibility alone is never an upload trigger. Unknown-origin and real-footage AI-face sources remain excluded.",
   "review_schema": {
     "approved": "Set decision=approved only after inspecting the exact original master and cover; include reviewed_video_sha256, reviewed_cover_sha256, reviewer, reviewed_at, checks{facts,full_spoken_audio,visuals,buyer_useful,cover}=true and explicit boolean ai_flags{ai_visuals,ai_voice,ai_music,ai_face,containsSyntheticMedia}. AI-face clips are excluded by this selector.",
     "rejected": "Rejection applies to the source identity, even if an alternative file with this source ID appears. Keep the reviewed evidence SHA and reasons.",
-    "promotions": "Before an eventual MAIN upload, root records instagram_id,bot_youtube_id,video_sha256,status=reserved; after upload add main_youtube_id. Reserved or completed source IDs and hashes are excluded from future selection. This workflow never adds promotions."
+    "promotions": "Before MAIN upload, record instagram_id,bot_youtube_id,video_sha256,status=reserved, the candidate exact batch_id and complete batch_sources, plus one persistent uploader_state_path. After upload add main_youtube_id. Every member of that reserved group is excluded from future selection; missing/conflicting batch provenance stops the review. This workflow never adds promotions."
   },
   "known_sources": [
     {

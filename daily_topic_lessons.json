@@ -3,13 +3,13 @@
   "reviewed": true,
   "reviewed_on": "2026-09-11",
   "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted.",
-  "audience_evidence": "Own public-comment audit 10-Sep-2026 found fabric-label, biowash, heavy-GSM feel and print-suitability questions. Own-site GSC 10-Aug–6-Sep had 2201 impressions/37 clicks for 240 gsm t shirt; this is not global volume or YouTube search data. Seed questions are editorial formulations, not claimed verbatim customer quotes.",
+  "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
     "combing_short_fibres": {
       "claim": "Combing is an additional fibre preparation step that removes short fibres before yarn spinning. Carding aligns and cleans fibres; combing and spinning are different stages.",
       "source_url": "https://cottonworks.com/learning-hub/yarn-manufacturing/fiber-preparation-for-spinning/",
       "source_title": "CottonWorks: Fiber Preparation for Spinning",
-      "checked_on": "2026-09-11",
+      "checked_on": "2026-09-12",
       "limits": "Do not identify carded/combed or ring/open-end yarn by rubbing sound, feel alone or an AI close-up. No claim about a specific supplied T-shirt without its specification."
     },
     "knit_loop_stretch": {
@@ -140,6 +140,16 @@
       "fact_ids": [
         "biopolish_surface",
         "compaction_shrinkage"
+      ]
+    },
+    {
+      "topic": "कॉम्ब्ड कॉटन में धागा बनने से पहले क्या बदलता है?",
+      "buyer_question": "What extra preparation does combed cotton describe?",
+      "lesson": "Carding aligns and cleans fibres. Combing is an additional preparation stage that removes short fibres before spinning, so the label describes a manufacturing process rather than a rubbing sound or a simple feel test.",
+      "buyer_decision": "Treat fibre preparation and yarn spinning as separate parts of the specification when comparing fabrics.",
+      "intent_key": "combing_short_fibre_removal_before_spinning",
+      "fact_ids": [
+        "combing_short_fibres"
       ]
     }
   ]

@@ -1,13 +1,8 @@
 name: Audio Sample (TTS verification)
 
-# Generates an ElevenLabs audio sample with the ACTUAL production preprocessor,
-# model, voice, and settings (eleven_v3, VOICE_TEMPO 1.0 — matched to
-# daily_short.yml). Whisper-transcribes the result so you can verify a
-# pronunciation fix WITHOUT listening, then uploads WAV + transcript.
-# Cost: ~$0.02 ElevenLabs + a few cents Whisper.
-#
-# Use it to confirm a _TTS_HINGLISH_DEVANAGARI / _TTS_PHONETIC_MAP change
-# reads correctly on the real production model before it ships in a daily video.
+# Generates an audio sample using the repository's daily voice configuration
+# and full text preprocessor, including the committed learned aliases.
+# Whisper provides a content transcript, not a pronunciation pass. Review audio.
 
 on:
   workflow_dispatch:
@@ -17,13 +12,13 @@ on:
         required: false
         default: 'Ye combed cotton hai, laambe samay tak chalega. Aankhein band karke feel karo. 15 rupiya bachke, feel hi badal jaata hai.'
       model:
-        description: 'ElevenLabs model id (production uses eleven_v3)'
+        description: 'Optional model override; blank uses the daily workflow model'
         required: false
-        default: 'eleven_v3'
+        default: ''
       voice_tempo:
-        description: 'atempo (production uses 1.0 = no slowdown)'
+        description: 'Optional tempo override; blank uses the daily workflow tempo'
         required: false
-        default: '1.0'
+        default: ''
 
 jobs:
   sample:
@@ -42,7 +37,7 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
 
-      - name: Generate + verify sample
+      - name: Generate + transcribe sample
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           INPUT_SAMPLE_TEXT: ${{ inputs.sample_text }}
@@ -52,24 +47,14 @@ jobs:
           set -e
           pip install -q elevenlabs requests openai-whisper
           python3 - << 'PY'
-          import os, subprocess
+          import json, os, subprocess
 
-          # Load ONLY the TTS preprocessor slice from daily_short.py (no heavy
-          # top-level deps). normalize_for_tts's one out-of-slice reference is
-          # _get_learned_pronunciations — stub it (this tool verifies the
-          # HAND-curated map; the learned map is exercised by the daily run).
-          src = open("daily_short.py").read()
-          start = src.index("# ╔══════════════════════════════════════════════════════════════════════╗\n# ║                   TTS PRE-PROCESSING")
-          end = src.index("def sarvam_tts_to_mp3")
-          ns = {"_get_learned_pronunciations": lambda: {}}
-          exec(src[start:end], ns)
-          normalize_for_tts = ns["normalize_for_tts"]
-
-          # Production voice + settings (must match daily_short.py)
-          VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"   # Ketu Original (PVC clone)
-          SETTINGS = {"stability": 0.50, "similarity_boost": 0.75,
-                      "style": 0.00, "use_speaker_boost": True}
-          model = os.environ.get("INPUT_MODEL") or "eleven_v3"
+          from tools.voice_runtime import load_normalize_for_tts, production_voice_config
+          normalize_for_tts = load_normalize_for_tts()
+          config = production_voice_config()
+          VOICE_ID = config['voice_id']
+          SETTINGS = config['voice_settings']
+          model = os.environ.get("INPUT_MODEL", "").strip() or config['model_id']
 
           text = os.environ.get("INPUT_SAMPLE_TEXT") or ""
           if not text or text == "None":
@@ -96,9 +81,9 @@ jobs:
 
           # Production post-process: VOICE_TEMPO (1.0 = none) + loudnorm
           try:
-              tempo = max(0.5, min(2.0, float(os.environ.get("VOICE_TEMPO", "1.0"))))
+              tempo = max(0.5, min(2.0, float(os.environ.get("VOICE_TEMPO", "").strip() or config["voice_tempo"])))
           except ValueError:
-              tempo = 1.0
+              raise ValueError("Invalid requested QA tempo")
           af = "loudnorm=I=-14:TP=-1.5:LRA=11"
           if abs(tempo - 1.0) > 0.001:
               af = f"atempo={tempo:.3f}," + af
@@ -106,8 +91,7 @@ jobs:
                           "-y", "sample_audio.mp3"], check=True, capture_output=True)
           print(f"🔊 tempo={tempo} + loudnorm applied")
 
-          # Whisper verification — transcribe what was ACTUALLY spoken so a
-          # pronunciation fix can be checked without listening.
+          # ASR records content; correct text does not prove correct pronunciation.
           import whisper
           wt = whisper.load_model("small").transcribe("sample_audio.mp3", language="hi")
           transcript = (wt.get("text") or "").strip()
@@ -115,9 +99,15 @@ jobs:
           print("WHISPER HEARD:\n" + transcript)
           print("=" * 70)
 
+          config['selected_model_id'] = model
+          config['selected_voice_tempo'] = tempo
+          config['matches_daily_model_and_tempo'] = model == config['model_id'] and tempo == config['voice_tempo']
+          config['qa_scope'] = 'ASR content transcript only; actual-audio pronunciation review still required'
+          with open("sample_voice_config.json", "w") as f:
+              json.dump(config, f, indent=2)
           with open("sample_meta.txt", "w") as f:
               f.write(f"ORIGINAL:\n{text}\n\nPREPROCESSED:\n{processed}\n\n"
-                      f"MODEL: {model}\nTEMPO: {tempo}\n\nWHISPER HEARD:\n{transcript}\n")
+                      f"MODEL: {model}\nTEMPO: {tempo}\nPRONUNCIATION: actual-audio review required\n\nWHISPER HEARD:\n{transcript}\n")
           PY
 
       - name: Upload audio sample artifact
@@ -127,4 +117,5 @@ jobs:
           path: |
             sample_audio.mp3
             sample_meta.txt
+            sample_voice_config.json
           retention-days: 7

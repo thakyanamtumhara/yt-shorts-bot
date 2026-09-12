@@ -289,10 +289,58 @@ def approval_reasons(source, review):
     return reasons
 
 
+def batch_identity(members):
+    if not isinstance(members, list) or not MIN_BATCH <= len(members) <= MAX_BATCH:
+        raise ReviewError("A promotion batch must identify all 7–10 reviewed sources.")
+    instagram_ids, youtube_ids = set(), set()
+    for member in members:
+        if (not isinstance(member, dict)
+                or set(member) != {"instagram_id", "bot_youtube_id", "workflow_run_id", "video_sha256"}
+                or not isinstance(member.get("instagram_id"), str) or not isinstance(member.get("bot_youtube_id"), str)
+                or not re.fullmatch(r"\d{5,30}", str(member.get("instagram_id", "")))
+                or not re.fullmatch(r"[A-Za-z0-9_-]{11}", str(member.get("bot_youtube_id", "")))
+                or type(member.get("workflow_run_id")) is not int or member["workflow_run_id"] <= 0
+                or (member.get("video_sha256") is not None
+                    and (not isinstance(member["video_sha256"], str)
+                         or not re.fullmatch(r"[0-9a-f]{64}", member["video_sha256"])))):
+            raise ReviewError("Promotion batch source identity is incomplete or invalid.")
+        if member["instagram_id"] in instagram_ids or member["bot_youtube_id"] in youtube_ids:
+            raise ReviewError("Promotion batch contains duplicate source identities.")
+        instagram_ids.add(member["instagram_id"])
+        youtube_ids.add(member["bot_youtube_id"])
+    canonical = json.dumps(sorted(members, key=lambda member: member["instagram_id"]),
+                           sort_keys=True, separators=(",", ":"))
+    return "daily-main-" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def consumed_batch_sources(promotions):
+    consumed, batch_ids = [], set()
+    for promotion in promotions:
+        if not isinstance(promotion, dict):
+            raise ReviewError("Invalid promotion reservation.")
+        members = promotion.get("batch_sources")
+        ident = batch_identity(members)
+        if promotion.get("batch_id") != ident:
+            raise ReviewError("Promotion batch identity does not match its complete source list.")
+        if not any(member["instagram_id"] == promotion.get("instagram_id")
+                   and member["bot_youtube_id"] == promotion.get("bot_youtube_id")
+                   and member["video_sha256"] == promotion.get("video_sha256")
+                   and member["video_sha256"] is not None for member in members):
+            raise ReviewError("The promoted winner does not match a verified member of its batch.")
+        if ident in batch_ids or any(
+                old["instagram_id"] == member["instagram_id"] or old["bot_youtube_id"] == member["bot_youtube_id"]
+                for old in consumed for member in members):
+            raise ReviewError("A reviewed batch or source already has a promotion reservation.")
+        batch_ids.add(ident)
+        consumed.extend(members)
+    return consumed
+
+
 def review_batch(history, youtube_history, ledger, archive_sources, instagram, now):
     if not isinstance(history, list) or not isinstance(youtube_history, list):
         raise ReviewError("Expected existing engagement history arrays.")
     sources = source_pool(ledger, archive_sources)
+    consumed = consumed_batch_sources(ledger["promotions"])
     yt_by_id = {entry.get("video_id"): entry for entry in youtube_history}
     reviews = {}
     for review in ledger["reviews"]:
@@ -300,7 +348,8 @@ def review_batch(history, youtube_history, ledger, archive_sources, instagram, n
         if media_id in reviews or review.get("decision") not in ("rejected", "approved", "hold"):
             raise ReviewError("Ambiguous or invalid content review record.")
         reviews[media_id] = review
-    excluded = {"unknown_origin_or_join": 0, "immature": 0, "already_promoted_or_reserved": 0}
+    excluded = {"unknown_origin_or_join": 0, "immature": 0, "already_promoted_or_reserved": 0,
+                "consumed_batch": 0}
     rows, seen = [], set()
     for record in history:
         media_id = record.get("media_id")
@@ -318,6 +367,11 @@ def review_batch(history, youtube_history, ledger, archive_sources, instagram, n
                or (source.get("master_sha256") and p.get("video_sha256") == source["master_sha256"])
                for p in ledger["promotions"]):
             excluded["already_promoted_or_reserved"] += 1
+            continue
+        if any(member["instagram_id"] == media_id or member["bot_youtube_id"] == source["bot_youtube_id"]
+               or (source.get("master_sha256") and member["video_sha256"] == source["master_sha256"])
+               for member in consumed):
+            excluded["consumed_batch"] += 1
             continue
         rows.append((record, source))
     rows.sort(key=lambda pair: stamp(pair[0]["published_at"]), reverse=True)
@@ -365,13 +419,19 @@ def review_batch(history, youtube_history, ledger, archive_sources, instagram, n
     elif priority["content_status"] != "REVIEW_PASSED":
         batch_reasons.append("Highest review-priority source has not passed all publication-content gates")
     elif not batch_reasons:
+        members = [{"instagram_id": row["instagram_id"], "bot_youtube_id": row["bot_youtube_id"],
+                    "workflow_run_id": row["workflow_run_id"], "video_sha256": row["master_sha256"]}
+                   for row in results]
         candidate = {"instagram_id": priority["instagram_id"], "bot_youtube_id": priority["bot_youtube_id"],
                      "video_sha256": priority["master_sha256"], "cover_sha256": priority["cover_sha256"],
+                     "batch_id": batch_identity(members), "batch_sources": members,
                      "action": "Manual MAIN scheduling review only; this tool never uploads"}
     return {"format": "selective-main-report-v1", "checked_at": now.isoformat(),
             "status": "CANDIDATE_FOR_MAIN_REVIEW" if candidate else "HOLD", "publishes": False,
             "batch_policy": {"minimum_age_days": MIN_AGE_DAYS, "minimum_batch": MIN_BATCH, "maximum_batch": MAX_BATCH,
-                             "maximum_candidate": 1, "kind": "Proposed operating choices, not universal quality thresholds"},
+                             "maximum_candidate": 1, "maximum_promotions_per_batch": 1,
+                             "reservation_consumes_all_batch_sources": True,
+                             "kind": "Proposed operating choices, not universal quality thresholds"},
             "metric_caveats": ["Lifetime snapshots at different ages, not a controlled day7 experiment",
                                "Paid versus organic split unavailable; do not call these organic-only results",
                                "Trial and ordinary reels retain their trial flag and are not equivalent exposure",

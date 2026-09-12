@@ -134,10 +134,112 @@ class SelectionTests(unittest.TestCase):
     def test_no_repeat_source_or_master_after_main_reservation(self):
         values = fixture()
         first = next(iter(values[3].values()))
-        values[2]["promotions"].append({"bot_youtube_id": first["bot_youtube_id"], "main_youtube_id": None, "status": "reserved"})
+        values[2]["reviews"].append(approval(first))
+        reservation = self.run_batch(values)["candidate_for_main"]
+        values[2]["promotions"].append({**reservation, "main_youtube_id": None, "status": "reserved"})
+        values[4].requested.clear()
         report = self.run_batch(values)
         self.assertEqual(report["excluded_counts"]["already_promoted_or_reserved"], 1)
+        self.assertEqual(report["excluded_counts"]["consumed_batch"], 7)
         self.assertNotIn(first["instagram_id"], values[4].requested)
+
+    def test_all_pass_still_returns_one_winner_with_the_complete_batch(self):
+        for count in (7, 8, 10):
+            with self.subTest(count=count):
+                values = fixture(count)
+                values[2]["reviews"] = [approval(source) for source in values[3].values()]
+                report = self.run_batch(values)
+                candidate = report["candidate_for_main"]
+                self.assertEqual(candidate["bot_youtube_id"], values[1][0]["video_id"])
+                self.assertEqual(len(candidate["batch_sources"]), count)
+                self.assertEqual({row["instagram_id"] for row in candidate["batch_sources"]},
+                                 {row["media_id"] for row in values[0]})
+                self.assertEqual(candidate["batch_id"], m.batch_identity(list(reversed(candidate["batch_sources"]))))
+                self.assertTrue(all(row["content_status"] == "REVIEW_PASSED" for row in report["batch"]))
+                self.assertEqual(report["batch_policy"]["maximum_promotions_per_batch"], 1)
+                self.assertIs(report["publishes"], False)
+
+    def test_reserved_scheduled_or_uncertain_winner_consumes_all_runner_ups(self):
+        for status in ("reserved", "scheduled", "upload_outcome_uncertain"):
+            with self.subTest(status=status):
+                values = fixture(10)
+                values[2]["reviews"] = [approval(source) for source in values[3].values()]
+                candidate = self.run_batch(values)["candidate_for_main"]
+                values[2]["promotions"] = [{**candidate, "status": status}]
+                values[4].requested.clear()
+                values[4].metrics[values[0][1]["media_id"]]["shares"] = 100000
+                report = self.run_batch(values)
+                self.assertIsNone(report["candidate_for_main"])
+                self.assertEqual(report["batch"], [])
+                self.assertEqual(report["excluded_counts"]["consumed_batch"], 9)
+                self.assertEqual(values[4].requested, [])
+
+    def test_next_group_requires_seven_unconsumed_sources(self):
+        first = fixture(8)
+        first[2]["reviews"] = [approval(source) for source in first[3].values()]
+        reservation = self.run_batch(first)["candidate_for_main"]
+        for fresh_count in (6, 7):
+            with self.subTest(fresh_count=fresh_count):
+                values = fixture(8 + fresh_count)
+                values[2]["reviews"] = [approval(source) for source in values[3].values()]
+                values[2]["promotions"] = [reservation]
+                report = self.run_batch(values)
+                self.assertEqual(len(report["batch"]), fresh_count)
+                candidate = report["candidate_for_main"]
+                if fresh_count == 6:
+                    self.assertIsNone(candidate)
+                    self.assertTrue(any("Fewer than7" in reason for reason in report["batch_hold_reasons"]))
+                else:
+                    self.assertEqual(candidate["bot_youtube_id"], values[1][8]["video_id"])
+                    self.assertNotEqual(candidate["batch_id"], reservation["batch_id"])
+                    self.assertTrue({member["instagram_id"] for member in candidate["batch_sources"]}.isdisjoint(
+                        member["instagram_id"] for member in reservation["batch_sources"]))
+
+    def test_consumed_identity_survives_missing_archive_and_master_repost(self):
+        values = fixture(8)
+        values[2]["reviews"] = [approval(source) for source in values[3].values()]
+        reservation = self.run_batch(values)["candidate_for_main"]
+        without_archives = fixture(8)
+        without_archives[2]["promotions"] = [reservation]
+        without_archives[3].clear()
+        self.assertEqual(self.run_batch(without_archives)["batch"], [])
+        repost = fixture(9)
+        repost[2]["promotions"] = [reservation]
+        repost[3][repost[0][8]["media_id"]]["master_sha256"] = reservation["batch_sources"][1]["video_sha256"]
+        self.assertEqual(self.run_batch(repost)["batch"], [])
+
+    def test_incomplete_tampered_or_reused_batch_reservation_stops_before_metrics(self):
+        values = fixture(8)
+        values[2]["reviews"] = [approval(source) for source in values[3].values()]
+        candidate = self.run_batch(values)["candidate_for_main"]
+        for defect in ("legacy", "missing_member", "wrong_id", "wrong_winner", "duplicate_batch", "overlap"):
+            with self.subTest(defect=defect):
+                current = fixture(9)
+                reservation = copy.deepcopy(candidate)
+                if defect == "legacy": reservation.pop("batch_sources")
+                if defect == "missing_member": reservation["batch_sources"].pop()
+                if defect == "wrong_id": reservation["batch_id"] = "different"
+                if defect == "wrong_winner": reservation["video_sha256"] = "0" * 64
+                current[2]["promotions"] = [reservation]
+                if defect == "duplicate_batch": current[2]["promotions"].append(copy.deepcopy(reservation))
+                if defect == "overlap":
+                    overlapping = copy.deepcopy(reservation)
+                    source = current[3][current[0][8]["media_id"]]
+                    overlapping["batch_sources"][-1] = {"instagram_id": source["instagram_id"],
+                        "bot_youtube_id": source["bot_youtube_id"], "workflow_run_id": source["workflow_run_id"],
+                        "video_sha256": source["master_sha256"]}
+                    overlapping["batch_id"] = m.batch_identity(overlapping["batch_sources"])
+                    current[2]["promotions"].append(overlapping)
+                with self.assertRaises(m.ReviewError): self.run_batch(current)
+                self.assertEqual(current[4].requested, [])
+
+    def test_unresolved_top_quality_does_not_fall_through_to_approved_runner_up(self):
+        values = fixture(8)
+        values[2]["reviews"] = [approval(source) for source in list(values[3].values())[1:]]
+        report = self.run_batch(values)
+        self.assertIsNone(report["candidate_for_main"])
+        self.assertEqual(report["priority_for_full_review"]["status"], "HOLD")
+        self.assertTrue(any("Highest review-priority" in reason for reason in report["batch_hold_reasons"]))
 
     def test_cap_ten_and_hold_below_seven(self):
         self.assertEqual(len(self.run_batch(fixture(14))["batch"]), 10)

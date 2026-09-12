@@ -264,8 +264,9 @@ class ActualIntegrationTest(unittest.TestCase):
         self.assertNotIn('businessman', output); self.assertNotIn('sale91', output); self.assertNotIn('Own reply', output)
 
     def test_brainstorm_api_error_returns_no_unreviewed_topic(self):
+        from tools.topic_audience_signals import topic_interest
         function = load_function('search_trending_topics', {'get_audience_questions': lambda _: 'No questions',
-            'get_top_performing_ig_topics': lambda _: []})
+            'get_ig_topic_interest_signals': lambda _: topic_interest([])})
         self.assertEqual(function(client(error=RuntimeError('Unavailable')), []), [])
 
 

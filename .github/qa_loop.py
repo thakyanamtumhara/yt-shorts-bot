@@ -8,6 +8,9 @@ For each script:
   3. Transcribes via OpenAI Whisper with language="hi"
   4. Records: original, preprocessed, transcript, audio path
 
+ASR candidates are content clues, not pronunciation approval. Review actual audio.
+This tool saves raw TTS audio; the daily final loudness/mix is a separate stage.
+
 Writes consolidated qa_results.json + per-sample mp3s + transcripts.txt.
 """
 
@@ -21,24 +24,15 @@ from pathlib import Path
 
 import requests
 
-ELEVENLABS_VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"
-ELEVENLABS_MODEL = "eleven_multilingual_v2"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.voice_runtime import load_normalize_for_tts, production_voice_config
+
+VOICE_CONFIG = production_voice_config()
+ELEVENLABS_VOICE_ID = VOICE_CONFIG['voice_id']
+ELEVENLABS_MODEL = VOICE_CONFIG['model_id']
 
 OUT_DIR = Path("/tmp/qa_out")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def load_normalize_for_tts():
-    """Extract normalize_for_tts from daily_short.py without importing heavy deps."""
-    src = Path("daily_short.py").read_text()
-    start = src.index(
-        "# ╔══════════════════════════════════════════════════════════════════════╗\n"
-        "# ║                   TTS PRE-PROCESSING"
-    )
-    end = src.index("def sarvam_tts_to_mp3")
-    ns: dict = {}
-    exec(src[start:end], ns)
-    return ns["normalize_for_tts"]
 
 
 def elevenlabs_tts(text: str, out_path: Path, api_key: str) -> None:
@@ -52,12 +46,7 @@ def elevenlabs_tts(text: str, out_path: Path, api_key: str) -> None:
         json={
             "text": text,
             "model_id": ELEVENLABS_MODEL,
-            "voice_settings": {
-                "stability": 0.50,
-                "similarity_boost": 0.75,
-                "style": 0.00,
-                "use_speaker_boost": True,
-            },
+            "voice_settings": VOICE_CONFIG['voice_settings'],
         },
         timeout=120,
     )
@@ -398,6 +387,7 @@ def main() -> int:
     scripts: list[str] = json.loads(scripts_json)
 
     normalize = load_normalize_for_tts()
+    (OUT_DIR / "voice_config.json").write_text(json.dumps(VOICE_CONFIG, indent=2) + "\n")
 
     results = []
     transcripts_log = []
