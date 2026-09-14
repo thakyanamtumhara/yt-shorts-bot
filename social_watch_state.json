@@ -517,6 +517,14 @@
   "17914574286451072": {
    "permalink": "https://www.instagram.com/reel/DdOxcc5CPDL/",
    "ts": "2026-09-13T14:26:58+0000"
+  },
+  "17906309304323962": {
+   "permalink": "https://www.instagram.com/reel/DdRjnirDiMY/",
+   "ts": "2026-09-14T16:24:19+0000"
+  },
+  "18101868497346744": {
+   "permalink": "https://www.instagram.com/reel/DdRfMQzEwjS/",
+   "ts": "2026-09-14T15:45:11+0000"
   }
  },
  "facebook": {},
@@ -965,8 +973,13 @@
    "at": "2026-09-14T15:49:13+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-15T00:31:20+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-09-14",
- "last_run_ist": "2026-09-14T15:49:13+05:30"
+ "last_green_date": "2026-09-15",
+ "last_run_ist": "2026-09-15T00:31:20+05:30"
 }
