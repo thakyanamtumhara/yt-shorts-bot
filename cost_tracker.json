@@ -2948,5 +2948,21 @@
       "whisper": 0.0036,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-09-14T15:50:47.744517",
+    "topic": "\u0930\u093f\u092c \u0935\u093e\u0932\u093e \u0917\u0932\u093e \u091c\u094d\u092f\u093e\u0926\u093e \u092b\u0948\u0932\u0924\u093e \u0915\u0948\u0938\u0947 \u0939\u0948?",
+    "title": "\u0930\u093f\u092c vs \u092c\u0949\u0921\u0940 \u092b\u0948\u092c\u094d\u0930\u093f\u0915 \u2014 \u0917\u0932\u093e \u091c\u094d\u092f\u093e\u0926\u093e \u0915\u094d\u092f\u094b\u0902 \u092b\u0948\u0932\u0924\u093e \u0939\u0948? T-Shirt Knit Structure",
+    "total_usd": 5.4594,
+    "duration_min": 23.3,
+    "breakdown": {
+      "claude_opus": 0.3232,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0173,
+      "veo_clips": 4.8,
+      "whisper": 0.0028,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.2211
+    }
   }
 ]

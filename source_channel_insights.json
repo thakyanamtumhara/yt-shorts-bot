@@ -1,21 +1,21 @@
 {
-  "fetched_at": "2026-09-12T12:31:55.230932",
+  "fetched_at": "2026-09-14T15:27:28.002122",
   "channel_id": "UCdgOMA7WO48MYimj6q6mvNQ",
   "videos": [
     {
       "video_id": "-rSkvY8ezng",
       "title": "Sublimation T-Shirt 200 GSM White Rs 120 | Delhi Wholesale",
-      "views": 1810,
+      "views": 1867,
       "likes": 48,
-      "comments": 16,
+      "comments": 18,
       "published": "2026-09-03T12:30:34Z",
       "duration_seconds": 35
     },
     {
       "video_id": "VAaemr-GgNA",
       "title": "Polo T-Shirt Wholesale Delhi | Cotton Rs 187, Premium Rs 237",
-      "views": 1401,
-      "likes": 34,
+      "views": 1477,
+      "likes": 35,
       "comments": 6,
       "published": "2026-09-05T12:30:31Z",
       "duration_seconds": 23
@@ -23,25 +23,25 @@
     {
       "video_id": "rGZjVY2KUdY",
       "title": "Oversize T-Shirt 210 GSM Rs 190, 240 GSM Rs 195 | Wholesale",
-      "views": 1129,
-      "likes": 22,
+      "views": 1331,
+      "likes": 25,
       "comments": 4,
       "published": "2026-09-08T12:30:36Z",
       "duration_seconds": 28
     },
     {
-      "video_id": "GpWmXrYTuV0",
-      "title": "Oversize 260 GSM Moon Patch Rs 190 se | 180 GSM Rs 177 Bulk",
-      "views": 857,
-      "likes": 22,
-      "comments": 0,
-      "published": "2026-09-10T12:30:05Z",
-      "duration_seconds": 34
+      "video_id": "h-MtpeTGhqo",
+      "title": "Hoodie Rs 337 se, Sweatshirt Rs 235 | Winter Wholesale Delhi",
+      "views": 1128,
+      "likes": 35,
+      "comments": 8,
+      "published": "2026-09-12T12:30:18Z",
+      "duration_seconds": 50
     },
     {
       "video_id": "Im0WUhqiMzU",
       "title": "Women's T-Shirt: Regular Fit Aur Oversize Fit | Cotton Lycra",
-      "views": 607,
+      "views": 702,
       "likes": 18,
       "comments": 10,
       "published": "2026-09-09T12:30:39Z",
@@ -50,11 +50,20 @@
     {
       "video_id": "Hv0hEycCrug",
       "title": "Women's T-Shirt Launch Mein 8 Colour | Regular + Oversize",
-      "views": 360,
-      "likes": 11,
-      "comments": 4,
+      "views": 602,
+      "likes": 16,
+      "comments": 2,
       "published": "2026-09-11T12:30:21Z",
       "duration_seconds": 21
+    },
+    {
+      "video_id": "a8roL43WdFY",
+      "title": "Women's T-Shirt Mein Itna Time Kyun Laga? | Dhaage Ke Rate",
+      "views": 490,
+      "likes": 13,
+      "comments": 2,
+      "published": "2026-09-13T12:30:08Z",
+      "duration_seconds": 31
     },
     {
       "video_id": "hIx-GcHePWo",
@@ -68,7 +77,7 @@
     {
       "video_id": "7epDAeG-0Fg",
       "title": "🔴 LIVE — BulkPlainTshirt.com Warehouse Delhi | 24/7 Plain T-Shirt Wholesale Transparency",
-      "views": 111,
+      "views": 113,
       "likes": 3,
       "comments": 0,
       "published": "2026-05-30T09:21:05Z",
@@ -77,36 +86,27 @@
     {
       "video_id": "6lia4FJ4Ix8",
       "title": "BulkPlainTshirt Warehouse Live — 2026-06-06 16:48",
-      "views": 99,
+      "views": 100,
       "likes": 1,
       "comments": 0,
       "published": "2026-06-06T12:23:21Z",
       "duration_seconds": 4
-    },
-    {
-      "video_id": "h-MtpeTGhqo",
-      "title": "Hoodie Rs 337 se, Sweatshirt Rs 235 | Winter Wholesale Delhi",
-      "views": 1,
-      "likes": 0,
-      "comments": 0,
-      "published": "2026-09-12T12:30:18Z",
-      "duration_seconds": 50
     }
   ],
   "top_comments": [
+    {
+      "text": "Bhai itnaa saara jo oversize t shirt h woh sb ni bikta thand me?",
+      "video_id": "h-MtpeTGhqo",
+      "is_owner": false,
+      "likes": 2,
+      "video_title": "Hoodie Rs 337 se, Sweatshirt Rs 235 | Winter Wholesale Delhi"
+    },
     {
       "text": "what is the minimum amount of t shirts or sweatshirt or hoodie we can buy ???",
       "video_id": "-rSkvY8ezng",
       "is_owner": false,
       "likes": 1,
       "video_title": "Sublimation T-Shirt 200 GSM White Rs 120 | Delhi Wholesale"
-    },
-    {
-      "text": "Lowers & Sweat Paints...",
-      "video_id": "Hv0hEycCrug",
-      "is_owner": false,
-      "likes": 1,
-      "video_title": "Women's T-Shirt Launch Mein 8 Colour | Regular + Oversize"
     },
     {
       "text": "सर 26 ते 34 नं राऊंड टि शर्ट शॅम्पल कितने तक मिलेगा",
@@ -158,6 +158,13 @@
       "video_title": "Oversize T-Shirt 210 GSM Rs 190, 240 GSM Rs 195 | Wholesale"
     },
     {
+      "text": "please bring 320 gsm hoodie marron and off white into stockk",
+      "video_id": "h-MtpeTGhqo",
+      "is_owner": false,
+      "likes": 0,
+      "video_title": "Hoodie Rs 337 se, Sweatshirt Rs 235 | Winter Wholesale Delhi"
+    },
+    {
       "text": "Lao Lao ,jaldi lao",
       "video_id": "Im0WUhqiMzU",
       "is_owner": false,
@@ -191,13 +198,6 @@
       "is_owner": false,
       "likes": 0,
       "video_title": "Women's T-Shirt: Regular Fit Aur Oversize Fit | Cotton Lycra"
-    },
-    {
-      "text": "Sir women tshirt please give a view of how they look on woman's.\nSir length bohot badi hoti hai apke tshirt ki\n\nSir women ki tshirt ke lie Side slit please.",
-      "video_id": "Hv0hEycCrug",
-      "is_owner": false,
-      "likes": 0,
-      "video_title": "Women's T-Shirt Launch Mein 8 Colour | Regular + Oversize"
     }
   ]
 }
