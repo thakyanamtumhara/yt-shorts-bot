@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-12 12:54)",
+   "detail": "ElevenLabs ✅ (2026-09-14 15:50)",
    "provider": "elevenlabs",
-   "at": "2026-09-12 12:54",
-   "title": "धागे का काउंट 30 vs 40 — बड़ा नंबर पतला धागा? Ne vs Denier"
+   "at": "2026-09-14 15:50",
+   "title": "रिब vs बॉडी फैब्रिक — गला ज्यादा क्यों फैलता है? T-Shirt Knit Structur"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 258,644/258,644 chars left",
+   "detail": "creator · PVC allowed · 258,327/258,644 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 258644,
+   "chars_left": 258327,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -461,8 +461,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-14T23:38:26+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-14T14:40:35+05:30",
+ "last_run_ist": "2026-09-14T23:38:26+05:30",
  "last_green_date": "2026-09-14"
 }
