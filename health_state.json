@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-14 15:50)",
+   "detail": "ElevenLabs ✅ (2026-09-15 14:20)",
    "provider": "elevenlabs",
-   "at": "2026-09-14 15:50",
-   "title": "रिब vs बॉडी फैब्रिक — गला ज्यादा क्यों फैलता है? T-Shirt Knit Structur"
+   "at": "2026-09-15 14:20",
+   "title": "बायोवॉश vs प्री-श्रंक — एक नहीं हैं! असली फर्क समझो"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 258,327/258,644 chars left",
+   "detail": "creator · PVC allowed · 257,959/258,644 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 258327,
+   "chars_left": 257959,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -473,8 +473,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-15T22:42:32+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-15T14:22:44+05:30",
+ "last_run_ist": "2026-09-15T22:42:32+05:30",
  "last_green_date": "2026-09-15"
 }
