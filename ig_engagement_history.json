@@ -2136,5 +2136,28 @@
       "container_id": "18344789779266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "18111805667039497",
+    "title": "Biowash vs Preshrunk — Same Lagta Hai But Fabric Finish Alag Hai",
+    "topic": "बायोवॉश और प्री-श्रंक एक ही चीज़ हैं क्या?",
+    "published_at": "2026-09-15T19:49:45.790596+05:30",
+    "checked": false,
+    "cover_text": "BIOWASH ≠ PRESHRUNK फर्क समझो",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "surface_vs_shrinkage",
+    "cover_labels": [
+      "सतह की नरमी",
+      "धुलाई में सिकुड़न"
+    ],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18344925064266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]
