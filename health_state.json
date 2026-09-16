@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-15 14:20)",
+   "detail": "ElevenLabs ✅ (2026-09-16 14:22)",
    "provider": "elevenlabs",
-   "at": "2026-09-15 14:20",
-   "title": "बायोवॉश vs प्री-श्रंक — एक नहीं हैं! असली फर्क समझो"
+   "at": "2026-09-16 14:22",
+   "title": "बिना Lycra के T-Shirt खिंचती क्यों है? Knit vs Woven Fabric"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 257,959/258,644 chars left",
+   "detail": "creator · PVC allowed · 257,606/258,644 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 257959,
+   "chars_left": 257606,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -485,8 +485,14 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-16T22:43:07+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-16T14:16:28+05:30",
+ "last_run_ist": "2026-09-16T22:43:07+05:30",
  "last_green_date": "2026-09-16"
 }
