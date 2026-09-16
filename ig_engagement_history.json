@@ -2159,5 +2159,27 @@
       "container_id": "18344925064266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "18448901581121811",
+    "title": "No Lycra But T-Shirt Still Stretches — Knit vs Woven Fabric Check",
+    "topic": "बिना लाइक्रा के भी टी-शर्ट खिंचती क्यों है?",
+    "published_at": "2026-09-16T19:48:39.352368+05:30",
+    "checked": false,
+    "cover_text": "LYCRA नहीं फिर STRETCH कैसे?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "knit_vs_fibre",
+    "cover_labels": [
+      "बुनाई",
+      "फाइबर"
+    ],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18345069589266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]
