@@ -131,6 +131,15 @@
   "url": "https://www.instagram.com/reel/DdeKwIdEv9E/"
  },
  "wh26-buyer-checklist-ig-feed": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/p/Ddgmn-mGMTW/"
+ },
+ "wh26-stock-proof-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1021231754300659/"
+ },
+ "wh26-stock-proof-x": {
+  "nudged": true
  }
 }
