@@ -1,0 +1,21 @@
+{
+  "format": "curated-feed-v1",
+  "mode": "publish",
+  "job_id": "wh26-buyer-checklist",
+  "job_sha256": "074261bdd3d0fca2737bddc2f38d9578aaef72a3635c84dc8e9c3c4b29c59255",
+  "account_id": "17841407981790313",
+  "phase": "published",
+  "child_ids": [
+    "18345651940266060",
+    "18345652039266060",
+    "18345652201266060",
+    "18345652222266060",
+    "18345652243266060"
+  ],
+  "pending": null,
+  "parent_id": "18345652309266060",
+  "publish_attempt_at": "2026-09-20T12:38:23.898982+00:00",
+  "media_id": "18112961885024146",
+  "published_at": "2026-09-20T12:38:23.898982+00:00",
+  "permalink": "https://www.instagram.com/p/Ddgmn-mGMTW/"
+}
