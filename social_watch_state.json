@@ -92,10 +92,6 @@
    "title": "Own Knitted Blank Wears — Delhi Godown Live",
    "published": "2026-08-30T10:14:40+00:00"
   },
-  "N7Y8hjPItfY": {
-   "title": "Acid Wash Oversize T-Shirt Rs 238 | Delhi Wholesale Bulk Rate",
-   "published": "2026-08-30T12:30:21+00:00"
-  },
   "4IBUmLTpZlE": {
    "title": "Plain Round Neck T-Shirt Wholesale Rs 107 se | Delhi Bulk",
    "published": "2026-09-01T12:30:06+00:00"
@@ -151,6 +147,10 @@
   "ZZHqqXNd_6A": {
    "title": "Website Par Stock Dikhta Hai—Godown Mein Bhi? | Plain T-Shirts",
    "published": "2026-09-21T12:30:22+00:00"
+  },
+  "IcauWSDc5V0": {
+   "title": "Printing Business ke Liye Blank T-Shirts | Ready Stock",
+   "published": "2026-09-22T12:30:19+00:00"
   }
  },
  "instagram": {
@@ -565,6 +565,10 @@
   "18112961885024146": {
    "permalink": "https://www.instagram.com/p/Ddgmn-mGMTW/",
    "ts": "2026-09-20T12:38:24+0000"
+  },
+  "18115467004962185": {
+   "permalink": "https://www.instagram.com/reel/DdmATD5AOew/",
+   "ts": "2026-09-22T14:59:24+0000"
   }
  },
  "facebook": {},
@@ -1093,8 +1097,13 @@
    "at": "2026-09-22T15:07:47+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-22T23:26:42+05:30",
+   "alerts": 1,
+   "new": 2
   }
  ],
  "last_green_date": "2026-09-22",
- "last_run_ist": "2026-09-22T15:07:47+05:30"
+ "last_run_ist": "2026-09-22T23:26:42+05:30"
 }
