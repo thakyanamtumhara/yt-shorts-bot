@@ -159,3 +159,14 @@ class EditorialGuardTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RedditSourceGateTest(unittest.TestCase):
+    def test_draft_is_reviewed_before_any_archive_or_public_write(self):
+        source=(ROOT/'daily_short.py').read_text()
+        block=source[source.index('def generate_reddit_post('):]
+        gate=block.index('approved, reason = _review_derived_content(')
+        self.assertLess(gate,block.index('with open(json_path, "w")'))
+        self.assertLess(gate,block.index('_publish_reddit_to_github_pages(draft'))
+        self.assertIn('Never invent a personal experience',block)
+        self.assertNotIn('First-person mandatory',block)

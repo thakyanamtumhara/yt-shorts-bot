@@ -2992,6 +2992,10 @@ def _auto_content_hold_reason(value):
     text = _auto_content_text(value)
     if not text.strip():
         return 'Content is empty.'
+    from tools.content_grounding import unsupported_derived_claim
+    derived_reason = unsupported_derived_claim(value)
+    if derived_reason:
+        return derived_reason
     if re.search(r'\bvarsity\b|वर्सिटी|वार्सिटी', text, re.I):
         return 'Varsity is closed and must not appear in new public content.'
     if re.search(r'₹\s*\d|\b(?:rs\.?|inr)\s*\d|\d\s*रुप', text, re.I):
@@ -7631,6 +7635,11 @@ def review_script(claude_client, script_voice, script_english, topic, video_prom
         feedback = " ".join(", ".join(item["words"]) + ": " + item["suggestion"] for item in wording)
         return False, 0, "spoken_wording", feedback
 
+    from tools.content_grounding import unsupported_derived_claim
+    derived_reason = unsupported_derived_claim(script_voice) or unsupported_derived_claim(script_english)
+    if derived_reason:
+        return False, 0, 'unsupported_mechanism', derived_reason
+
     from tools.daily_topic_selection import evidence_prompt, unsupported_shortcut
     lesson_evidence = evidence_prompt(topic)
     shortcut = unsupported_shortcut(script_voice) or unsupported_shortcut(script_english)
@@ -9676,133 +9685,30 @@ def generate_reddit_post(claude_client, cost_tracker, topic, blog_title, blog_ur
     subs_list = "\n".join(f"   - {s}" for s in REDDIT_SUBS_WHITELIST)
     tags_str = ", ".join(tags) if tags else "none"
 
-    prompt = f"""You are writing ONE Reddit post for a small Indian B2B textile manufacturer (Sale91.com / bulkplaintshirt.com — plain t-shirts, hoodies, blanks for printing businesses).
-
-CONTEXT:
-- Today's blog post: "{blog_title}"
-- Blog URL: {blog_url}
-- Hero image (already on S3): {hero_image_url or 'none'}
-- Topic angle: {topic}
-- Source video script (English): {script_english}
-- Tags: {tags_str}
-
-GOAL: Write a Reddit post that drives readers to the blog WITHOUT looking promotional. Reddit users hate "buy now" tone — they reward "I made this mistake" stories that share real insight, with the link as a "see photos + full breakdown" add-on at the end.
-
-OUTPUT FORMAT: Return ONLY a valid JSON object (no preamble, no markdown fences, no explanation). Exactly this schema:
-
+    source = f"Title: {blog_title}\nTopic: {topic}\nVideo script: {script_english}\n" + _editorial_evidence(topic)
+    prompt = f"""Write one useful Reddit draft for our Indian T-shirt wholesale business.
+Use only the supplied source facts and their stated limits. Explain one practical buyer lesson,
+finish the answer, and ask one specific peer question. Write plainly and conversationally.
+Never invent a personal experience, customer, rejected order, loss, test result, price, or guarantee.
+Do not hide the business connection: say this is a guide from our T-shirt wholesale business.
+Do not promise photographs or proof; AI images are illustrations. Any example must be explicitly hypothetical.
+No engagement bait, invented urgency, sales pitch or forced first-person story.
+Suggest one relevant community from the whitelist; its live rules must be checked before manual posting.
+Posting remains a draft. Do not claim a universal best time or automatically promise comment replies.
+Return ONLY valid JSON with these fields:
 {{
-  "target_sub": "<one subreddit from the whitelist below — pick the SINGLE most relevant for the topic>",
-  "posting_time": "<e.g. 'Weekday morning, 9-11 AM IST' or 'Sunday — r/Entrepreneur weekly self-promo thread only'>",
-  "title": "<ONE Reddit-native title, 70 chars max, no emojis. See TITLE RULES below — must sound like a real person posting, not a press release>",
-  "body": "<150-220 words. FIRST-PERSON HUMAN VOICE — see BODY VOICE RULES below. End with: 'Full breakdown with photos: {blog_url}' on its own line. Then ONE peer question on the next line. Use plain text with \\n for line breaks — Reddit markdown like **bold** is OK.>",
-  "engagement_plan": [
-    "Reply to every comment within 12 hours.",
-    "Spend 10 minutes commenting helpfully on other posts in r/X today (no links).",
-    "Do NOT cross-post to another subreddit today."
-  ]
+  "target_sub": "one community from the whitelist",
+  "posting_time": "Check the community rules and approved promotion thread before posting",
+  "title": "one complete factual buyer question or lesson, under 90 characters, no emoji",
+  "body": "120–200 useful words; length follows the complete lesson. End with an optional labelled guide link and one relevant peer question.",
+  "engagement_plan": ["Check current community rules before posting.", "Answer relevant questions with useful, source-supported replies."]
 }}
-
-SUBREDDIT WHITELIST — pick ONE that genuinely fits the topic:
+WHITELIST:
 {subs_list}
-
-TITLE RULES — the title is THE thing that decides if anyone clicks. Get this right.
-
-The user explicitly flagged that earlier titles like:
-   ❌ "Lost ₹40K mixing blanks: embroidery, DTF, screen print same order"
-sound like a press release / SEO headline, not a human posting on Reddit.
-
-DO NOT use these title shapes — they all sound robotic:
-   ❌ "Lost ₹X [doing Y]:" / "X cost me ₹Y: [list of things]"
-   ❌ "How to avoid X mistake (₹Y lesson)"
-   ❌ "[Number] [thing] [verb-ed]:" with a colon and bullet-like list
-   ❌ Keyword-stuffed: "DTF DTG screen print embroidery comparison India wholesale"
-   ❌ Anything that ends with a truncated noun ("...screen print same") — looks AI-cut-off
-
-USE one of these title shapes (real Reddit voice):
-
-  1. **First-person story hook** — talk like a human venting/sharing:
-     ✅ "Tried to combine embroidery + DTF + screen on one order. Cost me ₹40k. Sharing what went wrong."
-     ✅ "Used 3 different GSM blanks in the same order. Client rejected everything. ₹40k lesson."
-     ✅ "Lost ₹40k last week — sharing the dumb mistake so you don't repeat it."
-
-  2. **Question / advice-seeking** — invites comments naturally:
-     ✅ "Anyone else struggle with combining embroidery + DTF on the same shirt?"
-     ✅ "Has anyone successfully run 3 print methods on one bulk order without quality issues?"
-     ✅ "Need advice — client wants embroidery, DTF, and screen on same blank. Is this even doable?"
-
-  3. **PSA / warning** — short and direct:
-     ✅ "PSA: don't mix GSM grades within the same order. Lost ₹40k learning this."
-     ✅ "Heads up — combining embroidery + DTF + screen on one shirt is a quality disaster."
-
-  4. **Specific scenario opening** — concrete, story-shaped:
-     ✅ "Client wanted embroidery + DTF + screen on one bulk order. Here's why I'd never do that again."
-     ✅ "500-piece order, 3 different GSMs, 3 different print methods. Big mistake."
-
-ADDITIONAL TITLE RULES:
-- Sound human. Use contractions ("don't", "can't", "I've"). Allow common casual phrases ("lost ₹40k", "big mistake", "lesson learned", "be smarter than me").
-- The ₹ amount is allowed but NOT required in the title. If included, weave it naturally ("Cost me ₹40k") not as a headline lead.
-- Avoid colons + keyword lists. Use one sentence (with a period) or two short sentences.
-- Avoid starting with the cost ("Lost ₹40K..." is overused — start with the scenario instead).
-- No emojis in title (Reddit hates emoji-titles).
-- 60-90 chars ideal range. Longer if a complete thought needs it.
-- The title must read like something one of your blog post readers would themselves post after experiencing the problem — not like a headline you'd put on the blog.
-
-BODY VOICE RULES — same priority as the title. User flagged that today's body sounds like a case study, not a human posting.
-
-Today's actual body (DO NOT WRITE LIKE THIS):
-   ❌ "A client ordered 500 pieces last month — 200 embroidered polos..."
-   ❌ "We used whatever blanks we had..."
-   ❌ "The fix: one consistent blank across all three techniques."
-   ❌ "If you're running multi-technique orders, this one change will save you from expensive mistakes."
-
-   Problems: third-person framing ("A client...", "We used..."), distant
-   professional tone, marketing-pitch ending. Reads like a brand blog
-   excerpt. People scroll past this on Reddit.
-
-How a real printer would write the same story (WRITE LIKE THIS):
-
-   ✅ "Got burned hard last month, want to share so you don't repeat my dumb mistake.
-
-   Client ordered 500 pieces — 200 embroidered polos, 200 DTF, 100 screen prints. I figured I'd just use whatever blanks I had in stock: 160 GSM for embroidery, 180 for DTF, 200 for screen. Different blanks, different prices, why not?
-
-   Whole batch rejected. Side-by-side, the pieces looked like they came from three different companies — one was thin and floppy, one was stiff, one was heavy. Same brand, same campaign, totally inconsistent feel.
-
-   Took me a week to figure out the fix. Now I just use ONE blank for the entire order — 200 GSM combed cotton across all three print methods. Embroidery still runs smooth, DTF bonds clean, screen absorbs evenly. Zero returns since.
-
-   ₹40k down the drain before I figured this out. Wish I'd known.
-
-   Full breakdown with photos: <url>
-
-   Anyone else got bitten by mixing blanks across print methods?"
-
-Notice the human elements:
-- "I" voice throughout ("I figured", "I just use", "Wish I'd known")
-- Self-deprecation ("dumb mistake", "Why not?", "Took me a week")
-- Sensory description ("thin and floppy", "stiff", "heavy")
-- Conversational connectors ("Got burned hard", "Sounds simple enough", "Took me a week", "Now I just")
-- ₹ amount at the END, organic — not a marketing lead
-- Peer-to-peer closing question ("Anyone else got bitten by...")
-
-BODY VOICE RULES (apply ALL of these):
-1. **First-person mandatory.** "I" / "me" / "my" throughout. Never "we" (sounds corporate). Never "A client ordered..." — use "Client called me last week..." or "Got a job last week for 500 pieces..."
-2. **Open with vulnerability** — "Got burned for ₹40k..." / "Made the dumbest mistake last week..." / "Still kicking myself about this one." Real humans admit fault; brands hide it.
-3. **Self-deprecation OK** — "I should have known", "Stupid of me", "Was being lazy", "Thought I was being smart" all read as authentic.
-4. **Sensory detail beats abstract** — instead of "felt completely different" write "one was thin and floppy, one had stiffness, one was heavy". Help the reader SEE the problem.
-5. **Conversational connectors** — "Turns out", "Long story short", "Spoiler:", "ok so", "yeah", "tbh", "basically". Sprinkle 2-3 of these.
-6. **No marketing-pitch endings** — never "this one change will save you" / "expert tip" / "pro insight". Just describe what worked and stop.
-7. **The ₹ amount goes near the end as a punchline**, not a headline. "₹40k down the drain" hits harder than "I lost ₹40k because..."
-8. **End with a peer question** that invites comments — "Anyone else..." / "How do you handle..." / "What would you have done?"
-
-OTHER WRITING RULES:
-- NO emojis in title (Reddit hates emoji-titles).
-- 1-2 emojis MAX in body, only if naturally placed.
-- Use Reddit markdown in body: **bold** for the punchline only, bullet lists for actual lists, no ##H2.
-- Forbidden words: amazing, incredible, discover, unleash, revolutionary, transform, premium, journey (sound like ads).
-- Use specific numbers, real ₹ amounts, real fabric/GSM specs from the topic.
-- Mention "Sale91" or "BulkPlainTshirt" ONLY inside the link URL — never in the body text.
-- Replace "r/X" placeholder in engagement_plan with the actual chosen sub.
-
-Return ONLY the JSON object."""
+SOURCE DATA:
+{source}
+Guide URL: {blog_url}
+"""
 
     try:
         resp = claude_client.messages.create(
@@ -9818,6 +9724,12 @@ Return ONLY the JSON object."""
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[4:]
 
         draft = json.loads(raw)
+        approved, reason = _review_derived_content(
+            claude_client, cost_tracker, json.dumps(draft, ensure_ascii=False),
+            source, 'Reddit draft', 'claude-haiku-4-5-20251001')
+        if not approved:
+            print(f"   ⚠️ Reddit draft held: {reason}")
+            return None
         # Attach context fields used by the HTML renderer
         draft['hero_image_url'] = hero_image_url
         draft['blog_url'] = blog_url
@@ -13439,6 +13351,18 @@ def main():
         raise RuntimeError("No complete cover available; stop before publishing")
     from tools.cover_quality import prepend_cover
     COVER_META["opening_cover"] = prepend_cover(output_path, thumbnail_path)
+
+    from tools.short_review_archive import save_review_archive
+    review_path = save_review_archive(
+        video_path=output_path, thumbnail_path=thumbnail_path,
+        topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
+        script_voice=script_voice, tts_input=tts_input, script_english=script_english,
+        youtube_id=None, instagram_id=None, test_mode=TEST_MODE,
+        run_flags=RUN_FLAGS,
+    )
+    if not TEST_MODE:
+        from tools.prepublication_audio import require_native_audio_review
+        flag('native_audio_review', require_native_audio_review(output_path, review_path))
 
     # ── 10. Upload to YouTube ──
     upload_failed = False

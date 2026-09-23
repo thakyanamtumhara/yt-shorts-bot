@@ -155,7 +155,7 @@ class ExtractionAndReadbackTest(unittest.TestCase):
         def process(args, **kwargs):
             if args[0] == 'ffprobe':
                 return SimpleNamespace(stdout=json.dumps({'format': {'duration': '1.0'}, 'streams': [
-                    {'codec_type': 'video', 'width': 1080, 'height': 1920}, {'codec_type': 'audio'}]}))
+                    {'codec_type': 'video', 'width': 1080, 'height': 1920}, {'codec_type': 'audio', 'duration': '1.0'}]}))
             with wave.open(args[-1], 'wb') as output:
                 output.setnchannels(1); output.setsampwidth(2); output.setframerate(16000)
                 output.writeframes(b'\0\0' * 16000)
@@ -167,6 +167,39 @@ class ExtractionAndReadbackTest(unittest.TestCase):
             ffmpeg_args = run.call_args_list[1].args[0]
             for forbidden in ('-ss', '-t', '-to', '-af', '-filter:a', '-filter_complex'):
                 self.assertNotIn(forbidden, ffmpeg_args)
+
+    def test_actual_silent_outro_is_allowed_but_truncated_audio_is_rejected(self):
+        for extracted_seconds in (36.50, 15.0):
+            def process(args, **kwargs):
+                if args[0] == 'ffprobe':
+                    return SimpleNamespace(stdout=json.dumps({'format': {'duration': '39.2'}, 'streams': [
+                        {'codec_type': 'video', 'width': 1080, 'height': 1920},
+                        {'codec_type': 'audio', 'duration': '36.498005', 'start_time': '0.0'}]}))
+                with wave.open(args[-1], 'wb') as output:
+                    output.setnchannels(1); output.setsampwidth(2); output.setframerate(16000)
+                    output.writeframes(b'\0\0' * round(extracted_seconds * 16000))
+                return SimpleNamespace(returncode=0)
+            with self.subTest(seconds=extracted_seconds), TemporaryDirectory() as directory, \
+                    patch.object(audit.subprocess, 'run', side_effect=process):
+                if extracted_seconds == 15.0:
+                    with self.assertRaisesRegex(audit.AuditError, 'complete source audio'):
+                        audit.probe_and_extract(Path(directory) / 'video.mp4', Path(directory))
+                else:
+                    _, info = audit.probe_and_extract(Path(directory) / 'video.mp4', Path(directory))
+                    self.assertEqual(info['duration_seconds'], 39.2)
+                    self.assertEqual(info['audio_seconds'], 36.5)
+                    self.assertAlmostEqual(info['silent_video_tail_seconds'], 2.701995)
+
+    def test_unknown_or_invalid_source_audio_duration_cannot_pass(self):
+        for duration in (None, 'NaN', 'inf', '-1', '50'):
+            response = {'format': {'duration': '39.2'}, 'streams': [
+                {'codec_type': 'video', 'width': 1080, 'height': 1920},
+                {'codec_type': 'audio', 'duration': duration}]}
+            with self.subTest(duration=duration), TemporaryDirectory() as directory, \
+                    patch.object(audit.subprocess, 'run', return_value=SimpleNamespace(stdout=json.dumps(response))) as run:
+                with self.assertRaises(audit.AuditError):
+                    audit.probe_and_extract(Path(directory) / 'video.mp4', Path(directory))
+                self.assertEqual(run.call_count, 1)
 
     def service_modules(self, channel, video_channel=None):
         item = {'id': 'abcdefghijk', 'snippet': {'channelId': video_channel or channel, 'title': 'Expected'},

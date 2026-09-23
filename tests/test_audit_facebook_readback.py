@@ -135,7 +135,7 @@ class FacebookReadbackTest(unittest.TestCase):
                 patch.object(audit, 'validate_archive', return_value=(source, Path('video.mp4'))), \
                 patch.object(audit, 'facebook_readback', return_value={'state': 'readback_unavailable'}), \
                 patch.object(audit, 'youtube_readback', return_value=youtube), \
-                patch.object(audit, 'probe_and_extract', return_value=(Path('audio.wav'), {'duration_seconds': 40})), \
+                patch.object(audit, 'probe_and_extract', return_value=(Path('audio.wav'), {'duration_seconds': 40, 'audio_seconds': 40})), \
                 patch.object(audit, 'assess_audio', return_value={'passed': True}) as audio, \
                 patch('builtins.print'):
             self.assertEqual(audit.main(['--run-id', '35884612564']), 0)

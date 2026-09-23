@@ -1,0 +1,47 @@
+name: Repair Recovery Short AI Disclosure
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply native AI disclosure to verified recovery video GMaTnJRoiV8'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repair-recovery-disclosure-GMaTnJRoiV8
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install YouTube API dependencies
+        run: pip install -q google-auth google-api-python-client requests
+      - name: Back up exact status and preserve schedule while restoring AI disclosure
+        env:
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          APPLY_REPAIR: ${{ inputs.apply }}
+        run: |
+          if [ "$APPLY_REPAIR" = "true" ]; then
+            python tools/repair_daily_ai_disclosure.py --apply
+          else
+            python tools/repair_daily_ai_disclosure.py
+          fi
+      - name: Retain safe status backup and verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-disclosure-repair
+          path: native-disclosure-repair/*.json
+          retention-days: 7
+          if-no-files-found: warn

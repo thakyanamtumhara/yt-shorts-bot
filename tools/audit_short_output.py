@@ -175,6 +175,15 @@ def probe_and_extract(video, folder):
     if (not math.isfinite(seconds) or not 0 < seconds <= 180 or not visual or not sound
             or min(visual.get('width', 0), visual.get('height', 0)) <= 0):
         raise AuditError('Rendered video lacks bounded complete audio/video streams.')
+    try:
+        source_audio_seconds = float(sound['duration'])
+        audio_start_seconds = float(sound.get('start_time', 0))
+    except (KeyError, TypeError, ValueError):
+        raise AuditError('Rendered audio stream has no verifiable duration.') from None
+    if (not math.isfinite(source_audio_seconds) or not 0 < source_audio_seconds <= 180
+            or not math.isfinite(audio_start_seconds) or audio_start_seconds < -0.15
+            or audio_start_seconds + source_audio_seconds > seconds + 0.15):
+        raise AuditError('Rendered audio stream timing is invalid.')
     wav = folder / 'full-rendered-audio.wav'
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i', str(video), '-map', '0:a:0', '-vn',
                     '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', str(wav)],
@@ -182,9 +191,11 @@ def probe_and_extract(video, folder):
     import wave
     with wave.open(str(wav), 'rb') as audio:
         audio_seconds = audio.getnframes() / audio.getframerate()
-    if abs(audio_seconds - seconds) > 0.15 or not 1000 < wav.stat().st_size <= 8 * 1024 * 1024:
-        raise AuditError('Extracted audio does not span the complete rendered video.')
+    if abs(audio_seconds - source_audio_seconds) > 0.15 or not 1000 < wav.stat().st_size <= 8 * 1024 * 1024:
+        raise AuditError('Extracted audio does not span the complete source audio stream.')
     return wav, {'duration_seconds': seconds, 'width': visual['width'], 'height': visual['height'],
+                 'source_audio_seconds': source_audio_seconds, 'audio_start_seconds': audio_start_seconds,
+                 'silent_video_tail_seconds': max(0, seconds - audio_start_seconds - source_audio_seconds),
                  'audio_seconds': audio_seconds, 'audio_sha256': hashlib.sha256(wav.read_bytes()).hexdigest(),
                  'audio_representation': 'full first audio stream, mono 16kHz PCM; no trim, filters or denoising'}
 
@@ -424,7 +435,7 @@ def main(argv=None):
             report['facebook'] = facebook_readback(manifest)
             report['youtube'] = youtube_readback(manifest['source_posts']['bot_youtube'], manifest['titles']['youtube'])
             wav, report['media'] = probe_and_extract(video, Path(directory))
-            assessment = assess_audio(wav, manifest, report['media']['duration_seconds'], report_dir=REPORT)
+            assessment = assess_audio(wav, manifest, report['media']['audio_seconds'], report_dir=REPORT)
             report['audio_passed'] = assessment['passed']
             report['youtube_processed'] = report['youtube']['uploadStatus'] == 'processed'
             report['passed'] = (assessment['passed'] and report['youtube']['containsSyntheticMedia'] is True

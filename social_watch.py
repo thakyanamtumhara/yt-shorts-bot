@@ -39,6 +39,7 @@ IG_TOKEN = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
 FB_PAGE_ID = (os.environ.get("FB_PAGE_ID") or "1999594936994410").strip()
 FB_TOKEN = (os.environ.get("FB_PAGE_ACCESS_TOKEN") or IG_TOKEN).strip()
 GRAPH = "https://graph.facebook.com/v21.0"
+FB_GRAPH = "https://graph.facebook.com/v26.0"
 
 # a Factory Sach episode should land at least this often on the main channel
 FACTORY_SACH_MAX_GAP_DAYS = 10
@@ -203,29 +204,105 @@ def check_instagram(state):
     return alerts, info
 
 
+def facebook_read_fields(vid, fields):
+    req = urllib.request.Request(
+        f"{FB_GRAPH}/{vid}?" + urllib.parse.urlencode({"fields": "id," + fields}),
+        headers={"Authorization": f"Bearer {FB_TOKEN}", "User-Agent": "sale91-social-watch/1"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = json.loads(response.read())
+        if not isinstance(data, dict) or "error" in data:
+            return None, "API response unavailable"
+        if data.get("id") != vid:
+            return None, "response ID mismatch"
+        return data, None
+    except urllib.error.HTTPError as error:
+        return None, f"HTTP {error.code}"
+    except Exception:
+        return None, "request failed"
+
+
+def facebook_publication_evidence(data):
+    status = data.get("status") if isinstance(data.get("status"), dict) else {}
+    phase = status.get("publishing_phase") if isinstance(status.get("publishing_phase"), dict) else {}
+    known = {"ready", "processing", "uploading", "error", "failed", "complete", "completed",
+             "not_started", "in_progress", "pending", "published", "unpublished", "scheduled", "draft"}
+    clean = lambda value: value.lower() if isinstance(value, str) and value.lower() in known else None
+    video_status = clean(status.get("video_status"))
+    phase_status, publish_status = clean(phase.get("status")), clean(phase.get("publish_status"))
+    published = data.get("published") if type(data.get("published")) is bool else None
+    phase_complete = phase_status in ("complete", "completed") and publish_status == "published"
+    phase_pending = phase_status in ("not_started", "in_progress", "pending", "error", "failed") \
+                    or publish_status in ("not_started", "in_progress", "pending", "unpublished", "scheduled", "draft", "error", "failed")
+    conflict = (published is False and phase_complete) or (published is True and phase_pending)
+    publication_confirmed = not conflict and (published is True or (phase_complete and published is not False))
+    privacy = data.get("privacy")
+    privacy = privacy.get("value") if isinstance(privacy, dict) else privacy
+    privacy = privacy if privacy in ("EVERYONE", "ALL_FRIENDS", "FRIENDS_OF_FRIENDS", "SELF", "CUSTOM") else None
+    if conflict:
+        result = "conflicting_publication_signals"
+    elif publication_confirmed and privacy == "EVERYONE":
+        result = "published_public_by_api"
+    elif publication_confirmed and privacy is None:
+        result = "published_privacy_unverified"
+    elif privacy in ("ALL_FRIENDS", "FRIENDS_OF_FRIENDS", "SELF", "CUSTOM"):
+        result = "not_public_by_api"
+    elif published is False:
+        result = "not_published_by_api"
+    elif phase_pending:
+        result = "publication_pending"
+    else:
+        result = "publication_unverified"
+    return {"state": result, "video_status": video_status, "published": published,
+            "publishing_phase": phase_status, "publish_status": publish_status, "privacy": privacy}
+
+
 def check_facebook(state):
-    """Check reels the bot published are actually PUBLISHED, not stuck as drafts."""
+    """Confirm publication separately from video processing; keep unknowns pending."""
     alerts, info = [], []
     pending = state.setdefault("facebook", {})
-    if not pending:
+    unchecked = [(vid, meta) for vid, meta in pending.items()
+                 if not (meta.get("confirmed") and meta.get("confirmation_method") == "published_public_api_v1")]
+    if not unchecked:
         return alerts, info
-    ok, _ = token_healthy()
-    if not ok:
-        return alerts, info                   # already alerted in check_instagram
-    for vid, meta in list(pending.items()):
-        if meta.get("confirmed"):
+    if not FB_TOKEN:
+        alerts.append("Facebook: no Page token is available; recorded reel publication cannot be verified.")
+        return alerts, info
+    for vid, meta in unchecked:
+        meta["confirmed"] = False
+        if not isinstance(vid, str) or not re.fullmatch(r"[1-9][0-9]{0,29}", vid):
+            alerts.append("Facebook: a recorded reel ID is invalid; verification skipped.")
             continue
-        try:
-            d = get_json(f"{GRAPH}/{vid}?fields=id,status,permalink_url&access_token={FB_TOKEN}")
-            status = (d.get("status") or {}).get("video_status") or d.get("status") or "?"
-            if str(status).lower() in ("ready", "published"):
-                meta["confirmed"] = True
-                meta["permalink"] = d.get("permalink_url")
-            else:
-                alerts.append(f"Facebook reel not live — video {vid} status = {status}. "
-                              f"Posted {meta.get('queued_at','?')}. Open the Page and publish it.")
-        except Exception as e:
-            alerts.append(f"Facebook: could not check reel {vid} ({str(e)[:100]})")
+        data, error = facebook_read_fields(vid, "status")
+        if data is None:
+            meta["publication_check"] = {"state": "read_unavailable", "error": error}
+            alerts.append(f"Facebook: could not verify reel {vid} ({error}); publication remains unknown.")
+            continue
+        read_errors = {}
+        for field in ("published", "privacy"):
+            extra, error = facebook_read_fields(vid, field)
+            if extra is not None and field in extra:
+                data[field] = extra[field]
+            elif error:
+                read_errors[field] = error
+        evidence = facebook_publication_evidence(data)
+        meta["publication_check"] = {**evidence, "read_errors": read_errors}
+        if evidence["state"] == "published_public_by_api":
+            meta["confirmed"] = True
+            meta["confirmation_method"] = "published_public_api_v1"
+            meta["confirmed_at"] = now_ist().isoformat(timespec="seconds")
+            meta["permalink"] = f"https://www.facebook.com/reel/{vid}"
+            continue
+        reasons = {
+            "conflicting_publication_signals": "Facebook returned conflicting publication signals",
+            "published_privacy_unverified": "publication is confirmed, but public privacy could not be verified",
+            "not_public_by_api": "Facebook reports non-public privacy",
+            "not_published_by_api": "Facebook reports published=false",
+            "publication_pending": "the publishing phase is incomplete",
+            "publication_unverified": "publication could not be verified; processing ready alone is insufficient",
+        }
+        alerts.append(f"Facebook reel {vid}: {reasons[evidence['state']]}. "
+                      "Kept pending; check this exact reel in the Page before retrying publication.")
     return alerts, info
 
 
