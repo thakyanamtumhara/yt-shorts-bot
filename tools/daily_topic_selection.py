@@ -116,6 +116,19 @@ def load_topic_history(path):
         raise TopicHold('Topic history is unavailable or invalid; freshness cannot be verified.') from error
 
 
+def brainstorming_context(bank, history):
+    titles = {normalized(title) for title in history if isinstance(title, str)}
+    completed = [brief for brief in bank.get('seed_lessons', [])
+                 if normalized(brief.get('topic', '')) in titles]
+    used = {key for brief in completed for key in brief.get('fact_ids', [])}
+    preferred = [key for key in bank['facts'] if key not in used]
+    ordered = {key: bank['facts'][key] for key in preferred}
+    ordered.update({key: fact for key, fact in bank['facts'].items() if key in used})
+    return {'facts': ordered, 'preferred_fact_ids': preferred,
+            'completed_lessons': [{key: brief[key] for key in (
+                'topic', 'lesson', 'buyer_decision', 'intent_key', 'fact_ids')} for brief in completed]}
+
+
 def validate_brief(brief, bank, history=()):
     if not isinstance(brief, dict):
         raise TopicHold('A bare topic has no reviewed lesson evidence.')
@@ -132,6 +145,9 @@ def validate_brief(brief, bank, history=()):
         raise TopicHold('Duplicate fact references.')
     if normalized(brief['topic']) in {normalized(t) for t in history if isinstance(t, str)}:
         raise TopicHold('Topic repeats an existing title.')
+    completed = brainstorming_context(bank, history)['completed_lessons']
+    if normalized(brief['intent_key']) in {normalized(item['intent_key']) for item in completed}:
+        raise TopicHold('Topic repeats a completed reviewed lesson intent.')
     shortcut = unsupported_shortcut(' '.join(brief[key] for key in ('topic', 'lesson', 'buyer_decision')))
     if shortcut:
         raise TopicHold(shortcut)

@@ -2,7 +2,6 @@ import contextlib
 import io
 import json
 import os
-import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +10,34 @@ import social_watch
 
 
 class HealthAlertsTest(unittest.TestCase):
+    def test_old_invoice_flag_does_not_mean_active_clone_is_down(self):
+        subscription = {'tier': 'creator', 'status': 'active', 'has_open_invoices': True,
+                        'can_use_professional_voice_cloning': True,
+                        'character_count': 1038, 'character_limit': 258644}
+        with patch.dict(os.environ, {'ELEVENLABS_API_KEY': 'test'}), \
+             patch.object(health_watch, '_json_req', side_effect=[
+                 (200, subscription), (200, {'category': 'professional', 'name': 'Ketu Original'})]):
+            result = health_watch.check_elevenlabs()
+        self.assertFalse(result.ok)
+        self.assertEqual(result.severity, health_watch.WARN)
+        self.assertEqual(result.extra['chars_left'], 257606)
+
+    def test_real_payment_or_clone_failure_still_blocks(self):
+        subscription = {'tier': 'creator', 'status': 'past_due', 'has_open_invoices': True,
+                        'can_use_professional_voice_cloning': True,
+                        'character_count': 1038, 'character_limit': 258644}
+        with patch.dict(os.environ, {'ELEVENLABS_API_KEY': 'test'}), \
+             patch.object(health_watch, '_json_req', return_value=(200, subscription)):
+            result = health_watch.check_elevenlabs()
+        self.assertFalse(result.ok)
+        self.assertEqual(result.severity, health_watch.CRITICAL)
+        subscription['status'] = 'active'
+        with patch.dict(os.environ, {'ELEVENLABS_API_KEY': 'test'}), \
+             patch.object(health_watch, '_json_req', side_effect=[(200, subscription), (403, {})]):
+            result = health_watch.check_elevenlabs()
+        self.assertFalse(result.ok)
+        self.assertEqual(result.severity, health_watch.CRITICAL)
+
     def run_watch(self, state, delivered, result):
         with patch.object(health_watch, 'load_state', return_value=state), \
              patch.object(health_watch, 'save_state'), \

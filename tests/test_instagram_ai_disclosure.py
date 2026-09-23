@@ -2,6 +2,7 @@ import ast
 from datetime import datetime
 import json
 import os
+import re
 from pathlib import Path
 import sys
 import tempfile
@@ -18,6 +19,10 @@ TREE = ast.parse((ROOT / 'daily_short.py').read_text())
 
 
 def load_function(name, scope):
+    scope.setdefault('re', re)
+    if name == 'publish_ig_carousel':
+        for helper in ('_auto_content_text', '_auto_content_hold_reason', '_carousel_hashtags'):
+            load_function(helper, scope)
     node = next(n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name == name)
     exec(compile(ast.Module(body=[node], type_ignores=[]), str(ROOT / 'daily_short.py'), 'exec'), scope)
     return scope[name]
@@ -78,7 +83,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
             'IG_POST_META': metadata, 'BLOG_S3_BUCKET': 'test-bucket', 'BLOG_BASE_URL': 'https://example.invalid',
             'get_instagram_best_time': lambda *args: None,
             'get_ig_hashtags': lambda _: [], 'get_ig_seo_line': lambda *args: 'Useful buyer lesson',
-            'get_ig_cta_line': lambda: 'What do you check?', 'NEW_TEST_MODE': False, 'SINGLE_VEO_TEST': False,
+            'get_ig_cta_line': lambda topic=None: 'What do you check?', 'NEW_TEST_MODE': False, 'SINGLE_VEO_TEST': False,
             '_ig_post_publish_extras': Mock(), 'create_ai_container': create_ai_container,
             'raise_for_disclosure_rejection': raise_for_disclosure_rejection,
         }

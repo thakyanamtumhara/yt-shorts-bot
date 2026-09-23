@@ -87,29 +87,14 @@ WHAT WE DO:
 - We sell to custom printing businesses (DTG, DTF, Screen print, Heat Transfer) PAN India
 - We also EXPORT to other countries via courier or sea transport
 - Manufacturing in Tiruppur (India's textile hub), Warehouse in Delhi (Khanpur, South Delhi)
-- 1,25,232+ pieces sold in last 30 days
 
-PRODUCTS WE MAKE:
-- Plain Round Neck T-shirts (180, 200, 210, 220 GSM)
-- Oversized T-shirts
-- Plain Polo T-shirts
-- Plain Hoodies & Sweatshirts (240, 320, 430 GSM)
-- Acid Wash T-shirts (regular & oversized)
-- All products: 100% Cotton, Bio-washed, Pre-shrunk, Combed/Ring-spun Cotton
-
-PRICING & OFFERS:
-- Rs 2/pc discount for 500+ quantity orders
-- Rs 3/pc online purchase discount for any quantity
-- 50% COD available on first order for new buyers (+3% COD charge)
-- From second order: prepaid
-
-KEY FACTS:
-- 1 lakh+ t-shirts ready stock at any time
-- GSM: 180 for everyday wear, 200 for premium, 220 for heavy premium
-- All shirts are Bio-washed (enzyme-treated for smoothness) and Pre-shrunk
-- Ring-spun Combed Cotton (premium yarn, softer feel)
-- Available in 15+ colors
-- MOQ: as low as 10 pieces for ready stock items
+CURRENT PRODUCT AND ORDER DETAILS:
+- Check https://www.bulkplaintshirt.com/catalog/ for the exact product specification.
+- Check https://sale91.com for current prices, order quantities, offers and payment terms.
+- Check https://www.bulkplaintshirt.com/delhi-stock.html for current colour and size stock.
+- No stock total, sales total, composition, finish, GSM or price applies to every product.
+- Historical figures are not current quotations or proof of availability.
+- Varsity is closed. Do not list, price, show or offer it.
 """
 
 # ╔══════════════════════════════════════════════════════════════════════╗
@@ -384,24 +369,14 @@ COVER_META = {"cover_text": None, "cover_color": None, "cover_path": None, "cove
 # record by save_ig_upload_record so the learning loop can compare trial vs normal reach.
 IG_POST_META = {"trial": False, "collaborators": None}
 
-# Auto-Pin Comment — posts a CTA comment and pins it on every upload.
-# Rotates daily between question-bait (comment-signal days) and Sale91-link nudges.
 AUTO_PIN_COMMENT = True
-PIN_TAIL_VARIANTS = [
-    "🤔 Aapka next question kya hai? Comment mein puchho 👇",
-    "💬 Aap kaunsa printing method use karte ho — DTF ya screen? Comment karo 👇",
-    "📦 Bulk plain t-shirts chahiye? Sale91.com — MOQ sirf 10 pieces, Pan India",
-    "🔥 Agla video kis topic pe banaye? Comment mein batao 👇",
-    "🏭 Direct manufacturer se blanks lo → Sale91.com (khud ki knitting, biowashed)",
-]
+PIN_COMMENT_TEXT = ""
 
-def get_pin_tail():
-    """Day-rotated pinned-comment tail: 3 question-bait + 2 Sale91 nudges."""
-    return PIN_TAIL_VARIANTS[datetime.now().timetuple().tm_yday % len(PIN_TAIL_VARIANTS)]
 
-PIN_COMMENT_TEXT = """🤔 Aapka next question kya hai? Comment mein puchho 👇
+def get_pin_tail(topic=None):
+    from tools.audience_interaction import interaction_copy
+    return interaction_copy(topic)
 
-📦 Plain t-shirt for printing? → Sale91.com (MOQ 10 pieces, Pan India)"""
 
 # Auto-Playlist — organize videos into series playlists automatically
 AUTO_PLAYLIST = True
@@ -410,6 +385,7 @@ PLAYLIST_CACHE_FILE = f"{WORK_DIR}/playlist_cache.json"  # Cache playlist IDs
 # Instagram Reels Cross-Post (requires INSTAGRAM_ACCESS_TOKEN + INSTAGRAM_BUSINESS_ID secrets)
 CROSS_POST_INSTAGRAM = True
 IG_API_VERSION = "v21.0"  # v22.0 causes "Carousel item cannot be published standalone" error
+FB_API_VERSION = "v26.0"
 
 # Instagram Carousel — autonomous post of blog hero+img1+img2 to IG as a carousel.
 # Fires at 4:30 UTC (10 AM IST) next morning, 16h after the daily Reel — spacing
@@ -729,16 +705,6 @@ IG_SEO_KEYWORDS = {
 }
 IG_DEFAULT_SEO = "plain t-shirt wholesale for printing business India"
 
-# Sends-first CTAs — sends-per-reach is Instagram's #1 ranking signal (Mosseri) and
-# share-rate is the strongest predictor of views in our own 98-reel history.
-IG_CTA_LINES = [
-    "Us dost ko bhejo jo t-shirt business start kar raha hai 📩",
-    "Apne printing partner ko ye Reel bhejo — uska paisa bachega 🤝",
-    "Jo supplier se maal leta hai, usko ye zaroor forward karo 📤",
-    "Apne business group mein ye Reel daal do — kisi ka nuksan bachega 📩",
-    "Us bande ko bhejo jo abhi bhi bina check kiye blanks kharid raha hai 😅",
-]
-
 def _match_topic_series(topic):
     """Return the first TOPIC_SERIES_TAGS series name matching the topic, or None."""
     topic_lower = topic.lower()
@@ -761,9 +727,9 @@ def get_ig_seo_line(topic, title):
     line = f"{title} | {kw}"
     return line[:150]
 
-def get_ig_cta_line():
-    """Rotate send/save CTA deterministically by day of year."""
-    return IG_CTA_LINES[datetime.now().timetuple().tm_yday % len(IG_CTA_LINES)]
+def get_ig_cta_line(topic=None):
+    from tools.audience_interaction import interaction_copy
+    return interaction_copy(topic)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1949,7 +1915,7 @@ def set_fb_reel_cover(video_id, page_token, cover_path):
     try:
         with open(cover_path, "rb") as fh:
             r = requests.post(
-                f"https://graph.facebook.com/{IG_API_VERSION}/{video_id}/thumbnails",
+                f"https://graph.facebook.com/{FB_API_VERSION}/{video_id}/thumbnails",
                 data={"is_preferred": "true", "access_token": page_token},
                 files={"source": fh},
                 timeout=120,
@@ -1991,7 +1957,7 @@ def publish_fb_reel(video_path, description, cover_path=None):
     try:
         # Step 1: initialize upload session
         start_resp = requests.post(
-            f"https://graph.facebook.com/{IG_API_VERSION}/{page_id}/video_reels",
+            f"https://graph.facebook.com/{FB_API_VERSION}/{page_id}/video_reels",
             data={"upload_phase": "start", "access_token": page_token},
             timeout=30,
         )
@@ -2030,12 +1996,15 @@ def publish_fb_reel(video_path, description, cover_path=None):
             set_fb_reel_cover(fb_video_id, page_token, cover_path)
 
         # Step 3: publish
+        flag("facebook_ai_disclosure", {"requested": True, "video_id": fb_video_id,
+                                        "verification": "finish_not_acknowledged"})
         fin_resp = requests.post(
-            f"https://graph.facebook.com/{IG_API_VERSION}/{page_id}/video_reels",
+            f"https://graph.facebook.com/{FB_API_VERSION}/{page_id}/video_reels",
             data={
                 "upload_phase": "finish",
                 "video_state": "PUBLISHED",
                 "video_id": fb_video_id,
+                "is_ai_generated": "true",
                 "description": description[:2000],
                 "access_token": page_token,
             },
@@ -2044,6 +2013,18 @@ def publish_fb_reel(video_path, description, cover_path=None):
         if fin_resp.status_code != 200:
             print(f"   ❌ FB Reel: finish failed: {fin_resp.text[:200]}")
             return None
+        finish_receipt = fin_resp.json()
+        if finish_receipt.get("success") is not True:
+            print(f"   ❌ FB Reel: finish not acknowledged for {fb_video_id}; reconcile this ID before retrying")
+            return None
+        if finish_receipt.get("is_ai_generated") is False:
+            flag("facebook_ai_disclosure", {"requested": True, "video_id": fb_video_id,
+                                            "verification": "explicit_false_response"})
+            print(f"   ⚠️ FB Reel: published ID {fb_video_id}, but disclosure response conflicts; native check required")
+            return fb_video_id
+        flag("facebook_ai_disclosure", {"requested": True, "video_id": fb_video_id,
+                                        "verification": "finish_accepted_native_label_unverified"})
+        print("   🤖 FB Reel: is_ai_generated=true finish accepted; this video's native label is not independently verified")
         print(f"   ✅ FB Reel: PUBLISHED → video_id {fb_video_id}")
         return fb_video_id
     except Exception as e:
@@ -2094,27 +2075,25 @@ def post_telegram_channel(video_path, caption):
         return None
 
 
-def _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id):
+def _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id, comment_text=""):
     """Best-effort follow-ups after a Reel goes live: first comment + Story reshare.
     Failures here must never fail the publish — the Reel is already up."""
-    # First comment — carries the order CTA so the caption's first line stays a pure
-    # search phrase. Also gives early commenters something to reply to.
-    try:
-        comment_resp = requests.post(
-            f"https://graph.facebook.com/{IG_API_VERSION}/{ig_media_id}/comments",
-            data={
-                "message": "📦 Rate list + order: Sale91.com — MOQ sirf 10 pieces, Pan India delivery. Koi sawaal ho toh yahin pooch lo 👇",
-                "access_token": ig_token,
-            },
-            timeout=15,
-        )
-        if comment_resp.status_code == 200:
-            print(f"   💬 First comment posted")
-        else:
-            print(f"   ⚠️ First comment failed: {comment_resp.text[:120]}")
-    except Exception as e:
-        print(f"   ⚠️ First comment error: {e}")
-
+    if comment_text:
+        try:
+            comment_resp = requests.post(
+                f"https://graph.facebook.com/{IG_API_VERSION}/{ig_media_id}/comments",
+                data={
+                    "message": comment_text,
+                    "access_token": ig_token,
+                },
+                timeout=15,
+            )
+            if comment_resp.status_code == 200:
+                print(f"   💬 First comment posted")
+            else:
+                print(f"   ⚠️ First comment failed: {comment_resp.text[:120]}")
+        except Exception as e:
+            print(f"   ⚠️ First comment error: {e}")
     # Story reshare — posts the reel's cover as a Story for an early-momentum kick from
     # followers. Skipped for trial reels (they test on NON-followers; a Story would
     # contaminate the test) and when there is no hosted cover.
@@ -2297,11 +2276,10 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
 
         # Step 2: Create media container (Reels)
         ig_hashtags = get_ig_hashtags(topic)
+        interaction = get_ig_cta_line(topic) or description.split(chr(10))[0]
         ig_caption = (
             f"{get_ig_seo_line(topic, title)}\n\n"
-            f"{description.split(chr(10))[0]}\n\n"
-            f"{get_ig_cta_line()}\n\n"
-            f"📦 Order: Sale91.com (MOQ 10 pcs, Pan India)\n\n"
+            f"{interaction}\n\n"
             f"{' '.join(ig_hashtags)}"
         )
 
@@ -2506,7 +2484,8 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
                     print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")
-                    _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id)
+                    _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id,
+                                            comment_text=get_ig_cta_line(topic))
                     # Cleanup: delete temp video from S3 (non-blocking)
                     if ig_s3_key:
                         try:
@@ -2561,7 +2540,8 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                         if pub2.status_code == 200:
                             ig_media_id = pub2.json().get("id")
                             print(f"   ✅ Instagram Reel published (no-trial fallback)! ID: {ig_media_id}")
-                            _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id)
+                            _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id,
+                                            comment_text=get_ig_cta_line(topic))
                             if ig_s3_key:
                                 try:
                                     boto3.client("s3").delete_object(Bucket=BLOG_S3_BUCKET, Key=ig_s3_key)
@@ -5071,7 +5051,8 @@ def _own_channel_performance_signal():
 
 def get_script_prompt(topic):
     from tools.spoken_style import style_prompt
-    lesson_evidence = _editorial_evidence(topic)
+    from tools.daily_topic_selection import evidence_prompt
+    lesson_evidence = evidence_prompt(topic)
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
 (a B2B plain t-shirt manufacturer) but the script must NOT sell anything.
@@ -5206,9 +5187,9 @@ Sample par check kar lo."
       - "Same size label hai, par fit bhi same hai?"
       - "Blank dekhkar final print kaise judge karoge?"
 
-13. CLOSE THE LOOP AT 70-80% — reveal the answer/lesson roughly 4/5ths into the script,
-    NOT at the very end. Open a loop, build tension, deliver payoff with ~6-8s of
-    script left for "so what to do" — that tail is where SHARES happen.
+13. ANSWER THE BUYER EARLY — resolve the opening question directly after the hook.
+    Use the remaining time to explain why and give the supported buying action.
+    Do not delay the answer to a fixed percentage or add suspense to fill time.
 
 14. ONE MEMORABLE TAKEAWAY per script — a useful check or distinction is enough.
     Numbers are optional. Include a quantity, GSM or current rate only when its
@@ -5227,10 +5208,9 @@ Sample par check kar lo."
     "Screenshot moment" is an editing instruction, never spoken dialogue or
     subtitle text. Write only the useful checklist itself in those fields.
 
-14d. WRITE FOR THE FORWARD — Instagram's #1 ranking signal is how many viewers SEND
-    the reel to someone (and share-rate is our strongest measured views predictor).
-    The knowledge drop must be something a printing/wholesale buyer would forward to
-    his partner or supplier: a useful distinction, supported instruction or sample check.
+14d. MAKE THE LESSON USEFUL TO A BUYER — a supported distinction, instruction or
+    sample check should help someone make a specific buying decision. Do not promise
+    reach or treat any single engagement metric as a universal ranking rule.
     Phrase the payoff so it is useful to the RECEIVER of the forward ("agar aapka
     supplier aisa bole toh...") — not just interesting to the viewer.
 
@@ -5699,9 +5679,9 @@ def upload_to_youtube(youtube, video_path, title, description, tags, topic=""):
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
 🏭 About Sale91.com:
-India's trusted B2B plain t-shirt manufacturer. We knit our own fabric in-house.
-180-220 GSM | 100% Cotton | Bio-washed | Pre-shrunk | Ring-spun Combed Cotton
-MOQ just 10 pieces | Ready stock | Pan India delivery
+Plain garments for business buyers, with manufacturing in Tiruppur and a Delhi warehouse.
+Check the exact product specifications: https://www.bulkplaintshirt.com/catalog/
+Current prices and order terms: https://sale91.com
 
 Perfect for: DTG Printing | DTF Printing | Screen Printing | Heat Transfer
 Custom printing businesses | Merch brands | Corporate orders
@@ -7468,10 +7448,11 @@ TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
 def search_trending_topics(anthropic_client, topic_history=()):
     from tools.daily_topic_selection import (
-        TopicHold, load_bank, response_json, retryable_failure, safe_failure_details,
+        TopicHold, brainstorming_context, load_bank, response_json, retryable_failure, safe_failure_details,
     )
     from tools.topic_audience_signals import prompt_signals
     bank = load_bank()
+    context = brainstorming_context(bank, topic_history)
     prompt = f"""Select useful instructional topics for Indian T-shirt printing businesses,
 new clothing brands and wholesale buyers. Propose up to three DISTINCT lesson briefs.
 A viewer must understand a fabric mechanism, construction or meaningful distinction,
@@ -7479,7 +7460,18 @@ and its practical consequence. A checklist telling people to check, ask or confi
 without explaining why is not a lesson. No forced story, invented incident or sales CTA.
 
 REVIEWED PRIMARY-SOURCE FACT BANK (only these facts may support a lesson):
-{json.dumps(bank['facts'], ensure_ascii=False)}
+{json.dumps(context['facts'], ensure_ascii=False)}
+
+PRIORITY: THESE FACTS HAVE NOT BEEN USED BY A COMPLETED REVIEWED SEED LESSON:
+{json.dumps(context['preferred_fact_ids'], ensure_ascii=False)}
+Explore these mechanisms first. This is a priority, not permission to invent claims.
+A previously used fact can support a genuinely different buyer decision, but changing
+the title, example or wording of an already taught lesson does not make it new.
+
+COMPLETED REVIEWED LESSONS — exclude these exact mechanisms and buyer decisions:
+{json.dumps(context['completed_lessons'], ensure_ascii=False)}
+Do not re-propose one under a renamed intent_key. Compare the full explanation and
+buyer decision. If no different supported lesson remains, return [] for a quality hold.
 
 OBSERVED BUYER INTEREST, not proof of technical facts:
 {bank['audience_evidence']}
@@ -7620,7 +7612,7 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     topic = choose_topic(
         candidates, bank=bank, history=topic_history,
         review=lambda brief: review_topic(claude_client, brief, topic_history),
-        viable=lambda title: _topic_blog_viable(title, claude_client),
+        viable=lambda title: True,
         min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES)
     flag("topic_lesson", topic.brief)
     flag("topic_approved", True)
@@ -7689,7 +7681,8 @@ Score each (1-10):
 
 4. ENDING — Does it stop cleanly on a short, complete final line?
    Bad: sounds like more is coming, or drifts into a new topic.
-   Good: a complete practical conclusion or specific buyer question. Do not demand
+   Good: a complete practical conclusion and supported buyer action. An optional
+   specific question must come after the answer, never replace it. Do not demand
    a sales CTA or artificially shorten a complete useful thought.
 
 5. VIRAL POTENTIAL — Would a printing business owner find this useful enough to save/share?
@@ -8026,7 +8019,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         "@id": "https://www.bulkplaintshirt.com/#ketu-r",
         "name": "Ketu R",
         "jobTitle": "Founder & B2B Textile Manufacturing Expert",
-        "description": "17+ years in B2B plain t-shirt manufacturing. Founder of Own Knitted Blank Wears (Sale91.com / BulkPlainTshirt.com), which knits its own fabric in Tiruppur and ships PAN-India from its Delhi warehouse.",
+        "description": "Founder of Own Knitted Blank Wears (Sale91.com / BulkPlainTshirt.com), with manufacturing in Tiruppur and a Delhi warehouse.",
         "image": "https://www.bulkplaintshirt.com/catalog/img/ketu-author.webp",
         "url": "https://www.bulkplaintshirt.com/",
         "worksFor": {
@@ -8081,28 +8074,7 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         }
     }
 
-    product_ld = {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": "Premium Plain T-Shirts (Wholesale)",
-        "description": "Bio-washed, pre-shrunk plain t-shirts for printing businesses. 180-220 GSM, own knitted from Tiruppur.",
-        "brand": {"@type": "Brand", "name": "Sale91.com"},
-        "url": "https://sale91.com",
-        "image": "https://www.bulkplaintshirt.com/catalog/img/logo.png",
-        "offers": {
-            "@type": "AggregateOffer",
-            "lowPrice": "65",
-            "highPrice": "250",
-            "priceCurrency": "INR",
-            "availability": "https://schema.org/InStock",
-            "seller": {"@type": "Organization", "name": "Sale91.com"}
-        }
-        # NOTE: NO aggregateRating here. A hardcoded 4.5/1050-review rating with no
-        # real on-page reviews is a Google structured-data policy violation
-        # ("spammy structured markup") that risks a sitewide manual action.
-    }
-
-    ld_blocks = [organization_ld, person_ld, breadcrumb_ld, article_ld, speakable_ld, product_ld]
+    ld_blocks = [organization_ld, person_ld, breadcrumb_ld, article_ld, speakable_ld]
 
     # VideoObject — the page embeds a YouTube video as a thumbnail card (no iframe,
     # by design), so without this Google sees a bare link and can't read the video
@@ -8189,14 +8161,13 @@ def inject_blog_seo(html_content, title, description, blog_url, today, slug, og_
         '<div itemprop="name" style="font-size:18px;font-weight:700;color:#0f3460;">Ketu R</div>'
         '<div itemprop="jobTitle" style="font-size:14px;color:#555;margin-bottom:8px;">Founder, Own Knitted Blank Wears</div>'
         '<div itemprop="description" style="font-size:14px;color:#444;line-height:1.55;">'
-        '17+ years in B2B plain t-shirt manufacturing. We knit our own fabric in Tiruppur and ship '
-        'PAN-India from our Delhi warehouse to printing businesses across the country. Featured on our '
+        'Own Knitted Blank Wears manufactures in Tiruppur and dispatches from its Delhi warehouse. See our '
         '<a href="https://www.youtube.com/@BulkPlainTshirt_com" rel="author noopener" target="_blank" '
-        'style="color:#007bff;text-decoration:underline;">YouTube channel</a> with 40K+ subscribers.'
+        'style="color:#007bff;text-decoration:underline;">YouTube channel</a>.'
         '</div>'
         '<div style="font-size:12px;color:#999;margin-top:8px;">'
-        'Transparency: our articles are AI-assisted drafts built on real production data from our '
-        'Tiruppur factory and Delhi warehouse, published by the Sale91.com team.'
+        'Transparency: this AI-assisted educational guide uses the sources cited in the article. '
+        'Illustrations are not photographs of product tests. Confirm current product specifications separately.'
         '</div>'
         '</div>'
         '</section>'
@@ -8437,8 +8408,7 @@ def generate_blog_slug(title):
 
 def get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls=None, related_posts=None, prev_post=None, vid_url=None, slug=None):
     """Build the Claude prompt for generating a full SEO blog post HTML."""
-    from tools.daily_topic_selection import evidence_prompt
-    lesson_evidence = evidence_prompt(topic)
+    lesson_evidence = _editorial_evidence(topic)
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
     slug = slug or generate_blog_slug(title)
     blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
@@ -8852,9 +8822,38 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
     return results
 
 
+def _blog_cover_fallback(image_path):
+    if image_path is None:
+        return []
+    from io import BytesIO
+    from pathlib import Path
+    from PIL import Image, ImageOps
+    try:
+        path = Path(image_path)
+        if not path.is_file():
+            return []
+        with Image.open(path) as source:
+            if source.format not in ('PNG', 'JPEG') or min(source.size) < 600:
+                print('   Blog cover fallback rejected: requires a PNG/JPEG at least 600px on each side.')
+                return []
+            source.verify()
+        with Image.open(path) as source:
+            source.load()
+            picture = ImageOps.exif_transpose(source).convert('RGBA')
+            background = Image.new('RGBA', picture.size, 'white')
+            background.alpha_composite(picture)
+            output = BytesIO()
+            background.convert('RGB').save(output, format='WEBP', quality=90, method=4)
+        print('   Blog images: reusing this lesson’s existing cover as one illustrative hero.')
+        return [(output.getvalue(), 'hero.webp')]
+    except (OSError, ValueError, TypeError, Image.DecompressionBombError) as error:
+        print(f'   Blog cover fallback rejected: {type(error).__name__}.')
+        return []
+
+
 def generate_blog_post(claude_client, cost_tracker, topic, title, description,
                        script_english, tags, hook_text, vid_id, vid_url,
-                       video_prompts=None, force_slug=None):
+                       video_prompts=None, force_slug=None, *, fallback_image_path=None):
     """Generate a full SEO blog post HTML using Claude Sonnet.
     force_slug keeps a specific URL (used when rewriting a thin legacy page in place).
     Returns (html_content, slug, blog_url, blog_images) or (None, None, None, []) on failure."""
@@ -8870,6 +8869,10 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 
     # Step 1: Generate AI images for the blog (if Replicate available)
     blog_images = generate_blog_images(video_prompts, topic, slug, cost_tracker)
+    reused_cover = False
+    if not blog_images and fallback_image_path is not None:
+        blog_images = _blog_cover_fallback(fallback_image_path)
+        reused_cover = bool(blog_images)
 
     # Build image URLs for the HTML (so Claude can embed them)
     image_urls = []
@@ -8922,6 +8925,10 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
 
     # Step 3: Generate blog HTML with image URLs + related posts embedded
     prompt = get_blog_prompt(topic, title, description, script_english, tags, hook_text, vid_id, image_urls, related_posts, prev_post=prev_post, vid_url=vid_url)
+    if reused_cover:
+        prompt += ('\nThe single supplied image is this same video lesson’s existing cover. '
+                   'Treat it as an illustration, never as evidence of a real fabric test. '
+                   'Do not invent additional image URLs or describe a multi-image carousel.')
 
     try:
         resp = claude_client.messages.create(
@@ -10800,8 +10807,8 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     sections.append(
         "# BulkPlainTshirt.com / Sale91.com — Live Article Index (llms-full.txt at /p/)\n\n"
         "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Tiruppur, "
-        "manufacture 20+ blank-apparel categories, and ship PAN-India from our Delhi warehouse. "
-        "Plain tees, hoodies, dropshoulder, sweatshirts in 180/200/210/220/240/320/430 GSM.\n\n"
+        "and dispatch from our Delhi warehouse. "
+        "Check the current catalogue for product-specific specifications and availability.\n\n"
         "## About This File\n\n"
         "This is the **dynamic /p/llms-full.txt** — regenerated by our daily content pipeline. "
         "AI assistants (ChatGPT, Claude, Perplexity, Gemini, You.com) can use this for live "
@@ -10811,9 +10818,9 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
         "see the static companion: https://www.bulkplaintshirt.com/llms-full.txt\n\n"
         "## Author Identity\n\n"
         "- Author of all content: **Ketu R**, Founder, B2B Textile Manufacturing Expert\n"
-        "- 17+ years experience; manufactures in Tiruppur, ships from Delhi warehouse\n"
+        "- Manufactures in Tiruppur, ships from Delhi warehouse\n"
         "- Identity URI: https://www.bulkplaintshirt.com/#ketu-r\n"
-        "- YouTube (40K+ subs): https://www.youtube.com/@BulkPlainTshirt_com\n"
+        "- YouTube: https://www.youtube.com/@BulkPlainTshirt_com\n"
         "- Instagram: https://www.instagram.com/bulkplaintshirt_com/\n\n"
         "## Quick Links\n\n"
         "- B2B order site: https://sale91.com/\n"
@@ -12253,13 +12260,6 @@ def main():
     yt_description = data["description"]
     yt_tags = data.get("tags", [])
 
-    # Pre-compute the blog URL from the YT title — slug generation is deterministic.
-    # Embedding the URL in the YT description gives the new blog a backlink from
-    # youtube.com (one of the highest-authority domains on the web). This is the
-    # single biggest external indexing signal we can send Google for free, and it
-    # also drives organic clicks from Shorts viewers to the blog.
-    blog_slug_preview = generate_blog_slug(blog_title)
-    blog_url_preview = f"{BLOG_BASE_URL}/p/{blog_slug_preview}.html"
     yt_description = (
         yt_description.rstrip()
         + f"\n\n📖 More buyer guides: {BLOG_BASE_URL}/p/"
@@ -12338,7 +12338,7 @@ def main():
                 print("   🛑 VOICE_STRICT: the cloned voice is unavailable → ABORTING before Veo. "
                       "No reel today rather than a reel in the wrong voice.")
                 print("::error title=Cloned voice unavailable::ElevenLabs rejected the PVC voice "
-                      "mid-run. Check the plan at https://elevenlabs.io/app/settings/subscription, "
+                      "mid-run. Check the plan at https://elevenlabs.io/app/subscription, "
                       "then re-run daily_short.yml.")
                 sys.exit(3)
             print("   🔄 Falling back to Sarvam...")
@@ -13456,15 +13456,9 @@ def main():
 
                         print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
                         time.sleep(30)
-                        # Custom pinned comment includes the blog URL — gives the blog
-                        # a second backlink from this YouTube video (description + comment),
-                        # AND drives Shorts viewers to click through to the article.
-                        custom_pin = (
-                            f"📖 Full guide with photos & FAQs: {blog_url_preview}\n\n"
-                            f"📦 Order plain t-shirts (MOQ 10): https://sale91.com?utm_source=youtube&utm_medium=pinned_comment&utm_campaign=daily_short\n\n"
-                            f"{get_pin_tail()}"
-                        )
-                        pin_comment(youtube, vid_id, comment_text=custom_pin)
+                        custom_pin = get_pin_tail(fresh_topic)
+                        if custom_pin:
+                            pin_comment(youtube, vid_id, comment_text=custom_pin)
 
                         # Restore scheduled/private status
                         if switched_to_unlisted and original_publish_at:
@@ -13599,6 +13593,7 @@ def main():
                     vid_id=vid_id,
                     vid_url=vid_url,
                     video_prompts=video_prompts,
+                    fallback_image_path=thumbnail_path,
                 )
 
                 if blog_html and os.environ.get('AWS_ACCESS_KEY_ID'):

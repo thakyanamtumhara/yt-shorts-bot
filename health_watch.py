@@ -127,10 +127,7 @@ def check_elevenlabs():
     if reset:
         extra["quota_resets"] = datetime.fromtimestamp(reset, IST).strftime("%d %b %Y")
 
-    if sub.get("has_open_invoices"):
-        return Result(key, label, sev, False,
-                      f"plan '{tier}' has an UNPAID INVOICE — ElevenLabs will cut access. "
-                      f"Pay it: https://elevenlabs.io/app/subscription", extra)
+    extra["has_open_invoices"] = sub.get("has_open_invoices") is True
 
     if str(sub.get("status", "")).lower() in ("past_due", "incomplete", "free_disabled"):
         return Result(key, label, sev, False,
@@ -158,6 +155,12 @@ def check_elevenlabs():
         return Result(key, label, sev, False,
                       f"plan '{tier}' ok but only {left:,} characters left of {limit:,} — "
                       f"roughly {left // 1500} videos before it silently falls back", extra)
+
+    if extra["has_open_invoices"]:
+        return Result(key, label, WARN, False,
+                      f"open-invoice flag, but subscription '{sub.get('status')}', PVC accessible "
+                      f"and {left:,} characters left. The actual clone must succeed before video clips. "
+                      "Review billing: https://elevenlabs.io/app/subscription/invoices", extra)
 
     return Result(key, label, sev, True,
                   f"{tier} · PVC allowed · {left:,}/{limit:,} chars left", extra)
@@ -574,7 +577,7 @@ def main():
         today = now_ist().strftime("%Y-%m-%d")
         if st.get("last_green_date") != today:
             title = ("🟢 Pipeline dependencies all clear" if not down
-                     else f"🟡 Reels are safe — {len(down)} backup still down")
+                     else f"🟡 No blocking dependency check failed — {len(down)} warnings")
             delivered = notify(title, render(results) + f"\n\n_{stamp}_", dry)
             if not dry and delivered:
                 st["last_green_date"] = today

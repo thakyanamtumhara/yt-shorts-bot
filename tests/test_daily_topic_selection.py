@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import Mock
 
 from tools.daily_topic_selection import (
-    DIMENSIONS, SelectedTopic, TopicHold, choose_topic, evidence_prompt,
+    DIMENSIONS, SelectedTopic, TopicHold, brainstorming_context, choose_topic, evidence_prompt,
     load_bank, load_topic_history, response_json, review_result, safe_failure_details,
     unsupported_shortcut, validate_brief,
 )
@@ -244,6 +244,32 @@ class TopicResponseReliabilityTest(unittest.TestCase):
         available = [validate_brief(item, BANK, history) for item in BANK['seed_lessons'][6:]]
         self.assertGreaterEqual(len(available), 4)
         self.assertEqual(len({item['intent_key'] for item in available}), len(available))
+
+    def test_prompt_prioritizes_unused_facts_and_excludes_completed_decisions(self):
+        history = [brief(0)['topic'], brief(1)['topic'], brief(2)['topic']]
+        context = brainstorming_context(BANK, history)
+        self.assertNotIn('knit_loop_stretch', context['preferred_fact_ids'])
+        self.assertIn('jersey_face_back', context['preferred_fact_ids'])
+        self.assertIn('knit_loop_stretch', context['facts'])
+        self.assertEqual(len(context['completed_lessons']), 3)
+        api = client([])
+        self.brainstorm()(api, history)
+        prompt = api.messages.create.call_args.kwargs['messages'][0]['content']
+        self.assertIn(brief(0)['buyer_decision'], prompt)
+        self.assertIn(brief(0)['intent_key'], prompt)
+        self.assertIn('genuinely different buyer decision', prompt)
+
+    def test_completed_known_intent_is_rejected_after_title_change(self):
+        candidate = brief(0)
+        candidate['topic'] = 'A renamed hook for the identical lesson'
+        with self.assertRaisesRegex(TopicHold, 'completed reviewed lesson intent'):
+            validate_brief(candidate, BANK, [brief(0)['topic']])
+
+    def test_used_fact_is_still_available_for_a_genuinely_new_reviewed_decision(self):
+        candidate = brief(0)
+        candidate.update(topic='A distinct proposed buyer decision', intent_key='different_decision')
+        validated = validate_brief(candidate, BANK, [brief(0)['topic']])
+        self.assertIn('knit_loop_stretch', validated['evidence'])
 
 
 class ActualPublishedMythRegressionTest(unittest.TestCase):

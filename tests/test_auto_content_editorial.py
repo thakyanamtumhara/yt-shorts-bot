@@ -137,6 +137,25 @@ class EditorialGuardTest(unittest.TestCase):
         self.assertIn('first paragraph', prompt)
         self.assertIn('primary-source facts', prompt)
 
+    def test_article_schema_does_not_invent_price_or_stock(self):
+        scope = load_functions('inject_blog_seo')
+        output = scope['inject_blog_seo'](
+            '<!DOCTYPE html><html><head><title>Loops</title></head><body><h1>Loops</h1><p>Loops move.</p></body></html>',
+            'Loops', 'Knitted loop structure', 'https://example.com/loops.html', '2026-09-23', 'loops')
+        schemas = [json.loads(text) for text in re.findall(
+            r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', output, re.S)]
+        types = [item['@type'] for item in schemas]
+        self.assertIn('Article', types)
+        self.assertIn('BreadcrumbList', types)
+        self.assertNotIn('Product', types)
+        self.assertNotIn('AggregateOffer', output)
+        self.assertNotIn('schema.org/InStock', output)
+        self.assertNotIn('real production data', output)
+        self.assertNotIn('17+ years', output)
+        self.assertNotIn('40K+', output)
+        self.assertIn('sources cited in the article', output)
+        self.assertIn('Illustrations are not photographs of product tests', output)
+
 
 if __name__ == '__main__':
     unittest.main()
