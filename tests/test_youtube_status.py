@@ -242,6 +242,7 @@ class DailyCommentIntegrationTest(unittest.TestCase):
                 video, cover = Path(folder) / "video.mp4", Path(folder) / "cover.png"
                 video.write_bytes(b"rendered video")
                 cover.write_bytes(b"rendered cover")
+                (Path(folder) / "audio.wav").write_bytes(b"normalized source voice")
                 scope = {"upload_failed": False, "status_restore_error": None, "post_upload_error": None,
                          failure: "Unverified", "WORK_DIR": folder, "output_path": str(video),
                          "thumbnail_path": str(cover), "fresh_topic": "Supported lesson", "yt_title": "Title",

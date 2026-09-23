@@ -19,7 +19,8 @@ def _asset(path):
 
 def save_review_archive(*, video_path, thumbnail_path, topic, youtube_title,
                         instagram_title, script_voice, tts_input, script_english,
-                        youtube_id, instagram_id, test_mode, run_flags):
+                        youtube_id, instagram_id, test_mode, run_flags,
+                        normalized_voice_path=None):
     video = Path(video_path).resolve()
     video_asset = _asset(video)
     cover_asset = None
@@ -28,6 +29,16 @@ def save_review_archive(*, video_path, thumbnail_path, topic, youtube_title,
         cover = video.parent / ('review_cover' + thumbnail.suffix.lower())
         shutil.copyfile(thumbnail, cover)
         cover_asset = _asset(cover)
+    voice_asset = None
+    if normalized_voice_path is not None:
+        voice = Path(normalized_voice_path)
+        voice_identity = _asset(voice)
+        saved_voice = video.parent / ('review_normalized_voice' + voice.suffix.lower())
+        shutil.copyfile(voice, saved_voice)
+        voice_asset = _asset(saved_voice)
+        if any(voice_asset[key] != voice_identity[key] for key in ('bytes', 'sha256')):
+            raise ValueError('Normalized voice changed during archival')
+        voice_asset['stage'] = 'normalized_tts_before_fade_and_mix'
     manifest = {
         'format': 'daily-short-review-v1',
         'review_status': 'unreviewed',
@@ -45,6 +56,8 @@ def save_review_archive(*, video_path, thumbnail_path, topic, youtube_title,
         'workflow': {key.lower(): os.environ.get(key) for key in (
             'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_SHA')},
     }
+    if voice_asset is not None:
+        manifest['assets']['normalized_voice'] = voice_asset
     path = video.parent / 'review_manifest.json'
     temporary = path.with_suffix('.json.tmp')
     with temporary.open('w', encoding='utf-8') as target:

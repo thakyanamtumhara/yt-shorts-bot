@@ -1,9 +1,11 @@
 import hashlib
+import ast
 import json
 import os
 from pathlib import Path
 import tempfile
 import unittest
+import wave
 from unittest.mock import patch
 
 from tools.short_review_archive import save_review_archive
@@ -52,6 +54,47 @@ class ReviewArchiveTests(unittest.TestCase):
         self.assertEqual(record['source_posts'], {'bot_youtube': None, 'instagram': None})
         self.assertTrue(record['test_mode'])
         self.assertEqual(record['review_status'], 'unreviewed')
+        self.assertNotIn('normalized_voice', record['assets'])
+
+    def test_normalized_voice_is_copied_exactly_and_survives_source_cleanup(self):
+        source = self.root / 'voice_123.wav'
+        with wave.open(str(source), 'wb') as output:
+            output.setnchannels(1); output.setsampwidth(2); output.setframerate(16000)
+            output.writeframes(b'\x01\x00' * 1600)
+        before = source.read_bytes()
+        self.args['normalized_voice_path'] = source
+        manifest = json.loads(save_review_archive(**self.args).read_text())
+        source.unlink()
+        asset = manifest['assets']['normalized_voice']
+        archived = self.root / asset['file']
+        self.assertEqual(archived.read_bytes(), before)
+        self.assertEqual(asset['bytes'], len(before))
+        self.assertEqual(asset['sha256'], hashlib.sha256(before).hexdigest())
+        self.assertEqual(asset['stage'], 'normalized_tts_before_fade_and_mix')
+        self.assertEqual(asset['file'], 'review_normalized_voice.wav')
+        self.assertNotIn(str(self.root), json.dumps(asset))
+
+    def test_explicit_missing_or_empty_voice_cannot_claim_diagnostic_backup(self):
+        source = self.root / 'missing.mp3'
+        self.args['normalized_voice_path'] = source
+        with self.assertRaises(FileNotFoundError):
+            save_review_archive(**self.args)
+        source.write_bytes(b'')
+        with self.assertRaises(ValueError):
+            save_review_archive(**self.args)
+        self.assertFalse((self.root / 'review_manifest.json').exists())
+
+    def test_both_daily_archives_use_exact_audiofileclip_source_and_workflow_retains_copy(self):
+        root = Path(__file__).resolve().parents[1]
+        tree = ast.parse((root / 'daily_short.py').read_text())
+        calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Name) and node.func.id == 'save_review_archive']
+        self.assertEqual(len(calls), 2)
+        for call in calls:
+            voice = next(keyword.value for keyword in call.keywords if keyword.arg == 'normalized_voice_path')
+            self.assertIsInstance(voice, ast.Name)
+            self.assertEqual(voice.id, 'audio_path')
+        self.assertIn('/tmp/yt_shorts/review_normalized_voice.*', (root / '.github/workflows/daily_short.yml').read_text())
 
     def test_missing_or_empty_video_never_creates_manifest(self):
         for empty in (True, False):

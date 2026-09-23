@@ -13259,7 +13259,7 @@ def main():
         topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
         script_voice=script_voice, tts_input=tts_input, script_english=script_english,
         youtube_id=None, instagram_id=None, test_mode=TEST_MODE,
-        run_flags=RUN_FLAGS,
+        run_flags=RUN_FLAGS, normalized_voice_path=audio_path,
     )
     if not TEST_MODE:
         from tools.prepublication_audio import require_native_audio_review
@@ -13536,7 +13536,7 @@ def main():
             topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
             script_voice=script_voice, tts_input=tts_input, script_english=script_english,
             youtube_id=vid_id, instagram_id=ig_media_id, test_mode=TEST_MODE,
-            run_flags=RUN_FLAGS,
+            run_flags=RUN_FLAGS, normalized_voice_path=audio_path,
         )
         flag('review_archive', True)
         print(f"   Review archive saved: {review_path}")

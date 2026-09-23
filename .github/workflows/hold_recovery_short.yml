@@ -1,0 +1,47 @@
+name: Hold Exact Recovery Short for Quality Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Hold only GMaTnJRoiV8 by clearing its 24-Sep-2026 schedule; false previews only'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repair-recovery-disclosure-GMaTnJRoiV8
+  cancel-in-progress: false
+
+jobs:
+  hold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install YouTube API dependencies
+        run: pip install -q google-auth google-api-python-client requests
+      - name: Back up status, test offline undo and optionally hold exact Short
+        env:
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          APPLY_HOLD: ${{ inputs.apply }}
+        run: |
+          if [ "$APPLY_HOLD" = "true" ]; then
+            python tools/hold_recovery_short.py --apply
+          else
+            python tools/hold_recovery_short.py
+          fi
+      - name: Retain safe original status, restore body and verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-short-quality-hold
+          path: recovery-short-quality-hold/*.json
+          retention-days: 30
+          if-no-files-found: warn
