@@ -5,13 +5,15 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 import re
+import textwrap
 from types import SimpleNamespace
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from tools.daily_topic_selection import (
-    DIMENSIONS, SelectedTopic, TopicHold, brainstorming_context, choose_topic, evidence_prompt,
+    DIMENSIONS, SelectedTopic, TopicHold, brainstorming_context, choose_topic,
+    consume_uploaded_topic, evidence_prompt,
     load_bank, load_topic_history, response_json, review_result, safe_failure_details,
     unsupported_shortcut, validate_brief,
 )
@@ -136,6 +138,111 @@ class EvidenceAndSelectionTest(unittest.TestCase):
         choose(many, reviewer, viable=viable)
         self.assertEqual(reviewer.call_count, 5)
         self.assertEqual(viable.call_count, 10)
+
+
+class TopicConsumptionTest(unittest.TestCase):
+    VIDEO_ID = 'aB3dE5gH7_-'
+
+    def test_normal_ack_preserves_existing_strings_and_is_idempotent(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson", "Other session lesson"]')
+            topic = SelectedTopic(validate_brief(brief(), BANK))
+            self.assertTrue(consume_uploaded_topic(path, topic, self.VIDEO_ID))
+            self.assertEqual(load_topic_history(path), ['Earlier lesson', 'Other session lesson', str(topic)])
+            self.assertFalse(consume_uploaded_topic(path, topic, self.VIDEO_ID))
+            self.assertEqual(len(load_topic_history(path)), 3)
+
+    def test_test_modes_and_invalid_ack_never_touch_history(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            for mode in ('test_mode', 'new_test_mode', 'single_veo_test'):
+                self.assertFalse(consume_uploaded_topic(path, 'Lesson', self.VIDEO_ID, **{mode: True}))
+            for video_id in (None, '', '?', 'test:12345', 'too-short', 12345678901, 'https://yt/12345'):
+                self.assertFalse(consume_uploaded_topic(path, 'Lesson', video_id))
+            self.assertFalse(path.exists())
+
+    def test_corrupt_history_and_failed_atomic_write_preserve_original_bytes(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson"]')
+            original = path.read_bytes()
+            with patch('tools.daily_topic_selection.os.fsync', side_effect=OSError('Disk write failed')):
+                with self.assertRaises(OSError):
+                    consume_uploaded_topic(path, 'New lesson', self.VIDEO_ID)
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(list(Path(folder).glob('*.tmp')), [])
+            path.write_text('broken')
+            with self.assertRaises(TopicHold):
+                consume_uploaded_topic(path, 'New lesson', self.VIDEO_ID)
+            self.assertEqual(path.read_text(), 'broken')
+
+    def upload_stage(self, path, *, mode=None, upload_error=None, instagram_error=None,
+                     video_id=VIDEO_ID, youtube_auth=True):
+        source = (ROOT / 'daily_short.py').read_text()
+        start = source.index('    # ── 10. Upload to YouTube')
+        end = source.index('    # ── 10e. Generate & Publish SEO Blog Post', start)
+        scope = {'TEST_MODE': False, 'NEW_TEST_MODE': False, 'SINGLE_VEO_TEST': False,
+                 'TOPIC_HISTORY_FILE': path, 'consume_uploaded_topic': consume_uploaded_topic,
+                 'fresh_topic': 'New supported lesson', 'output_path': 'video.mp4',
+                 'thumbnail_path': None, 'yt_title': 'Title', 'ig_title': 'IG title',
+                 'yt_description': 'Description', 'yt_tags': [], 'music_mood': 'calm',
+                 'get_topic_tags': lambda topic: [], 'get_youtube_service': lambda: object() if youtube_auth else None,
+                 'check_past_engagement': Mock(), 'check_instagram_engagement': Mock(),
+                 'upload_to_youtube': Mock(side_effect=upload_error, return_value=(video_id, 'https://youtube.com/shorts/' + str(video_id))),
+                 'SCHEDULE_PUBLISH': False, 'time': SimpleNamespace(sleep=Mock()),
+                 'get_pin_tail': lambda topic: None, 'add_to_playlist': Mock(), 'flag': Mock(),
+                 'CROSS_POST_INSTAGRAM': False, 'os': SimpleNamespace(environ={}),
+                 'cross_post_to_instagram': Mock(side_effect=instagram_error, return_value=None),
+                 'publish_fb_reel': Mock(return_value=None), 'post_telegram_channel': Mock()}
+        if mode:
+            scope[mode] = True
+        with redirect_stdout(StringIO()):
+            exec(compile(textwrap.dedent(source[start:end]), 'upload_stage', 'exec'), scope)
+        return scope
+
+    def test_actual_upload_stage_consumes_after_ack_before_instagram_failure(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson"]')
+            with self.assertRaisesRegex(RuntimeError, 'Instagram failed'):
+                self.upload_stage(path, instagram_error=RuntimeError('Instagram failed'))
+            self.assertEqual(load_topic_history(path), ['Earlier lesson', 'New supported lesson'])
+
+    def test_actual_upload_stage_errors_auth_failures_and_invalid_ids_do_not_consume(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson"]')
+            for options in ({'upload_error': RuntimeError('Upload failed')}, {'youtube_auth': False},
+                            {'video_id': '?'}, {'video_id': 'invalid'}):
+                with self.subTest(options=options):
+                    self.upload_stage(path, **options)
+                    self.assertEqual(load_topic_history(path), ['Earlier lesson'])
+
+    def test_actual_upload_stage_test_modes_keep_their_existing_upload_semantics(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson"]')
+            for mode in ('TEST_MODE', 'NEW_TEST_MODE', 'SINGLE_VEO_TEST'):
+                with self.subTest(mode=mode):
+                    scope = self.upload_stage(path, mode=mode)
+                    self.assertEqual(load_topic_history(path), ['Earlier lesson'])
+                    self.assertEqual(scope['upload_to_youtube'].call_count, 0 if mode == 'TEST_MODE' else 1)
+
+    def test_actual_topic_selection_is_read_only_until_successful_upload(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        start = source.index('    # ── 2. Pick a distinct lesson with reviewed facts')
+        end = source.index('    # ── 3. Generate Script (with quality gate)', start)
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('["Earlier lesson"]')
+            original = path.read_bytes()
+            scope = {'TOPIC_HISTORY_FILE': path, 'claude': None, 'TOPIC_BANK': [],
+                     'smart_pick_topic': Mock(return_value='New supported lesson')}
+            with redirect_stdout(StringIO()):
+                exec(compile(textwrap.dedent(source[start:end]), 'selection_stage', 'exec'), scope)
+            self.assertEqual(scope['fresh_topic'], 'New supported lesson')
+            self.assertEqual(path.read_bytes(), original)
 
 
 class StrictReviewTest(unittest.TestCase):

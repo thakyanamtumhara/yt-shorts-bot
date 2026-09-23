@@ -413,10 +413,9 @@ def run_all():
 
 
 def render(results):
-    icon = {True: "🟢", False: "🔴"}
     lines = []
     for r in results:
-        mark = icon[r.ok] if r.ok or r.severity != INFO else "⚪"
+        mark = "🟢" if r.ok else ("🔴" if r.severity == CRITICAL else "🟡")
         lines.append(f"{mark} {r.label}: {r.detail}")
     return "\n".join(lines)
 
@@ -511,7 +510,8 @@ def main():
     print(f"🩺 health watch — {stamp}{'  [GATE]' if gate else ''}{'  [DRY RUN]' if dry else ''}")
     results = run_all()
     for r in results:
-        print(f"   {'🟢' if r.ok else '🔴'} {r.label:34s} {r.detail}")
+        mark = "🟢" if r.ok else ("🔴" if r.severity == CRITICAL else "🟡")
+        print(f"   {mark} {r.label:34s} {r.detail}")
 
     if "--json" in sys.argv:
         print(json.dumps({r.key: r.as_dict() for r in results}, indent=1, ensure_ascii=False))

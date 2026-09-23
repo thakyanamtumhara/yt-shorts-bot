@@ -3072,6 +3072,8 @@ def _generate_existing_article_carousel(claude_client, cost_tracker, articles, p
     for article in ordered[:5]:
         if not article.get('slug'):
             continue
+        if 'hero_image' in article and not _blog_hero_url(article):
+            continue
         draft = generate_ig_carousel_draft(
             claude_client=claude_client, cost_tracker=cost_tracker,
             blog_title=article.get('title', ''),
@@ -8255,6 +8257,30 @@ def _load_blog_history_active():
     return [h for h in history if not h.get('redirect_to')]
 
 
+def _blog_hero_url(post):
+    if 'hero_image' in post:
+        value = post['hero_image']
+        if not isinstance(value, str) or not value.strip():
+            return None
+        value = value.strip()
+        if value.startswith('/') and not value.startswith('//'):
+            return BLOG_BASE_URL.rstrip('/') + value
+        return value if value.startswith(('https://', 'http://')) else None
+    slug = post.get('slug')
+    return f'{BLOG_BASE_URL}/p/{slug}-hero.webp' if slug else None
+
+
+def _blog_lastmod(post):
+    for value in (post.get('modified'), post.get('date')):
+        if not isinstance(value, str) or not value:
+            continue
+        try:
+            return datetime.fromisoformat(value.replace('Z', '+00:00')).strftime('%Y-%m-%d')
+        except ValueError:
+            continue
+    return None
+
+
 # ── Blog publish gate ──────────────────────────────────────────────────
 # June 2026: 35 near-duplicate posts in one month tipped Google's scaled-content
 # threshold — new posts land in "Crawled – currently not indexed" and the
@@ -8460,7 +8486,11 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
 
     related_instructions = ""
     if related_posts:
-        links_list = "\n".join(f"   - {rp['title']}: https://www.bulkplaintshirt.com/p/{rp['slug']}.html (hero image: https://www.bulkplaintshirt.com/p/{rp['slug']}-hero.webp)" for rp in related_posts)
+        links_list = "\n".join(
+            f"   - {rp['title']}: https://www.bulkplaintshirt.com/p/{rp['slug']}.html"
+            + (f" (hero image: {_blog_hero_url(rp)})" if _blog_hero_url(rp)
+               else " (text-only card; no image is approved)")
+            for rp in related_posts)
         # Inline link pool — Claude picks the most contextually relevant 2-3 to embed in body
         inline_pool = "\n".join(f"   - \"{rp['title']}\" → https://www.bulkplaintshirt.com/p/{rp['slug']}.html" for rp in related_posts[:7])
         related_instructions = f"""
@@ -8485,7 +8515,8 @@ def get_blog_prompt(topic, title, description, script_english, tags, hook_text, 
       Show ALL these as VISUAL CARDS:
 {links_list}
       - Responsive flex/grid: 2-3 cards per row on desktop, 1 per row on mobile
-      - Each card: hero image (height:140px, object-fit:cover, border-radius:8px 8px 0 0, loading="lazy", onerror="this.style.display='none'") + clickable title link (font-size:14px, font-weight:600, padding:12px)
+      - Use an image only when a hero image URL is explicitly supplied above. For text-only cards, omit the image; never guess one from the slug.
+      - Each card: optional approved hero image (height:140px, object-fit:cover, border-radius:8px 8px 0 0, loading="lazy", onerror="this.style.display='none'") + clickable title link (font-size:14px, font-weight:600, padding:12px)
       - Card styling: background #fff, border-radius:10px, box-shadow:0 2px 6px rgba(0,0,0,0.06), border:1px solid #e8e8e0
       - Wrap container: max-width:800px, margin:30px auto
       - Section heading: H2 "More Articles"
@@ -8911,13 +8942,14 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
                     scored.append((score, h))
             scored.sort(key=lambda x: -x[0])
             related_posts = [
-                {"title": h["title"], "slug": h["slug"], "tags": h.get("tags", [])}
+                {"title": h["title"], "slug": h["slug"], "tags": h.get("tags", []),
+                 "hero_image": _blog_hero_url(h)}
                 for _, h in scored[:7]
             ]
             # Fallback: if no topic match, use 5 most recent
             if not related_posts:
                 related_posts = [
-                    {"title": h["title"], "slug": h["slug"]}
+                    {"title": h["title"], "slug": h["slug"], "hero_image": _blog_hero_url(h)}
                     for h in history_sorted if h.get('slug') != slug
                 ][:5]
     except Exception as e:
@@ -9824,12 +9856,14 @@ def repair_existing_blog_posts(s3_client, cloudfront_client):
 
     repaired = []
     for entry in history:
+        if entry.get('editorial_corrected_at'):
+            continue
         slug = entry.get("slug", "")
         title = entry.get("title", "")
         blog_url = entry.get("url", "")
         date = entry.get("date", datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d"))
         date10 = (date or "")[:10]
-        vid_url = entry.get("vid_url", "")
+        vid_url = entry.get("vid_url") or ""
         _vm = re.search(r'(?:shorts/|v=|embed/|/vi/)([A-Za-z0-9_-]{11})', vid_url)
         vid_id = _vm.group(1) if _vm else None
         key = f"p/{slug}.html"
@@ -9977,8 +10011,6 @@ def build_sitemap_xml(new_post=None):
     """
     import json as _json
 
-    today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
-
     # Static pages — NO lastmod: these rarely change, and stamping today's date
     # on every rebuild taught Google to distrust the sitemap's lastmod signal.
     # policy.html / term.html / disclaimer.html are Disallow'd in robots.txt and
@@ -10022,16 +10054,11 @@ def build_sitemap_xml(new_post=None):
             continue
         seen_slugs.add(p_slug)
         p_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
-        p_date = today
-        try:
-            dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
-            p_date = dt.strftime('%Y-%m-%d')
-        except Exception:
-            pass
+        p_date = _blog_lastmod(post)
+        lastmod_xml = f'    <lastmod>{p_date}</lastmod>\n' if p_date else ''
         urls_xml += f'''  <url>
     <loc>{p_url}</loc>
-    <lastmod>{p_date}</lastmod>
-    <changefreq>monthly</changefreq>
+{lastmod_xml}    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 '''
@@ -10127,7 +10154,8 @@ def build_blog_index_html(new_post=None):
     # OG image: use latest post hero, or logo fallback
     og_image = f"{BLOG_BASE_URL}/catalog/img/logo.png"
     if posts:
-        og_image = f"{BLOG_BASE_URL}/p/{posts[0].get('slug', '')}-hero.webp"
+        og_image = _blog_hero_url(posts[0]) or og_image
+    og_image = _html.escape(og_image)
 
     # Color palette for hero fallback gradients
     gradients = [
@@ -10160,7 +10188,10 @@ def build_blog_index_html(new_post=None):
             p_date = dt.strftime('%b %d, %Y')
         except Exception:
             pass
-        hero_url = f"/p/{p_slug}-hero.webp"
+        hero_url = _blog_hero_url(post)
+        hero_img = (f'<img src="{_html.escape(hero_url)}" alt="{p_title}" loading="lazy" '
+                    'onerror="this.parentElement.classList.add(\'no-img\')">') if hero_url else ''
+        hero_class = 'card-img' if hero_url else 'card-img no-img'
         post_url = f"/p/{p_slug}.html"
         vid_url = post.get('vid_url', '')
         word_count = post.get('word_count', 2000)
@@ -10184,8 +10215,8 @@ def build_blog_index_html(new_post=None):
 
         cards_html += f'''        <article class="post-card" data-tags="{tags_attr}" data-title="{p_title}" data-topic="{p_topic}">
             <a href="{post_url}">
-                <div class="card-img" style="--fallback-bg:{gradient}">
-                    <img src="{hero_url}" alt="{p_title}" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+                <div class="{hero_class}" style="--fallback-bg:{gradient}">
+                    {hero_img}
                     <div class="img-fallback">{first_letter}</div>
                     {play_icon}
                 </div>
@@ -10524,6 +10555,8 @@ def build_rss_feed(new_post=None):
     """
     import json as _json
     import html as _html
+    import mimetypes as _mimetypes
+    from urllib.parse import urlsplit as _urlsplit
 
     posts = _load_blog_history_active()
 
@@ -10545,7 +10578,11 @@ def build_rss_feed(new_post=None):
             p_date = dt.strftime('%a, %d %b %Y %H:%M:%S %z')
         except Exception:
             pass
-        hero_url = f"{BLOG_BASE_URL}/p/{p_slug}-hero.webp"
+        hero_url = _blog_hero_url(post)
+        enclosure_xml = ''
+        if hero_url:
+            image_type = _mimetypes.guess_type(_urlsplit(hero_url).path)[0] or 'image/webp'
+            enclosure_xml = f'      <enclosure url="{_html.escape(hero_url)}" type="{image_type}"/>\n'
 
         # Build tag elements
         tags_xml = ''
@@ -10558,8 +10595,7 @@ def build_rss_feed(new_post=None):
       <guid isPermaLink="true">{p_url}</guid>
       <description>{p_desc}</description>
       <pubDate>{p_date}</pubDate>
-      <enclosure url="{hero_url}" type="image/webp"/>
-{tags_xml}    </item>
+{enclosure_xml}{tags_xml}    </item>
 '''
 
     now_rfc = datetime.now(pytz.timezone(TIMEZONE)).strftime('%a, %d %b %Y %H:%M:%S %z')
@@ -10568,7 +10604,7 @@ def build_rss_feed(new_post=None):
   <channel>
     <title>Plain T-Shirt Blog | BulkPlainTshirt.com</title>
     <link>{BLOG_BASE_URL}/p/index.html</link>
-    <description>Expert guides on wholesale plain t-shirts, GSM fabric, printing techniques from India's leading B2B manufacturer.</description>
+    <description>Buyer guides on wholesale plain t-shirts, fabric specifications and printing decisions from Sale91.com.</description>
     <language>en</language>
     <lastBuildDate>{now_rfc}</lastBuildDate>
     <atom:link href="{BLOG_BASE_URL}/p/feed.xml" rel="self" type="application/rss+xml"/>
@@ -10602,7 +10638,10 @@ def build_blog_widget_html(max_posts=3):
     for post in posts:
         p_slug = post.get('slug', '')
         p_title = _html.escape(post.get('title', ''))
-        hero_url = f"{BLOG_BASE_URL}/p/{p_slug}-hero.webp"
+        hero_url = _blog_hero_url(post)
+        hero_img = (f'<img src="{_html.escape(hero_url)}" alt="{p_title}" loading="lazy" '
+                    'style="width:100%;height:140px;object-fit:cover;" '
+                    'onerror="this.style.display=\'none\'">') if hero_url else ''
         post_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
         p_date = ''
         try:
@@ -10611,7 +10650,7 @@ def build_blog_widget_html(max_posts=3):
         except Exception:
             pass
         cards += f'''  <a href="{post_url}" style="display:block;text-decoration:none;color:inherit;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06);border:1px solid #e8e8e0;transition:transform 0.2s;flex:1;min-width:240px;">
-    <img src="{hero_url}" alt="{p_title}" loading="lazy" style="width:100%;height:140px;object-fit:cover;" onerror="this.style.display='none'">
+    {hero_img}
     <div style="padding:12px 14px;">
       <div style="font-size:14px;font-weight:600;color:#1a1a1a;line-height:1.4;">{p_title}</div>
       <div style="font-size:11px;color:#999;margin-top:6px;">{p_date}</div>
@@ -10731,8 +10770,8 @@ def _build_and_upload_p_llms_txt(s3_client, current_blog=None):
     out = []
     out.append("# BulkPlainTshirt.com — Blog URL Directory")
     out.append("# Auto-updated daily by yt-shorts-bot from blog_history.json")
-    out.append("# Author: Ketu R, Founder — https://www.bulkplaintshirt.com/#ketu-r")
-    out.append("# YouTube: https://www.youtube.com/@BulkPlainTshirt_com (40K+ subs)")
+    out.append("# Published by the Sale91.com team; articles may be prepared with AI assistance.")
+    out.append("# YouTube: https://www.youtube.com/@BulkPlainTshirt_com")
     out.append("#")
     out.append("# RELATED DISCOVERY FILES:")
     out.append("#   Short profile:   https://www.bulkplaintshirt.com/llms.txt")
@@ -10806,7 +10845,7 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
     # ── Header ──
     sections.append(
         "# BulkPlainTshirt.com / Sale91.com — Live Article Index (llms-full.txt at /p/)\n\n"
-        "> India's leading B2B plain t-shirt manufacturer. We knit our own fabric in Tiruppur, "
+        "> B2B plain t-shirt manufacturing in Tiruppur, "
         "and dispatch from our Delhi warehouse. "
         "Check the current catalogue for product-specific specifications and availability.\n\n"
         "## About This File\n\n"
@@ -10817,7 +10856,7 @@ def _build_and_upload_llms_full(s3_client, latest_html, latest_title, latest_url
         "**For our full company profile, product catalog, glossary, and citation guidance,**\n"
         "see the static companion: https://www.bulkplaintshirt.com/llms-full.txt\n\n"
         "## Author Identity\n\n"
-        "- Author of all content: **Ketu R**, Founder, B2B Textile Manufacturing Expert\n"
+        "- Published by the **Sale91.com team**; articles may be prepared with AI assistance\n"
         "- Manufactures in Tiruppur, ships from Delhi warehouse\n"
         "- Identity URI: https://www.bulkplaintshirt.com/#ketu-r\n"
         "- YouTube: https://www.youtube.com/@BulkPlainTshirt_com\n"
@@ -12129,15 +12168,12 @@ def main():
     fetch_source_channel_insights()
 
     # ── 2. Pick a distinct lesson with reviewed facts ──
-    from tools.daily_topic_selection import load_topic_history
+    from tools.daily_topic_selection import consume_uploaded_topic, load_topic_history
     topic_history = load_topic_history(TOPIC_HISTORY_FILE)
 
     print("   🎯 Smart topic selection (with quality gate)...")
     fresh_topic = smart_pick_topic(claude, TOPIC_BANK, topic_history)
 
-    topic_history.append(fresh_topic)
-    with open(TOPIC_HISTORY_FILE, "w") as f:
-        json.dump(topic_history, f, indent=2)
     print(f"   📌 Topic: {fresh_topic}")
 
     # ── 3. Generate Script (with quality gate) ──
@@ -13425,6 +13461,11 @@ def main():
         if youtube:
             try:
                 vid_id, vid_url = upload_to_youtube(youtube, output_path, yt_title, yt_description, yt_tags, topic=fresh_topic)
+                consumed = consume_uploaded_topic(
+                    TOPIC_HISTORY_FILE, fresh_topic, vid_id, test_mode=TEST_MODE,
+                    new_test_mode=NEW_TEST_MODE, single_veo_test=SINGLE_VEO_TEST)
+                if consumed:
+                    flag('topic_consumed', {'topic': str(fresh_topic), 'youtube_id': vid_id})
 
                 if vid_id and vid_id != "?":
                     if NEW_TEST_MODE or SINGLE_VEO_TEST:

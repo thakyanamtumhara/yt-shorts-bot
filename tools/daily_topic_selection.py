@@ -1,6 +1,8 @@
 import json
+import os
 from pathlib import Path
 import re
+import tempfile
 import unicodedata
 
 
@@ -114,6 +116,35 @@ def load_topic_history(path):
         return history
     except (OSError, ValueError) as error:
         raise TopicHold('Topic history is unavailable or invalid; freshness cannot be verified.') from error
+
+
+def consume_uploaded_topic(path, topic, video_id, *, test_mode=False,
+                           new_test_mode=False, single_veo_test=False):
+    if test_mode or new_test_mode or single_veo_test:
+        return False
+    if not isinstance(video_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id):
+        return False
+    if not isinstance(topic, str) or not topic.strip():
+        raise TopicHold('An uploaded topic must have a nonempty title.')
+    path = Path(path)
+    history = load_topic_history(path)
+    if normalized(topic) in {normalized(title) for title in history}:
+        return False
+    history.append(str(topic))
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=path.parent,
+                                         prefix=path.name + '.', suffix='.tmp', delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(history, handle, ensure_ascii=False, indent=2)
+            handle.write('\n')
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return True
 
 
 def brainstorming_context(bank, history):
