@@ -161,5 +161,12 @@
  },
  "wh26-printing-li": {
   "nudged": true
+ },
+ "wh26-printing-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1640578897677797/"
+ },
+ "wh26-printing-x": {
+  "nudged": true
  }
 }
