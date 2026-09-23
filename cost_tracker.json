@@ -2995,5 +2995,21 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.2063
     }
+  },
+  {
+    "date": "2026-09-23T16:26:41.732183",
+    "topic": "\u092a\u094b\u0932\u094b \u0915\u0940 \u091c\u093e\u0932\u0940\u0926\u093e\u0930 \u092c\u0941\u0928\u093e\u0935\u091f \u0915\u0948\u0938\u0947 \u092c\u0928\u0924\u0940 \u0939\u0948 \u2014 \u092a\u0940\u0915\u0947 (Pique) fabric \u0915\u093e \u0905\u0938\u0932\u0940 \u092e\u0924\u0932\u092c",
+    "title": "Polo T-Shirt \u0915\u0940 \u091c\u093e\u0932\u0940\u0926\u093e\u0930 \u092c\u0941\u0928\u093e\u0935\u091f \u0915\u093e \u0930\u093e\u091c\u093c \u2014 Pique Knit vs Cotton Quality",
+    "total_usd": 5.4654,
+    "duration_min": 31.9,
+    "breakdown": {
+      "claude_opus": 0.3491,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0208,
+      "veo_clips": 4.8,
+      "whisper": 0.0036,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.1969
+    }
   }
 ]

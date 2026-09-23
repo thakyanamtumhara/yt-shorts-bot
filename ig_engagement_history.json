@@ -2123,7 +2123,7 @@
     "title": "Rib Neckline vs Body Fabric — Why Collar Stretches More in Plain T-Shirts",
     "topic": "रिब वाला गला ज्यादा फैलता कैसे है?",
     "published_at": "2026-09-14T21:15:36.306455+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "RIB GALA क्यों फैलता है?",
     "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
     "cover_path": "ai+pil-buyer-b",
@@ -2135,14 +2135,23 @@
       "requested": true,
       "container_id": "18344789779266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-09-23T21:50:05.203311+05:30",
+    "hours_since_publish": 216.6,
+    "views": 2107,
+    "reach": 1739,
+    "likes": 16,
+    "comments": 1,
+    "shares": 7,
+    "saves": 5,
+    "avg_watch_time_ms": 10514
   },
   {
     "media_id": "18111805667039497",
     "title": "Biowash vs Preshrunk — Same Lagta Hai But Fabric Finish Alag Hai",
     "topic": "बायोवॉश और प्री-श्रंक एक ही चीज़ हैं क्या?",
     "published_at": "2026-09-15T19:49:45.790596+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "BIOWASH ≠ PRESHRUNK फर्क समझो",
     "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
     "cover_path": "illustration-buyer-b",
@@ -2158,14 +2167,23 @@
       "requested": true,
       "container_id": "18344925064266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-09-23T21:50:05.203311+05:30",
+    "hours_since_publish": 194.0,
+    "views": 313,
+    "reach": 286,
+    "likes": 5,
+    "comments": 1,
+    "shares": 1,
+    "saves": 2,
+    "avg_watch_time_ms": 7073
   },
   {
     "media_id": "18448901581121811",
     "title": "No Lycra But T-Shirt Still Stretches — Knit vs Woven Fabric Check",
     "topic": "बिना लाइक्रा के भी टी-शर्ट खिंचती क्यों है?",
     "published_at": "2026-09-16T19:48:39.352368+05:30",
-    "checked": false,
+    "checked": true,
     "cover_text": "LYCRA नहीं फिर STRETCH कैसे?",
     "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
     "cover_path": "illustration-buyer-b",
@@ -2179,6 +2197,37 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18345069589266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "checked_at": "2026-09-23T21:50:05.203311+05:30",
+    "hours_since_publish": 170.0,
+    "views": 866,
+    "reach": 668,
+    "likes": 12,
+    "comments": 1,
+    "shares": 0,
+    "saves": 5,
+    "avg_watch_time_ms": 10554
+  },
+  {
+    "media_id": "18618843040045479",
+    "title": "Pique Fabric Is NOT a Fibre — Polo Texture Ka Asli Secret Most Sellers Miss",
+    "topic": "पोलो की जालीदार बुनावट कैसे बनती है — पीके (Pique) fabric का असली मतलब",
+    "published_at": "2026-09-23T21:52:35.510063+05:30",
+    "checked": false,
+    "bot_youtube_id": "GMaTnJRoiV8",
+    "workflow_run_id": "35884612564",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "POLO की जाली FIBRE नहीं KNITTING",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18346125022266060",
       "verification": "create_accepted_native_label_unverified"
     }
   }
