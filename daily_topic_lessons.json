@@ -1,7 +1,7 @@
 {
   "format": "daily-topic-facts-v1",
   "reviewed": true,
-  "reviewed_on": "2026-09-11",
+  "reviewed_on": "2026-09-23",
   "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted.",
   "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
@@ -23,14 +23,14 @@
       "claim": "In single jersey, the technical face shows the legs of loops as vertical V-like columns; the reverse shows the loop crowns more prominently in horizontal rows. Face and back therefore differ.",
       "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
       "source_title": "CottonWorks: Knit Basics",
-      "checked_on": "2026-09-11",
+      "checked_on": "2026-09-23",
       "limits": "Teach construction, not a pass/fail quality test. Do not label generated close-ups as a microscope view of actual stock."
     },
     "pique_tuck_structure": {
       "claim": "Tuck stitches create the cellular texture used in pique constructions, common in polo shirts. Pique is a knit construction, rather than a fibre-composition label.",
       "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
       "source_title": "CottonWorks: Knit Basics",
-      "checked_on": "2026-09-11",
+      "checked_on": "2026-09-23",
       "limits": "The distinction between construction and fibre label is a buyer inference. Do not promise a universal temperature, breathability score or printing suitability."
     },
     "french_terry_fleece": {
@@ -79,14 +79,14 @@
       "claim": "Fabric mass per unit area measures the mass of a defined area of fabric. It is a different quantity from the total weight of a finished garment.",
       "source_url": "https://store.astm.org/d3776_d3776m-20r25.html",
       "source_title": "ASTM D3776/D3776M-20(2025): public abstract for Fabric Mass Per Unit Area",
-      "checked_on": "2026-09-11",
+      "checked_on": "2026-09-23",
       "limits": "Use the public definition only, not an invented home certification procedure. The garment-weight distinction is dimensional reasoning. Weight alone does not establish fibre identity, finishing or all quality attributes. Do not prescribe a universal GSM minimum."
     },
     "stitch_construction_jobs": {
       "claim": "A twin-needle 406 coverseam is commonly used to hem knitted garments. Three-thread 504 overedge can join fabric plies as well as finish edges; two-thread 503 serging is not suitable for a loaded joining seam.",
       "source_url": "https://www.coats.com/en-us/info-hub/basic-stitch-types/",
       "source_title": "Coats: Basic Stitch Types",
-      "checked_on": "2026-09-11",
+      "checked_on": "2026-09-23",
       "limits": "Describe specified common constructions, not every T-shirt. Two visible rows alone cannot identify the stitch or certify quality; no universal strength claim. Tubular garments may lack side seams."
     }
   },
@@ -150,6 +150,46 @@
       "intent_key": "combing_short_fibre_removal_before_spinning",
       "fact_ids": [
         "combing_short_fibres"
+      ]
+    },
+    {
+      "topic": "टी-शर्ट का कपड़ा अंदर और बाहर अलग क्यों दिखता है?",
+      "buyer_question": "Why does single-jersey T-shirt fabric look different on its two sides?",
+      "lesson": "Single jersey presents the loop legs as vertical V-like columns on its face. On the reverse, the loop crowns appear more prominently in horizontal rows; the contrast comes from construction rather than proving that one side is defective.",
+      "buyer_decision": "Compare corresponding fabric sides when judging appearance; do not mistake the normal reverse structure for a fault.",
+      "intent_key": "single_jersey_face_back_loop_orientation",
+      "fact_ids": [
+        "jersey_face_back"
+      ]
+    },
+    {
+      "topic": "पोलो की जाली जैसी बनावट: कपास का नाम या बुनाई का?",
+      "buyer_question": "Does the textured pique surface on a polo tell us its fibre composition?",
+      "lesson": "Tuck stitches create the cellular surface associated with pique knit constructions. Pique describes how the fabric is knitted, so its textured surface does not by itself establish which fibre was used.",
+      "buyer_decision": "Treat pique construction and cotton or other fibre composition as separate details when comparing polos.",
+      "intent_key": "pique_texture_is_construction_not_fibre",
+      "fact_ids": [
+        "pique_tuck_structure"
+      ]
+    },
+    {
+      "topic": "टी-शर्ट का वजन और GSM एक नंबर क्यों नहीं हैं?",
+      "buyer_question": "Is a finished T-shirt weighing a certain number of grams the same as that GSM?",
+      "lesson": "Fabric mass per unit area relates fabric mass to a defined area. The total mass of a completed garment is a different measurement, so weighing the complete T-shirt does not directly give its fabric GSM.",
+      "buyer_decision": "Compare fabric GSM with fabric GSM and garment weight with garment weight; do not substitute one number for the other.",
+      "intent_key": "fabric_area_mass_vs_whole_garment_mass",
+      "fact_ids": [
+        "fabric_mass_per_area"
+      ]
+    },
+    {
+      "topic": "टी-शर्ट के नीचे और जोड़ पर अलग सिलाई क्यों होती है?",
+      "buyer_question": "Why can a T-shirt hem and a fabric joining seam use different stitch constructions?",
+      "lesson": "A 406 twin-needle coverseam is commonly used for hems in knitted garments. A 504 three-thread overedge can join fabric layers and finish their edges; these stitch constructions serve different jobs rather than acting as a universal quality ranking.",
+      "buyer_decision": "Judge the stitch against its job at that seam; two visible rows alone do not certify the whole garment.",
+      "intent_key": "knit_hem_coverseam_vs_joining_overedge",
+      "fact_ids": [
+        "stitch_construction_jobs"
       ]
     }
   ]

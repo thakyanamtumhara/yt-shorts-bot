@@ -63,12 +63,13 @@ on:
 
 concurrency:
   group: daily-short-generation
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   create-and-upload:
     permissions:
       contents: write
+      issues: write
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -123,7 +124,7 @@ jobs:
           FB_APP_ID: ${{ secrets.FB_APP_ID }}
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
           VIZARD_API_KEY: ${{ secrets.VIZARD_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
@@ -200,7 +201,7 @@ jobs:
       - name: Grade the finished reel
         if: ${{ always() && steps.generate.conclusion != 'skipped' && github.event.inputs.test_thumbnail != 'true' }}
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: python health_watch.py --postrun
@@ -283,8 +284,9 @@ jobs:
           if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
             curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
-              --data-urlencode "text=⚠️ Daily Short pipeline FAILED — $(date -u +'%d %b %Y %H:%M UTC') (trigger: ${{ github.event_name }}). No Short/blog today. Likely causes: Anthropic credit balance empty, Veo/TTS API, or YouTube upload. Logs: ${RUN_URL}" \
-              -o /dev/null || true
+              --data-urlencode "text=⚠️ Daily Short pipeline failed — $(TZ=Asia/Kolkata date +'%d %b %Y %H:%M IST'). Check the failed step and any completed uploads before retrying. Logs: ${RUN_URL}" \
+              -o /tmp/daily-alert.json
+            python -c 'import json; r=json.load(open("/tmp/daily-alert.json")); assert r.get("ok") is True, "Telegram did not confirm delivery"; print("Private failure alert delivered:", r["result"]["message_id"])'
           fi
           # 2) Tracking issue (ensure label exists first, else create fails silently)
           gh label create bot-failure --color b60205 --description "daily_short pipeline failure" 2>/dev/null || true
@@ -306,5 +308,5 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}

@@ -68,7 +68,7 @@ jobs:
           FB_APP_ID: ${{ secrets.FB_APP_ID }}
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
           VIZARD_API_KEY: ${{ secrets.VIZARD_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
@@ -81,7 +81,7 @@ jobs:
           python health_watch.py $ARGS | tee /tmp/health.txt
 
       - name: Commit state
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+        if: ${{ always() && github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
@@ -94,7 +94,7 @@ jobs:
       # Telegram needs TELEGRAM_ALERT_CHAT_ID to exist; a GitHub issue always
       # reaches Ketu by email, so it is the channel that cannot silently fail.
       - name: Raise or update the tracking issue
-        if: ${{ steps.watch.outputs.critical != '0' && github.event.inputs.dry_run != 'true' }}
+        if: ${{ always() && steps.watch.outputs.critical != '' && steps.watch.outputs.critical != '0' && github.event.inputs.dry_run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

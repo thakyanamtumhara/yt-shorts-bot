@@ -130,7 +130,7 @@ def check_elevenlabs():
     if sub.get("has_open_invoices"):
         return Result(key, label, sev, False,
                       f"plan '{tier}' has an UNPAID INVOICE — ElevenLabs will cut access. "
-                      f"Pay it: https://elevenlabs.io/app/settings/subscription", extra)
+                      f"Pay it: https://elevenlabs.io/app/subscription", extra)
 
     if str(sub.get("status", "")).lower() in ("past_due", "incomplete", "free_disabled"):
         return Result(key, label, sev, False,
@@ -140,7 +140,7 @@ def check_elevenlabs():
         return Result(key, label, sev, False,
                       f"plan is '{tier}' — Professional Voice Clone is BLOCKED "
                       f"(needs Creator or above). The reel will fall back to a generic voice. "
-                      f"Fix: https://elevenlabs.io/app/settings/subscription", extra)
+                      f"Fix: https://elevenlabs.io/app/subscription", extra)
 
     status, voice = _json_req(f"https://api.elevenlabs.io/v1/voices/{ELEVENLABS_VOICE_ID}", h)
     if status != 200:
@@ -403,9 +403,9 @@ def run_all():
             results.append(fn())
         except Exception as e:
             name = fn.__name__.replace("check_", "")
-            results.append(Result(name, name, WARN, True,
-                                  f"probe itself errored ({type(e).__name__}: {str(e)[:100]}) — "
-                                  f"not treated as down"))
+            severity = CRITICAL if name in {"elevenlabs", "anthropic", "google", "meta_token", "youtube"} else WARN
+            results.append(Result(name, name, severity, False,
+                                  f"probe could not verify service ({type(e).__name__})"))
     return results
 
 
@@ -481,6 +481,13 @@ def main():
     gate = "--gate" in sys.argv
     force = "--force-ping" in sys.argv
     stamp = now_ist().strftime("%d-%b %H:%M IST")
+    alert_failures = []
+
+    def notify(title, body, dry_run):
+        delivered = send_telegram(title, body, dry_run)
+        if not delivered:
+            alert_failures.append(title)
+        return delivered
 
     if "--postrun" in sys.argv:
         bad, warn = grade_render()
@@ -494,9 +501,9 @@ def main():
         if not bad and not warn:
             print("   🟢 reel shipped clean — Ketu's voice, karaoke captions, music, full clips")
             return 0
-        send_telegram("🔴 Today's reel shipped DEGRADED" if bad else "🟡 Today's reel has issues",
+        notify("🔴 Today's reel needs attention" if bad else "🟡 Today's reel has issues",
                       "\n".join(f"• {m}" for m in bad + warn) + f"\n\n_{stamp}_", dry)
-        return 1 if bad else 0
+        return 1 if bad or alert_failures else 0
 
     print(f"🩺 health watch — {stamp}{'  [GATE]' if gate else ''}{'  [DRY RUN]' if dry else ''}")
     results = run_all()
@@ -524,7 +531,7 @@ def main():
                     "would have shipped degraded.\n\n" + render(down) +
                     f"\n\nFix it, then re-run: gh workflow run daily_short.yml "
                     f"-R thakyanamtumhara/yt-shorts-bot\n\n_{stamp}_")
-            send_telegram("🔴 Daily reel BLOCKED — dependency down", body, dry)
+            notify("🔴 Daily reel BLOCKED — dependency down", body, dry)
             for r in blocking:
                 print(f"::error title={r.label}::{r.detail}")
             print(f"\n🚫 GATE FAILED — {len(blocking)} critical dependency down. "
@@ -543,7 +550,7 @@ def main():
     changed = [r for r in results if bool(prev.get(r.key, {}).get("ok", True)) != r.ok]
 
     if force:
-        send_telegram("🔔 Health watch test ping",
+        notify("🔔 Health watch test ping",
                       render(results) + f"\n\n_{stamp}_", dry)
 
     if changed:
@@ -554,28 +561,28 @@ def main():
             parts.append("*Broke:*\n" + render(broke))
         if healed:
             parts.append("*Recovered:*\n" + render(healed))
-        send_telegram("⚠️ Pipeline dependency changed", "\n\n".join(parts) + f"\n\n_{stamp}_", dry)
+        notify("⚠️ Pipeline dependency changed", "\n\n".join(parts) + f"\n\n_{stamp}_", dry)
     elif blocking:
         # already announced — re-ping once a day, and only for things that stop a
         # reel. A backup that stays red forever would train Ketu to ignore this.
         today = now_ist().strftime("%Y-%m-%d")
         if st.get("last_still_down_date") != today:
-            send_telegram("🔴 Still down", render(blocking) + f"\n\n_{stamp}_", dry)
-            if not dry:
+            delivered = notify("🔴 Still down", render(blocking) + f"\n\n_{stamp}_", dry)
+            if not dry and delivered:
                 st["last_still_down_date"] = today
     else:
         today = now_ist().strftime("%Y-%m-%d")
         if st.get("last_green_date") != today:
             title = ("🟢 Pipeline dependencies all clear" if not down
                      else f"🟡 Reels are safe — {len(down)} backup still down")
-            send_telegram(title, render(results) + f"\n\n_{stamp}_", dry)
-            if not dry:
+            delivered = notify(title, render(results) + f"\n\n_{stamp}_", dry)
+            if not dry and delivered:
                 st["last_green_date"] = today
 
     if not dry:
         save_state(st, results)
     emit_counts(down, blocking)
-    return 0
+    return 1 if blocking or alert_failures else 0
 
 
 if __name__ == "__main__":

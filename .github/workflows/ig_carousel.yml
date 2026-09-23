@@ -143,7 +143,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           # TELEGRAM_ALERT_CHAT_ID only. Until 15-Aug-2026 this step used
           # TELEGRAM_CHANNEL_ID — the PUBLIC Sale91 subscriber channel — so the
           # next failure would have broadcast an internal error to subscribers.

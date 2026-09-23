@@ -1,6 +1,8 @@
 import ast
 import copy
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import re
 from types import SimpleNamespace
@@ -10,7 +12,8 @@ from unittest.mock import Mock
 
 from tools.daily_topic_selection import (
     DIMENSIONS, SelectedTopic, TopicHold, choose_topic, evidence_prompt,
-    load_bank, load_topic_history, review_result, unsupported_shortcut, validate_brief,
+    load_bank, load_topic_history, response_json, review_result, safe_failure_details,
+    unsupported_shortcut, validate_brief,
 )
 
 
@@ -163,6 +166,84 @@ class StrictReviewTest(unittest.TestCase):
         value = review_payload(); del value['duplicate_of']
         with self.assertRaises(TopicHold):
             review_result(value)
+
+
+class TopicResponseReliabilityTest(unittest.TestCase):
+    def brainstorm(self):
+        from tools.topic_audience_signals import topic_interest
+        return load_function('search_trending_topics', {
+            'get_audience_questions': lambda _: 'No current questions',
+            'get_ig_topic_interest_signals': lambda _: topic_interest([])})
+
+    def response(self, text, stop='end_turn', tokens=500):
+        return SimpleNamespace(content=[SimpleNamespace(text=text)], stop_reason=stop,
+                               usage=SimpleNamespace(output_tokens=tokens))
+
+    def test_truncated_but_parseable_json_is_never_accepted(self):
+        with self.assertRaisesRegex(TopicHold, 'output-token limit'):
+            response_json(self.response('[]', 'max_tokens', 2400))
+
+    def test_refusal_or_tool_response_never_becomes_approval(self):
+        for stop in ('refusal', 'tool_use', 'pause_turn'):
+            with self.subTest(stop=stop), self.assertRaises(TopicHold):
+                response_json(self.response('[]', stop))
+
+    def test_multiple_text_blocks_and_json_fence_are_supported(self):
+        response = self.response('```json\n[')
+        response.content.extend([SimpleNamespace(type='thinking'), SimpleNamespace(text=']\n```')])
+        self.assertEqual(response_json(response), [])
+
+    def test_truncation_retries_smaller_request_and_reports_safe_cause(self):
+        api = client([])
+        api.messages.create.side_effect = [self.response('[{"topic":', 'max_tokens', 3200),
+                                           self.response(json.dumps([brief()]))]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.brainstorm()(api, []), [brief()])
+        self.assertIn('stop_reason=max_tokens', output.getvalue())
+        self.assertIn('output_tokens=3200', output.getvalue())
+        self.assertEqual(api.messages.create.call_count, 2)
+        for call in api.messages.create.call_args_list:
+            self.assertEqual(call.kwargs['model'], 'claude-opus-4-6')
+            self.assertEqual(call.kwargs['max_tokens'], 3200)
+        self.assertIn('at most TWO', api.messages.create.call_args.kwargs['messages'][0]['content'])
+
+    def test_invalid_array_or_repeated_malformed_json_still_falls_back_to_seeds(self):
+        for payload in ({'topics': [brief()]}, ['bare topic'], None):
+            api = client(payload)
+            self.assertEqual(self.brainstorm()(api, []), [])
+            self.assertEqual(api.messages.create.call_count, 2)
+
+    def test_valid_empty_result_is_not_retried_or_treated_as_api_failure(self):
+        api = client([])
+        self.assertEqual(self.brainstorm()(api, []), [])
+        self.assertEqual(api.messages.create.call_count, 1)
+
+    def test_auth_failure_is_not_retried_and_secrets_are_not_logged(self):
+        error = RuntimeError('api-key=secret-sentinel https://private.invalid/?token=secret-sentinel')
+        error.status_code = 401
+        api = client(error=error)
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.brainstorm()(api, []), [])
+        self.assertEqual(api.messages.create.call_count, 1)
+        self.assertIn('http_status=401', output.getvalue())
+        self.assertNotIn('secret-sentinel', output.getvalue())
+        self.assertNotIn('secret-sentinel', safe_failure_details(error))
+
+    def test_truncated_review_retries_without_relaxing_duplicate_gate(self):
+        api = client([])
+        api.messages.create.side_effect = [self.response('{', 'max_tokens', 900),
+            self.response(json.dumps(review_payload(duplicate_of='Prior buyer lesson')))]
+        self.assertEqual(load_function('review_topic')(api, brief(), [])[0], 0)
+        self.assertEqual(api.messages.create.call_count, 2)
+        self.assertEqual(api.messages.create.call_args.kwargs['max_tokens'], 900)
+
+    def test_seed_buffer_covers_previously_unused_fact_ids_after_exact_exhaustion(self):
+        history = [item['topic'] for item in BANK['seed_lessons'][:6]]
+        available = [validate_brief(item, BANK, history) for item in BANK['seed_lessons'][6:]]
+        self.assertGreaterEqual(len(available), 4)
+        self.assertEqual(len({item['intent_key'] for item in available}), len(available))
 
 
 class ActualPublishedMythRegressionTest(unittest.TestCase):

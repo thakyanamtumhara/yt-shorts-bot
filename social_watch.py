@@ -266,17 +266,32 @@ def _tg_direct(title, message):
             pass
         return False, ("TELEGRAM_ALERT_CHAT_ID secret is not set, so alerts have nowhere "
                        "private to go (TELEGRAM_CHANNEL_ID is the public channel — not used)." + hint)
+    try:
+        target = get_json(f"https://api.telegram.org/bot{tok}/getChat?" + urllib.parse.urlencode({"chat_id": chat}))
+        recipient = target.get("result") or {}
+        if (target.get("ok") is not True or recipient.get("type") != "private"
+                or str(recipient.get("id")) != chat
+                or recipient.get("username", "").casefold() != "bulkplaintshirt_com"):
+            return False, "private owner recipient verification failed"
+    except Exception:
+        return False, "private owner recipient lookup failed"
     body = urllib.parse.urlencode({
         "chat_id": chat,
-        "text": f"*{title}*\n\n{message}",
-        "parse_mode": "Markdown",
+        "text": f"{title}\n\n{message}"[:3900],
         "disable_web_page_preview": "true",
     }).encode()
     try:
         req = urllib.request.Request(f"https://api.telegram.org/bot{tok}/sendMessage",
                                      data=body, method="POST")
         with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read()).get("ok", False), "sent"
+            response = json.loads(r.read())
+            receipt = response.get("result") or {}
+            confirmed = (response.get("ok") is True
+                         and isinstance(receipt.get("message_id"), int)
+                         and str((receipt.get("chat") or {}).get("id")) == chat)
+            if confirmed:
+                print(f"   Private Telegram receipt: {receipt['message_id']}")
+            return confirmed, "sent" if confirmed else "delivery receipt not confirmed"
     except Exception as e:
         return False, f"sendMessage failed: {str(e)[:150]}"
 

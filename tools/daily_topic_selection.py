@@ -12,6 +12,47 @@ class TopicHold(RuntimeError):
     pass
 
 
+def response_json(response):
+    stop = getattr(response, 'stop_reason', None)
+    if stop == 'max_tokens':
+        raise TopicHold('Model response hit its output-token limit; incomplete JSON rejected.')
+    if stop not in (None, 'end_turn', 'stop_sequence'):
+        raise TopicHold('Model did not complete an ordinary text response.')
+    blocks = getattr(response, 'content', [])
+    raw = '\n'.join(block.text for block in blocks
+                    if isinstance(getattr(block, 'text', None), str)).strip()
+    if raw.startswith('```'):
+        raw = re.sub(r'^```(?:json)?\s*\n?', '', raw, count=1)
+        raw = re.sub(r'\s*```\s*$', '', raw, count=1)
+    if not raw:
+        raise TopicHold('Model response contains no text JSON.')
+    return json.loads(raw)
+
+
+def safe_failure_details(error, response=None):
+    parts = [type(error).__name__]
+    status = getattr(error, 'status_code', None)
+    if type(status) is int:
+        parts.append(f'http_status={status}')
+    if isinstance(error, json.JSONDecodeError):
+        parts.append(f'json_line={error.lineno} column={error.colno}')
+    if isinstance(error, TopicHold):
+        parts.append(str(error))
+    stop = getattr(response, 'stop_reason', None)
+    if stop in ('end_turn', 'max_tokens', 'stop_sequence', 'tool_use', 'pause_turn', 'refusal'):
+        parts.append(f'stop_reason={stop}')
+    usage = getattr(response, 'usage', None)
+    count = getattr(usage, 'output_tokens', None)
+    if type(count) is int:
+        parts.append(f'output_tokens={count}')
+    return '; '.join(parts)
+
+
+def retryable_failure(error):
+    status = getattr(error, 'status_code', None)
+    return status not in (400, 401, 402, 403, 404)
+
+
 class SelectedTopic(str):
     def __new__(cls, brief):
         value = super().__new__(cls, brief['topic'])
@@ -139,8 +180,8 @@ def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max
     for brief in ranked[:max_candidates]:
         try:
             score, feedback = review(brief)
-        except Exception:
-            score, feedback = 0, 'Topic review unavailable; held.'
+        except Exception as error:
+            score, feedback = 0, f'Topic review unavailable; held ({safe_failure_details(error)}).'
         print(f"   Topic review: {brief['topic'][:70]} → {score}/40 ({feedback})")
         if type(score) is int and min_score <= score <= 40:
             approved.append((score, {**brief, 'selection_review': {
