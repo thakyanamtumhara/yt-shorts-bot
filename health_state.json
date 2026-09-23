@@ -35,7 +35,8 @@
    "detail": "key valid · 50 models · veo visible: yes",
    "veo_models": [
     "models/veo-3.1-generate-preview",
-    "models/veo-3.1-fast-generate-preview"
+    "models/veo-3.1-fast-generate-preview",
+    "models/veo-3.1-lite-generate-preview"
    ]
   },
   "meta_token": {
@@ -562,9 +563,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-23T14:15:43+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-22T22:39:59+05:30",
+ "last_run_ist": "2026-09-23T14:15:43+05:30",
  "last_green_date": "2026-09-21",
- "last_still_down_date": "2026-09-22"
+ "last_still_down_date": "2026-09-23"
 }
