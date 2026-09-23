@@ -52,8 +52,35 @@ def _matches_status(actual, expected):
     return True
 
 
+def status_verification(video_id, expected, actual, acknowledgment=None):
+    response = acknowledgment if isinstance(acknowledgment, dict) else {}
+    returned = response.get("status") if isinstance(response.get("status"), dict) else {}
+    evidence = {"video_id": video_id, "verified": False,
+                "request": {"id": video_id, "status": deepcopy(expected)},
+                "acknowledgment": {"id": response.get("id"), "status": {
+                    key: deepcopy(value) for key, value in returned.items() if key in MUTABLE_STATUS_FIELDS}},
+                "status_readback": deepcopy(actual), "state": "status_mismatch"}
+    other_fields = {key: value for key, value in expected.items() if key != "containsSyntheticMedia"}
+    try:
+        if not isinstance(actual, dict) or not _matches_status(actual, other_fields):
+            return evidence
+    except (StatusSafetyError, KeyError, TypeError):
+        return evidence
+    if response.get("id") is not None and response["id"] != video_id:
+        return {**evidence, "state": "wrong_acknowledgment_video"}
+    if "containsSyntheticMedia" in returned and returned["containsSyntheticMedia"] is not True:
+        return {**evidence, "state": "acknowledgment_native_not_true"}
+    if "containsSyntheticMedia" in actual:
+        if actual["containsSyntheticMedia"] is not True:
+            return {**evidence, "state": "readback_native_not_true"}
+        return {**evidence, "verified": True, "state": "readback_native_true"}
+    if response.get("id") == video_id and returned.get("containsSyntheticMedia") is True:
+        return {**evidence, "verified": True, "state": "accepted_native_true_readback_omitted"}
+    return {**evidence, "state": "readback_omitted_without_true_acknowledgment"}
+
+
 def post_daily_ai_comment(youtube, video_id, comment_text, post_comment, *,
-                          scheduled, enabled=True, sleep=time.sleep, now=None):
+                          scheduled, enabled=True, sleep=time.sleep, now=None, record_evidence=None):
     """Call post_comment only with usable text, restoring all known mutable status.
 
     The callback takes no arguments. This helper is only for known daily AI videos;
@@ -87,14 +114,20 @@ def post_daily_ai_comment(youtube, video_id, comment_text, post_comment, *,
         return post_comment()
     finally:
         # Even a lost switch/restore acknowledgment can have changed the video.
+        acknowledgment = None
         try:
-            youtube.videos().update(
+            acknowledgment = youtube.videos().update(
                 part="status", body={"id": video_id, "status": restore}).execute()
         except Exception:
             pass
         try:
-            if not _matches_status(_read_status(youtube, video_id), restore):
-                raise StatusRestorationError("Status readback did not match the original scheduled state")
+            if record_evidence:
+                record_evidence(status_verification(video_id, restore, None, acknowledgment))
+            evidence = status_verification(video_id, restore, _read_status(youtube, video_id), acknowledgment)
+            if record_evidence:
+                record_evidence(evidence)
+            if not evidence["verified"]:
+                raise StatusRestorationError("Status evidence did not verify the original scheduled state")
         except Exception as error:
             raise StatusRestorationError(
                 "YouTube schedule/AI disclosure restoration could not be verified; check the exact video"

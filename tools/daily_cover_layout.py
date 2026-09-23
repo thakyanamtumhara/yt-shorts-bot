@@ -7,6 +7,9 @@ from tools.cover_quality import FONT, validate_cover_text
 
 LAYOUT_VERSION = 'buyer-comparison-b-v1'
 PROFILES = (
+    {'key': 'pique_vs_fibre', 'facts': {'pique_tuck_structure'},
+     'terms': (r'pique|पिके|पीके', r'fibre|fiber|फाइबर', r'knit|बुनावट|बुनाई|construction'),
+     'labels': ('बुनावट', 'फाइबर'), 'latin': ('KNIT STRUCTURE', 'FIBRE CONTENT'), 'icons': ('loops', 'yarn')},
     {'key': 'weight_question', 'facts': {'fabric_mass_per_area'},
      'terms': (r'gsm|जी.?एस.?एम', r'light|हल्क|halk', r'heavy|heavier|भारी|bhar', r'quality|क्वालिटी|गुणवत्ता|बेहतर|better'),
      'labels': ('हल्का', 'भारी'), 'latin': ('LIGHTER', 'HEAVIER'), 'icons': ('fabric_light', 'fabric_heavy')},

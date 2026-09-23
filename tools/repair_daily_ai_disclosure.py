@@ -7,9 +7,10 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.youtube_status import MUTABLE_STATUS_FIELDS, _matches_status, _timestamp
+from tools.youtube_status import MUTABLE_STATUS_FIELDS, _timestamp, status_verification
 
 
 VIDEO_ID = "GMaTnJRoiV8"
@@ -19,7 +20,9 @@ REPORT = Path("native-disclosure-repair")
 
 
 class RepairError(RuntimeError):
-    pass
+    def __init__(self, message, report=None):
+        super().__init__(message)
+        self.report = report
 
 
 def _read(youtube):
@@ -51,7 +54,7 @@ def undo_body_from_backup(backup):
                                       if key in MUTABLE_STATUS_FIELDS}}
 
 
-def repair(youtube, backup_path, *, apply=False, now=None):
+def repair(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
     channels = youtube.channels().list(part="id", mine=True).execute().get("items", [])
     if len(channels) != 1 or channels[0].get("id") != BOT_CHANNEL:
         raise RepairError("Credential is not the expected BOT channel")
@@ -73,14 +76,35 @@ def repair(youtube, backup_path, *, apply=False, now=None):
               "containsSyntheticMedia_after": original.get("containsSyntheticMedia"), "verified": False}
     if not apply:
         return {**result, "dry_run": True, "proposed_containsSyntheticMedia": True}
+    result.update(dry_run=False, readbacks=[])
+    acknowledgment = None
     if original.get("containsSyntheticMedia") is not True:
-        youtube.videos().update(part="status", body=body).execute()
-        result["applied"] = True
-    actual = _read(youtube)
-    if not _matches_status(actual, body["status"]):
-        raise RepairError("Repair readback did not preserve schedule and mutable status")
-    return {**result, "dry_run": False, "containsSyntheticMedia_after": actual["containsSyntheticMedia"],
-            "verified": True}
+        result["write_attempted"] = True
+        try:
+            acknowledgment = youtube.videos().update(part="status", body=body).execute()
+            result["applied"] = True
+        except Exception as error:
+            result["write_error"] = type(error).__name__
+    result["update_acknowledgment"] = status_verification(
+        VIDEO_ID, body["status"], None, acknowledgment)["acknowledgment"]
+    Path(backup_path).with_name("status-verification.json").write_text(json.dumps(result, indent=2) + "\n")
+    for attempt in range(3):
+        try:
+            actual = _read(youtube)
+            evidence = status_verification(VIDEO_ID, body["status"], actual, acknowledgment)
+            result["readbacks"].append(evidence)
+            result.update(containsSyntheticMedia_after=actual.get("containsSyntheticMedia"),
+                          verified=evidence["verified"], verification_state=evidence["state"])
+        except Exception as error:
+            result["readbacks"].append({"read_error": type(error).__name__})
+        Path(backup_path).with_name("status-verification.json").write_text(json.dumps(result, indent=2) + "\n")
+        if result["verified"]:
+            return result
+        if result.get("verification_state") not in (None, "status_mismatch"):
+            break
+        if attempt < 2:
+            sleep(2)
+    raise RepairError("Repair status evidence could not be verified; no second write attempted", result)
 
 
 def main():
@@ -99,6 +123,8 @@ def main():
         youtube = build("youtube", "v3", credentials=credentials, cache_discovery=False)
         result = repair(youtube, REPORT / "status-backup.json", apply=args.apply)
     except Exception as error:
+        if isinstance(error, RepairError) and error.report:
+            result = error.report
         result["error"] = str(error) if isinstance(error, RepairError) else type(error).__name__
     (REPORT / "report.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result))

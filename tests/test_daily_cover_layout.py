@@ -62,7 +62,7 @@ class DailyCoverLayoutTest(unittest.TestCase):
         self.assertEqual(supported_comparison(topic('surface shrinkage',['biopolish_surface','compaction_shrinkage']),text)['key'],'surface_vs_shrinkage')
 
     def test_distinct_topics_receive_distinct_labels(self):
-        rows=[('terry',['french_terry_fleece'],'French terry has inside loops; fleece has a brushed inside.','terry_vs_fleece'),('jersey',['jersey_face_back'],'Single jersey front and back look different.','jersey_sides'),('count',['cotton_count_direction'],'Ne cotton count and denier use different directions.','yarn_numbering'),('knit',['knit_loop_stretch'],'Knit loops stretch; that does not establish fibre content or elastane.','knit_vs_fibre')]
+        rows=[('pique',['pique_tuck_structure'],'Pique is knit construction, not a fibre label.','pique_vs_fibre'),('terry',['french_terry_fleece'],'French terry has inside loops; fleece has a brushed inside.','terry_vs_fleece'),('jersey',['jersey_face_back'],'Single jersey front and back look different.','jersey_sides'),('count',['cotton_count_direction'],'Ne cotton count and denier use different directions.','yarn_numbering'),('knit',['knit_loop_stretch'],'Knit loops stretch; that does not establish fibre content or elastane.','knit_vs_fibre')]
         for title,facts,script,expected in rows:
             selected=supported_comparison(topic(title,facts),script)
             self.assertEqual(selected['key'],expected)

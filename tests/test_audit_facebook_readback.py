@@ -141,7 +141,7 @@ class FacebookReadbackTest(unittest.TestCase):
             self.assertEqual(audit.main(['--run-id', '35884612564']), 0)
             audio.assert_called_once()
             saved = json.loads((Path(directory) / 'report.json').read_text())
-            self.assertIn('Facebook readback is reported separately', saved['pass_scope'])
+            self.assertIn('Facebook and Instagram readbacks are reported separately', saved['pass_scope'])
             self.assertEqual(saved['facebook']['state'], 'readback_unavailable')
 
 

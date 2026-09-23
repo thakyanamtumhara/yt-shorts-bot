@@ -26,7 +26,7 @@ def service(status=None, channel=repair.BOT_CHANNEL, video_id=repair.VIDEO_ID, t
         assert part == "status" and body["id"] == repair.VIDEO_ID
         def execute():
             youtube.current = transform(copy.deepcopy(body["status"]))
-            return {"id": repair.VIDEO_ID}
+            return {"id": repair.VIDEO_ID, "status": copy.deepcopy(body["status"])}
         return SimpleNamespace(execute=execute)
     youtube.videos.return_value.update.side_effect = update
     return youtube
@@ -106,9 +106,37 @@ class DisclosureRepairTest(unittest.TestCase):
             with self.subTest(key=key), TemporaryDirectory() as folder:
                 path = Path(folder) / "backup.json"
                 with self.assertRaises(repair.RepairError):
-                    repair.repair(youtube, path, apply=True, now=NOW)
+                    repair.repair(youtube, path, apply=True, now=NOW, sleep=Mock())
                 self.assertEqual(json.loads(path.read_text())["status_before"], ORIGINAL)
             youtube.videos.return_value.update.assert_called_once()
+
+    def test_known_get_omission_accepts_and_records_exact_native_true_ack(self):
+        youtube = service(transform=lambda status: {key: value for key, value in status.items()
+                                                     if key != "containsSyntheticMedia"})
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "backup.json"
+            report = repair.repair(youtube, path, apply=True, now=NOW)
+            saved = json.loads(path.with_name("status-verification.json").read_text())
+        self.assertTrue(report["verified"])
+        self.assertEqual(report["verification_state"], "accepted_native_true_readback_omitted")
+        self.assertIsNone(report["containsSyntheticMedia_after"])
+        self.assertTrue(saved["update_acknowledgment"]["status"]["containsSyntheticMedia"])
+        self.assertEqual(saved["update_acknowledgment"]["id"], repair.VIDEO_ID)
+        youtube.videos.return_value.update.assert_called_once()
+
+    def test_status_mismatch_has_bounded_reads_no_second_write_and_saved_actual_status(self):
+        youtube = service(transform=lambda status: {**status, "embeddable": True})
+        sleep = Mock()
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "backup.json"
+            with self.assertRaises(repair.RepairError) as raised:
+                repair.repair(youtube, path, apply=True, now=NOW, sleep=sleep)
+            saved = json.loads(path.with_name("status-verification.json").read_text())
+        self.assertEqual(len(saved["readbacks"]), 3)
+        self.assertEqual(sleep.call_count, 2)
+        self.assertTrue(saved["readbacks"][-1]["status_readback"]["embeddable"])
+        self.assertEqual(raised.exception.report, saved)
+        youtube.videos.return_value.update.assert_called_once()
 
     def test_foreign_undo_backup_is_rejected(self):
         with self.assertRaises(repair.RepairError):

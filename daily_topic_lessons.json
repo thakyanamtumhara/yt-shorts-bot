@@ -27,11 +27,11 @@
       "limits": "Teach construction, not a pass/fail quality test. Do not label generated close-ups as a microscope view of actual stock."
     },
     "pique_tuck_structure": {
-      "claim": "Tuck stitches create the cellular texture used in pique constructions, common in polo shirts. Pique is a knit construction, rather than a fibre-composition label.",
+      "claim": "Tuck stitches create cellular texture in pique constructions used for polo shirts. In a tuck cycle, a needle retains the old loop and collects another yarn; later, new yarn is knitted through the held loop and tuck loop. Pique is a knit construction, rather than a fibre-composition label.",
       "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
       "source_title": "CottonWorks: Knit Basics",
       "checked_on": "2026-09-23",
-      "limits": "The distinction between construction and fibre label is a buyer inference. Do not promise a universal temperature, breathability score or printing suitability."
+      "limits": "The distinction between construction and fibre label is a buyer inference. Do not call tuck loops incomplete or partially pulled-through stitches. Do not assume identical texture, universal breathability or printing suitability. Printing performance depends on the actual fabric and process, not fibre alone."
     },
     "french_terry_fleece": {
       "claim": "In the described cotton constructions, French terry retains un-napped loops or floats on the inside. Brushing or napping the interior creates the fleecy surface of fleece.",

@@ -8,6 +8,8 @@ FONT = Path(__file__).resolve().parents[1] / 'assets/fonts/Baloo2.ttf'
 
 def neutral_cover(topic):
     value = (topic or '').lower()
+    if any(w in value for w in ('pique', 'पिके', 'पीके')):
+        return 'POLO की बनावट | फाइबर या बुनाई?', 'POLO TEXTURE | FIBRE OR KNIT?'
     if 'dtf' in value or 'डीटीएफ' in value:
         return ('DTF PRINT | नमी का असर', 'DTF PRINT | NAMI KA ASAR') if any(w in value for w in ('humid', 'rain', 'monsoon', 'नमी', 'बारिश')) else ('DTF PRINT | क्या जाँचें?', 'DTF PRINT | KYA CHECK KAREIN?')
     if any(w in value for w in ('oversized', 'regular fit', 'साइज़', 'size', 'boxy')):

@@ -19,6 +19,7 @@ import requests
 
 REPOSITORY = 'thakyanamtumhara/yt-shorts-bot'
 BOT_CHANNEL = 'UCHZbA84OiM9COlTQ4JcVgeQ'
+IG_ACCOUNT = '17841407981790313'
 FB_GRAPH = 'https://graph.facebook.com/v26.0'
 QA_MODEL = 'gemini-3.8-flash'
 MAX_ARCHIVE = 512 * 1024 * 1024
@@ -222,7 +223,7 @@ def youtube_readback(video_id, expected_title):
             **{key: status.get(key) for key in ('privacyStatus', 'publishAt', 'uploadStatus', 'containsSyntheticMedia')}}
 
 
-def _facebook_fields(video_id, fields, token):
+def _meta_fields(video_id, fields, token):
     try:
         response = requests.get(FB_GRAPH + '/' + video_id,
             headers={'Authorization': 'Bearer ' + token}, params={'fields': 'id,' + fields},
@@ -318,20 +319,90 @@ def facebook_readback(manifest):
     token = os.environ.get('FB_PAGE_ACCESS_TOKEN')
     if not token:
         return {**result, 'state': 'credential_missing'}
-    data, read = _facebook_fields(video_id, 'status,permalink_url', token)
+    data, read = _meta_fields(video_id, 'status,permalink_url', token)
     result['reads'] = {'status_and_permalink': read}
     if data is None:
         return {**result, 'state': 'readback_unavailable'}
     result['state'] = 'readback_complete'
     result['permalink_url'] = _facebook_permalink(data.get('permalink_url'), video_id)
     for field in ('published', 'privacy', 'is_ai_generated'):
-        extra, field_read = _facebook_fields(video_id, field, token)
+        extra, field_read = _meta_fields(video_id, field, token)
         result['reads'][field] = field_read
         if extra is not None and field in extra:
             data[field] = extra[field]
     result.update(facebook_publication(data))
     if type(data.get('is_ai_generated')) is bool:
         result['native_ai_disclosure'] = 'api_true' if data['is_ai_generated'] else 'api_false'
+    return result
+
+
+def instagram_readback(manifest):
+    result = {'state': 'manifest_id_absent', 'account_id': IG_ACCOUNT,
+              'native_ai_disclosure': 'unverified', 'native_label_visible': 'not_independently_checked',
+              'published_media_readable': False, 'public_visitor_access': 'not_independently_checked'}
+    posts = manifest.get('source_posts') or {}
+    media_id = posts.get('instagram') if isinstance(posts, dict) else None
+    if not media_id:
+        return result
+    if not isinstance(media_id, str) or not re.fullmatch(r'[1-9][0-9]{0,29}', media_id):
+        return {**result, 'state': 'invalid_manifest_id'}
+    result['media_id'] = media_id
+    configured = (os.environ.get('INSTAGRAM_BUSINESS_ID') or IG_ACCOUNT).strip()
+    if configured != IG_ACCOUNT:
+        return {**result, 'state': 'configured_account_mismatch'}
+    token = (os.environ.get('INSTAGRAM_ACCESS_TOKEN') or '').strip()
+    if not token:
+        return {**result, 'state': 'credential_missing'}
+    account, read = _meta_fields(IG_ACCOUNT, 'username', token)
+    result['reads'] = {'account': read}
+    if account is None:
+        return {**result, 'state': 'account_readback_unavailable'}
+    def username(value):
+        return value if isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_.]{1,30}', value) else None
+    expected_username = username(account.get('username'))
+    result['account_username'] = expected_username
+    media, read = _meta_fields(media_id, 'media_type,media_product_type,permalink,username', token)
+    result['reads']['media'] = read
+    if media is None:
+        return {**result, 'state': 'media_readback_unavailable'}
+    observed_username = username(media.get('username'))
+    result['media_username'] = observed_username
+    owner, read = _meta_fields(media_id, 'owner', token)
+    result['reads']['owner'] = read
+    owner = owner.get('owner') if owner is not None else None
+    owner_id = owner.get('id') if isinstance(owner, dict) else None
+    result['owner_id'] = owner_id if isinstance(owner_id, str) and re.fullmatch(r'[1-9][0-9]{0,29}', owner_id) else None
+    username_conflict = bool(expected_username and observed_username
+                             and expected_username.casefold() != observed_username.casefold())
+    if (owner_id is not None and owner_id != IG_ACCOUNT) or username_conflict:
+        return {**result, 'state': 'owner_mismatch', 'owner_verified': False}
+    if owner_id == IG_ACCOUNT:
+        owner_method = 'exact_owner_id'
+    elif expected_username and observed_username and expected_username.casefold() == observed_username.casefold():
+        owner_method = 'exact_username_of_verified_account'
+    else:
+        owner_method = 'unverified'
+    result.update({'owner_verified': owner_method != 'unverified', 'owner_verification': owner_method})
+    result['media_type'] = media.get('media_type') if media.get('media_type') in ('VIDEO', 'IMAGE', 'CAROUSEL_ALBUM') else None
+    result['media_product_type'] = media.get('media_product_type') if media.get('media_product_type') in ('REELS', 'FEED', 'STORY', 'AD') else None
+    result['permalink'] = None
+    link = media.get('permalink')
+    if isinstance(link, str) and len(link) <= 2048:
+        try:
+            url = urlsplit(link)
+            if (url.scheme == 'https' and url.netloc in ('instagram.com', 'www.instagram.com')
+                    and re.fullmatch(r'/(?:p|reel|reels|tv)/[A-Za-z0-9_-]{5,30}/?', url.path)):
+                result['permalink'] = urlunsplit((url.scheme, url.netloc, url.path, '', ''))
+        except ValueError:
+            pass
+    result['published_media_readable'] = bool(result['owner_verified'] and result['permalink']
+                                               and result['media_type'] == 'VIDEO'
+                                               and result['media_product_type'] == 'REELS')
+    extra, read = _meta_fields(media_id, 'is_ai_generated', token)
+    result['reads']['is_ai_generated'] = read
+    if extra is not None and type(extra.get('is_ai_generated')) is bool:
+        result['native_ai_disclosure'] = 'api_true' if extra['is_ai_generated'] else 'api_false'
+    result['state'] = 'published_media_readable' if result['published_media_readable'] else 'publication_unverified'
     return result
 
 
@@ -418,7 +489,7 @@ def main(argv=None):
     REPORT.mkdir(exist_ok=True)
     report = {'format': 'daily-short-output-audit-v1', 'checked_at': datetime.now(timezone.utc).isoformat(),
               'read_only': True, 'public_writes': 0, 'render_or_tts_calls': 0, 'passed': False,
-              'pass_scope': 'Full rendered audio and exact BOT YouTube upload; Facebook readback is reported separately.'}
+              'pass_scope': 'Full rendered audio and exact BOT YouTube upload; Facebook and Instagram readbacks are reported separately.'}
     try:
         source_id = run_id(args.run_id)
         if os.environ.get('GITHUB_REPOSITORY', REPOSITORY) != REPOSITORY:
@@ -432,6 +503,7 @@ def main(argv=None):
             report['assets'] = {kind: {key: manifest['assets'][kind][key] for key in ('file', 'bytes', 'sha256')}
                                 for kind in ('video', 'cover')}
             report['topic'] = manifest.get('topic')
+            report['instagram'] = instagram_readback(manifest)
             report['facebook'] = facebook_readback(manifest)
             report['youtube'] = youtube_readback(manifest['source_posts']['bot_youtube'], manifest['titles']['youtube'])
             wav, report['media'] = probe_and_extract(video, Path(directory))

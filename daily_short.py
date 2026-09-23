@@ -12687,6 +12687,15 @@ def main():
         _sub_model = os.environ.get("SUBTITLE_WHISPER_MODEL", "medium").strip() or "medium"
         wmodel = whisper.load_model(_sub_model)
         result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
+        from tools.caption_timing import choose_timing_source, plain_caption_segments, verified_karaoke
+        result, _timing_source = choose_timing_source(
+            result, audio_clip_dur,
+            retry=lambda: wmodel.transcribe(
+                audio_path, language="hi", word_timestamps=True,
+                condition_on_previous_text=False, temperature=0.0,
+                initial_prompt=normalize_for_tts(script_voice)[:1000],
+            ),
+        )
         # Whisper returns segments — typically sentence-ish. Use those for timing.
         # Also keep WORD-level timestamps (timing only — Whisper text is Devanagari, no CI font).
         whisper_segs = [
@@ -12702,51 +12711,11 @@ def main():
         ]
         cost.track_whisper(audio_clip_dur)
 
-        if whisper_segs and eng_sentences:
-            # Whisper sync REPLACES the fallback equal-time slicing, doesn't add to it.
-            # (Earlier bug: appending instead of clearing caused 2× subtitles in the
-            # rendered video — both fallback and synced versions overlaid.)
-            subtitle_segments = []
-            n_eng = len(eng_sentences)
-            n_wh = len(whisper_segs)
-            if n_eng == n_wh:
-                # Clean 1:1 mapping
-                for k, eng in enumerate(eng_sentences):
-                    subtitle_segments.append({
-                        "text": eng,
-                        "start": whisper_segs[k]["start"],
-                        "end": whisper_segs[k]["end"],
-                    })
-            else:
-                # Proportional: bucket Whisper segments to match English count
-                ratio = n_wh / n_eng
-                for k, eng in enumerate(eng_sentences):
-                    si = int(k * ratio)
-                    ei = min(int((k + 1) * ratio) - 1, n_wh - 1)
-                    if ei < si: ei = si
-                    si = min(si, n_wh - 1)
-                    subtitle_segments.append({
-                        "text": eng,
-                        "start": whisper_segs[si]["start"],
-                        "end": whisper_segs[ei]["end"],
-                    })
-            print(f"   ✅ Whisper synced! ({n_eng} English sentences ↔ {n_wh} Hindi audio segments)")
-        else:
-            # Fallback: equal-time slicing
-            seg_dur = audio_clip_dur / max(len(eng_sentences), 1)
-            for idx, eng in enumerate(eng_sentences):
-                subtitle_segments.append({
-                    "text": eng, "start": idx * seg_dur, "end": (idx + 1) * seg_dur
-                })
+        subtitle_segments, _plain_timing_mode = plain_caption_segments(
+            eng_sentences, whisper_segs, audio_clip_dur)
+        print(f"   Caption timing: {_plain_timing_mode}; source={_timing_source['source']}")
 
         # ── Karaoke word timings ──
-        # Map script_voice words (Roman Hinglish = the ACTUAL spoken words) onto
-        # Whisper's word timestamps with a single GLOBAL proportional mapping.
-        # (The old per-sentence bucketing collapsed when script sentence count
-        # differed from Whisper segment count — ellipses inflate script sentences —
-        # cramming words into early buckets: user saw captions race then vanish.)
-        # Global j→int(j*m/n) is monotonic by construction, so drift is gradual
-        # and coverage always spans the full audio.
         try:
             # Devanagari words in the script render as tofu (CI fonts are
             # Latin-only). Show their Roman spelling via reverse map instead
@@ -12785,87 +12754,17 @@ def main():
             token_weights = [p[2] for p in _tris]
             wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
 
-            if script_words_all:
-                n = len(script_words_all)
-                # PRIMARY: true forced alignment (handles non-uniform ASR drift).
-                aligned = None
-                if wtimes_all:
-                    try:
-                        aligned = _forced_align_caption_times(raw_tokens, wtimes_all, normalize_for_tts)
-                    except Exception as _ae:
-                        print(f"   ⚠️ Forced align failed ({_ae}) — using weighted map")
-                        aligned = None
-                if aligned and any(a for a in aligned):
-                    # fill any None (punctuation-only tokens) from neighbours
-                    _last = 0.0
-                    for j, sw in enumerate(script_words_all):
-                        a = aligned[j]
-                        if a is None:
-                            st = en = _last
-                        else:
-                            st, en = a
-                            _last = en
-                        karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
-                    print(f"   🎯 Captions force-aligned to audio ({len(karaoke_words)} words)")
-                elif wtimes_all:
-                    # FALLBACK: spoken-weight proportional map
-                    m = len(wtimes_all)
-                    total_w = float(sum(token_weights)) or float(n)
-                    cum = 0.0
-                    for j, sw in enumerate(script_words_all):
-                        w0 = cum / total_w
-                        cum += token_weights[j]
-                        w1 = cum / total_w
-                        i0 = min(int(w0 * m), m - 1)
-                        i1 = min(max(int(w1 * m), i0 + 1), m)
-                        st = wtimes_all[i0]["start"]
-                        en = wtimes_all[i1 - 1]["end"]
-                        karaoke_words.append({"text": sw, "start": st, "end": max(en, st + 0.08)})
-                else:
-                    # No word timestamps at all — spread evenly across speech span
-                    span_start = whisper_segs[0]["start"] if whisper_segs else 0.2
-                    span_end = whisper_segs[-1]["end"] if whisper_segs else max(audio_clip_dur - 0.3, 1.0)
-                    per = max(0.12, (span_end - span_start) / n)
-                    for j, sw in enumerate(script_words_all):
-                        karaoke_words.append({"text": sw, "start": span_start + j * per,
-                                              "end": span_start + (j + 1) * per})
-
-                # Monotonic clamp (safety net — global mapping is already ordered)
-                for j in range(1, len(karaoke_words)):
-                    if karaoke_words[j]["start"] < karaoke_words[j - 1]["start"] + 0.02:
-                        karaoke_words[j]["start"] = karaoke_words[j - 1]["start"] + 0.02
-                    if karaoke_words[j]["end"] < karaoke_words[j]["start"] + 0.06:
-                        karaoke_words[j]["end"] = karaoke_words[j]["start"] + 0.06
-
-                # Coverage sanity: if the mapping ends long before the audio does
-                # (or starts absurdly late), the timing source is degenerate —
-                # rebuild with an even spread rather than ship racing captions.
-                if karaoke_words:
-                    cov_end = karaoke_words[-1]["end"]
-                    cov_start = karaoke_words[0]["start"]
-                    if cov_end < 0.55 * audio_clip_dur or cov_start > 6.0:
-                        print(f"   ⚠️ Karaoke coverage degenerate (span {cov_start:.1f}-{cov_end:.1f}s of {audio_clip_dur:.1f}s) — using even spread")
-                        karaoke_words = []
-                        span_start, span_end = 0.2, max(audio_clip_dur - 0.3, 1.0)
-                        per = max(0.12, (span_end - span_start) / n)
-                        for j, sw in enumerate(script_words_all):
-                            karaoke_words.append({"text": sw, "start": span_start + j * per,
-                                                  "end": span_start + (j + 1) * per})
-                    print(f"   🎤 Karaoke timing: {len(karaoke_words)} words, span {karaoke_words[0]['start']:.1f}s → {karaoke_words[-1]['end']:.1f}s (audio {audio_clip_dur:.1f}s)")
-                    # Sync self-check: for a few caption words, show what Whisper
-                    # actually HEARD at that word's start time. If the caption word
-                    # and the heard word line up, timing is synced.
-                    try:
-                        _step = max(1, len(karaoke_words) // 8)
-                        for _ki in range(0, len(karaoke_words), _step):
-                            _kw = karaoke_words[_ki]
-                            _heard = min(wtimes_all, key=lambda w: abs(w["start"] - _kw["start"]))
-                            print(f"      ⏱ {_kw['start']:5.1f}s caption={_kw['text'][:14]:<14} | heard={_heard.get('text','')[:14]}")
-                    except Exception:
-                        pass
+            karaoke_words, _word_timing = verified_karaoke(
+                raw_tokens, script_words_all, whisper_segs, audio_clip_dur,
+                normalize_for_tts, _forced_align_caption_times)
+            flag("caption_timing", {**_timing_source, **_word_timing,
+                                    "plain_fallback": _plain_timing_mode})
+            print(f"   Caption highlight: {_word_timing['reason']} ({len(karaoke_words)} evidenced words)")
         except Exception as _ke:
             karaoke_words = []
-            print(f"   ⚠️ Karaoke timing failed: {_ke}")
+            flag("caption_timing", {"mode": "plain", "highlight_verified": False,
+                                    "reason": "alignment_error", "error": type(_ke).__name__})
+            print(f"   ⚠️ Karaoke timing unavailable ({type(_ke).__name__}); plain captions retained")
         flag("karaoke", bool(karaoke_words))
 
         # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
@@ -12901,6 +12800,8 @@ def main():
         print(f"   ⚠️ Whisper caption sync FAILED ({type(_e).__name__}: {str(_e)[:160]}) — "
               f"captions fall back to equal-time slicing and the karaoke highlight is dropped")
         flag("karaoke", False)
+        flag("caption_timing", {"mode": "estimated_plain", "highlight_verified": False,
+                                "reason": "whisper_unavailable", "error": type(_e).__name__})
 
     # ── 7. Video Assembly ──
     print("   ✂️ Building video...")
@@ -13418,6 +13319,7 @@ def main():
                                     youtube, vid_id, custom_pin,
                                     lambda: pin_comment(youtube, vid_id, comment_text=custom_pin),
                                     scheduled=SCHEDULE_PUBLISH,
+                                    record_evidence=lambda evidence: flag('youtube_status_evidence', evidence),
                                 )
                                 flag("youtube_comment", bool(comment_id))
                             except StatusRestorationError as status_error:

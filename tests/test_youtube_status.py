@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 from tools.youtube_status import (
     MUTABLE_STATUS_FIELDS, StatusRestorationError, StatusSafetyError,
-    post_daily_ai_comment,
+    post_daily_ai_comment, status_verification,
 )
 
 
@@ -172,6 +172,31 @@ class ScheduledCommentTest(unittest.TestCase):
         youtube = FakeYouTube()
         youtube.restore_transform = lambda status: {**status, "publishAt": "2026-09-24T19:00:00+05:30"}
         self.assertEqual(self.call(youtube), "comment-id")
+
+    def test_known_native_get_omission_uses_latest_exact_update_acknowledgment(self):
+        youtube = FakeYouTube()
+        youtube.restore_transform = lambda status: {key: value for key, value in status.items()
+                                                     if key != "containsSyntheticMedia"}
+        record = Mock()
+        self.assertEqual(self.call(youtube, record_evidence=record), "comment-id")
+        evidence = record.call_args.args[0]
+        self.assertTrue(evidence["verified"])
+        self.assertEqual(evidence["state"], "accepted_native_true_readback_omitted")
+        self.assertEqual(evidence["acknowledgment"]["id"], VIDEO_ID)
+        self.assertTrue(evidence["acknowledgment"]["status"]["containsSyntheticMedia"])
+
+    def test_missing_wrong_or_false_ack_cannot_prove_omitted_native_flag(self):
+        expected = {"privacyStatus": "private", "publishAt": ORIGINAL["publishAt"], "containsSyntheticMedia": True}
+        actual = {key: value for key, value in expected.items() if key != "containsSyntheticMedia"}
+        for acknowledgment in (None, {"id": "wrong", "status": {"containsSyntheticMedia": True}},
+                               {"id": VIDEO_ID, "status": {}},
+                               {"id": VIDEO_ID, "status": {"containsSyntheticMedia": False}},
+                               {"id": VIDEO_ID, "status": {"containsSyntheticMedia": "true"}}):
+            self.assertFalse(status_verification(VIDEO_ID, expected, actual, acknowledgment)["verified"])
+        acknowledged = {"id": VIDEO_ID, "status": {"containsSyntheticMedia": True}}
+        for value in (False, None, "true"):
+            self.assertFalse(status_verification(VIDEO_ID, expected,
+                                                {**actual, "containsSyntheticMedia": value}, acknowledged)["verified"])
 
     def test_non_scheduled_public_upload_needs_no_status_mutation(self):
         youtube = FakeYouTube()

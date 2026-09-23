@@ -2766,8 +2766,10 @@
       "printing business",
       "bulk tshirt supplier"
     ],
-    "description": "That honeycomb texture on polo t-shirts? It's not about the fibre — it's a knit construction called pique, made with tuck stitches. Learn the difference so you specify correctly when ordering fabric.\n",
-    "word_count": 1354,
-    "excerpt": "The short answer: pique is a knit construction, not a fibre type. That distinctive honeycomb or cellular texture on a polo shirt comes from the way the fabric is knitted — specifically from tuck stitches — and has nothing to do with whether the yarn is cotton, polyester, or a blend. Confusing the two leads to vague purchase orders and mismatched samples, which is a preventable sourcing problem. In standard single-jersey knitting, every needle draws a loop fully through the previous loop to form a new stitch. Pique construction works differently: at certain points in the knitting cycle, some loops are not fully pulled through. Instead, they stay connected (\"tucked\") to the loop from the previous row. When these incomplete, held loops sit next to fully formed stitches, they push the surrounding fabric outward — creating the raised, dimpled, almost three-dimensional surface you see on a polo shirt body. This is the tuck-stitch mechanism. The pattern of tucks — how many, how spaced, in what sequence — determines the final surface geometry. A uniform, evenly spaced tuck pattern produces the classic honeycomb or waffle-like appearance associated with polo shirts. A different tuck sequence would produce a different surface entirely. The..."
+    "description": "Pique names a knit construction, not fibre composition. Learn what tuck stitches do and which separate specifications to request before ordering polo blanks.",
+    "word_count": 823,
+    "excerpt": "Pique is a knit construction, not a fibre type. Tuck stitches create the cellular texture associated with knitted polo fabric. That texture does not identify the fibre composition or grade. State construction and fibre composition separately when ordering.",
+    "modified": "2026-09-23",
+    "editorial_corrected_at": "2026-09-23"
   }
 ]
