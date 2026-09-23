@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import tempfile
+from urllib.parse import parse_qs, urlsplit, urlunsplit
 import zipfile
 
 import requests
@@ -18,6 +19,7 @@ import requests
 
 REPOSITORY = 'thakyanamtumhara/yt-shorts-bot'
 BOT_CHANNEL = 'UCHZbA84OiM9COlTQ4JcVgeQ'
+FB_GRAPH = 'https://graph.facebook.com/v26.0'
 QA_MODEL = 'gemini-3.8-flash'
 MAX_ARCHIVE = 512 * 1024 * 1024
 REPORT = Path('audit-short-report')
@@ -209,6 +211,119 @@ def youtube_readback(video_id, expected_title):
             **{key: status.get(key) for key in ('privacyStatus', 'publishAt', 'uploadStatus', 'containsSyntheticMedia')}}
 
 
+def _facebook_fields(video_id, fields, token):
+    try:
+        response = requests.get(FB_GRAPH + '/' + video_id,
+            headers={'Authorization': 'Bearer ' + token}, params={'fields': 'id,' + fields},
+            timeout=30, allow_redirects=False)
+        try:
+            data = response.json()
+        except ValueError:
+            return None, {'state': 'invalid_json', 'http_status': response.status_code}
+    except requests.RequestException:
+        return None, {'state': 'network_error'}
+    if response.status_code != 200 or not isinstance(data, dict) or 'error' in data:
+        safe = {'state': 'read_unavailable', 'http_status': response.status_code}
+        error = data.get('error') if isinstance(data, dict) else None
+        if isinstance(error, dict):
+            safe.update({key: error[key] for key in ('code', 'error_subcode') if type(error.get(key)) is int})
+        return None, safe
+    if data.get('id') != video_id:
+        return None, {'state': 'identity_mismatch'}
+    return data, {'state': 'read_ok'}
+
+
+def facebook_publication(data):
+    def state(value):
+        known = {'ready', 'processing', 'uploading', 'error', 'failed', 'complete', 'completed',
+                 'not_started', 'in_progress', 'pending', 'published', 'unpublished', 'scheduled', 'draft'}
+        return value.lower() if isinstance(value, str) and value.lower() in known else None
+    status = data.get('status') if isinstance(data.get('status'), dict) else {}
+    phase = status.get('publishing_phase') if isinstance(status.get('publishing_phase'), dict) else {}
+    video_status, phase_status, publish_status = (state(status.get('video_status')),
+                                                 state(phase.get('status')), state(phase.get('publish_status')))
+    published = data.get('published') if type(data.get('published')) is bool else None
+    complete = phase_status in ('complete', 'completed') and publish_status == 'published'
+    incomplete = phase_status in ('not_started', 'in_progress', 'pending', 'error', 'failed') \
+                 or publish_status in ('unpublished', 'scheduled', 'draft', 'error', 'failed')
+    conflict = (published is False and complete) or (published is True and incomplete)
+    confirmed = not conflict and (published is True or (complete and published is not False))
+    privacy = data.get('privacy')
+    privacy = privacy.get('value') if isinstance(privacy, dict) else privacy
+    privacy = privacy if privacy in ('EVERYONE', 'ALL_FRIENDS', 'FRIENDS_OF_FRIENDS', 'SELF', 'CUSTOM') else None
+    if conflict:
+        conclusion = 'conflicting_publication_signals'
+    elif confirmed:
+        conclusion = 'publication_confirmed_by_api'
+    elif published is False:
+        conclusion = 'not_published'
+    elif incomplete:
+        conclusion = 'publication_incomplete'
+    else:
+        conclusion = 'publication_unverified'
+    public = None
+    if not conflict and (published is False or privacy in ('ALL_FRIENDS', 'FRIENDS_OF_FRIENDS', 'SELF', 'CUSTOM')):
+        public = False
+    elif confirmed and privacy == 'EVERYONE':
+        public = True
+    return {'video_status': video_status, 'processing_ready': video_status == 'ready',
+            'published': published, 'publishing_phase': {'status': phase_status, 'publish_status': publish_status},
+            'privacy': privacy, 'publication_state': conclusion, 'publication_confirmed_by_api': confirmed,
+            'public_by_api': public, 'public_visitor_access': 'not_independently_checked'}
+
+
+def _facebook_permalink(value, video_id):
+    if not isinstance(value, str) or len(value) > 2048:
+        return None
+    if value.startswith('/') and not value.startswith('//'):
+        value = 'https://www.facebook.com' + value
+    try:
+        url = urlsplit(value)
+        if (url.scheme != 'https' or url.netloc not in ('facebook.com', 'www.facebook.com', 'm.facebook.com')
+                or not re.fullmatch(r'/[A-Za-z0-9_./-]*', url.path)):
+            return None
+        query = ''
+        if video_id not in url.path.split('/'):
+            if url.path.rstrip('/') != '/watch' or parse_qs(url.query).get('v') != [video_id]:
+                return None
+            query = 'v=' + video_id
+        return urlunsplit((url.scheme, url.netloc, url.path, query, ''))
+    except ValueError:
+        return None
+
+
+def facebook_readback(manifest):
+    flags = manifest.get('run_flags') or {}
+    disclosure = flags.get('facebook_ai_disclosure') if isinstance(flags, dict) else None
+    result = {'state': 'manifest_id_absent', 'native_ai_disclosure': 'unverified',
+              'native_label_visible': 'not_independently_checked'}
+    if not isinstance(disclosure, dict) or not disclosure.get('video_id'):
+        return result
+    video_id = disclosure['video_id']
+    if not isinstance(video_id, str) or not re.fullmatch(r'[1-9][0-9]{0,29}', video_id):
+        return {**result, 'state': 'invalid_manifest_id'}
+    result.update({'video_id': video_id,
+                   'manifest_disclosure_requested': disclosure.get('requested') is True})
+    token = os.environ.get('FB_PAGE_ACCESS_TOKEN')
+    if not token:
+        return {**result, 'state': 'credential_missing'}
+    data, read = _facebook_fields(video_id, 'status,permalink_url', token)
+    result['reads'] = {'status_and_permalink': read}
+    if data is None:
+        return {**result, 'state': 'readback_unavailable'}
+    result['state'] = 'readback_complete'
+    result['permalink_url'] = _facebook_permalink(data.get('permalink_url'), video_id)
+    for field in ('published', 'privacy', 'is_ai_generated'):
+        extra, field_read = _facebook_fields(video_id, field, token)
+        result['reads'][field] = field_read
+        if extra is not None and field in extra:
+            data[field] = extra[field]
+    result.update(facebook_publication(data))
+    if type(data.get('is_ai_generated')) is bool:
+        result['native_ai_disclosure'] = 'api_true' if data['is_ai_generated'] else 'api_false'
+    return result
+
+
 def review_words(script):
     return list(dict.fromkeys([word for word in TERMS if word in script]
                 + re.findall(r'(?<![A-Za-z])[A-Za-z][A-Za-z0-9-]{1,25}(?![A-Za-z])', script)))[:40]
@@ -291,7 +406,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     REPORT.mkdir(exist_ok=True)
     report = {'format': 'daily-short-output-audit-v1', 'checked_at': datetime.now(timezone.utc).isoformat(),
-              'read_only': True, 'public_writes': 0, 'render_or_tts_calls': 0, 'passed': False}
+              'read_only': True, 'public_writes': 0, 'render_or_tts_calls': 0, 'passed': False,
+              'pass_scope': 'Full rendered audio and exact BOT YouTube upload; Facebook readback is reported separately.'}
     try:
         source_id = run_id(args.run_id)
         if os.environ.get('GITHUB_REPOSITORY', REPOSITORY) != REPOSITORY:
@@ -305,6 +421,7 @@ def main(argv=None):
             report['assets'] = {kind: {key: manifest['assets'][kind][key] for key in ('file', 'bytes', 'sha256')}
                                 for kind in ('video', 'cover')}
             report['topic'] = manifest.get('topic')
+            report['facebook'] = facebook_readback(manifest)
             report['youtube'] = youtube_readback(manifest['source_posts']['bot_youtube'], manifest['titles']['youtube'])
             wav, report['media'] = probe_and_extract(video, Path(directory))
             assessment = assess_audio(wav, manifest, report['media']['duration_seconds'], report_dir=REPORT)

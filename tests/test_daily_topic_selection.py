@@ -190,7 +190,7 @@ class TopicConsumptionTest(unittest.TestCase):
                  'get_topic_tags': lambda topic: [], 'get_youtube_service': lambda: object() if youtube_auth else None,
                  'check_past_engagement': Mock(), 'check_instagram_engagement': Mock(),
                  'upload_to_youtube': Mock(side_effect=upload_error, return_value=(video_id, 'https://youtube.com/shorts/' + str(video_id))),
-                 'SCHEDULE_PUBLISH': False, 'time': SimpleNamespace(sleep=Mock()),
+                 'SCHEDULE_PUBLISH': False, 'time': SimpleNamespace(sleep=Mock()), 're': re,
                  'get_pin_tail': lambda topic: None, 'add_to_playlist': Mock(), 'flag': Mock(),
                  'CROSS_POST_INSTAGRAM': False, 'os': SimpleNamespace(environ={}),
                  'cross_post_to_instagram': Mock(side_effect=instagram_error, return_value=None),
@@ -228,6 +228,18 @@ class TopicConsumptionTest(unittest.TestCase):
                     scope = self.upload_stage(path, mode=mode)
                     self.assertEqual(load_topic_history(path), ['Earlier lesson'])
                     self.assertEqual(scope['upload_to_youtube'].call_count, 0 if mode == 'TEST_MODE' else 1)
+
+    def test_history_failure_after_real_ack_does_not_request_duplicate_upload(self):
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'topic_history.json'
+            path.write_text('broken')
+            scope = self.upload_stage(path)
+            self.assertFalse(scope['upload_failed'])
+            self.assertEqual(scope['vid_id'], self.VIDEO_ID)
+            self.assertEqual(scope['post_upload_error'], 'TopicHold')
+            scope['flag'].assert_any_call('youtube_postprocessing', False)
+            scope['cross_post_to_instagram'].assert_called_once()
+            self.assertEqual(path.read_text(), 'broken')
 
     def test_actual_topic_selection_is_read_only_until_successful_upload(self):
         source = (ROOT / 'daily_short.py').read_text()

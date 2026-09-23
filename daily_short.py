@@ -10193,6 +10193,9 @@ def build_blog_index_html(new_post=None):
                     'onerror="this.parentElement.classList.add(\'no-img\')">') if hero_url else ''
         hero_class = 'card-img' if hero_url else 'card-img no-img'
         post_url = f"/p/{p_slug}.html"
+        modified = _blog_lastmod(post) if post.get('modified') else None
+        if modified:
+            post_url += f"?v={modified}"
         vid_url = post.get('vid_url', '')
         word_count = post.get('word_count', 2000)
         read_min = max(1, round(word_count / 200))
@@ -10572,6 +10575,8 @@ def build_rss_feed(new_post=None):
         p_slug = post.get('slug', '')
         p_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
         p_desc = _html.escape(post.get('description', post.get('topic', '')))
+        modified = _blog_lastmod(post) if post.get('modified') else None
+        public_url = p_url + (f"?v={modified}" if modified else "")
         p_date = ''
         try:
             dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
@@ -10591,7 +10596,7 @@ def build_rss_feed(new_post=None):
 
         items_xml += f'''    <item>
       <title>{p_title}</title>
-      <link>{p_url}</link>
+      <link>{public_url}</link>
       <guid isPermaLink="true">{p_url}</guid>
       <description>{p_desc}</description>
       <pubDate>{p_date}</pubDate>
@@ -10643,6 +10648,9 @@ def build_blog_widget_html(max_posts=3):
                     'style="width:100%;height:140px;object-fit:cover;" '
                     'onerror="this.style.display=\'none\'">') if hero_url else ''
         post_url = f"{BLOG_BASE_URL}/p/{p_slug}.html"
+        modified = _blog_lastmod(post) if post.get('modified') else None
+        if modified:
+            post_url += f"?v={modified}"
         p_date = ''
         try:
             dt = datetime.fromisoformat(post.get('date', '').replace('Z', '+00:00'))
@@ -13434,6 +13442,8 @@ def main():
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
+    status_restore_error = None
+    post_upload_error = None
     vid_id = None
     if TEST_MODE:
         print(f"\n{'='*60}")
@@ -13475,49 +13485,24 @@ def main():
                         if thumbnail_path:
                             print(f"   📁 Thumbnail saved locally: {thumbnail_path}")
                     else:
-                        # ── 10b. Pin CTA comment (wait for YouTube to process video) ──
-                        # Scheduled videos are private — YouTube blocks comments on private videos.
-                        # Temporarily switch to unlisted, post comment, then restore scheduled state.
-                        original_publish_at = None
-                        switched_to_unlisted = False
-                        if SCHEDULE_PUBLISH:
-                            try:
-                                # Save original publishAt before switching
-                                vid_status = youtube.videos().list(part="status", id=vid_id).execute()
-                                if vid_status.get("items"):
-                                    original_publish_at = vid_status["items"][0]["status"].get("publishAt")
-                                youtube.videos().update(
-                                    part="status",
-                                    body={"id": vid_id, "status": {"privacyStatus": "unlisted"}}
-                                ).execute()
-                                switched_to_unlisted = True
-                                print("   🔓 Temporarily set to unlisted for commenting...")
-                            except Exception as e:
-                                print(f"   ⚠️ Could not switch to unlisted: {e}")
-
-                        print("   ⏳ Waiting 30s for YouTube video processing before commenting...")
-                        time.sleep(30)
+                        # ── 10b. Add the buyer question without losing scheduled status ──
                         custom_pin = get_pin_tail(fresh_topic)
-                        if custom_pin:
-                            pin_comment(youtube, vid_id, comment_text=custom_pin)
-
-                        # Restore scheduled/private status
-                        if switched_to_unlisted and original_publish_at:
+                        if custom_pin and AUTO_PIN_COMMENT:
+                            from tools.youtube_status import post_daily_ai_comment, StatusRestorationError
                             try:
-                                youtube.videos().update(
-                                    part="status",
-                                    body={
-                                        "id": vid_id,
-                                        "status": {
-                                            "privacyStatus": "private",
-                                            "publishAt": original_publish_at,
-                                        }
-                                    }
-                                ).execute()
-                                print(f"   🔒 Restored scheduled/private status")
-                            except Exception as e:
-                                print(f"   ⚠️ Could not restore private status: {e}")
-                                print(f"   ℹ️ Video may remain unlisted — check YouTube Studio")
+                                comment_id = post_daily_ai_comment(
+                                    youtube, vid_id, custom_pin,
+                                    lambda: pin_comment(youtube, vid_id, comment_text=custom_pin),
+                                    scheduled=SCHEDULE_PUBLISH,
+                                )
+                                flag("youtube_comment", bool(comment_id))
+                            except StatusRestorationError as status_error:
+                                status_restore_error = str(status_error)
+                                flag("youtube_status_restore", False)
+                                print(f"   ❌ {status_restore_error}: {vid_id}")
+                            except Exception as comment_error:
+                                flag("youtube_comment", False)
+                                print(f"   ⚠️ Owner comment skipped/failed ({type(comment_error).__name__}); upload kept")
 
                         # thumbnails.set DOES work on this channel, including on Shorts —
                         # re-tested live 2026-08-01 via yt_thumb_probe.yml on video
@@ -13539,14 +13524,19 @@ def main():
                         add_to_playlist(youtube, vid_id, fresh_topic)
 
                 print(f"\n{'='*60}")
-                print(f"  ✅ DAILY SHORT COMPLETE!")
+                print("  ⚠️ DAILY SHORT NEEDS STATUS REVIEW" if status_restore_error else "  ✅ DAILY SHORT COMPLETE!")
                 print(f"  🔗 {vid_url}")
                 print(f"  📌 {yt_title}")
                 print(f"{'='*60}")
             except Exception as upload_err:
-                print(f"   ❌ YouTube upload failed: {upload_err}")
-                upload_failed = True
-                flag("youtube_upload", False)
+                if isinstance(vid_id, str) and re.fullmatch(r"[A-Za-z0-9_-]{11}", vid_id):
+                    post_upload_error = type(upload_err).__name__
+                    flag("youtube_postprocessing", False)
+                    print(f"   ❌ YouTube post-upload step failed ({post_upload_error}); upload kept: {vid_id}")
+                else:
+                    print(f"   ❌ YouTube upload failed: {upload_err}")
+                    upload_failed = True
+                    flag("youtube_upload", False)
         else:
             print("   ❌ YouTube auth failed. Video saved locally.")
             upload_failed = True
@@ -13737,9 +13727,11 @@ def main():
         except: pass
     try: os.remove(audio_path)
     except: pass
-    if thumbnail_path and not upload_failed:
+    if thumbnail_path and not upload_failed and not status_restore_error and not post_upload_error:
         try: os.remove(thumbnail_path)
         except: pass
+    if status_restore_error or post_upload_error:
+        raise RuntimeError(f"YouTube post-upload verification failed for {vid_id}; do not reupload")
 
 
 def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None, base_image_path=None):

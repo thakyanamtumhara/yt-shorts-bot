@@ -218,6 +218,7 @@ jobs:
           git add source_channel_insights.json || true
           git add blog_history.json || true
           git add ig_engagement_history.json || true
+          git add social_watch_state.json || true
           git add thumbnail_research.json || true
           git add reddit_drafts/ || true
           git add ig_drafts/ || true

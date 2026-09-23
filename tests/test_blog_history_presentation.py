@@ -60,7 +60,11 @@ class HistoryPresentationTest(unittest.TestCase):
         self.assertIn('card-img no-img', card)
         self.assertNotIn('<img ', card)
         self.assertIn('Corrected cotton guide', card)
+        self.assertIn('/p/corrected-guide.html?v=2026-09-23', card)
+        self.assertIn('/p/corrected-guide.html?v=2026-09-23', widget)
         items = ET.fromstring(feed).findall('./channel/item')
+        self.assertEqual(items[0].findtext('link'), f'{BASE}/p/corrected-guide.html?v=2026-09-23')
+        self.assertEqual(items[0].findtext('guid'), f'{BASE}/p/corrected-guide.html')
         self.assertIsNone(items[0].find('enclosure'))
         self.assertEqual(items[1].find('enclosure').attrib['url'], f'{BASE}/p/legacy-guide-hero.webp')
         self.assertEqual(items[2].find('enclosure').attrib,
