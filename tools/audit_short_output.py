@@ -16,6 +16,11 @@ import zipfile
 
 import requests
 
+if __package__:
+    from .youtube_status import MUTABLE_STATUS_FIELDS, status_verification
+else:
+    from youtube_status import MUTABLE_STATUS_FIELDS, status_verification
+
 
 REPOSITORY = 'thakyanamtumhara/yt-shorts-bot'
 BOT_CHANNEL = 'UCHZbA84OiM9COlTQ4JcVgeQ'
@@ -220,7 +225,35 @@ def youtube_readback(video_id, expected_title):
     title = video['snippet'].get('title', '')
     return {'video_id': video_id, 'channel_id': BOT_CHANNEL, 'title': title,
             'title_matches_manifest': title == expected_title or title == expected_title + ' #Shorts',
+            'mutable_status': {key: value for key, value in status.items() if key in MUTABLE_STATUS_FIELDS},
             **{key: status.get(key) for key in ('privacyStatus', 'publishAt', 'uploadStatus', 'containsSyntheticMedia')}}
+
+
+def youtube_disclosure_verification(manifest, readback):
+    video_id = (manifest.get('source_posts') or {}).get('bot_youtube')
+    if readback.get('video_id') != video_id or readback.get('channel_id') != BOT_CHANNEL:
+        return {'verified': False, 'state': 'wrong_video_or_owner'}
+    actual = readback.get('mutable_status')
+    if not isinstance(actual, dict):
+        return {'verified': False, 'state': 'owner_status_unavailable'}
+    if 'containsSyntheticMedia' in actual:
+        return {'verified': actual['containsSyntheticMedia'] is True,
+                'state': 'readback_native_true' if actual['containsSyntheticMedia'] is True else 'readback_native_not_true'}
+    saved = (manifest.get('run_flags') or {}).get('youtube_status_evidence')
+    if not isinstance(saved, dict) or saved.get('verified') is not True or saved.get('video_id') != video_id:
+        return {'verified': False, 'state': 'readback_omitted_without_bound_manifest_acknowledgment'}
+    request, response = saved.get('request'), saved.get('acknowledgment')
+    if not isinstance(request, dict) or not isinstance(response, dict):
+        return {'verified': False, 'state': 'manifest_acknowledgment_incomplete'}
+    expected = request.get('status')
+    if (request.get('id') != video_id or not isinstance(expected, dict)
+            or expected.get('containsSyntheticMedia') is not True
+            or expected.get('privacyStatus') not in ('private', 'unlisted', 'public')
+            or not set(expected).issubset(MUTABLE_STATUS_FIELDS)):
+        return {'verified': False, 'state': 'manifest_request_not_bound_to_native_true'}
+    checked = status_verification(video_id, expected, actual, response)
+    return {'verified': checked['verified'], 'state': checked['state'],
+            'evidence_source': 'exact_run_manifest_latest_status_update_and_current_owner_get'}
 
 
 def _meta_fields(video_id, fields, token):
@@ -506,11 +539,12 @@ def main(argv=None):
             report['instagram'] = instagram_readback(manifest)
             report['facebook'] = facebook_readback(manifest)
             report['youtube'] = youtube_readback(manifest['source_posts']['bot_youtube'], manifest['titles']['youtube'])
+            report['youtube_disclosure'] = youtube_disclosure_verification(manifest, report['youtube'])
             wav, report['media'] = probe_and_extract(video, Path(directory))
             assessment = assess_audio(wav, manifest, report['media']['audio_seconds'], report_dir=REPORT)
             report['audio_passed'] = assessment['passed']
             report['youtube_processed'] = report['youtube']['uploadStatus'] == 'processed'
-            report['passed'] = (assessment['passed'] and report['youtube']['containsSyntheticMedia'] is True
+            report['passed'] = (assessment['passed'] and report['youtube_disclosure']['verified'] is True
                                 and report['youtube']['title_matches_manifest'] is True and report['youtube_processed'])
     except Exception as error:
         report['error'] = str(error) if isinstance(error, AuditError) else type(error).__name__

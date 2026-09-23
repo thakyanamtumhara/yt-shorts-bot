@@ -233,5 +233,60 @@ class ExtractionAndReadbackTest(unittest.TestCase):
             self.assertFalse(any('insert' in str(call) or 'update' in str(call) for call in service.mock_calls))
 
 
+class ManifestDisclosureTest(unittest.TestCase):
+    def evidence(self):
+        manifest = manifest_data()
+        video_id = manifest['source_posts']['bot_youtube']
+        expected = {'privacyStatus': 'private', 'publishAt': '2026-09-24T13:30:00Z',
+                    'embeddable': False, 'publicStatsViewable': False, 'containsSyntheticMedia': True}
+        manifest['run_flags'] = {'youtube_status_evidence': {
+            'verified': True, 'video_id': video_id, 'request': {'id': video_id, 'status': expected},
+            'acknowledgment': {'id': video_id, 'status': {'containsSyntheticMedia': True}}}}
+        readback = {'video_id': video_id, 'channel_id': audit.BOT_CHANNEL,
+                    'mutable_status': {key: value for key, value in expected.items() if key != 'containsSyntheticMedia'}}
+        return manifest, readback
+
+    def test_exact_verified_manifest_ack_with_matching_owner_get_accepts_omission(self):
+        manifest, readback = self.evidence()
+        result = audit.youtube_disclosure_verification(manifest, readback)
+        self.assertTrue(result['verified'])
+        self.assertEqual(result['state'], 'accepted_native_true_readback_omitted')
+
+    def test_old_manifest_or_generic_requested_flag_does_not_prove_disclosure(self):
+        _, readback = self.evidence()
+        for flags in ({}, {'youtube_status_evidence': {'requested': True}},
+                      {'youtube_status_evidence': {'verified': True}}):
+            manifest = manifest_data(); manifest['run_flags'] = flags
+            self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
+
+    def test_explicit_false_malformed_or_changed_owner_status_blocks_ack(self):
+        for changes in ({'containsSyntheticMedia': False}, {'containsSyntheticMedia': None},
+                        {'containsSyntheticMedia': 'true'}, {'embeddable': True},
+                        {'publishAt': '2026-09-25T13:30:00Z'}, {'privacyStatus': 'unlisted'}):
+            manifest, readback = self.evidence()
+            readback['mutable_status'].update(changes)
+            with self.subTest(changes=changes):
+                self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
+
+    def test_wrong_or_incomplete_ack_and_unverified_receipt_fail(self):
+        for location, field, value in (('request', 'id', 'wrong-video'), ('acknowledgment', 'id', 'wrong-video'),
+                                      ('acknowledgment', 'status', {}),
+                                      ('acknowledgment', 'status', {'containsSyntheticMedia': False}),
+                                      (None, 'verified', False), (None, 'video_id', 'wrong-video')):
+            manifest, readback = self.evidence()
+            saved = manifest['run_flags']['youtube_status_evidence']
+            target = saved[location] if location else saved
+            target[field] = value
+            with self.subTest(location=location, field=field):
+                self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
+
+    def test_direct_true_owner_get_needs_no_saved_ack_but_owner_must_match(self):
+        _, readback = self.evidence()
+        readback['mutable_status']['containsSyntheticMedia'] = True
+        self.assertTrue(audit.youtube_disclosure_verification(manifest_data(), readback)['verified'])
+        readback['channel_id'] = 'wrong-channel'
+        self.assertFalse(audit.youtube_disclosure_verification(manifest_data(), readback)['verified'])
+
+
 if __name__ == '__main__':
     unittest.main()

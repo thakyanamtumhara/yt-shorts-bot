@@ -64,6 +64,7 @@ def repair(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
               "channel_id": BOT_CHANNEL, "source_run_id": "35884612564", "status_before": original}
     body = undo_body_from_backup(backup)
     body["status"]["containsSyntheticMedia"] = True
+    body["status"]["embeddable"] = True
     backup["proposed_status"] = deepcopy(body["status"])
     with Path(backup_path).open("x", encoding="utf-8") as target:
         json.dump(backup, target, ensure_ascii=False, indent=2)
@@ -72,13 +73,14 @@ def repair(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
         os.fsync(target.fileno())
     result = {"video_id": VIDEO_ID, "channel_id": BOT_CHANNEL, "applied": False,
               "privacyStatus": original["privacyStatus"], "publishAt": original["publishAt"],
+              "embeddable_before": original.get("embeddable"),
               "containsSyntheticMedia_before": original.get("containsSyntheticMedia"),
               "containsSyntheticMedia_after": original.get("containsSyntheticMedia"), "verified": False}
     if not apply:
         return {**result, "dry_run": True, "proposed_containsSyntheticMedia": True}
     result.update(dry_run=False, readbacks=[])
     acknowledgment = None
-    if original.get("containsSyntheticMedia") is not True:
+    if original.get("containsSyntheticMedia") is not True or original.get("embeddable") is not True:
         result["write_attempted"] = True
         try:
             acknowledgment = youtube.videos().update(part="status", body=body).execute()
@@ -93,7 +95,8 @@ def repair(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
             actual = _read(youtube)
             evidence = status_verification(VIDEO_ID, body["status"], actual, acknowledgment)
             result["readbacks"].append(evidence)
-            result.update(containsSyntheticMedia_after=actual.get("containsSyntheticMedia"),
+            result.update(embeddable_after=actual.get("embeddable"),
+                          containsSyntheticMedia_after=actual.get("containsSyntheticMedia"),
                           verified=evidence["verified"], verification_state=evidence["state"])
         except Exception as error:
             result["readbacks"].append({"read_error": type(error).__name__})

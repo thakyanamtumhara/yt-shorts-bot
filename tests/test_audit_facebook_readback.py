@@ -127,7 +127,9 @@ class FacebookReadbackTest(unittest.TestCase):
         source.update({'assets': {kind: {'file': kind, 'bytes': 1, 'sha256': 'a' * 64}
                                   for kind in ('video', 'cover')},
                        'source_posts': {'bot_youtube': 'abcdefghijk'}, 'titles': {'youtube': 'Title'}})
-        youtube = {'uploadStatus': 'processed', 'containsSyntheticMedia': True, 'title_matches_manifest': True}
+        youtube = {'uploadStatus': 'processed', 'containsSyntheticMedia': True, 'title_matches_manifest': True,
+                   'video_id': 'abcdefghijk', 'channel_id': audit.BOT_CHANNEL,
+                   'mutable_status': {'containsSyntheticMedia': True}}
         with TemporaryDirectory() as directory, patch.object(audit, 'REPORT', Path(directory)), \
                 patch.object(audit, 'github_json', return_value={}), \
                 patch.object(audit, 'validate_run', return_value={}), \

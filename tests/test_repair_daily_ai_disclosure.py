@@ -53,6 +53,7 @@ class DisclosureRepairTest(unittest.TestCase):
             backup = json.loads(path.read_text())
         desired = {key: value for key, value in ORIGINAL.items() if key != "uploadStatus"}
         desired["containsSyntheticMedia"] = True
+        desired["embeddable"] = True
         self.assertEqual(youtube.current, desired)
         self.assertTrue(report["applied"] and report["verified"])
         youtube.videos.return_value.update.assert_called_once()
@@ -92,7 +93,7 @@ class DisclosureRepairTest(unittest.TestCase):
         youtube.videos.return_value.update.assert_not_called()
 
     def test_already_true_is_read_back_without_another_write(self):
-        youtube = service(status={**ORIGINAL, "containsSyntheticMedia": True})
+        youtube = service(status={**ORIGINAL, "containsSyntheticMedia": True, "embeddable": True})
         with TemporaryDirectory() as folder:
             report = repair.repair(youtube, Path(folder) / "backup.json", apply=True, now=NOW)
         self.assertTrue(report["verified"])
@@ -125,7 +126,7 @@ class DisclosureRepairTest(unittest.TestCase):
         youtube.videos.return_value.update.assert_called_once()
 
     def test_status_mismatch_has_bounded_reads_no_second_write_and_saved_actual_status(self):
-        youtube = service(transform=lambda status: {**status, "embeddable": True})
+        youtube = service(transform=lambda status: {**status, "embeddable": False})
         sleep = Mock()
         with TemporaryDirectory() as folder:
             path = Path(folder) / "backup.json"
@@ -134,7 +135,7 @@ class DisclosureRepairTest(unittest.TestCase):
             saved = json.loads(path.with_name("status-verification.json").read_text())
         self.assertEqual(len(saved["readbacks"]), 3)
         self.assertEqual(sleep.call_count, 2)
-        self.assertTrue(saved["readbacks"][-1]["status_readback"]["embeddable"])
+        self.assertFalse(saved["readbacks"][-1]["status_readback"]["embeddable"])
         self.assertEqual(raised.exception.report, saved)
         youtube.videos.return_value.update.assert_called_once()
 
