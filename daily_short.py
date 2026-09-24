@@ -216,7 +216,6 @@ SUBTITLE_BG_COLOR = (0, 0, 0)
 SUBTITLE_BG_OPACITY = 0.7
 SUBTITLE_BG_PADDING = 16
 WORDS_PER_SUBTITLE = 3        # Punchy 3-word phrases (top-quartile Shorts pace)
-MAX_SUBTITLE_DURATION = 1.8   # Force caption swap at least every 1.8s
 # Karaoke captions — word-by-word highlight of the ACTUAL spoken Roman-Hinglish words.
 # KARAOKE_CAPTIONS=0 is the kill switch (falls back to old segment-level English captions).
 KARAOKE_CAPTIONS = os.environ.get("KARAOKE_CAPTIONS", "1").strip() in ("1", "true", "yes")
@@ -3086,6 +3085,7 @@ def _generate_existing_article_carousel(claude_client, cost_tracker, articles, p
             topic=article.get('topic') or article.get('title', ''),
             script_english=article.get('excerpt') or article.get('description', ''),
             tags=article.get('tags', []),
+            image_assets=article.get('image_assets'),
         )
         if draft:
             return draft
@@ -3094,7 +3094,8 @@ def _generate_existing_article_carousel(claude_client, cost_tracker, articles, p
 
 
 def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url, blog_slug,
-                                topic, script_english, tags, uploaded_filenames=None):
+                                topic, script_english, tags, uploaded_filenames=None,
+                                image_assets=None):
     """Generate an IG carousel post draft for tomorrow morning's auto-publish.
 
     Daily-bot already cross-posts the Veo Short as a Reel. This adds a SECOND
@@ -3105,6 +3106,10 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
     Returns the saved draft path, or None on failure. Failure is non-fatal.
     """
     print("   📷 IG carousel: Drafting next-morning post...")
+    from tools.standalone_image_policy import standalone_image_urls
+    if image_assets is None:
+        records = [item for item in _load_blog_history_active() if item.get('slug') == blog_slug]
+        image_assets = records[-1].get('image_assets') if records else None
     source = f'Title: {blog_title}\nTopic: {topic}\nSource: {script_english}'
     source += _editorial_evidence(topic)
     reason = _auto_content_hold_reason(source)
@@ -3129,13 +3134,13 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
         # duplicate slides on 2026-07-06 — never again).
         candidate_urls = [f"{BLOG_BASE_URL}/p/{blog_slug}-{uploaded_filenames[0].replace('.webp', '.jpg')}"]
     else:
-        # No image info passed (blog-skip branch / pre-fix callers). These three
-        # names are a GUESS, not a fact — verified below before we commit to them.
-        candidate_urls = [
-            f"{BLOG_BASE_URL}/p/{blog_slug}-hero.jpg",
-            f"{BLOG_BASE_URL}/p/{blog_slug}-img1.jpg",
-            f"{BLOG_BASE_URL}/p/{blog_slug}-img2.jpg",
-        ]
+        candidate_urls = [asset['url'].replace('.webp', '.jpg') for asset in image_assets or []
+                          if isinstance(asset, dict) and isinstance(asset.get('url'), str)]
+
+    candidate_urls = standalone_image_urls(candidate_urls, image_assets)
+    if not candidate_urls:
+        print('   ⏸️ IG image draft held: no independent image; Reel covers and unknown legacy assets are not standalone posts.')
+        return None
 
     # Verify every candidate actually exists before writing the draft — the check
     # the comment above always promised but the else-branch never performed.
@@ -3199,6 +3204,8 @@ Return only JSON: {{"caption": "caption text", "hashtags": ["#topic"]}}."""
             "blog_url": blog_url,
             "blog_slug": blog_slug,
             "image_urls": image_urls,
+            "image_assets": image_assets,
+            "image_policy_version": "2026-09-24",
             "caption": parsed.get("caption", ""),
             "hashtags": _carousel_hashtags(parsed.get("hashtags", [])),
             "editorial_review": {"version": "2026-09-23", "supported": True, "reason": reason},
@@ -3215,7 +3222,7 @@ Return only JSON: {{"caption": "caption text", "hashtags": ["#topic"]}}."""
         return None
 
 
-def publish_ig_carousel(image_urls, caption, hashtags=None):
+def publish_ig_carousel(image_urls, caption, hashtags=None, image_assets=None):
     """Publish an IG carousel. Refuses anything that reads as a fabricated loss.
 
     Belt-and-braces on top of the prompt fix: three separate generators (Short
@@ -3223,6 +3230,11 @@ def publish_ig_carousel(image_urls, caption, hashtags=None):
     ~60 such posts went out under Ketu's real business name before he caught it.
     A prompt is a request; this is a gate.
     """
+    from tools.standalone_image_policy import standalone_image_urls
+    image_urls = standalone_image_urls(image_urls, image_assets)
+    if not image_urls:
+        print('   ⏸️ IG image publish held: no independently sourced image is approved.')
+        return None
     reason = _auto_content_hold_reason(caption)
     if reason:
         print(f'   🚫 IG carousel BLOCKED: {reason}')
@@ -3458,10 +3470,9 @@ IG_DRAFT_MAX_AGE_DAYS = 4
 def _tombstone_ig_draft(path, data, reason):
     """Retire a draft that can never publish, so the queue moves on by itself.
 
-    Marks posted=true (what the selector reads) plus an explicit skipped flag so
-    the state is honest — this is the same end-state the hand-written
-    'auto-fix(verifier)' commits produced, minus the human."""
-    data["posted"] = True
+    Held and retired drafts must never count as published."""
+    data["posted"] = False
+    data["held"] = True
     data["skipped"] = True
     data["skip_reason"] = reason
     data["media_id"] = None
@@ -3484,6 +3495,7 @@ def post_latest_ig_carousel():
     print("\n" + "=" * 60)
     print("  📷 IG CAROUSEL POST — morning auto-publish")
     print("=" * 60)
+    from tools.standalone_image_policy import standalone_image_urls
 
     if not os.path.isdir(IG_CAROUSEL_DRAFTS_DIR):
         print(f"   ℹ️ No {IG_CAROUSEL_DRAFTS_DIR}/ folder yet — nothing to post")
@@ -3509,8 +3521,15 @@ def post_latest_ig_carousel():
                 data = json.load(f)
         except Exception:
             continue
-        if data.get("posted"):
+        if data.get("posted") or data.get("media_id") or data.get("held") or data.get("skipped"):
             continue
+
+        wanted = data.get("image_urls") or []
+        approved = standalone_image_urls(wanted, data.get('image_assets'))
+        if not approved:
+            _tombstone_ig_draft(path, data, 'No independent image provenance; Reel-cover or unverified legacy draft held.')
+            continue
+        data['image_urls'] = approved
 
         try:
             age_days = (today_ist - datetime.strptime(fname[:-5], "%Y-%m-%d").date()).days
@@ -3552,6 +3571,7 @@ def post_latest_ig_carousel():
         image_urls=target_data["image_urls"],
         caption=target_data.get("caption", ""),
         hashtags=target_data.get("hashtags", []),
+        image_assets=target_data.get("image_assets"),
     )
 
     # Update the draft with the result
@@ -3568,7 +3588,8 @@ def post_latest_ig_carousel():
         target_data["attempts"] = attempts
         target_data["error"] = "publish_ig_carousel returned None — check logs"
         if attempts >= 2:
-            target_data["posted"] = True
+            target_data["posted"] = False
+            target_data["held"] = True
             target_data["skipped"] = True
             target_data["skip_reason"] = f"publish failed {attempts}× — retired so the queue moves on"
             print(f"   🪦 IG carousel: retiring after {attempts} failed attempts")
@@ -8885,7 +8906,7 @@ def _blog_cover_fallback(image_path):
             output = BytesIO()
             background.convert('RGB').save(output, format='WEBP', quality=90, method=4)
         print('   Blog images: reusing this lesson’s existing cover as one illustrative hero.')
-        return [(output.getvalue(), 'hero.webp')]
+        return [(output.getvalue(), 'reel-cover.webp')]
     except (OSError, ValueError, TypeError, Image.DecompressionBombError) as error:
         print(f'   Blog cover fallback rejected: {type(error).__name__}.')
         return []
@@ -9601,7 +9622,7 @@ def process_main_channel_recap():
     save_blog_history(video["title"], blog_title, blog_slug, blog_url, video["vid_url"],
                       tags=blog_tags, description=video["description"][:200],
                       word_count=_prose_word_count(blog_html),
-                      excerpt=sunday_excerpt)
+                      excerpt=sunday_excerpt, blog_images=blog_images)
     print(f"   ✅ Blog published: {blog_url}")
 
     # ── Step 7: Reddit draft ──
@@ -11253,6 +11274,8 @@ def rewrite_thin_posts(only_slug=None):
             entry = {"date": today, "title": p["new_title"], "slug": slug,
                      "url": blog_url, "topic": p["topic"][:80], "vid_url": ""}
             history.append(entry); hist_by_slug[slug] = entry
+        from tools.standalone_image_policy import blog_image_metadata
+        entry.update(blog_image_metadata(blog_images, slug, BLOG_BASE_URL))
         # publish_blog_to_s3 reads BLOG_HISTORY_FILE for related links, so persist first.
         json.dump(history, open(BLOG_HISTORY_FILE, "w"), ensure_ascii=False, indent=2)
         ok = publish_blog_to_s3(html, slug, p["new_title"], blog_url, blog_images, vid_id=None, tags=p.get("tags", []))
@@ -11470,6 +11493,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             today_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
             new_post = {"date": today_iso, "title": title, "slug": slug,
                         "url": blog_url, "topic": "", "vid_url": ""}
+            from tools.standalone_image_policy import blog_image_metadata
+            new_post.update(blog_image_metadata(blog_images, slug, BLOG_BASE_URL))
             index_html = build_blog_index_html(new_post=new_post)
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
@@ -11533,6 +11558,8 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
             today_iso = datetime.now(pytz.timezone(TIMEZONE)).isoformat()
             rss_new_post = {"date": today_iso, "title": title, "slug": slug,
                             "url": blog_url, "topic": "", "vid_url": ""}
+            from tools.standalone_image_policy import blog_image_metadata
+            rss_new_post.update(blog_image_metadata(blog_images, slug, BLOG_BASE_URL))
             rss_xml = build_rss_feed(new_post=rss_new_post)
             s3.put_object(
                 Bucket=BLOG_S3_BUCKET,
@@ -11598,7 +11625,7 @@ def publish_blog_to_s3(html_content, slug, title, blog_url, blog_images=None, vi
 
 
 def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
-                      description="", word_count=0, excerpt=""):
+                      description="", word_count=0, excerpt="", blog_images=None):
     """Save blog post metadata to blog_history.json for tracking.
 
     excerpt: 200-word plain-text excerpt extracted from the blog body — used
@@ -11610,6 +11637,7 @@ def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
             with open(BLOG_HISTORY_FILE, "r") as f:
                 history = json.load(f)
 
+        from tools.standalone_image_policy import blog_image_metadata
         history.append({
             "date": datetime.now(pytz.timezone(TIMEZONE)).isoformat(),
             "topic": topic,
@@ -11621,6 +11649,7 @@ def save_blog_history(topic, title, slug, blog_url, vid_url, tags=None,
             "description": (description or "")[:200],
             "word_count": word_count or 0,
             "excerpt": (excerpt or "")[:1500],  # cached for llms-full.txt
+            **blog_image_metadata(blog_images, slug, BLOG_BASE_URL),
         })
 
         with open(BLOG_HISTORY_FILE, "w") as f:
@@ -12658,7 +12687,6 @@ def main():
     # SAME NUMBER OF SENTENCES as script_voice, so sentence-level alignment is clean:
     #   - Whisper segments the Hindi audio into N sentences (start/end timestamps)
     #   - Each English sentence inherits its Hindi counterpart's timing
-    #   - Long English sentences split into smaller subtitle pieces by MAX_SUBTITLE_DURATION
     subtitle_segments = []
     karaoke_words = []   # [{"text","start","end"}] — Roman-Hinglish words w/ Whisper timing
     sub_source = script_english if script_english else script_voice
@@ -12758,44 +12786,20 @@ def main():
                 raw_tokens, script_words_all, whisper_segs, audio_clip_dur,
                 normalize_for_tts, _forced_align_caption_times)
             flag("caption_timing", {**_timing_source, **_word_timing,
+                                    "caption_sentence_count": len(eng_sentences),
+                                    "speech_segment_count": len(whisper_segs),
                                     "plain_fallback": _plain_timing_mode})
             print(f"   Caption highlight: {_word_timing['reason']} ({len(karaoke_words)} evidenced words)")
         except Exception as _ke:
             karaoke_words = []
-            flag("caption_timing", {"mode": "plain", "highlight_verified": False,
+            flag("caption_timing", {**_timing_source, "mode": "plain", "highlight_verified": False,
+                                    "caption_sentence_count": len(eng_sentences),
+                                    "speech_segment_count": len(whisper_segs),
+                                    "plain_fallback": _plain_timing_mode,
                                     "reason": "alignment_error", "error": type(_ke).__name__})
             print(f"   ⚠️ Karaoke timing unavailable ({type(_ke).__name__}); plain captions retained")
         flag("karaoke", bool(karaoke_words))
 
-        # Enforce MAX_SUBTITLE_DURATION — if a caption sits >1.8s, split it in half
-        try:
-            split_segs = []
-            for seg in subtitle_segments:
-                dur = max(0.0, seg["end"] - seg["start"])
-                if dur <= MAX_SUBTITLE_DURATION:
-                    split_segs.append(seg)
-                    continue
-                words_in = seg["text"].split()
-                # Split into halves until each piece fits under MAX_SUBTITLE_DURATION
-                pieces = max(2, int(dur / MAX_SUBTITLE_DURATION) + 1)
-                per = max(1, len(words_in) // pieces)
-                slices = [words_in[i:i + per] for i in range(0, len(words_in), per)]
-                # Merge tiny tail into previous slice
-                if len(slices) > pieces and len(slices[-1]) <= 1 and slices[:-1]:
-                    slices[-2].extend(slices[-1])
-                    slices = slices[:-1]
-                slice_dur = dur / max(len(slices), 1)
-                for idx, sl in enumerate(slices):
-                    split_segs.append({
-                        "text": " ".join(sl),
-                        "start": seg["start"] + idx * slice_dur,
-                        "end":   seg["start"] + (idx + 1) * slice_dur,
-                    })
-            if len(split_segs) != len(subtitle_segments):
-                print(f"   ✂️ Caption pacing: {len(subtitle_segments)} → {len(split_segs)} (≤{MAX_SUBTITLE_DURATION}s each)")
-            subtitle_segments = split_segs
-        except Exception as _e:
-            print(f"   ⚠️ Caption split skipped: {_e}")
     except Exception as _e:
         print(f"   ⚠️ Whisper caption sync FAILED ({type(_e).__name__}: {str(_e)[:160]}) — "
               f"captions fall back to equal-time slicing and the karaoke highlight is dropped")
@@ -13264,6 +13268,8 @@ def main():
     if not TEST_MODE:
         from tools.prepublication_audio import require_native_audio_review
         flag('native_audio_review', require_native_audio_review(output_path, review_path))
+        from tools.prepublication_visual import require_native_visual_review
+        flag('native_visual_review', require_native_visual_review(output_path, review_path))
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
@@ -13459,7 +13465,7 @@ def main():
                         save_blog_history(fresh_topic, blog_title, blog_slug, blog_url, vid_url,
                                           tags=yt_tags, description=yt_description,
                                           word_count=_prose_word_count(blog_html),
-                                          excerpt=excerpt)
+                                          excerpt=excerpt, blog_images=blog_images)
                         print(f"   ✅ Blog published: {blog_url}")
 
                         # Generate Reddit post draft for the employee to paste manually.

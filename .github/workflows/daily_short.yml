@@ -271,6 +271,7 @@ jobs:
             /tmp/yt_shorts/upload_meta.json
             /tmp/yt_shorts/review_manifest.json
             /tmp/yt_shorts/audio-assessment.json
+            /tmp/yt_shorts/visual-assessment.json
             /tmp/yt_shorts/review_cover.*
             /tmp/yt_shorts/review_normalized_voice.*
           retention-days: 21

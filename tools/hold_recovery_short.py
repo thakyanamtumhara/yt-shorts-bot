@@ -17,6 +17,18 @@ from tools.youtube_status import MUTABLE_STATUS_FIELDS, _timestamp, status_verif
 
 REPORT = Path("recovery-short-quality-hold")
 BACKUP_FORMAT = "recovery-short-quality-hold-backup-v1"
+SOURCE_RUN_ID = "35884612564"
+
+
+def select_target(video_id):
+    global VIDEO_ID, PUBLISH_AT, SOURCE_RUN_ID, REPORT
+    targets = {"GMaTnJRoiV8": ("2026-09-24T13:30:00Z", "35884612564"),
+               "HHqmZdnSQEs": ("2026-09-25T13:30:00Z", "36008837674")}
+    if video_id not in targets:
+        raise HoldError("Video is not an exact reviewed quality-hold target")
+    VIDEO_ID = video_id
+    PUBLISH_AT, SOURCE_RUN_ID = targets[video_id]
+    REPORT = Path("recovery-short-quality-hold")
 
 
 class HoldError(RuntimeError):
@@ -54,7 +66,7 @@ def undo_body_from_backup(backup):
     """Prepare the exact original schedule with native AI disclosure retained; no API call."""
     if (not isinstance(backup, dict) or backup.get("format") != BACKUP_FORMAT
             or backup.get("video_id") != VIDEO_ID or backup.get("channel_id") != BOT_CHANNEL
-            or backup.get("source_run_id") != "35884612564"
+            or backup.get("source_run_id") != SOURCE_RUN_ID
             or not isinstance(backup.get("status_before"), dict)):
         raise HoldError("Backup does not belong to the exact recovery Short")
     original = backup["status_before"]
@@ -108,7 +120,7 @@ def hold(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
     held = _mutable_status(original)
     held.pop("publishAt")
     backup = {"format": BACKUP_FORMAT, "video_id": VIDEO_ID, "channel_id": BOT_CHANNEL,
-              "source_run_id": "35884612564", "status_before": original,
+              "source_run_id": SOURCE_RUN_ID, "status_before": original,
               "proposed_hold_status": held,
               "native_disclosure_policy": "Retain true for this known AI video, including when GET omits the field."}
     undo = offline_undo_check(backup, held)
@@ -165,7 +177,9 @@ def hold(youtube, backup_path, *, apply=False, now=None, sleep=time.sleep):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--video-id", choices=("GMaTnJRoiV8", "HHqmZdnSQEs"), default="GMaTnJRoiV8")
     args = parser.parse_args(argv)
+    select_target(args.video_id)
     REPORT.mkdir(exist_ok=True)
     result = {"video_id": VIDEO_ID, "dry_run": not args.apply, "verified": False}
     try:

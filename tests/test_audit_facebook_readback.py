@@ -139,6 +139,7 @@ class FacebookReadbackTest(unittest.TestCase):
                 patch.object(audit, 'youtube_readback', return_value=youtube), \
                 patch.object(audit, 'probe_and_extract', return_value=(Path('audio.wav'), {'duration_seconds': 40, 'audio_seconds': 40})), \
                 patch.object(audit, 'assess_audio', return_value={'passed': True}) as audio, \
+                patch('tools.prepublication_visual.assess_final_visuals', return_value={'passed': True}), \
                 patch('builtins.print'):
             self.assertEqual(audit.main(['--run-id', '35884612564']), 0)
             audio.assert_called_once()

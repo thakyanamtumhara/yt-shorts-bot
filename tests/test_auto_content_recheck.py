@@ -38,8 +38,9 @@ class RecheckTests(unittest.TestCase):
     @patch.object(audit, 'github_json')
     def test_latest_failure_and_running_are_not_green(self, api):
         for change, expected in [({'conclusion': 'failure'}, 'issue'), ({'status': 'in_progress'}, 'pending')]:
-            api.return_value = {'workflow_runs': [run(**change)]}
-            self.assertEqual(check.daily_check(NOW)['state'], expected)
+            api.side_effect = [{'workflow_runs': [run(**change)]}, run(**change)]
+            with patch.object(audit, 'download_artifact', side_effect=RuntimeError('No archive')):
+                self.assertEqual(check.daily_check(NOW)['state'], expected)
 
     def test_overnight_schedule_and_completion_check_source_day(self):
         morning = NOW.replace(day=25, hour=1)
@@ -129,7 +130,30 @@ class RecheckTests(unittest.TestCase):
             root = Path(tmp)
             (root / 'blog_history.json').write_text(json.dumps([{'date': '2026-09-23T20:00:00+05:30',
                                                                'modified': '2026-09-24'}]))
+            self.assertEqual(check.blog_check(NOW.replace(day=25), root)['state'], 'issue')
+
+    def test_blog_cadence_matches_mon_wed_fri_and_can_be_configured(self):
+        for day in (22, 24, 26, 27):
+            self.assertEqual(check.blog_check(NOW.replace(day=day))['state'], 'not_due')
+        with TemporaryDirectory() as tmp, patch.dict(os.environ, {'BLOG_WEEKDAYS': '3'}):
+            root = Path(tmp)
+            (root / 'blog_history.json').write_text('[]')
             self.assertEqual(check.blog_check(NOW, root)['state'], 'issue')
+
+    def test_failed_run_still_checks_successful_instagram_receipt(self):
+        manifest = manifest_data()
+        manifest['run_flags'] = {'native_audio_review': {'passed': True}}
+        failed = run(conclusion='failure')
+        with patch.object(audit, 'github_json', side_effect=[{'workflow_runs': [failed]}, failed]), \
+                patch.object(audit, 'download_artifact', return_value=(archive_data(manifest), 7)), \
+                patch.object(check, 'youtube_check', return_value=check.result('issue', 'Held')), \
+                patch.object(check, 'instagram_check', return_value=check.result('ok', 'Published')) as ig, \
+                patch.object(audit, 'facebook_readback', return_value={'publication_confirmed_by_api': True, 'public_by_api': True}):
+            output = check.daily_check(NOW)
+        self.assertEqual(output['state'], 'issue')
+        self.assertEqual(output['conclusion'], 'failure')
+        self.assertEqual(output['checks']['instagram']['state'], 'ok')
+        ig.assert_called_once()
 
 
 if __name__ == '__main__':

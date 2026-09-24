@@ -173,6 +173,14 @@ class ScheduledCommentTest(unittest.TestCase):
         youtube.restore_transform = lambda status: {**status, "publishAt": "2026-09-24T19:00:00+05:30"}
         self.assertEqual(self.call(youtube), "comment-id")
 
+    def test_delayed_schedule_readback_retries_reads_without_repeating_writes(self):
+        youtube = FakeYouTube()
+        youtube.restore_transform = lambda status: ({key: value for key, value in status.items()
+                                                     if key != 'publishAt'} if youtube.reads < 4 else status)
+        self.assertEqual(self.call(youtube), 'comment-id')
+        self.assertEqual(len(youtube.updates), 2)
+        self.assertEqual(youtube.reads, 4)
+
     def test_known_native_get_omission_uses_latest_exact_update_acknowledgment(self):
         youtube = FakeYouTube()
         youtube.restore_transform = lambda status: {key: value for key, value in status.items()

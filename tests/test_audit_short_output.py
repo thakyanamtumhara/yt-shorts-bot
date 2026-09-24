@@ -268,17 +268,25 @@ class ManifestDisclosureTest(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
 
-    def test_wrong_or_incomplete_ack_and_unverified_receipt_fail(self):
+    def test_wrong_or_incomplete_ack_fails(self):
         for location, field, value in (('request', 'id', 'wrong-video'), ('acknowledgment', 'id', 'wrong-video'),
                                       ('acknowledgment', 'status', {}),
                                       ('acknowledgment', 'status', {'containsSyntheticMedia': False}),
-                                      (None, 'verified', False), (None, 'video_id', 'wrong-video')):
+                                      (None, 'video_id', 'wrong-video')):
             manifest, readback = self.evidence()
             saved = manifest['run_flags']['youtube_status_evidence']
             target = saved[location] if location else saved
             target[field] = value
             with self.subTest(location=location, field=field):
                 self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
+
+    def test_delayed_get_can_verify_raw_exact_ack_despite_initial_mismatch(self):
+        manifest, readback = self.evidence()
+        saved = manifest['run_flags']['youtube_status_evidence']
+        saved.update(verified=False, state='status_mismatch', status_readback={'privacyStatus': 'private'})
+        self.assertTrue(audit.youtube_disclosure_verification(manifest, readback)['verified'])
+        readback['mutable_status'].pop('publishAt')
+        self.assertFalse(audit.youtube_disclosure_verification(manifest, readback)['verified'])
 
     def test_direct_true_owner_get_needs_no_saved_ack_but_owner_must_match(self):
         _, readback = self.evidence()

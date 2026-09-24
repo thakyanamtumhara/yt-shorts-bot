@@ -11,6 +11,11 @@ QUESTIONS = {
     'knit_hem_coverseam_vs_joining_overedge': 'Which seam would you like explained on a sample: the hem or a joining seam?',
 }
 
+FACT_QUESTIONS = {
+    'jersey_face_back': QUESTIONS['single_jersey_face_back_loop_orientation'],
+    'pique_tuck_structure': QUESTIONS['pique_texture_is_construction_not_fibre'],
+}
+
 
 def interaction_copy(topic):
     brief = getattr(topic, 'brief', None)
@@ -24,6 +29,8 @@ def interaction_copy(topic):
             or not isinstance(evidence, dict)
             or any(not isinstance(evidence.get(key), dict) or not evidence[key].get('source_url') for key in fact_ids)):
         return ''
-    question = QUESTIONS.get(brief.get('intent_key'),
-                             'Which part of this buying check would you like explained on a sample?')
+    question = QUESTIONS.get(brief.get('intent_key'))
+    if not question and len(fact_ids) == 1:
+        question = FACT_QUESTIONS.get(fact_ids[0])
+    question = question or 'Which part of this buying check would you like explained on a sample?'
     return decision.strip() + '\n\n' + question

@@ -159,14 +159,16 @@ class ActualDailyPublisherTests(unittest.TestCase):
         client = Mock(post=Mock(return_value=response(400, error={'message': 'Unsupported is_ai_generated', 'code': 100})))
         scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
         fn = load_function('publish_ig_carousel', scope)
-        self.assertIsNone(fn(['https://example.invalid/one.png'], 'Useful fabric lesson'))
+        self.assertIsNone(fn(['https://example.invalid/one.png'], 'Useful fabric lesson',
+                             image_assets=[{'url': 'https://example.invalid/one.png', 'origin': 'independent_generation'}]))
         self.assertEqual(client.post.call_count, 1)
         self.assertEqual(client.post.call_args.kwargs['data']['is_ai_generated'], 'true')
 
     def test_single_photo_success_keeps_flag_and_publishes_once(self):
         client = Mock(post=Mock(side_effect=[response(id='photo-container'), response(id='photo-media')]), get=Mock(return_value=response(status_code='FINISHED')))
         scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
-        self.assertEqual(load_function('publish_ig_carousel', scope)(['https://example.invalid/one.png'], 'Useful fabric lesson'), 'photo-media')
+        self.assertEqual(load_function('publish_ig_carousel', scope)(['https://example.invalid/one.png'], 'Useful fabric lesson',
+                         image_assets=[{'url': 'https://example.invalid/one.png', 'origin': 'independent_generation'}]), 'photo-media')
         self.assertEqual(client.post.call_count, 2)
         self.assertEqual(client.post.call_args_list[0].kwargs['data']['is_ai_generated'], 'true')
         self.assertEqual(client.post.call_args_list[1].kwargs['data']['creation_id'], 'photo-container')

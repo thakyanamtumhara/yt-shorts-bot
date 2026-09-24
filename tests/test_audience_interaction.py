@@ -36,6 +36,15 @@ class AudienceInteractionTests(unittest.TestCase):
         self.assertTrue(text.startswith(brief['buyer_decision'] + '\n\n'))
         self.assertTrue(text.endswith('Which part of this buying check would you like explained on a sample?'))
 
+    def test_dynamic_jersey_intent_keeps_the_topic_specific_question(self):
+        brief = {'buyer_decision': 'Identify the intended fabric side.',
+                 'intent_key': 'jersey_face_vs_back_loop_appearance',
+                 'fact_ids': ['jersey_face_back'],
+                 'evidence': {'jersey_face_back': {'source_url': 'https://cottonworks.com/learning-hub/knitting/knit-basics/'}}}
+        text = interaction_copy(SimpleNamespace(brief=brief))
+        self.assertIn('outside or the inside?', text)
+        self.assertNotIn('Which part', text)
+
     def test_writer_and_reviewer_resolve_question_before_optional_interaction(self):
         source = (ROOT / 'daily_short.py').read_text()
         tree = ast.parse(source)

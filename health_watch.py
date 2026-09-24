@@ -448,8 +448,13 @@ def grade_render():
         bad.append("YouTube upload FAILED — no Short went live (retry_upload.py has the metadata)")
 
     if f.get("karaoke") is False:
-        bad.append("karaoke captions dropped — Whisper sync failed, captions are evenly sliced "
-                   "and will drift off the voice")
+        timing = f.get('caption_timing') or {}
+        if (timing.get('plain_fallback') == 'segment_timed_plain'
+                and timing.get('segments_reliable') is True
+                and (f.get('native_visual_review') or {}).get('passed') is True):
+            warn.append('Plain captions passed final visual review; word highlighting is off')
+        else:
+            bad.append('Caption timing has not passed final review; check the saved visual assessment')
 
     if f.get("music") is False:
         warn.append("no background music — the reel ships as a dry voice track")

@@ -34,6 +34,24 @@ def service(status=None, channel=hold.BOT_CHANNEL, owner=hold.BOT_CHANNEL, video
 
 
 class RecoveryHoldTest(unittest.TestCase):
+    def test_single_jersey_hold_is_exact_and_undo_preserves_schedule(self):
+        try:
+            hold.select_target('HHqmZdnSQEs')
+            status = {**ORIGINAL, 'publishAt': hold.PUBLISH_AT}
+            youtube = service(status=status, video_id=hold.VIDEO_ID)
+            with TemporaryDirectory() as directory:
+                path = Path(directory) / 'status-backup.json'
+                result = hold.hold(youtube, path, apply=True, now=NOW)
+                backup = json.loads(path.read_text())
+                self.assertEqual(backup['source_run_id'], '36008837674')
+                self.assertEqual(hold.undo_body_from_backup(backup)['status']['publishAt'], '2026-09-25T13:30:00Z')
+            self.assertTrue(result['verified'])
+            self.assertEqual(result['video_id'], 'HHqmZdnSQEs')
+            with self.assertRaises(hold.HoldError):
+                hold.select_target('not-target')
+        finally:
+            hold.select_target('GMaTnJRoiV8')
+
     def test_default_preview_saves_exact_original_and_tested_restore_without_write(self):
         youtube = service()
         with TemporaryDirectory() as directory:

@@ -240,7 +240,7 @@ def youtube_disclosure_verification(manifest, readback):
         return {'verified': actual['containsSyntheticMedia'] is True,
                 'state': 'readback_native_true' if actual['containsSyntheticMedia'] is True else 'readback_native_not_true'}
     saved = (manifest.get('run_flags') or {}).get('youtube_status_evidence')
-    if not isinstance(saved, dict) or saved.get('verified') is not True or saved.get('video_id') != video_id:
+    if not isinstance(saved, dict) or saved.get('video_id') != video_id:
         return {'verified': False, 'state': 'readback_omitted_without_bound_manifest_acknowledgment'}
     request, response = saved.get('request'), saved.get('acknowledgment')
     if not isinstance(request, dict) or not isinstance(response, dict):
@@ -516,13 +516,17 @@ def assess_audio(wav, manifest, seconds, *, report_dir=None):
 
 
 def main(argv=None):
+    if __package__:
+        from .prepublication_visual import assess_final_visuals
+    else:
+        from prepublication_visual import assess_final_visuals
     parser = argparse.ArgumentParser(description='Read-only verification of one completed daily Short artifact.')
     parser.add_argument('--run-id', required=True)
     args = parser.parse_args(argv)
     REPORT.mkdir(exist_ok=True)
     report = {'format': 'daily-short-output-audit-v1', 'checked_at': datetime.now(timezone.utc).isoformat(),
               'read_only': True, 'public_writes': 0, 'render_or_tts_calls': 0, 'passed': False,
-              'pass_scope': 'Full rendered audio and exact BOT YouTube upload; Facebook and Instagram readbacks are reported separately.'}
+              'pass_scope': 'Full rendered audio, final visuals with caption timing evidence, and exact BOT YouTube upload; Facebook and Instagram readbacks are reported separately.'}
     try:
         source_id = run_id(args.run_id)
         if os.environ.get('GITHUB_REPOSITORY', REPOSITORY) != REPOSITORY:
@@ -543,8 +547,11 @@ def main(argv=None):
             wav, report['media'] = probe_and_extract(video, Path(directory))
             assessment = assess_audio(wav, manifest, report['media']['audio_seconds'], report_dir=REPORT)
             report['audio_passed'] = assessment['passed']
+            visual = assess_final_visuals(video, manifest, report_dir=REPORT)
+            report['visual_passed'] = visual['passed']
+            report['visual_assessment_artifact'] = 'visual-assessment.json'
             report['youtube_processed'] = report['youtube']['uploadStatus'] == 'processed'
-            report['passed'] = (assessment['passed'] and report['youtube_disclosure']['verified'] is True
+            report['passed'] = (assessment['passed'] and visual['passed'] and report['youtube_disclosure']['verified'] is True
                                 and report['youtube']['title_matches_manifest'] is True and report['youtube_processed'])
     except Exception as error:
         report['error'] = str(error) if isinstance(error, AuditError) else type(error).__name__

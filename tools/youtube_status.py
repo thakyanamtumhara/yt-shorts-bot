@@ -123,9 +123,14 @@ def post_daily_ai_comment(youtube, video_id, comment_text, post_comment, *,
         try:
             if record_evidence:
                 record_evidence(status_verification(video_id, restore, None, acknowledgment))
-            evidence = status_verification(video_id, restore, _read_status(youtube, video_id), acknowledgment)
-            if record_evidence:
-                record_evidence(evidence)
+            for delay in (0, 5, 15, 30):
+                if delay:
+                    sleep(delay)
+                evidence = status_verification(video_id, restore, _read_status(youtube, video_id), acknowledgment)
+                if record_evidence:
+                    record_evidence(evidence)
+                if evidence['verified'] or evidence['state'] != 'status_mismatch':
+                    break
             if not evidence["verified"]:
                 raise StatusRestorationError("Status evidence did not verify the original scheduled state")
         except Exception as error:

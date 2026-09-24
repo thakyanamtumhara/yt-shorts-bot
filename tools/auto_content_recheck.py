@@ -50,7 +50,7 @@ def latest_today(runs, now):
     return max(eligible, key=lambda run: (run['created_at'], run['id']), default=None)
 
 
-def workflow_state(workflow, now, deadline, sunday=False):
+def workflow_state(workflow, now, deadline, sunday=False, inspect_failed=False):
     if sunday and now.weekday() == 6:
         return result('not_due', 'Sunday: no daily Short scheduled'), None
     listing = audit.github_json(f'/actions/workflows/{workflow}/runs?branch=main&per_page=50')
@@ -63,7 +63,7 @@ def workflow_state(workflow, now, deadline, sunday=False):
         return result('pending', 'Today\'s run is still in progress', **evidence), None
     if run.get('conclusion') != 'success':
         return result('issue', 'Today\'s latest run did not succeed',
-                      conclusion=run.get('conclusion'), **evidence), None
+                      conclusion=run.get('conclusion'), **evidence), run if inspect_failed else None
     return result('ok', 'Today\'s run succeeded', **evidence), run
 
 
@@ -115,17 +115,25 @@ def instagram_check(manifest, feed=False):
 
 
 def daily_check(now, observed_now=None):
-    state, run = workflow_state('daily_short.yml', now, datetime.min.replace(hour=16, minute=37).time(), True)
+    state, run = workflow_state('daily_short.yml', now, datetime.min.replace(hour=16, minute=37).time(),
+                                True, inspect_failed=True)
     if run is None:
         return state
     run = audit.github_json(f'/actions/runs/{run["id"]}')
     audit.validate_run(run, str(run['id']))
-    data, artifact_id = audit.download_artifact(str(run['id']), run)
+    try:
+        data, artifact_id = audit.download_artifact(str(run['id']), run)
+    except Exception as error:
+        return result('issue', 'Run has no verifiable finished output archive',
+                      run_id=run['id'], conclusion=run.get('conclusion'), error_type=type(error).__name__)
     with tempfile.TemporaryDirectory() as folder:
         manifest, _ = audit.validate_archive(data, run, Path(folder))
     flags = manifest.get('run_flags') or {}
     checks = {'audio': result('ok' if (flags.get('native_audio_review') or {}).get('passed') is True else 'issue',
                               'Saved native audio review; no new model assessment'),
+              'visual': result('ok' if (flags.get('native_visual_review') or {}).get('passed') is True else 'issue',
+                               'Saved final visual approval' if (flags.get('native_visual_review') or {}).get('passed') is True else
+                               'No passed final visual review saved'),
               'youtube': guarded(lambda: youtube_check(manifest, observed_now or now)),
               'instagram': guarded(lambda: instagram_check(manifest))}
     def facebook():
@@ -137,9 +145,11 @@ def daily_check(now, observed_now=None):
                       disclosure_requested=read.get('manifest_disclosure_requested'),
                       visible_label='Not independently checked')
     checks['facebook'] = guarded(facebook)
-    passed = all(item['state'] == 'ok' for item in checks.values())
+    passed = all(item['state'] == 'ok' for item in checks.values()) and state['state'] == 'ok'
     return result('ok' if passed else 'issue', 'Verified output receipts' if passed else
-                  'Some output checks need attention', run_id=run['id'], artifact_id=artifact_id, checks=checks)
+                  'Run failed; individual publication receipts checked' if state['state'] != 'ok' else
+                  'Some output checks need attention', run_id=run['id'], artifact_id=artifact_id,
+                  conclusion=run.get('conclusion'), checks=checks)
 
 
 def feed_receipts(root, now):
@@ -153,7 +163,8 @@ def feed_receipts(root, now):
             age = (now.date() - datetime.fromisoformat(file.stem).date()).days
         except ValueError:
             continue
-        if 0 <= age <= 4 and not draft.get('posted') and draft.get('image_urls'):
+        if (0 <= age <= 4 and not draft.get('posted') and not draft.get('held')
+                and not draft.get('skipped') and draft.get('image_urls')):
             eligible += 1
     for file in sorted((root / 'feed_queue' / 'state').glob('*.json'))[-120:]:
         data = json.loads(file.read_text())
@@ -183,7 +194,11 @@ def feed_check(now, root=ROOT):
 
 
 def blog_check(now, root=ROOT):
-    if now.weekday() == 6 or now.hour * 60 + now.minute < 16 * 60 + 37:
+    weekdays = {int(day) for day in os.environ.get('BLOG_WEEKDAYS', '0,2,4').split(',')
+                if day.strip().isdigit()}
+    if now.weekday() not in weekdays:
+        return result('not_due', 'No generated blog scheduled on this weekday')
+    if now.hour * 60 + now.minute < 16 * 60 + 37:
         return result('not_due', 'Today\'s generated blog is not due yet')
     posts = json.loads((root / 'blog_history.json').read_text())
     today = [post for post in posts if timestamp(post.get('date'))

@@ -50,7 +50,7 @@ class BlogCoverFallbackTest(unittest.TestCase):
                 Image.new('RGB', (900, 600), 'orange').save(path)
                 original = path.read_bytes()
                 result = fallback(path)
-                self.assertEqual(result[0][1], 'hero.webp')
+                self.assertEqual(result[0][1], 'reel-cover.webp')
                 with Image.open(BytesIO(result[0][0])) as converted:
                     self.assertEqual(converted.format, 'WEBP')
                     self.assertEqual(converted.size, (900, 600))
@@ -84,7 +84,7 @@ class BlogCoverFallbackTest(unittest.TestCase):
             path = Path(directory) / 'cover.png'
             Image.new('RGB', (800, 800), 'white').save(path)
             result, client = self.generate([], path)
-        self.assertEqual([name for _, name in result[3]], ['hero.webp'])
+        self.assertEqual([name for _, name in result[3]], ['reel-cover.webp'])
         self.assertIn('never as evidence of a real fabric test',
                       client.messages.create.call_args.kwargs['messages'][0]['content'])
 
