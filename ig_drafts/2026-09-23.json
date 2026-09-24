@@ -21,7 +21,8 @@
     "source_url": "https://cottonworks.com/learning-hub/knitting/knit-basics/",
     "reason": "Removed the unsupported incomplete-loop explanation. Keeps construction separate from fibre composition and asks a relevant buyer question; no promises or assumed customer experience."
   },
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "17908997931307048",
+  "error": null,
+  "posted_at": "2026-09-24T18:21:22.012637+05:30"
 }
