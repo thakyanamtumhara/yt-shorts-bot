@@ -2230,5 +2230,31 @@
       "container_id": "18346125022266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "18072547223769747",
+    "title": "Single Jersey Face vs Back — How to Check Before Printing on Wrong Side",
+    "topic": "सिंगल जर्सी टी-शर्ट का सीधा-उल्टा अलग क्यों दिखता है?",
+    "published_at": "2026-09-24T19:47:52.904271+05:30",
+    "checked": false,
+    "bot_youtube_id": "HHqmZdnSQEs",
+    "workflow_run_id": "36008837674",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "सीधा-उल्टा कैसे पहचानें?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "jersey_sides",
+    "cover_labels": [
+      "सामने",
+      "पीछे"
+    ],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18346252711266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]

@@ -3,22 +3,22 @@
     "Scam",
     "सच",
     "Mistake",
-    "बर्बाद",
-    "Crack",
     "Loss",
+    "Crack",
     "Fake",
+    "Waste",
     "Secret",
     "Reality",
     "Exposed",
-    "Waste",
-    "धोखा",
     "Reject",
-    "Hack",
-    "गलती"
+    "Cheap",
+    "बर्बाद",
+    "धोखा",
+    "Fail"
   ],
   "best_colors": {
     "text": [
-      "#FFD700",
+      "#FFD400",
       "#FFFFFF",
       "#FF0000",
       "#FF6600",
@@ -26,21 +26,21 @@
     ],
     "stroke": "#000000"
   },
-  "text_rules": "Use 3-5 words max in Hinglish mixing Hindi keywords with English technical/money terms; always include a specific number (₹ price, GSM, or piece count) paired with a negative consequence word (CRACK, WASTE, बर्बाद) to create a curiosity gap that forces the tap.",
-  "layout": "Place all hook text in the center 25%-70% vertical safe zone using large bold sans-serif font with black stroke; use product image or t-shirt close-up as the background with slight dark overlay so yellow (#FFD400) keyword text and white secondary text pop at thumbnail size on mobile.",
-  "patterns": "Top-performing Indian business Reels thumbnails follow a 'specific loss + relatable mistake' formula — a rupee amount or piece count paired with a disaster word (CRACK, REJECT, SCAM) outperforms generic advice thumbnails by 5-10x. Winning covers use high-contrast yellow keyword on dark/product background with no face, keeping text brutally short so it reads instantly at 1-inch mobile preview size. The curiosity gap works best when viewers can't tell WHO made the mistake or HOW it happened without watching — question marks and Hindi words spike engagement because they feel personal to the Indian B2B buyer.",
+  "text_rules": "Use 3-5 words max mixing Hindi+English with a ₹ price or number + a SHOCK/LOSS keyword in yellow (#FFD400) against dark background; end with a question mark or alarming consequence to create irresistible curiosity gap. Avoid purely educational/technical terms (BIOWASH, YARN COUNT) — lead with the FINANCIAL PAIN or SCAM ANGLE instead.",
+  "layout": "Keep all text in the center 25%-70% vertical band (safe from Instagram grid-crop and YouTube player UI); place bold 2-line stacked text dead-center with the ₹ number or GSM keyword in yellow on line 1 and the consequence/question in white on line 2, no face needed — product-context or dark/blurred warehouse background works best.",
+  "patterns": "Top-performing Indian business Reels thumbnails follow a LOSS-STORY formula: a specific ₹ amount or quantity (₹40K, 500 Pcs) paired with a disaster word (Crack, Reject, Scam, Waste) creates an immediate emotional hook that stops the scroll. Hinglish question-format covers (e.g., '220 GSM लिखा 160 निकली?') massively outperform pure-Hindi or pure-English educational covers. Dark or product-shot backgrounds with high-contrast yellow+white bold text dominate over illustrated, pastel, or cream-toned designs.",
   "example_texts": [
-    "₹60K 1000 Pc REJECT",
+    "₹60K 1000 Pcs REJECT",
     "180 GSM असली या नकली?",
-    "₹30 BLANK PRINT FAIL",
-    "OVERSIZED SECRET ₹12 EXTRA",
-    "500 Pc COLOUR BLEED",
-    "₹40 vs ₹85 सच",
-    "GSM METER ₹200 बचाओ",
-    "GIRLS TEE 3X MARGIN",
-    "POLYESTER TRAP 1 WASH",
-    "₹1L STOCK DEAD 1 गलती"
+    "₹30 Tee PROFIT कितना?",
+    "SUBLIMATION 3 Wash GONE",
+    "₹2 TAG से ₹20K LOSS",
+    "OVERLOCK SKIP 800 Pc RETURN",
+    "WHITE Tee पीली क्यों?",
+    "₹50 vs ₹90 SAME GSM?",
+    "COLLAR LOOSE 1 SECRET FIX",
+    "WHOLESALE MARGIN सच EXPOSED"
   ],
-  "ig_patterns": "High save-rate (1.7%+) Reels covers promise reusable diagnostic knowledge — '3 Checks', 'Feel Cheap? Check These' — using specific piece counts and GSM numbers that buyers bookmark as purchasing checklists. High share-rate (1.8%+) covers expose a common scam or mistake with a question format in Hindi ('लिखा...निकली?') that triggers 'my retailer friend needs to see this' impulse sharing. The winning formula for both saves AND shares is: ₹ loss amount or piece count + technical keyword (GSM, YARN, MOISTURE) + consequence word — all in under 5 words with yellow highlight on the money/technical term.",
-  "updated": "2026-08-31T16:52:17.413985"
+  "ig_patterns": "Highest save-rate covers promise DIAGNOSTIC VALUE — '3 Checks', '3 Things' — paired with a relatable ₹ loss scenario, making viewers bookmark for future reference before their next bulk order. Highest share-rate covers expose INDUSTRY SCAMS or SUPPLIER TRICKS (GSM fraud, yarn swaps, humidity failures) that trigger 'my retailer friend needs to see this' sharing impulse. Illustrated/pastel cream+navy covers with purely technical Hindi terms (BIOWASH, YARN COUNT, LYCRA) consistently fail on both saves and shares — the winning formula is bold yellow keyword + white consequence text on dark/real backgrounds with a financial or quality PAIN hook.",
+  "updated": "2026-09-24T14:14:23.727002"
 }

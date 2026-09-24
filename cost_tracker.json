@@ -3011,5 +3011,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.1969
     }
+  },
+  {
+    "date": "2026-09-24T14:18:10.485138",
+    "topic": "\u0938\u093f\u0902\u0917\u0932 \u091c\u0930\u094d\u0938\u0940 \u091f\u0940-\u0936\u0930\u094d\u091f \u0915\u093e \u0938\u0940\u0927\u093e-\u0909\u0932\u094d\u091f\u093e \u0905\u0932\u0917 \u0915\u094d\u092f\u094b\u0902 \u0926\u093f\u0916\u0924\u093e \u0939\u0948?",
+    "title": "\u0938\u093f\u0902\u0917\u0932 \u091c\u0930\u094d\u0938\u0940 \u0915\u093e \u0938\u0940\u0927\u093e vs \u0909\u0932\u094d\u091f\u093e \u2014 V Loop vs Arc Row \u0915\u0948\u0938\u0947 \u092a\u0939\u091a\u093e\u0928\u0947\u0902?",
+    "total_usd": 5.2489,
+    "duration_min": 22.4,
+    "breakdown": {
+      "claude_opus": 0.3341,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0163,
+      "veo_clips": 4.8,
+      "whisper": 0.0035,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
