@@ -155,6 +155,10 @@
   "anoWcm-H0BA": {
    "title": "GSM Same Hai, T-Shirt Quality Bhi Same?",
    "published": "2026-09-23T12:30:01+00:00"
+  },
+  "TQLozf1HkEQ": {
+   "title": "Bulk T-Shirt Order se Pehle Sample Check Karo | sale91",
+   "published": "2026-09-24T12:30:17+00:00"
   }
  },
  "instagram": {
@@ -581,6 +585,18 @@
   "18094297376553282": {
    "permalink": "https://www.instagram.com/reel/DdogkihFadh/",
    "ts": "2026-09-23T14:20:00+0000"
+  },
+  "17901455922657635": {
+   "permalink": "https://www.instagram.com/reel/DdrLNN7gp5p/",
+   "ts": "2026-09-24T15:11:02+0000"
+  },
+  "18072547223769747": {
+   "permalink": "https://www.instagram.com/reel/DdrFH0xjBK_/",
+   "ts": "2026-09-24T14:17:43+0000"
+  },
+  "17908997931307048": {
+   "permalink": "https://www.instagram.com/p/Ddq7SGhFLr5/",
+   "ts": "2026-09-24T12:51:19+0000"
   }
  },
  "facebook": {
@@ -602,7 +618,19 @@
   },
   "28248277061509173": {
    "queued_at": "2026-09-24 14:18",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-09-24T23:41:40+05:30",
+   "permalink": "https://www.facebook.com/reel/28248277061509173"
   }
  },
  "history": [
@@ -1150,8 +1178,13 @@
    "at": "2026-09-24T15:12:26+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-24T23:41:40+05:30",
+   "alerts": 0,
+   "new": 4
   }
  ],
  "last_green_date": "2026-09-24",
- "last_run_ist": "2026-09-24T15:12:26+05:30"
+ "last_run_ist": "2026-09-24T23:41:40+05:30"
 }
