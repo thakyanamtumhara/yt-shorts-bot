@@ -175,5 +175,12 @@
  "wh26-sample-order-ig": {
   "resolved": true,
   "url": "https://www.instagram.com/reel/DdrLNN7gp5p/"
+ },
+ "wh26-sample-order-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1022198904185954/"
+ },
+ "wh26-sample-order-x": {
+  "nudged": true
  }
 }
