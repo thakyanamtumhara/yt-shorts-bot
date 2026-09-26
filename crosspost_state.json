@@ -184,6 +184,11 @@
   "nudged": true
  },
  "wh26-printing-question-ig-feed": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/p/DdwBc_0oFgi/"
+ },
+ "stock20260917-full-yt": {
+  "nudged": true
  }
 }
