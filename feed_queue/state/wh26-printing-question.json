@@ -1,0 +1,15 @@
+{
+  "format": "curated-feed-v1",
+  "mode": "publish",
+  "job_id": "wh26-printing-question",
+  "job_sha256": "5543a86d09ba7d0c0345551004c53c327e7511e35aaf0374a6911a0b20876ff7",
+  "account_id": "17841407981790313",
+  "phase": "published",
+  "child_ids": [],
+  "pending": null,
+  "parent_id": "18346532683266060",
+  "publish_attempt_at": "2026-09-26T12:21:28.624694+00:00",
+  "media_id": "17982602811085682",
+  "published_at": "2026-09-26T12:21:28.624694+00:00",
+  "permalink": "https://www.instagram.com/p/DdwBc_0oFgi/"
+}
