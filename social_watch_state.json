@@ -163,6 +163,10 @@
   "ULO0MW7a_cc": {
    "title": "T-Shirt Ka Rate Hi Poora Kharcha Nahi Hai",
    "published": "2026-09-25T12:30:29+00:00"
+  },
+  "VsvzPjszHrU": {
+   "title": "T-Shirt Stock Out? Notify Me Aur Stock Planning | Ketu",
+   "published": "2026-09-26T13:30:22+00:00"
   }
  },
  "instagram": {
@@ -605,6 +609,10 @@
   "17901958593574554": {
    "permalink": "https://www.instagram.com/reel/Ddtsq8dEdmE/",
    "ts": "2026-09-25T14:41:45+0000"
+  },
+  "17982602811085682": {
+   "permalink": "https://www.instagram.com/p/DdwBc_0oFgi/",
+   "ts": "2026-09-26T12:21:29+0000"
   }
  },
  "facebook": {
@@ -1206,8 +1214,13 @@
    "at": "2026-09-26T15:11:55+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-26T23:06:38+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-09-26",
- "last_run_ist": "2026-09-26T15:11:55+05:30"
+ "last_run_ist": "2026-09-26T23:06:38+05:30"
 }
