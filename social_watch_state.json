@@ -167,6 +167,10 @@
   "VsvzPjszHrU": {
    "title": "T-Shirt Stock Out? Notify Me Aur Stock Planning | Ketu",
    "published": "2026-09-26T13:30:22+00:00"
+  },
+  "l1P2CkqrqPQ": {
+   "title": "Bulk Order Se Pehle Sample Ko Dhokar Dekho",
+   "published": "2026-09-27T12:30:00+00:00"
   }
  },
  "instagram": {
@@ -613,6 +617,10 @@
   "17982602811085682": {
    "permalink": "https://www.instagram.com/p/DdwBc_0oFgi/",
    "ts": "2026-09-26T12:21:29+0000"
+  },
+  "18079206431348189": {
+   "permalink": "https://www.instagram.com/reel/Ddy22yaj4tc/",
+   "ts": "2026-09-27T14:47:24+0000"
   }
  },
  "facebook": {
@@ -1224,8 +1232,13 @@
    "at": "2026-09-27T15:51:36+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-27T23:32:35+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-09-27",
- "last_run_ist": "2026-09-27T15:51:36+05:30"
+ "last_run_ist": "2026-09-27T23:32:35+05:30"
 }
