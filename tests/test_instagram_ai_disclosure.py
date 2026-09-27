@@ -21,6 +21,7 @@ TREE = ast.parse((ROOT / 'daily_short.py').read_text())
 def load_function(name, scope):
     scope.setdefault('re', re)
     if name == 'publish_ig_carousel':
+        scope.setdefault('CITED_RATE_FACTS', {})
         for helper in ('_auto_content_text', '_auto_content_hold_reason', '_carousel_hashtags'):
             load_function(helper, scope)
     node = next(n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name == name)

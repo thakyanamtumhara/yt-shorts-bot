@@ -24,7 +24,7 @@ SLUG = 'pique-fabric-explained-why-polo-t-shirt-texture-is-a-knit'
 def load_functions(*names, **extra):
     scope = {'json': json, 're': re, 'os': os, 'datetime': datetime, 'timedelta': timedelta,
              'pytz': pytz, 'TIMEZONE': 'Asia/Kolkata', 'BLOG_BASE_URL': BASE,
-             'IG_DRAFT_MAX_AGE_DAYS': 4, **extra}
+             'IG_DRAFT_MAX_AGE_DAYS': 4, 'CITED_RATE_FACTS': {}, **extra}
     nodes = [n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name in names]
     exec(compile(ast.Module(body=nodes, type_ignores=[]), 'daily_short.py', 'exec'), scope)
     return scope
@@ -78,7 +78,7 @@ class ImageRailRegressionTest(unittest.TestCase):
                               IG_CAROUSEL_DRAFTS_DIR=str(folder / 'drafts'),
                               _editorial_evidence=lambda topic: 'Reviewed fact.',
                               _auto_content_hold_reason=lambda value: None,
-                              _review_derived_content=lambda *args: (True, 'Supported'),
+                              _review_derived_content=lambda *args, **kwargs: (True, 'Supported'),
                               _reachable_image_urls=Mock(side_effect=lambda urls: urls))
 
     def draft(self, scope, client, **extra):

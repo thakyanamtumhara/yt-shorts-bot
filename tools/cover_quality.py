@@ -31,7 +31,8 @@ def neutral_cover(topic):
     return 'टी-शर्ट खरीदने से पहले | यह जानो', 'BEFORE BUYING T-SHIRTS | KNOW THIS'
 
 
-def validate_cover_text(text, script):
+def validate_cover_text(text, script, rates=()):
+    """rates: exact live website rates cited by the lesson (tools/current_rates.allowed_amounts)."""
     if not isinstance(text, str) or not text.strip():
         raise ValueError('Cover wording is empty')
     lines = [line.strip() for line in text.split('|')]
@@ -39,11 +40,22 @@ def validate_cover_text(text, script):
         raise ValueError('Cover needs two complete short lines')
     if not 3 <= len(' '.join(lines).split()) <= 8 or len(text) > 90:
         raise ValueError('Rewrite the full cover within 3–8 words; never truncate')
-    if re.search(r'₹|\brs\.?\s*\d|\b(?:lakhs?|crores?|lost|loss(?:es)?|returns?|returned|destroyed|rejected|rejections?)\b|नुकसान|लाख|बर्बाद', text, re.I):
+    if re.search(r'\b(?:lakhs?|crores?|lost|loss(?:es)?|returns?|returned|destroyed|rejected|rejections?)\b|नुकसान|लाख|बर्बाद', text, re.I):
         raise ValueError('Cover cannot invent or amplify monetary loss or batch-return claims')
     normalized = text.translate(str.maketrans('०१२३४५६७८९', '0123456789'))
     normalized_script = (script or '').translate(str.maketrans('०१२३४५६७८९', '0123456789'))
+    priced = set()
+    for match in re.finditer(r'(?:₹|\brs\.?)\s*(\d+)', normalized, re.I):
+        amount = int(match.group(1))
+        spoken = re.search(r'(?:₹|\brs\.?)\s*' + str(amount) + r'(?!\d)', normalized_script, re.I)
+        if amount not in rates or not spoken:
+            raise ValueError('A cover price must be an exact live website rate already spoken in the script')
+        priced.add(match.start(1))
+    if re.search(r'₹(?!\s*\d)|\brs\.?(?!\s*\d)', normalized, re.I):
+        raise ValueError('A cover price must be an exact live website rate already spoken in the script')
     for match in re.finditer(r'\d+(?:\.\d+)?', normalized):
+        if match.start() in priced:
+            continue
         claim = re.match(r'\d+(?:\.\d+)?\s*GSM\b', normalized[match.start():], re.I)
         if not claim or not re.search(r'(?<!\d)' + re.escape(claim.group()).replace(r'\ ', r'\s*') + r'(?!\w)', normalized_script, re.I):
             raise ValueError('Only an exact script-grounded GSM value is allowed; omit prices, counts and outcomes')
@@ -53,11 +65,11 @@ def validate_cover_text(text, script):
     return lines
 
 
-def choose_cover(text, latin, script, topic):
+def choose_cover(text, latin, script, topic, rates=()):
     fallback = neutral_cover(topic)
     try:
-        validate_cover_text(text, script)
-        validate_cover_text(latin, script)
+        validate_cover_text(text, script, rates)
+        validate_cover_text(latin, script, rates)
         if re.search(r'[\u0900-\u097f]', latin):
             raise ValueError('Latin wording still contains Devanagari')
         return text, latin, 'validated'

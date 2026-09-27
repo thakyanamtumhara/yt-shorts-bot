@@ -16,7 +16,7 @@ TREE = ast.parse((ROOT / 'daily_short.py').read_text())
 
 def load_functions(*names, **extra):
     scope = {'json': json, 're': re, 'datetime': datetime, 'pytz': pytz,
-             'TIMEZONE': 'Asia/Kolkata', **extra}
+             'TIMEZONE': 'Asia/Kolkata', 'CITED_RATE_FACTS': {}, **extra}
     selected = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in names]
     exec(compile(ast.Module(body=selected, type_ignores=[]), 'daily_short.py', 'exec'), scope)
     return scope
@@ -155,6 +155,23 @@ class EditorialGuardTest(unittest.TestCase):
         self.assertNotIn('40K+', output)
         self.assertIn('sources cited in the article', output)
         self.assertIn('Illustrations are not photographs of product tests', output)
+
+
+
+class LiveRateCaptionTest(unittest.TestCase):
+    def scope(self, cited):
+        return load_functions('_auto_content_text', '_auto_content_hold_reason',
+                              CITED_RATE_FACTS=cited)
+
+    def test_captions_may_quote_only_the_cited_live_rates(self):
+        hold = self.scope({'rate_non_bio_rneck': {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}})['_auto_content_hold_reason']
+        self.assertIsNone(hold('Non-bio round neck is ₹107 per piece for 10+ pieces today, before GST.'))
+        self.assertIn('unverified', hold('Non-bio round neck is ₹99 per piece.'))
+
+    def test_evergreen_pages_quote_no_rate_even_when_one_is_cited(self):
+        hold = self.scope({'rate_non_bio_rneck': {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}})['_auto_content_hold_reason']
+        self.assertIn('Evergreen', hold('<p>Non-bio round neck is ₹107 per piece.</p>', rates=False))
+        self.assertIsNone(hold('<p>Check the live price list for the current rate.</p>', rates=False))
 
 
 if __name__ == '__main__':

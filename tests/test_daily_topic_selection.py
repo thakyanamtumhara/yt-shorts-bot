@@ -32,6 +32,13 @@ def load_function(name, namespace=None):
     return scope[name]
 
 
+def rate_scope():
+    scope = {'CITED_RATE_FACTS': {}}
+    for name in ('_cited_rate_facts', '_rate_amounts'):
+        scope[name] = load_function(name, scope)
+    return scope
+
+
 def brief(index=0):
     return copy.deepcopy(BANK['seed_lessons'][index])
 
@@ -408,7 +415,7 @@ class ActualPublishedMythRegressionTest(unittest.TestCase):
             reviewer.assert_not_called()
 
     def test_each_actual_claim_is_blocked_before_script_review_api(self):
-        review = load_function('review_script')
+        review = load_function('review_script', rate_scope())
         for claim in self.CLAIMS:
             api = client({'approved': True})
             result = review(api, claim, claim, SelectedTopic(validate_brief(brief(), BANK)))
@@ -428,7 +435,8 @@ class ActualIntegrationTest(unittest.TestCase):
         function = load_function('smart_pick_topic', {
             'search_trending_topics': lambda *args: generated,
             'review_topic': reviewer, '_topic_blog_viable': lambda *args: True,
-            'TOPIC_MIN_SCORE': 25, 'TOPIC_MAX_CANDIDATES': 5, 'flag': flags})
+            'TOPIC_MIN_SCORE': 25, 'TOPIC_MAX_CANDIDATES': 5, 'flag': flags,
+            '_install_live_rates': lambda: {}, **rate_scope()})
         return function, flags
 
     def test_empty_brainstorm_seed_fallback_still_requires_review(self):
@@ -467,7 +475,7 @@ class ActualIntegrationTest(unittest.TestCase):
         self.assertNotIn('THEORY AVOID', prompt)
 
     def test_script_cannot_pass_when_source_or_explanation_flags_fail(self):
-        review = load_function('review_script')
+        review = load_function('review_script', rate_scope())
         topic = SelectedTopic(validate_brief(brief(), BANK))
         payload = {'approved': True, 'scores': dict.fromkeys(
             ('hook', 'natural_feel', 'value', 'ending', 'viral_potential', 'visual_alignment'), 7),
@@ -494,6 +502,32 @@ class ActualIntegrationTest(unittest.TestCase):
         function = load_function('search_trending_topics', {'get_audience_questions': lambda _: 'No questions',
             'get_ig_topic_interest_signals': lambda _: topic_interest([])})
         self.assertEqual(function(client(error=RuntimeError('Unavailable')), []), [])
+
+
+
+class LiveRateFactTest(unittest.TestCase):
+    def tearDown(self):
+        from tools import daily_topic_selection
+        daily_topic_selection.LIVE_FACTS.clear()
+
+    def test_checked_rates_join_the_bank_for_this_run_and_list_allowed_amounts(self):
+        from tools.daily_topic_selection import install_live_facts
+        fact = {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}
+        install_live_facts({'rate_non_bio_rneck': fact})
+        self.assertEqual(load_bank()['facts']['rate_non_bio_rneck'], fact)
+        lesson = dict(brief(), fact_ids=['rate_non_bio_rneck'], evidence={'rate_non_bio_rneck': fact})
+        prompt = evidence_prompt(SelectedTopic(lesson))
+        self.assertIn('ALLOWED RUPEE AMOUNTS (exact; anything else is rejected): ₹24, ₹107, ₹131', prompt)
+        self.assertNotIn('ALLOWED RUPEE AMOUNTS', evidence_prompt(SelectedTopic(brief())))
+
+    def test_only_complete_rate_facts_can_be_added_at_run_time(self):
+        from tools.daily_topic_selection import install_live_facts
+        fact = {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}
+        for facts in ({'knit_loop_stretch': fact}, {'rate_x': {**fact, 'source_url': 'http://x'}},
+                      {'rate_x': {**fact, 'limits': ''}}):
+            with self.subTest(facts=list(facts)), self.assertRaises(TopicHold):
+                install_live_facts(facts)
+        self.assertNotIn('rate_x', load_bank()['facts'])
 
 
 if __name__ == '__main__':

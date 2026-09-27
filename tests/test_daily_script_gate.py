@@ -20,6 +20,13 @@ def load_function(name,namespace=None):
     return scope[name]
 
 
+def rate_scope():
+    scope={'CITED_RATE_FACTS':{}}
+    for name in ('_cited_rate_facts','_rate_amounts'):
+        scope[name]=load_function(name,scope)
+    return scope
+
+
 def valid_review(**updates):
     value={'approved':True,'scores':dict.fromkeys(DIMENSIONS,6),'total_score':36,'weakest':'hook','feedback':'Useful complete buyer question and practical sample check.'}
     value.update(updates)
@@ -33,7 +40,7 @@ def client_for(value=None,error=None,raw=None):
 
 class DailyReviewSchemaTest(unittest.TestCase):
     def setUp(self):
-        self.review=load_function('review_script')
+        self.review=load_function('review_script',rate_scope())
 
     def call(self,value):
         return self.review(client_for(value),'Sample ka fit kaise check karein?','How do you check the fit of a sample?','sample fit')
@@ -159,3 +166,33 @@ class WriterContradictionRegressionTest(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+class PriceGateTest(unittest.TestCase):
+    def topic(self):
+        from tools.daily_topic_selection import SelectedTopic
+        return SelectedTopic({'topic': 'Non bio round neck rate', 'fact_ids': ['rate_non_bio_rneck'],
+                               'evidence': {'rate_non_bio_rneck': {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}}})
+
+    def test_unverified_price_is_rewritten_before_any_model_review(self):
+        review = load_function('review_script', rate_scope())
+        for voice, english in (('Non bio ₹99 mein milti hai.', 'Non-bio costs 99.'),
+                               ('Sau rupaye ka fark hai.', 'A hundred rupees of difference.'),
+                               ('₹107 wali non bio.', 'The ₹120 one.')):
+            client = client_for(valid_review())
+            approved, score, weakest, feedback = review(client, voice, english, self.topic())
+            self.assertEqual((approved, score, weakest), (False, 0, 'price'))
+            self.assertIn('₹107', feedback)
+            client.messages.create.assert_not_called()
+
+    def test_exact_cited_rate_goes_on_to_the_normal_review(self):
+        review = load_function('review_script', rate_scope())
+        client = client_for(valid_review())
+        review(client, 'Non bio round neck abhi website par ₹107 hai.', 'Non-bio round neck is ₹107 on the website now.', self.topic())
+        client.messages.create.assert_called_once()
+
+    def test_without_cited_rates_any_price_is_rewritten(self):
+        review = load_function('review_script', rate_scope())
+        client = client_for(valid_review())
+        self.assertEqual(review(client, 'Ye ₹107 wali hai.', 'This costs ₹107.', 'plain topic')[2], 'price')
+        client.messages.create.assert_not_called()

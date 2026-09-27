@@ -8,6 +8,7 @@ import unicodedata
 
 BANK_PATH = Path(__file__).resolve().parents[1] / 'daily_topic_lessons.json'
 DIMENSIONS = {'buyer_interest', 'freshness', 'learning_value', 'shareability'}
+LIVE_FACTS = {}
 
 
 class TopicHold(RuntimeError):
@@ -87,13 +88,7 @@ def unsupported_shortcut(text):
     return None
 
 
-def load_bank(path=BANK_PATH):
-    bank = json.loads(Path(path).read_text(encoding='utf-8'))
-    if bank.get('format') != 'daily-topic-facts-v1' or bank.get('reviewed') is not True:
-        raise TopicHold('Topic evidence bank is not reviewed.')
-    facts = bank.get('facts')
-    if not isinstance(facts, dict) or not facts:
-        raise TopicHold('Topic evidence bank has no facts.')
+def _check_facts(facts):
     for fact_id, fact in facts.items():
         if not re.fullmatch(r'[a-z0-9_]+', fact_id) or not isinstance(fact, dict):
             raise TopicHold('Invalid topic fact.')
@@ -102,6 +97,27 @@ def load_bank(path=BANK_PATH):
             raise TopicHold('Topic fact is missing its evidence or limits.')
         if not fact['source_url'].startswith('https://'):
             raise TopicHold('Topic fact has no primary-source URL.')
+
+
+def install_live_facts(facts):
+    """Today's checked rate facts (tools/current_rates.py) join the reviewed bank for this run only."""
+    facts = dict(facts or {})
+    _check_facts(facts)
+    if any(not key.startswith('rate_') for key in facts):
+        raise TopicHold('Only live rate facts may be added at run time.')
+    LIVE_FACTS.clear()
+    LIVE_FACTS.update(facts)
+
+
+def load_bank(path=BANK_PATH):
+    bank = json.loads(Path(path).read_text(encoding='utf-8'))
+    if bank.get('format') != 'daily-topic-facts-v1' or bank.get('reviewed') is not True:
+        raise TopicHold('Topic evidence bank is not reviewed.')
+    facts = bank.get('facts')
+    if not isinstance(facts, dict) or not facts:
+        raise TopicHold('Topic evidence bank has no facts.')
+    _check_facts(facts)
+    bank['facts'] = {**facts, **{key: fact for key, fact in LIVE_FACTS.items() if key not in facts}}
     return bank
 
 
@@ -242,9 +258,16 @@ def evidence_prompt(topic):
     brief = getattr(topic, 'brief', None)
     if not brief:
         return ''
+    from tools.current_rates import allowed_amounts
+    rates = allowed_amounts(brief.get('evidence'))
+    allowed = ('\nALLOWED RUPEE AMOUNTS (exact; anything else is rejected): '
+               + ', '.join(f'₹{value}' for value in sorted(rates)) + '\n') if rates else ''
     return ('\nAPPROVED LESSON AND ITS PRIMARY-SOURCE FACTS:\n'
             + json.dumps(brief, ensure_ascii=False)
             + '\nTeach the mechanism or distinction, then its buyer consequence. '
             'Use only the supplied facts; historical titles and AI imagery are not proof. '
             'Do not replace the explanation with a list of things to check. '
-            'Do not add prices, thresholds, guarantees or process-identification tricks.\n')
+            'A rupee amount may appear only exactly as written in a cited rate_ fact (the current '
+            'website rate, before GST) or as the difference between two such amounts, always in digits '
+            'with the ₹ sign. Never round it or add any other price, discount, threshold, guarantee '
+            'or process-identification trick.\n' + allowed)

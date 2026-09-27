@@ -13,6 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class CoverQualityTest(unittest.TestCase):
+    def test_cover_may_show_only_cited_live_rates_that_the_script_speaks(self):
+        script = 'Non-bio ₹107 aur bio ₹150, dono 180 GSM. ₹43 ka fark kyun?'
+        rates = {107, 150, 43, 131, 185}
+        self.assertEqual(validate_cover_text('₹107 vs ₹150 | फ़र्क़ क्या है?', script, rates), ['₹107 vs ₹150', 'फ़र्क़ क्या है?'])
+        for cover, allowed in (('₹99 vs ₹150 | फ़र्क़ क्या है?', rates), ('₹185 vs ₹150 | फ़र्क़ क्या है?', rates),
+                               ('₹107 vs ₹150 | फ़र्क़ क्या है?', ()), ('₹ vs ₹ | कौन सा लें?', rates),
+                               ('₹107 नुकसान | क्यों हुआ?', rates)):
+            with self.subTest(cover=cover), self.assertRaises(ValueError):
+                validate_cover_text(cover, script, allowed)
+
     def test_published_broken_money_hooks_are_replaced_as_whole_phrases(self):
         for old in ('₹7 DYE | 500 Pc BLEED', '₹3 FUSING | COLLAR FLAT 2', '₹2 LESS | 500 Pc बिना'):
             hi, latin, reason = choose_cover(old, old, '500 pieces', 'MOQ bulk order')

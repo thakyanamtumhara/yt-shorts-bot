@@ -61,7 +61,7 @@ class BlogCoverFallbackTest(unittest.TestCase):
             _editorial_evidence=lambda topic: '', _auto_content_hold_reason=lambda text: None,
             generate_blog_slug=lambda title: 'lesson', generate_blog_images=Mock(return_value=images),
             _load_blog_history_active=lambda: [], get_blog_prompt=Mock(return_value='Write the lesson'),
-            _review_derived_content=lambda *args: (True, 'Supported'),
+            _review_derived_content=lambda *args, **kwargs: (True, 'Supported'),
             inject_blog_seo=lambda html, *args, **kwargs: html, _prose_word_count=lambda html: 200)
         response = SimpleNamespace(content=[SimpleNamespace(text='<html>Supported lesson</html>')],
                                    stop_reason='end_turn')
