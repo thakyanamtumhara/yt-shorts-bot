@@ -3039,5 +3039,18 @@
       "tts_elevenlabs": 0.0212,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-09-27T16:39:23.138732",
+    "topic": "GSM \u0938\u093f\u0930\u094d\u092b \u0915\u092a\u0921\u093c\u0947 \u0915\u093e \u0935\u091c\u093c\u0928 \u0939\u0948 \u2014 \u092a\u0942\u0930\u0940 \u091f\u0940-\u0936\u0930\u094d\u091f \u0915\u093e \u0928\u0939\u0940\u0902",
+    "title": "GSM \u0938\u093f\u0930\u094d\u092b \u0915\u092a\u0921\u093c\u0947 \u0915\u093e \u0935\u091c\u093c\u0928 \u0939\u0948 \u2014 \u092a\u0942\u0930\u0940 T-Shirt \u0915\u093e \u0928\u0939\u0940\u0902! Kitchen Scale \u0938\u0947 Check \u092e\u0924 \u0915\u0930\u094b",
+    "total_usd": 0.4336,
+    "duration_min": 6.2,
+    "breakdown": {
+      "claude_opus": 0.3195,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0191,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
