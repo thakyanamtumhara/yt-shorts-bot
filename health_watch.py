@@ -449,7 +449,7 @@ def grade_render():
 
     if f.get("karaoke") is False:
         timing = f.get('caption_timing') or {}
-        if (timing.get('plain_fallback') == 'segment_timed_plain'
+        if (timing.get('plain_fallback') in ('segment_timed_plain', 'alignment_timed_plain')
                 and timing.get('segments_reliable') is True
                 and (f.get('native_visual_review') or {}).get('passed') is True):
             warn.append('Plain captions passed final visual review; word highlighting is off')

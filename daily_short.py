@@ -61,6 +61,7 @@ os.makedirs(f"{WORK_DIR}/my_clips", exist_ok=True)
 # job exits 0 even when the reel came out degraded — this is how four reels
 # shipped in the wrong voice over 10-13 Aug 2026 without a single red run.
 RUN_FLAGS_FILE = f"{WORK_DIR}/run_flags.json"
+VOICE_ALIGNMENT_FILE = f"{WORK_DIR}/voice_alignment.json"
 RUN_FLAGS = {}
 
 
@@ -12292,25 +12293,44 @@ def main():
     tts_input = normalize_for_tts(script_voice)
 
     # Primary: ElevenLabs Hindi (Emotive — best prosody for storytelling)
+    # The /with-timestamps request returns the same audio plus the time of every
+    # character spoken; captions are timed from that instead of Whisper guesses.
+    voice_alignment = None
     if elevenlabs_key and not voice_ok:
         print("   🎙️ Generating voice (ElevenLabs Hindi — Emotive prosody)...")
         try:
-            from elevenlabs import ElevenLabs
-            el_client = ElevenLabs(api_key=elevenlabs_key)
-            audio_iter = el_client.text_to_speech.convert(
-                voice_id=ELEVENLABS_VOICE_ID,
-                model_id=ELEVENLABS_MODEL,
-                text=tts_input,
-                voice_settings=ELEVENLABS_VOICE_SETTINGS,
-            )
-            with open(audio_path, "wb") as f:
-                for chunk in audio_iter:
-                    f.write(chunk)
+            try:
+                from tools.tts_alignment import speech_with_timestamps
+                _voice_bytes, voice_alignment, _voice_request = speech_with_timestamps(
+                    elevenlabs_key, ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL, tts_input, ELEVENLABS_VOICE_SETTINGS)
+                with open(audio_path, "wb") as f:
+                    f.write(_voice_bytes)
+                with open(VOICE_ALIGNMENT_FILE, "w", encoding="utf-8") as f:
+                    json.dump({"voice_id": ELEVENLABS_VOICE_ID, "model_id": ELEVENLABS_MODEL,
+                               "request_id": _voice_request, "text": tts_input,
+                               "alignment": voice_alignment}, f, ensure_ascii=False)
+                print("   ⏱️ Voice character timestamps received")
+            except Exception as _timing_error:
+                voice_alignment = None
+                print(f"   ⚠️ Voice timestamps unavailable ({str(_timing_error)[:160]}) — plain voice request, "
+                      f"captions will need Whisper")
+                from elevenlabs import ElevenLabs
+                el_client = ElevenLabs(api_key=elevenlabs_key)
+                audio_iter = el_client.text_to_speech.convert(
+                    voice_id=ELEVENLABS_VOICE_ID,
+                    model_id=ELEVENLABS_MODEL,
+                    text=tts_input,
+                    voice_settings=ELEVENLABS_VOICE_SETTINGS,
+                )
+                with open(audio_path, "wb") as f:
+                    for chunk in audio_iter:
+                        f.write(chunk)
             print("   ✅ Voice: ElevenLabs Hindi (with Hinglish pre-normalization)")
             cost.track_tts("elevenlabs", len(tts_input))
             flag("tts", "elevenlabs")
             voice_ok = True
         except Exception as e:
+            voice_alignment = None
             print(f"   ⚠️ ElevenLabs TTS failed: {e}")
             if SINGLE_VEO_TEST or NEW_TEST_MODE or TEST_MODE:
                 print("   🛑 Test mode + ElevenLabs failed → ABORTING before Veo to save cost.")
@@ -12371,6 +12391,7 @@ def main():
     # that ElevenLabs deliberately adds for human-feel. ElevenLabs is good enough
     # that we should NOT post-process the speech timing — only adjust loudness.
     # If a specific run is too gappy, set TIGHTEN_SILENCES=1 to enable trimming.
+    voice_time_scale, voice_timing_preserved = 1.0, True
     try:
         import subprocess
         tightened_path = audio_path.replace(".mp3", "_tight.mp3")
@@ -12384,7 +12405,8 @@ def main():
         except ValueError:
             tempo_val = 0.95
         tempo_filter = f"atempo={tempo_val:.3f},"
-        if os.environ.get("TIGHTEN_SILENCES", "").strip() in ("1", "true", "yes"):
+        tighten_silences = os.environ.get("TIGHTEN_SILENCES", "").strip() in ("1", "true", "yes")
+        if tighten_silences:
             # Gentle: only kill silences > 1.5s (clearly intro/outro pauses, not prosody)
             af = f"{tempo_filter}silenceremove=stop_periods=-1:stop_duration=1.5:stop_threshold=-32dB:stop_silence=0.6,loudnorm=I=-14:TP=-1.5:LRA=11"
         else:
@@ -12394,6 +12416,9 @@ def main():
         ], capture_output=True, timeout=60)
         if os.path.exists(tightened_path) and os.path.getsize(tightened_path) > 0:
             os.replace(tightened_path, audio_path)
+            # atempo stretches every timestamp by 1/tempo; removed silences cannot be mapped.
+            voice_time_scale = 1.0 / float(f"{tempo_val:.3f}")
+            voice_timing_preserved = not tighten_silences
             print("   🔊 Voice normalized to -14 LUFS (prosody preserved)")
         else:
             print("   ⚠️ Voice post-processing skipped (ffmpeg output empty)")
@@ -12681,14 +12706,14 @@ def main():
         flag("clips", {"got": got, "expected": expected, "kling": kling_clips})
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
-    # ── 6. Subtitles (Whisper-synced English captions) ──
+    # ── 6. Subtitles ──
     # Use script_english (simple paraphrased English) so subtitles are accessible
     # to non-Hindi viewers + deaf/HoH. Claude generates script_english with the
-    # SAME NUMBER OF SENTENCES as script_voice, so sentence-level alignment is clean:
-    #   - Whisper segments the Hindi audio into N sentences (start/end timestamps)
-    #   - Each English sentence inherits its Hindi counterpart's timing
+    # SAME NUMBER OF SENTENCES as script_voice, so each English sentence inherits
+    # its Hindi counterpart's timing. Timing comes from the voice's own character
+    # timestamps; Whisper is only the fallback when those are missing.
     subtitle_segments = []
-    karaoke_words = []   # [{"text","start","end"}] — Roman-Hinglish words w/ Whisper timing
+    karaoke_words = []   # [{"text","start","end"}] — Roman-Hinglish words w/ measured timing
     sub_source = script_english if script_english else script_voice
     audio_clip_dur = AudioFileClip(audio_path).duration
 
@@ -12699,113 +12724,133 @@ def main():
     if not eng_sentences:
         eng_sentences = [sub_source.strip()]
 
-    # Safe fallback before Whisper attempt: equal-time slicing.
-    # Whisper sync below will overwrite with synced timing if successful.
+    # Safe fallback before timing is measured: equal-time slicing.
+    # Measured timing below overwrites this when available.
     _fallback_seg_dur = audio_clip_dur / max(len(eng_sentences), 1)
     subtitle_segments = [
         {"text": eng, "start": idx * _fallback_seg_dur, "end": (idx + 1) * _fallback_seg_dur}
         for idx, eng in enumerate(eng_sentences)
     ]
 
-    try:
-        import whisper
-        # "medium" for caption timing: small mis-hears clear TTS words (सुफ्ट for
-        # "soft", वोष for "wash"), which breaks forced alignment at those spots.
-        # medium is markedly more accurate; SUBTITLE_WHISPER_MODEL can override.
-        _sub_model = os.environ.get("SUBTITLE_WHISPER_MODEL", "medium").strip() or "medium"
-        wmodel = whisper.load_model(_sub_model)
-        result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
-        from tools.caption_timing import choose_timing_source, plain_caption_segments, verified_karaoke
-        result, _timing_source = choose_timing_source(
-            result, audio_clip_dur,
-            retry=lambda: wmodel.transcribe(
-                audio_path, language="hi", word_timestamps=True,
-                condition_on_previous_text=False, temperature=0.0,
-                initial_prompt=normalize_for_tts(script_voice)[:1000],
-            ),
-        )
-        # Whisper returns segments — typically sentence-ish. Use those for timing.
-        # Also keep WORD-level timestamps (timing only — Whisper text is Devanagari, no CI font).
-        whisper_segs = [
-            {"start": float(s["start"]), "end": float(s["end"]),
-             "words": [
-                 {"start": float(w["start"]), "end": float(w["end"]),
-                  "text": (w.get("word") or "").strip()}
-                 for w in (s.get("words") or [])
-                 if w.get("end", 0) > w.get("start", 0)
-             ]}
-            for s in result.get("segments", [])
-            if s.get("end", 0) > s.get("start", 0)
-        ]
-        cost.track_whisper(audio_clip_dur)
+    # Devanagari words in the script render as tofu (CI fonts are
+    # Latin-only). Show their Roman spelling via reverse map instead
+    # of dropping them — dropped words shrank the caption word list
+    # and desynced captions from the voice (Ketu report 2026-07-11).
+    _deva_to_roman = {}
+    for _k, _v in (list(_TTS_HINGLISH_DEVANAGARI.items())
+                   + list(_get_learned_pronunciations().items())):
+        if _re_subs.fullmatch(r"[a-z]+", str(_k)) and _v not in _deva_to_roman:
+            _deva_to_roman[_v] = _k
 
-        subtitle_segments, _plain_timing_mode = plain_caption_segments(
-            eng_sentences, whisper_segs, audio_clip_dur)
-        print(f"   Caption timing: {_plain_timing_mode}; source={_timing_source['source']}")
+    def _romanize_token(t):
+        return _re_subs.sub(r"[ऀ-ॿ]+",
+                            lambda m: _deva_to_roman.get(m.group(0), ""), t)
 
-        # ── Karaoke word timings ──
+    raw_tokens = [t for t in script_voice.split() if t.strip()]
+    script_words_all = [_romanize_token(t) for t in raw_tokens]
+    # keep raw + display arrays aligned after dropping empties
+    _pairs = [(rt, w) for rt, w in zip(raw_tokens, script_words_all) if w.strip()]
+    raw_tokens = [p[0] for p in _pairs]
+    script_words_all = [p[1] for p in _pairs]
+
+    voice_timed = False
+    if voice_alignment is not None and voice_timing_preserved:
+        _alignment_check = {"reason": "not_checked"}
         try:
-            # Devanagari words in the script render as tofu (CI fonts are
-            # Latin-only). Show their Roman spelling via reverse map instead
-            # of dropping them — dropped words shrank the caption word list
-            # and desynced captions from the voice (Ketu report 2026-07-11).
-            _deva_to_roman = {}
-            for _k, _v in (list(_TTS_HINGLISH_DEVANAGARI.items())
-                           + list(_get_learned_pronunciations().items())):
-                if _re_subs.fullmatch(r"[a-z]+", str(_k)) and _v not in _deva_to_roman:
-                    _deva_to_roman[_v] = _k
+            from tools.tts_alignment import alignment_evidence, aligned_words, sentence_spans, timed_sentences
+            _alignment_check = alignment_evidence(tts_input, voice_alignment, audio_clip_dur, voice_time_scale)
+            if _alignment_check["exact"]:
+                _spans = sentence_spans(tts_input, voice_alignment, voice_time_scale) or []
+                _timed = timed_sentences(eng_sentences, _spans, audio_clip_dur)
+                _aligned, _word_timing = aligned_words(raw_tokens, script_words_all, tts_input, voice_alignment,
+                                                       normalize_for_tts, voice_time_scale)
+                if _timed or _word_timing["highlight_verified"]:
+                    voice_timed = True
+                    _plain_timing_mode = "alignment_timed_plain" if _timed else "estimated_plain"
+                    if _timed:
+                        subtitle_segments = _timed
+                    karaoke_words = _aligned
+                    flag("caption_timing", {
+                        **{key: _alignment_check[key] for key in
+                           ("first_start", "last_end", "audio_seconds", "alignment_sha256")},
+                        "source": "tts_character_alignment", "alignment_exact": True,
+                        "time_scale": round(voice_time_scale, 6), "segments_reliable": True,
+                        "words_reliable": bool(_aligned), **_word_timing,
+                        "caption_sentence_count": len(eng_sentences), "speech_segment_count": len(_spans),
+                        "plain_fallback": _plain_timing_mode})
+                    flag("karaoke", bool(karaoke_words))
+                    print(f"   Caption timing: {_plain_timing_mode}; source=tts_character_alignment")
+                    print(f"   Caption highlight: {_word_timing['reason']} ({len(karaoke_words)} evidenced words)")
+                else:
+                    _alignment_check = {**_alignment_check, "reason": "sentences_and_words_unmatched"}
+        except Exception as _ae:
+            _alignment_check = {"reason": type(_ae).__name__}
+        if not voice_timed:
+            print(f"   ⚠️ Voice timestamps not usable for captions ({_alignment_check['reason']}) — trying Whisper")
 
-            def _romanize_token(t):
-                return _re_subs.sub(r"[ऀ-ॿ]+",
-                                    lambda m: _deva_to_roman.get(m.group(0), ""), t)
+    if not voice_timed:
+        try:
+            import whisper
+            # "medium" for caption timing: small mis-hears clear TTS words (सुफ्ट for
+            # "soft", वोष for "wash"), which breaks forced alignment at those spots.
+            # medium is markedly more accurate; SUBTITLE_WHISPER_MODEL can override.
+            _sub_model = os.environ.get("SUBTITLE_WHISPER_MODEL", "medium").strip() or "medium"
+            wmodel = whisper.load_model(_sub_model)
+            result = wmodel.transcribe(audio_path, language="hi", word_timestamps=True)
+            from tools.caption_timing import choose_timing_source, plain_caption_segments, verified_karaoke
+            result, _timing_source = choose_timing_source(
+                result, audio_clip_dur,
+                retry=lambda: wmodel.transcribe(
+                    audio_path, language="hi", word_timestamps=True,
+                    condition_on_previous_text=False, temperature=0.0,
+                    initial_prompt=normalize_for_tts(script_voice)[:1000],
+                ),
+            )
+            # Whisper returns segments — typically sentence-ish. Use those for timing.
+            # Also keep WORD-level timestamps (timing only — Whisper text is Devanagari, no CI font).
+            whisper_segs = [
+                {"start": float(s["start"]), "end": float(s["end"]),
+                 "words": [
+                     {"start": float(w["start"]), "end": float(w["end"]),
+                      "text": (w.get("word") or "").strip()}
+                     for w in (s.get("words") or [])
+                     if w.get("end", 0) > w.get("start", 0)
+                 ]}
+                for s in result.get("segments", [])
+                if s.get("end", 0) > s.get("start", 0)
+            ]
+            cost.track_whisper(audio_clip_dur)
 
-            def _spoken_units(tok):
-                """How many WORDS this script token becomes when spoken — the
-                audio is TTS of normalize_for_tts(script), so "₹140" → "एक सौ
-                चालीस रुपये" = 4 spoken words, "GSM"/"combed" = 1. Weighting the
-                caption timing by this (instead of 1-per-token) is what keeps
-                captions in sync: flat mapping drifts after every number/price
-                because the spoken word count ≠ the script token count."""
-                try:
-                    norm = normalize_for_tts(tok)
-                except Exception:
-                    norm = tok
-                return max(1, len(_re_subs.findall(r"[ऀ-ॿ]+|[A-Za-z]+|\d+", norm)))
+            subtitle_segments, _plain_timing_mode = plain_caption_segments(
+                eng_sentences, whisper_segs, audio_clip_dur)
+            print(f"   Caption timing: {_plain_timing_mode}; source={_timing_source['source']}")
 
-            raw_tokens = [t for t in script_voice.split() if t.strip()]
-            script_words_all = [_romanize_token(t) for t in raw_tokens]
-            token_weights = [_spoken_units(t) for t in raw_tokens]
-            # keep raw + display + weight arrays aligned after dropping empties
-            _tris = [(rt, w, wt) for rt, w, wt in zip(raw_tokens, script_words_all, token_weights) if w.strip()]
-            raw_tokens = [p[0] for p in _tris]
-            script_words_all = [p[1] for p in _tris]
-            token_weights = [p[2] for p in _tris]
-            wtimes_all = [w for seg in whisper_segs for w in seg.get("words", [])]
+            # ── Karaoke word timings ──
+            try:
+                karaoke_words, _word_timing = verified_karaoke(
+                    raw_tokens, script_words_all, whisper_segs, audio_clip_dur,
+                    normalize_for_tts, _forced_align_caption_times)
+                flag("caption_timing", {**_timing_source, **_word_timing,
+                                        "caption_sentence_count": len(eng_sentences),
+                                        "speech_segment_count": len(whisper_segs),
+                                        "plain_fallback": _plain_timing_mode})
+                print(f"   Caption highlight: {_word_timing['reason']} ({len(karaoke_words)} evidenced words)")
+            except Exception as _ke:
+                karaoke_words = []
+                flag("caption_timing", {**_timing_source, "mode": "plain", "highlight_verified": False,
+                                        "caption_sentence_count": len(eng_sentences),
+                                        "speech_segment_count": len(whisper_segs),
+                                        "plain_fallback": _plain_timing_mode,
+                                        "reason": "alignment_error", "error": type(_ke).__name__})
+                print(f"   ⚠️ Karaoke timing unavailable ({type(_ke).__name__}); plain captions retained")
+            flag("karaoke", bool(karaoke_words))
 
-            karaoke_words, _word_timing = verified_karaoke(
-                raw_tokens, script_words_all, whisper_segs, audio_clip_dur,
-                normalize_for_tts, _forced_align_caption_times)
-            flag("caption_timing", {**_timing_source, **_word_timing,
-                                    "caption_sentence_count": len(eng_sentences),
-                                    "speech_segment_count": len(whisper_segs),
-                                    "plain_fallback": _plain_timing_mode})
-            print(f"   Caption highlight: {_word_timing['reason']} ({len(karaoke_words)} evidenced words)")
-        except Exception as _ke:
-            karaoke_words = []
-            flag("caption_timing", {**_timing_source, "mode": "plain", "highlight_verified": False,
-                                    "caption_sentence_count": len(eng_sentences),
-                                    "speech_segment_count": len(whisper_segs),
-                                    "plain_fallback": _plain_timing_mode,
-                                    "reason": "alignment_error", "error": type(_ke).__name__})
-            print(f"   ⚠️ Karaoke timing unavailable ({type(_ke).__name__}); plain captions retained")
-        flag("karaoke", bool(karaoke_words))
-
-    except Exception as _e:
-        print(f"   ⚠️ Whisper caption sync FAILED ({type(_e).__name__}: {str(_e)[:160]}) — "
-              f"captions fall back to equal-time slicing and the karaoke highlight is dropped")
-        flag("karaoke", False)
-        flag("caption_timing", {"mode": "estimated_plain", "highlight_verified": False,
-                                "reason": "whisper_unavailable", "error": type(_e).__name__})
+        except Exception as _e:
+            print(f"   ⚠️ Whisper caption sync FAILED ({type(_e).__name__}: {str(_e)[:160]}) — "
+                  f"captions fall back to equal-time slicing and the karaoke highlight is dropped")
+            flag("karaoke", False)
+            flag("caption_timing", {"mode": "estimated_plain", "highlight_verified": False,
+                                    "reason": "whisper_unavailable", "error": type(_e).__name__})
 
     # ── 7. Video Assembly ──
     print("   ✂️ Building video...")
@@ -12993,6 +13038,9 @@ def main():
             print(f"   ✅ Karaoke captions: {len(k_lines)} lines / {n_word_clips} word-states")
         except Exception as e:
             print(f"   ⚠️ Karaoke captions failed: {e} — falling back to segment subtitles")
+            flag("karaoke", False)
+            flag("caption_timing", {**(RUN_FLAGS.get("caption_timing") or {}), "highlight_verified": False,
+                                    "render_error": type(e).__name__})
 
     # Fallback — old segment-level English captions (unchanged)
     if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:

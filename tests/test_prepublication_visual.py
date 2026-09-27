@@ -91,6 +91,31 @@ class VisualAssessmentTest(unittest.TestCase):
         data['run_flags']['caption_timing']['words_reliable'] = False
         self.assertFalse(visual.caption_timing_evidence(data)['verified'])
 
+    def test_voice_timestamp_captions_pass_only_with_exact_alignment(self):
+        data = manifest()
+        data['run_flags']['caption_timing'] = {
+            'source': 'tts_character_alignment', 'alignment_exact': True, 'segments_reliable': True,
+            'words_reliable': True, 'highlight_verified': True, 'mode': 'verified_word_timing',
+            'caption_sentence_count': 8, 'speech_segment_count': 8, 'plain_fallback': 'alignment_timed_plain'}
+        evidence = visual.caption_timing_evidence(data)
+        self.assertTrue(evidence['verified'])
+        self.assertEqual(evidence['timing_source'], 'tts_character_alignment')
+        timing = data['run_flags']['caption_timing']
+        for changes in ({'alignment_exact': False}, {'alignment_exact': None}, {'segments_reliable': False}):
+            altered = deepcopy(data); altered['run_flags']['caption_timing'].update(changes)
+            self.assertFalse(visual.caption_timing_evidence(altered)['verified'])
+        timing.update(highlight_verified=False, words_reliable=False, mode='plain')
+        self.assertTrue(visual.caption_timing_evidence(data)['verified'])
+        for changes in ({'speech_segment_count': 7}, {'plain_fallback': 'estimated_plain'},
+                        {'plain_fallback': 'segment_timed_plain'}):
+            altered = deepcopy(data); altered['run_flags']['caption_timing'].update(changes)
+            self.assertFalse(visual.caption_timing_evidence(altered)['verified'])
+
+    def test_whisper_timing_cannot_borrow_the_voice_timestamp_label(self):
+        data = manifest()
+        data['run_flags']['caption_timing']['plain_fallback'] = 'alignment_timed_plain'
+        self.assertFalse(visual.caption_timing_evidence(data)['verified'])
+
     def test_missing_primary_facts_cannot_be_replaced_by_a_title(self):
         data = manifest(); data['run_flags']['topic_lesson']['evidence'] = {}
         with self.assertRaises(visual.VisualReviewError):

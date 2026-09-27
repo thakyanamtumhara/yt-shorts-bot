@@ -107,11 +107,13 @@ def caption_timing_evidence(manifest):
     captions, segments = timing.get('caption_sentence_count'), timing.get('speech_segment_count')
     counts_match = type(captions) is int and type(segments) is int and 0 < captions == segments
     estimated = timing.get('mode') == 'estimated_plain' or timing.get('plain_fallback') == 'estimated_plain'
-    source_ok = timing.get('segments_reliable') is True
-    plain_ok = timing.get('plain_fallback') == 'segment_timed_plain'
+    aligned = timing.get('source') == 'tts_character_alignment'
+    source_ok = timing.get('segments_reliable') is True and (not aligned or timing.get('alignment_exact') is True)
+    plain_ok = timing.get('plain_fallback') == ('alignment_timed_plain' if aligned else 'segment_timed_plain')
     highlight_ok = timing.get('highlight_verified') is True and timing.get('words_reliable') is True
     verified = bool(source_ok and (highlight_ok or (counts_match and plain_ok and not estimated)))
-    return {'verified': verified, 'sentence_counts_match': counts_match, 'source_segments_reliable': source_ok,
+    return {'verified': verified, 'timing_source': 'tts_character_alignment' if aligned else 'whisper',
+            'sentence_counts_match': counts_match, 'source_segments_reliable': source_ok,
             'caption_sentence_count': captions if type(captions) is int else None,
             'speech_segment_count': segments if type(segments) is int else None,
             'estimated_timing': estimated, 'segment_timed_plain': plain_ok, 'highlight_verified': highlight_ok,

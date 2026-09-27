@@ -204,7 +204,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
-        run: python health_watch.py --postrun
+          # Manual test runs print the grade instead of alerting Ketu.
+          TEST_RUN: ${{ github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true' }}
+        run: |
+          if [ "$TEST_RUN" = "true" ]; then python health_watch.py --postrun --dry-run; else python health_watch.py --postrun; fi
 
       - name: Save updated tracking files
         if: always()
@@ -274,11 +277,12 @@ jobs:
             /tmp/yt_shorts/visual-assessment.json
             /tmp/yt_shorts/review_cover.*
             /tmp/yt_shorts/review_normalized_voice.*
+            /tmp/yt_shorts/voice_alignment.json
           retention-days: 21
           if-no-files-found: ignore
 
       - name: Notify on failure
-        if: failure()
+        if: ${{ failure() && github.event.inputs.test_mode != 'true' && github.event.inputs.new_test_mode != 'true' }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${RUN_URL}"

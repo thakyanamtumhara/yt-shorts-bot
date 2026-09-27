@@ -22,6 +22,13 @@ class CaptionHealthTests(unittest.TestCase):
         self.assertEqual(bad, [])
         self.assertTrue(any('word highlighting is off' in item for item in warnings))
 
+    def test_reviewed_plain_captions_timed_by_voice_timestamps_are_only_a_warning(self):
+        bad, warnings = self.grade({'caption_timing': {'plain_fallback': 'alignment_timed_plain',
+                                                      'segments_reliable': True},
+                                    'native_visual_review': {'passed': True}})
+        self.assertEqual(bad, [])
+        self.assertTrue(any('word highlighting is off' in item for item in warnings))
+
     def test_unreviewed_or_estimated_captions_remain_a_quality_issue(self):
         for flags in ({}, {'caption_timing': {'plain_fallback': 'estimated_plain'},
                            'native_visual_review': {'passed': True}},
