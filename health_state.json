@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-24 14:18)",
+   "detail": "ElevenLabs ✅ (2026-09-27 16:39)",
    "provider": "elevenlabs",
-   "at": "2026-09-24 14:18",
-   "title": "सिंगल जर्सी का सीधा vs उल्टा — V Loop vs Arc Row कैसे पहचानें?"
+   "at": "2026-09-27 16:39",
+   "title": "GSM सिर्फ कपड़े का वज़न है — पूरी T-Shirt का नहीं! Kitchen Scale से Ch"
   },
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 256,158 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 255,364 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 256158,
+   "chars_left": 255364,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -635,9 +635,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-27T22:40:07+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-27T14:57:14+05:30",
+ "last_run_ist": "2026-09-27T22:40:07+05:30",
  "last_green_date": "2026-09-27",
  "last_still_down_date": "2026-09-23"
 }
