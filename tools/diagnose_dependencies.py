@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import base64
 import json
 import os
 import re
@@ -76,6 +77,7 @@ def subscription_summary(value):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Read dependency state; optional tiny private TTS capability probe.')
     parser.add_argument('--tts-probe', action='store_true')
+    parser.add_argument('--alignment-probe', action='store_true')
     args = parser.parse_args(argv)
     key = os.environ.get('ELEVENLABS_API_KEY', '').strip()
     if not key:
@@ -88,6 +90,8 @@ def main(argv=None):
     print(json.dumps({'voice_http_status': voice_status, 'voice_available': voice_status == 200,
                       'voice_category': safe_code(voice.get('category')),
                       'error_code': error_code(voice_body)}))
+    if args.alignment_probe:
+        return alignment_probe(key)
     if not args.tts_probe:
         print(json.dumps({'tts_probe': 'not_requested'}))
         return 0 if status == 200 and voice_status == 200 else 1
@@ -103,6 +107,54 @@ def main(argv=None):
                       'error_code': error_code(audio) if not valid_audio else None,
                       'attempts': 1}))
     return 0 if valid_audio else 1
+
+
+ALIGNMENT_TEXT = 'एक T-shirt हल्की, एक bhaari — दोनों दो सौ GSM. अब देखो, GSM सिर्फ एक fixed area का weight बताता है.'
+
+
+def alignment_summary(text, alignment, audio_seconds):
+    if not isinstance(alignment, dict):
+        return {'present': False}
+    chars = alignment.get('characters')
+    starts = alignment.get('character_start_times_seconds')
+    ends = alignment.get('character_end_times_seconds')
+    exact = chars == list(text)
+    complete = (isinstance(starts, list) and isinstance(ends, list)
+                and len(starts) == len(ends) == len(chars or []))
+    ordered = complete and all(
+        type(a) in (int, float) and type(b) in (int, float) and 0 <= a <= b
+        for a, b in zip(starts, ends)) and all(
+        x <= y for x, y in zip(starts, starts[1:]))
+    stops = [index for index, char in enumerate(text) if char == '.']
+    return {'present': True, 'characters_exact': exact, 'complete': complete, 'ordered': ordered,
+            'character_count': len(chars) if isinstance(chars, list) else None,
+            'first_start': round(starts[0], 3) if complete and starts else None,
+            'last_end': round(ends[-1], 3) if complete and ends else None,
+            'sentence_stop_ends': [round(ends[index], 3) for index in stops] if exact and complete else None,
+            'estimated_audio_seconds': round(audio_seconds, 3)}
+
+
+def alignment_probe(key):
+    status, _, body = request('text-to-speech/' + VOICE_ID + '/with-timestamps?output_format=mp3_44100_128', key, {
+        'text': ALIGNMENT_TEXT, 'model_id': MODEL_ID,
+        'voice_settings': {'stability': 0.50, 'similarity_boost': 0.75,
+                           'style': 0.00, 'use_speaker_boost': True}})
+    value = object_body(body) if status == 200 else {}
+    try:
+        audio = base64.b64decode(value.get('audio_base64') or '', validate=True)
+    except ValueError:
+        audio = b''
+    valid_audio = len(audio) > 100 and (audio.startswith(b'ID3') or (audio[0] == 255 and audio[1] & 224 == 224))
+    seconds = len(audio) * 8 / 128000
+    summary = alignment_summary(ALIGNMENT_TEXT, value.get('alignment'), seconds)
+    normalized = alignment_summary(ALIGNMENT_TEXT, value.get('normalized_alignment'), seconds)
+    passed = valid_audio and summary.get('characters_exact') and summary.get('ordered')
+    print(json.dumps({'alignment_probe': 'passed' if passed else 'failed', 'http_status': status,
+                      'model': MODEL_ID, 'audio_bytes': len(audio) if valid_audio else 0,
+                      'alignment': summary, 'normalized_alignment': normalized,
+                      'error_code': error_code(body) if status != 200 else None, 'attempts': 1},
+                     ensure_ascii=False))
+    return 0 if passed else 1
 
 
 if __name__ == '__main__':

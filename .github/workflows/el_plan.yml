@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      alignment_probe:
+        description: 'Make one tiny Hindi voice probe with character timestamps; no media is published'
+        required: false
+        type: boolean
+        default: false
       topics:
         description: 'Run topic-only brainstorming and quality review; no media or publishing'
         required: false
@@ -35,9 +40,11 @@ jobs:
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           TTS_PROBE: ${{ inputs.tts_probe }}
+          ALIGNMENT_PROBE: ${{ inputs.alignment_probe }}
         run: |
           args=()
           if [ "$TTS_PROBE" = "true" ]; then args+=(--tts-probe); fi
+          if [ "$ALIGNMENT_PROBE" = "true" ]; then args+=(--alignment-probe); fi
           python tools/diagnose_dependencies.py "${args[@]}"
       - name: Install topic diagnostic dependencies
         if: ${{ always() && inputs.topics }}

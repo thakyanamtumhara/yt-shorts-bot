@@ -50,6 +50,26 @@ class DependencyProbeTest(unittest.TestCase):
                     probe, 'request', side_effect=values), redirect_stdout(StringIO()):
                 self.assertEqual(probe.main(['--tts-probe']), expected)
 
+    def test_alignment_probe_requires_exact_ordered_character_timing(self):
+        import base64
+        text = probe.ALIGNMENT_TEXT
+        audio = base64.b64encode(b'ID3' + b'a' * 300).decode()
+        steps = [index * 0.05 for index in range(len(text))]
+        exact = {'characters': list(text), 'character_start_times_seconds': steps,
+                 'character_end_times_seconds': [step + 0.05 for step in steps]}
+        for alignment, expected in [(exact, 0), ({**exact, 'characters': list(text[:-1]) + ['?']}, 1), (None, 1)]:
+            body = json.dumps({'audio_base64': audio, 'alignment': alignment}).encode()
+            values = [(200, 'application/json', b'{}'), (200, 'application/json', b'{}'),
+                      (200, 'application/json', body)]
+            output = StringIO()
+            with self.subTest(expected=expected, present=alignment is not None), patch.dict(
+                    'os.environ', {'ELEVENLABS_API_KEY': 'secret'}), patch.object(
+                    probe, 'request', side_effect=values) as request, redirect_stdout(output):
+                self.assertEqual(probe.main(['--alignment-probe']), expected)
+            self.assertIn('/with-timestamps', request.call_args.args[0])
+            self.assertEqual(request.call_args.args[2]['model_id'], 'eleven_v3')
+            self.assertNotIn(audio, output.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()
