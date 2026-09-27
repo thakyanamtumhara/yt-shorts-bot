@@ -525,6 +525,12 @@ def main():
     # last_video_voice is retrospective — it stays red until a good render exists,
     # so gating on it would deadlock the very run that fixes it
     blocking = [r for r in down if r.severity == CRITICAL and r.key != "last_video_voice"]
+    if not dry:
+        try:
+            from tools.urgent_actions import update as update_urgent_actions
+            update_urgent_actions("health_watch", {r.key: r.detail for r in blocking})
+        except Exception as error:
+            print(f"   ⚠️ Urgent-action list not saved ({type(error).__name__})")
 
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

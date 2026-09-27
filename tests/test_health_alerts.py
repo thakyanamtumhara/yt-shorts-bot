@@ -2,6 +2,7 @@ import contextlib
 import io
 import json
 import os
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -39,7 +40,10 @@ class HealthAlertsTest(unittest.TestCase):
         self.assertEqual(result.severity, health_watch.CRITICAL)
 
     def run_watch(self, state, delivered, result):
-        with patch.object(health_watch, 'load_state', return_value=state), \
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as folder, \
+             patch('tools.urgent_actions.PATH', Path(folder) / 'urgent_actions.json'), \
+             patch.object(health_watch, 'load_state', return_value=state), \
              patch.object(health_watch, 'save_state'), \
              patch.object(health_watch, 'run_all', return_value=[result]), \
              patch.object(health_watch, 'send_telegram', return_value=delivered), \

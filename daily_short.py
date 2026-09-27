@@ -5827,6 +5827,18 @@ MOOD_TO_MUSIC_PROMPT = {
 
 
 
+def _note_replicate_billing(error):
+    """Real Replicate billing refusals drive the owner's urgent to-do; a success clears it."""
+    from tools.urgent_actions import replicate_refused_credit, update
+    try:
+        if error is None:
+            update("daily_short", {})
+        elif replicate_refused_credit(error):
+            update("daily_short", {"replicate_credit": f"Replicate refused a job: {str(error)[:120]}"})
+    except Exception as note_error:
+        print(f"   ⚠️ Urgent-action note not saved ({type(note_error).__name__})")
+
+
 def generate_bg_music(mood="calm"):
     """Generate background music using ACE-Step via Replicate API.
     Retries up to 3 times with exponential backoff on transient errors (429, 5xx)."""
@@ -5871,6 +5883,7 @@ def generate_bg_music(mood="calm"):
                 with open(music_path, "wb") as f:
                     f.write(audio_bytes)
                 print(f"   ✅ AI music generated: {os.path.basename(music_path)}")
+                _note_replicate_billing(None)
                 return music_path
             else:
                 print("   ⚠️ Replicate returned empty audio")
@@ -5889,6 +5902,7 @@ def generate_bg_music(mood="calm"):
                 time.sleep(wait)
             else:
                 print(f"   ⚠️ Replicate ACE-Step failed after {attempt} attempt(s): {e}")
+                _note_replicate_billing(e)
                 return None
     return None
 
@@ -7619,7 +7633,10 @@ RECENT TOPICS — repeated intent is a rejection even if words, price or GSM cha
 {json.dumps(list(topic_history)[-30:], ensure_ascii=False)}
 
 Score four dimensions 0-10, total out of 40:
-buyer_interest: answers a relevant buyer uncertainty; views alone are not proof.
+buyer_interest: answers a relevant buyer uncertainty; views alone are not proof. Owned
+Instagram data (Aug-Sep 2026): honest reels explaining a real current price difference drew
+2.2K-4.5K views; definition-only lessons drew 313-905. A lesson that uses cited rate_ facts to
+explain what a real price gap buys answers the buyer's most common question.
 freshness: teaches a materially different idea or decision from recent output.
 learning_value: explains what happens or why, not merely 'check the sample'.
 shareability: useful enough to pass to another buyer, without drama or a fake story.
@@ -8970,10 +8987,13 @@ def generate_blog_images(video_prompts, topic, slug, cost_tracker=None):
             try:
                 print(f"   📷 Blog images: Generating {filename} via Replicate FLUX Dev...")
                 img_bytes = _generate_image_replicate(prompt, aspect)
+                if img_bytes:
+                    _note_replicate_billing(None)
             except Exception as e:
                 replicate_fails += 1
                 print(f"   ⚠️ Blog images: Replicate failed for {filename} "
                       f"({replicate_fails}/2): {e}")
+                _note_replicate_billing(e)
 
         # Fallback to fal.ai
         if not img_bytes and has_fal:

@@ -86,6 +86,7 @@ jobs:
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
           git add health_state.json || true
+          git add urgent_actions.json || true
           git diff --cached --quiet && exit 0
           git commit -m "health watch state [skip ci]" || true
           git pull --rebase origin ${{ github.ref_name }} || true
