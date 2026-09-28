@@ -25,8 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: read
-      issues: write   # the failure step opens/comments a tracking issue
+      contents: write  # saves the urgent to-do list for the WWbun bar
+      issues: write    # the failure step opens/comments a tracking issue
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +53,7 @@ jobs:
               ("img2.webp", "4:3", "Indian textile factory floor with folded blank t-shirts"),
           ]
           ok = 0
+          refused = None
           t0 = time.time()
           for name, aspect, prompt in PROMPTS:
               started = time.time()
@@ -65,11 +66,19 @@ jobs:
                   else:
                       print(f"❌ {name}: returned {size} bytes")
               except Exception as e:
+                  from tools.urgent_actions import replicate_refused_credit
+                  if replicate_refused_credit(e):
+                      refused = str(e)[:120]
                   throttled = "429" in str(e) or "throttl" in str(e).lower()
                   print(f"❌ {name}: {'THROTTLED (429)' if throttled else 'ERROR'} after "
                         f"{time.time()-started:.1f}s — {str(e)[:180]}")
 
           print(f"\n📷 RESULT: {ok}/3 images generated in {time.time()-t0:.0f}s total")
+          from tools.urgent_actions import update
+          if ok == 3:
+              update("replicate", {})
+          elif refused:
+              update("replicate", {"replicate_credit": f"Image self-test refused: {refused}"})
           if ok == 3:
               print("✅ Image generation is fully healthy — blog posts will get all 3 images.")
           elif ok == 1:
@@ -79,6 +88,20 @@ jobs:
               print("⚠️ Partial or total failure — read the per-image errors above.")
           raise SystemExit(0 if ok == 3 else 1)
           PY
+
+      - name: Save the urgent to-do list
+        if: always()
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add urgent_actions.json || true
+          git commit -m "urgent actions after image self-test [skip ci]" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin ${{ github.ref_name }} || git rebase --abort || true
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i*10))
+          done
+          echo "::warning::urgent_actions.json push failed after 3 attempts"
 
       - name: Notify on failure
         if: failure()

@@ -4,7 +4,7 @@
  "items": [
   {
    "id": "replicate_credit",
-   "owner": "daily_short",
+   "owner": "replicate",
    "title": "Recharge Replicate",
    "detail": "Reels go out without background music, and blogs and Instagram carousels get no images. Log in with \"Sign in with GitHub\" (thakyanamtumhara).",
    "action_url": "https://replicate.com/account/billing",

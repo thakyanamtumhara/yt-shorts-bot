@@ -5832,9 +5832,9 @@ def _note_replicate_billing(error):
     from tools.urgent_actions import replicate_refused_credit, update
     try:
         if error is None:
-            update("daily_short", {})
+            update("replicate", {})
         elif replicate_refused_credit(error):
-            update("daily_short", {"replicate_credit": f"Replicate refused a job: {str(error)[:120]}"})
+            update("replicate", {"replicate_credit": f"Replicate refused a job: {str(error)[:120]}"})
     except Exception as note_error:
         print(f"   ⚠️ Urgent-action note not saved ({type(note_error).__name__})")
 

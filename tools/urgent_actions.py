@@ -2,8 +2,8 @@
 
 Only real, owner-fixable problems belong here (billing, expired logins). Each
 writer owns its items: health_watch (critical dependency checks) and
-daily_short (actual Replicate billing refusals, which health_watch's account
-ping cannot see). A writer can only add or clear its own items, so one check
+replicate (actual Replicate results from the daily run and the weekly image
+self-test; health_watch's account ping cannot see billing refusals). A writer can only add or clear its own items, so one check
 never erases another's evidence. The repo is public: no secrets, amounts or
 account numbers in the text.
 """
