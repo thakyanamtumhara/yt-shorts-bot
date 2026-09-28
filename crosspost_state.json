@@ -199,6 +199,8 @@
   "nudged": true
  },
  "stock20260917-raw01-ig": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dd1zMDPjDo3/"
  }
 }
