@@ -171,6 +171,10 @@
   "l1P2CkqrqPQ": {
    "title": "Bulk Order Se Pehle Sample Ko Dhokar Dekho",
    "published": "2026-09-27T12:30:00+00:00"
+  },
+  "mj3j-MOr5bA": {
+   "title": "Stock Ka Wait Karte-Karte Doosra Stock Bhi Khatam? | Notify Me",
+   "published": "2026-09-28T12:30:19+00:00"
   }
  },
  "instagram": {
@@ -621,6 +625,10 @@
   "18079206431348189": {
    "permalink": "https://www.instagram.com/reel/Ddy22yaj4tc/",
    "ts": "2026-09-27T14:47:24+0000"
+  },
+  "18110444644881119": {
+   "permalink": "https://www.instagram.com/reel/Dd1zMDPjDo3/",
+   "ts": "2026-09-28T18:12:41+0000"
   }
  },
  "facebook": {
@@ -1242,8 +1250,13 @@
    "at": "2026-09-28T16:56:21+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-09-29T01:52:39+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-09-28",
- "last_run_ist": "2026-09-28T16:56:21+05:30"
+ "last_green_date": "2026-09-29",
+ "last_run_ist": "2026-09-29T01:52:39+05:30"
 }
