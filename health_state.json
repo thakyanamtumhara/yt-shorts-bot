@@ -642,9 +642,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-09-28T15:34:14+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-09-27T22:40:07+05:30",
- "last_green_date": "2026-09-27",
+ "last_run_ist": "2026-09-28T15:34:14+05:30",
+ "last_green_date": "2026-09-28",
  "last_still_down_date": "2026-09-23"
 }
