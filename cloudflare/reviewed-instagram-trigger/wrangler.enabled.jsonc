@@ -1,0 +1,12 @@
+{
+  "name": "reviewed-instagram-trigger",
+  "account_id": "7496d7d235ea08571b8a048299c1a282",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-29",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {"ENABLED": "true", "DRY_RUN": "false"},
+  "triggers": {"crons": ["2,7,12,17,22,27,32,37,42,47,52,57 * * * *"]},
+  "observability": {"enabled": true, "head_sampling_rate": 1}
+}

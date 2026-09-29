@@ -1,4 +1,5 @@
 name: Reviewed Instagram Reels
+run-name: Reviewed Instagram · ${{ github.event_name == 'schedule' && 'publish_due' || inputs.mode || 'preflight' }}
 
 on:
   schedule:
