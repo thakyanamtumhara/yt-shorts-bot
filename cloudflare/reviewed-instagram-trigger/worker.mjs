@@ -93,17 +93,17 @@ function safeCode(error) {
 
 export async function tick(env, options = {}) {
   const now = options.now ?? Date.now(), request = options.fetch ?? fetch;
-  if (env.ENABLED !== 'true') return {status: 'disabled', version: '1.0.0'};
+  if (env.ENABLED !== 'true') return {status: 'disabled', version: '1.0.1'};
   check(typeof env.REVIEWED_IG_GH_TOKEN === 'string' && env.REVIEWED_IG_GH_TOKEN.length > 0, 'github_secret_missing');
   async function raw(url, {github = false, method = 'GET', body, missing = false} = {}) {
-    const headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'reviewed-instagram-trigger/1.0.0', 'Cache-Control': 'no-cache'};
+    const headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'reviewed-instagram-trigger/1.0.1', 'Cache-Control': 'no-cache'};
     if (github) {
       check(url.startsWith(`https://api.github.com/repos/${REPO}/`), 'unexpected_github_target');
       headers.Authorization = `Bearer ${env.REVIEWED_IG_GH_TOKEN}`;
       headers['X-GitHub-Api-Version'] = '2022-11-28';
     }
     if (body) headers['Content-Type'] = 'application/json';
-    const response = await request(url, {method, headers, body: body ? JSON.stringify(body) : undefined, redirect: 'error', signal: AbortSignal.timeout(12000), cf: {cacheTtl: 0, cacheEverything: false}});
+    const response = await request(url, {method, headers, body: body ? JSON.stringify(body) : undefined, redirect: 'manual', signal: AbortSignal.timeout(12000), cf: {cacheTtl: 0, cacheEverything: false}});
     if (missing && response.status === 404) return null;
     check(response.ok, 'http_' + response.status);
     if (response.status === 204) return null;
@@ -141,7 +141,7 @@ export async function tick(env, options = {}) {
       else ready.push(job);
     } catch (error) { blocked.push({job_id: job.id, code: safeCode(error)}); }
   }
-  const base = {version: '1.0.0', commit: head.sha, due_count: due.length, verified_count: verified.length, ready: ready.map(job => job.id), blocked};
+  const base = {version: '1.0.1', commit: head.sha, due_count: due.length, verified_count: verified.length, ready: ready.map(job => job.id), blocked};
   if (!ready.length) return {...base, status: blocked.length ? 'blocked' : 'nothing_due'};
   const runPath = `actions/workflows/${WORKFLOW}/runs?branch=main&per_page=100&exclude_pull_requests=true`;
   for (const status of ['queued', 'in_progress', 'waiting']) {

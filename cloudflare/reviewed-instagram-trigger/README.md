@@ -1,4 +1,4 @@
-# Reviewed Instagram fallback · v1.0.0
+# Reviewed Instagram fallback · v1.0.1
 
 Dedicated Cloudflare Cron Worker; fixed target is the existing `reviewed_ai_reels.yml` workflow in `thakyanamtumhara/yt-shorts-bot`, `main`, `mode=publish_due`. It never publishes to Meta or writes release state. No routes, workers.dev URL or preview URL are enabled, and its HTTP handler always returns404.
 
@@ -21,7 +21,7 @@ wrangler deploy --dry-run --config wrangler.enabled.jsonc --outdir /private/tmp/
 
 The read-only check captures the existing `gh` credential in process memory and sets `DRY_RUN=true`; it cannot POST a dispatch. It prints identifier-only results. Never enable HTTP testing routes or print environment/credential values.
 
-29-Sep-2026 evidence:22 tests passed, including exact canonical hash comparison against Python for all seven real queued jobs; both deploy dry-runs passed. Live read-only check at main `deac73545a6b7d16be10dbd31599f886e0e7ce82` returned four due/four verified, zero ready/blocked, `nothing_due`. No deployment or trigger submission was part of those checks.
+29-Sep-2026 evidence:23 tests passed, including exact canonical hash comparison against Python for all seven real queued jobs; both deploy dry-runs passed. Live read-only check returned four due/four verified, zero ready/blocked, `nothing_due`. The first cloud tick exposed Workers' rejection of `redirect: error` before network. Version1.0.1 uses `redirect: manual` and rejects all non-2xx statuses; tests prove301/302/307/308 cause no follow-up request. A local Workers runtime probe with a dummy credential independently reproduced the old error and verified the corrected request reaches GitHub's expected401 response. The failed initial cloud event is retained in recovery evidence. A successful natural cloud tick is still required after each runtime fix.
 
 ## Deployment after review
 

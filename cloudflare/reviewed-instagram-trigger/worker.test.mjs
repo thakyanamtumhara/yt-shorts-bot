@@ -22,7 +22,7 @@ function mock(options = {}) {
   const jobs = options.jobs ?? [clone(job)], approval = options.receipt ?? clone(receipt), calls = [];
   const fetch = async (target, init) => {
     const url = new URL(target); calls.push({url: target, method: init.method, body: init.body, headers: init.headers});
-    assert.equal(init.redirect, 'error');
+    assert.equal(init.redirect, 'manual');
     if (url.hostname === 'www.bulkplaintshirt.com') {
       assert.equal(init.headers.Authorization, undefined);
       assert.equal(url.searchParams.get('trigger_read'), String(now));
@@ -162,6 +162,14 @@ test('three unsuccessful delivery attempts stop automatic run creation', async (
 test('GitHub read or dispatch failure is never reported accepted', async () => {
   for (const options of [{githubError: 403}, {dispatchError: 500}]) {
     const m = mock(options); await assert.rejects(tick(env, {now, fetch: m.fetch}), /http_/);
+  }
+});
+
+test('Workers-compatible manual redirect mode refuses all redirect responses', async () => {
+  for (const status of [301, 302, 307, 308]) {
+    const m = mock({githubError: status});
+    await assert.rejects(tick(env, {now, fetch: m.fetch}), new RegExp('http_' + status));
+    assert.equal(m.calls.length, 1); assert.equal(m.posts().length, 0);
   }
 });
 
