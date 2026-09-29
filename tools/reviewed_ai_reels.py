@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release exact user-selected AI Reels; default to read-only validation."""
+"""Release exact selected Reels with batch-specific approval and disclosure."""
 import argparse
 import hashlib
 import json
@@ -22,9 +22,12 @@ except ImportError:
 
 Error = FeedError
 JOB_FIELDS = {'id', 'status', 'account_id', 'publish_at', 'caption', 'video_url', 'video_sha256', 'cover_url', 'cover_sha256', 'is_ai_generated', 'user_selection'}
+OPTIONAL_JOB_FIELDS = {'media_kind', 'first_comment'}
+MEDIA_KINDS = {'real_footage_ai', 'cloned_voice_screen_recording', 'original_recording'}
 SELECTION_FIELDS = {'batch_id', 'id', 'version', 'sha256', 'approved'}
-STATE_FIELDS = {'format', 'mode', 'job_id', 'job_sha256', 'account_id', 'video_sha256', 'selection_sha256', 'phase', 'pending', 'parent_id', 'media_id', 'publish_attempt_at', 'published_at', 'native_ai_requested', 'native_ai_verified', 'prepared_at'}
+STATE_FIELDS = {'format', 'mode', 'job_id', 'job_sha256', 'account_id', 'video_sha256', 'selection_sha256', 'phase', 'pending', 'parent_id', 'media_id', 'publish_attempt_at', 'published_at', 'native_ai_requested', 'native_ai_verified', 'prepared_at', 'comment_id', 'comment_verified'}
 DISCLOSURE = 'AI-assisted dialogue using my own footage and voice.'
+CLONED_VOICE_DISCLOSURE = 'AI voice: my own cloned voice.'
 DISCLOSURE_PROBE_ID = '18091355006159379'
 PREFIX = 'p/automation-state-reviewed-ai-reels'
 BUCKET = 'bulkplaintshirt.com'
@@ -55,8 +58,11 @@ def load_approvals(path):
     if not isinstance(rows, list) or not rows:
         raise Error('The approval receipt has no selections.')
     for row in rows:
-        if not isinstance(row, dict) or set(row) != {'id', 'version', 'sha256', 'public_release_approved'} or row['public_release_approved'] is not True:
+        required = {'id', 'version', 'sha256', 'public_release_approved'}
+        if not isinstance(row, dict) or not required.issubset(row) or set(row) - required - {'media_kind'} or row['public_release_approved'] is not True:
             raise Error('Invalid approved version receipt.')
+        if row.get('media_kind', 'real_footage_ai') not in MEDIA_KINDS:
+            raise Error('Unknown approved media kind.')
         if not isinstance(row['id'], str) or not isinstance(row['version'], str) or not isinstance(row['sha256'], str) or not SHA.fullmatch(row['sha256']):
             raise Error('Invalid approved identifier, version or hash.')
     if len({r['id'] for r in rows}) != len(rows) or len({r['sha256'] for r in rows}) != len(rows):
@@ -64,20 +70,46 @@ def load_approvals(path):
     return receipt
 
 
+def approval_for_job(path, approvals):
+    if 'batch_id' in approvals:
+        return approvals
+    batch = (read_object(path).get('user_selection') or {}).get('batch_id')
+    if batch not in approvals:
+        raise Error('No independent approval receipt for this batch.')
+    return approvals[batch]
+
+
+def load_approval_batches(path, batch_dir):
+    receipts = [load_approvals(path)]
+    receipts += [load_approvals(p) for p in sorted(Path(batch_dir).glob('*.json'))]
+    if len({r['batch_id'] for r in receipts}) != len(receipts):
+        raise Error('Duplicate batch approval receipt.')
+    return {r['batch_id']: r for r in receipts}
+
+
 def load_job(path, approvals):
+    approvals = approval_for_job(path, approvals)
     job = read_object(path)
-    if set(job) != JOB_FIELDS or job.get('status') != 'reviewed' or job.get('is_ai_generated') is not True:
-        raise Error('Use exact reviewed-AI job fields with mandatory boolean is_ai_generated=true.')
+    if not JOB_FIELDS.issubset(job) or set(job) - JOB_FIELDS - OPTIONAL_JOB_FIELDS or job.get('status') != 'reviewed':
+        raise Error('Use the exact reviewed Reel job fields.')
+    kind = job.get('media_kind', 'real_footage_ai')
+    if kind not in MEDIA_KINDS or type(job.get('is_ai_generated')) is not bool or job['is_ai_generated'] is not (kind != 'original_recording'):
+        raise Error('Native AI flag must match the explicitly approved media kind.')
     if not isinstance(job['id'], str) or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,79}', job['id']) or job['account_id'] != ACCOUNT_ID:
         raise Error('Invalid job ID or Instagram account.')
     due = parse_time(job['publish_at'])
     if due <= datetime.fromisoformat(approvals['approved_at']):
         raise Error('Release time must be later than explicit approval.')
     caption = job['caption']
-    if not isinstance(caption, str) or not 1 <= len(caption) <= 2200 or DISCLOSURE not in caption:
-        raise Error('Caption must retain the explicit own-footage AI disclosure and fit Instagram limits.')
-    for kind in ('video', 'cover'):
-        url, sha = job[kind + '_url'], job[kind + '_sha256']
+    required_disclosure = {'real_footage_ai': DISCLOSURE, 'cloned_voice_screen_recording': CLONED_VOICE_DISCLOSURE}.get(kind)
+    if not isinstance(caption, str) or not 1 <= len(caption) <= 2200 or (required_disclosure and required_disclosure not in caption):
+        raise Error('Caption must fit Instagram limits and retain truthful disclosure for this media kind.')
+    if kind == 'cloned_voice_screen_recording' and DISCLOSURE in caption:
+        raise Error('A screen recording must not claim real filmed footage.')
+    if 'first_comment' in job and (not isinstance(job['first_comment'], str) or not 1 <= len(job['first_comment']) <= 2200):
+        raise Error('Invalid reviewed first comment.')
+    for asset_kind in ('video', 'cover'):
+        url, sha = job[asset_kind + '_url'], job[asset_kind + '_sha256']
         if not isinstance(url, str) or not isinstance(sha, str) or not SHA.fullmatch(sha):
             raise Error('Every asset requires an HTTPS URL and exact SHA256.')
         parsed = urlsplit(url)
@@ -88,7 +120,7 @@ def load_job(path, approvals):
         raise Error('Job has no exact user selection.')
     if selection['batch_id'] != approvals['batch_id'] or selection['sha256'] != job['video_sha256']:
         raise Error('Selected batch or video hash changed.')
-    if not any(r['id'] == selection['id'] and r['version'] == selection['version'] and r['sha256'] == selection['sha256'] for r in approvals['videos']):
+    if not any(r['id'] == selection['id'] and r['version'] == selection['version'] and r['sha256'] == selection['sha256'] and r.get('media_kind', 'real_footage_ai') == kind for r in approvals['videos']):
         raise Error('Video ID/version/hash is not in the explicit user-selected receipt.')
     return job
 
@@ -204,9 +236,15 @@ class Instagram:
         return self.request('GET', ACCOUNT_ID, params={'fields': 'id,username'})
 
     def create(self, data):
-        if data.get('is_ai_generated') != 'true':
-            raise Error('Native AI disclosure is mandatory.')
+        if data.get('is_ai_generated') not in ('true', 'false'):
+            raise Error('Explicit approved native AI status is mandatory.')
         return self.request('POST', ACCOUNT_ID + '/media', data=data).get('id')
+
+    def comment(self, media_id, text):
+        return self.request('POST', media_id + '/comments', data={'message': text}).get('id')
+
+    def read_comment(self, comment_id):
+        return self.request('GET', comment_id, params={'fields': 'id,text'})
 
     def status(self, container):
         return self.request('GET', container, params={'fields': 'status_code'}).get('status_code')
@@ -233,7 +271,7 @@ def require_disclosure_route(api):
 def bind_state(state, job, mode):
     binding = {'format': 'reviewed-ai-reel-v1', 'mode': mode, 'job_id': job['id'], 'job_sha256': digest(job), 'account_id': ACCOUNT_ID, 'video_sha256': job['video_sha256'], 'selection_sha256': digest(job['user_selection'])}
     if state is None:
-        return dict(binding, phase='validated', pending=None, native_ai_requested=True, native_ai_verified=False)
+        return dict(binding, phase='validated', pending=None, native_ai_requested=job['is_ai_generated'], native_ai_verified=False)
     if any(state.get(k) != v for k, v in binding.items()) or set(state) - STATE_FIELDS:
         raise Error('Saved release belongs to changed copy, schedule, selection, version or account.')
     if state.get('pending'):
@@ -243,11 +281,19 @@ def bind_state(state, job, mode):
 
 def verify_published(api, job, store, state):
     media = api.media(state['media_id'])
-    if media.get('id') != state['media_id'] or media.get('username') != ACCOUNT_USERNAME or media.get('caption') != job['caption'] or (media.get('owner') or {}).get('id') != ACCOUNT_ID or media.get('is_ai_generated') is not True:
+    if media.get('id') != state['media_id'] or media.get('username') != ACCOUNT_USERNAME or media.get('caption') != job['caption'] or (media.get('owner') or {}).get('id') != ACCOUNT_ID or media.get('is_ai_generated') is not job['is_ai_generated']:
         raise Error('Published media disclosure/identity/caption verification failed. ID is retained; do not republish.')
     state['native_ai_verified'] = True
     state['phase'] = 'published_verified'
     store.save(state)
+    if job.get('first_comment'):
+        comment_id = state.get('comment_id') or record_post(lambda: api.comment(state['media_id'], job['first_comment']), store, state, 'comment')
+        comment = api.read_comment(comment_id)
+        if comment.get('id') != comment_id or comment.get('text') != job['first_comment']:
+            raise Error('Saved first-comment readback differs; retain its ID and do not repeat the POST.')
+        state['comment_verified'] = True
+        state['phase'] = 'published_verified'
+        store.save(state)
     return state
 
 
@@ -264,14 +310,14 @@ def run_job(api, job, store, execute=False, prepare_only=False, clock=utc_now, a
         raise Error('Release is not due; no container or publication before its time.')
     require_account(api)
     assets_check(job)
-    if not prepare_only:
+    if not prepare_only and job['is_ai_generated']:
         require_disclosure_route(api)
     if not execute:
-        return {'dry_run': True, 'job_id': job['id'], 'native_ai_required': True, 'native_ai_route_verified': not prepare_only, 'publish_at': job['publish_at'], 'video_sha256': job['video_sha256']}
+        return {'dry_run': True, 'job_id': job['id'], 'native_ai_required': job['is_ai_generated'], 'native_ai_route_verified': not prepare_only if job['is_ai_generated'] else None, 'publish_at': job['publish_at'], 'video_sha256': job['video_sha256']}
     if state.get('media_id'):
         return verify_published(api, job, store, state)
     store.save(state)
-    body = {'media_type': 'REELS', 'video_url': job['video_url'], 'cover_url': job['cover_url'], 'caption': job['caption'], 'is_ai_generated': 'true', 'share_to_feed': 'true'}
+    body = {'media_type': 'REELS', 'video_url': job['video_url'], 'cover_url': job['cover_url'], 'caption': job['caption'], 'is_ai_generated': str(job['is_ai_generated']).lower(), 'share_to_feed': 'true'}
     parent = state.get('parent_id') or record_post(api.create, store, state, 'parent', body)
     wait_finished(api, parent)
     state['phase'] = 'prepared_native_requested' if prepare_only else 'ready'
@@ -293,22 +339,28 @@ def run_queue(queue, approvals, backend, api_factory=Instagram, execute=False, c
     jobs = [load_job(p, approvals) for p in sorted(Path(queue).glob('*.json'))]
     if len({j['id'] for j in jobs}) != len(jobs) or len({j['video_sha256'] for j in jobs}) != len(jobs):
         raise Error('Duplicate job ID or approved video content in queue.')
-    results = []
+    results, errors = [], []
     for job in sorted(jobs, key=lambda j: parse_time(j['publish_at'])):
-        store = StateStore(Path(queue) / 'state' / (job['video_sha256'] + '.json'), backend)
-        state = bind_state(store.read(), job, 'publish')
-        if not execute or parse_time(job['publish_at']) <= clock():
-            if execute and state.get('native_ai_verified') and state.get('media_id'):
-                results.append({'job_id': job['id'], 'already_verified': True, 'media_id': state['media_id']})
-                continue
-            results.append(run_job(api_factory(), job, store, execute=execute, clock=clock, assets_check=assets_check))
-    return {'results': results, 'queue_count': len(jobs)}
+        try:
+            store = StateStore(Path(queue) / 'state' / (job['video_sha256'] + '.json'), backend)
+            state = bind_state(store.read(), job, 'publish')
+            if not execute or parse_time(job['publish_at']) <= clock():
+                if execute and state.get('native_ai_verified') and state.get('media_id') and (not job.get('first_comment') or state.get('comment_verified')):
+                    results.append({'job_id': job['id'], 'already_verified': True, 'media_id': state['media_id']})
+                    continue
+                result = run_job(api_factory(), job, store, execute=execute, clock=clock, assets_check=assets_check)
+                results.append(dict(result, due_lateness_seconds=max(0, round((clock() - parse_time(job['publish_at'])).total_seconds()))))
+        except Exception as exc:
+            message = str(exc) if isinstance(exc, Error) else type(exc).__name__ + '; response details omitted'
+            errors.append({'job_id': job['id'], 'error': message})
+    return {'results': results, 'errors': errors, 'queue_count': len(jobs)}
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--queue-dir', type=Path, default=Path('reviewed_ai_reels'))
     parser.add_argument('--approvals', type=Path, default=Path('reviewed_ai_releases/approvals.json'))
+    parser.add_argument('--approval-batches', type=Path, default=Path('reviewed_ai_releases/batches'))
     parser.add_argument('--job', type=Path)
     parser.add_argument('--state', type=Path)
     parser.add_argument('--prepare-only', action='store_true')
@@ -326,7 +378,7 @@ def main(argv=None):
     if args.prepare_only and (args.state.resolve().is_relative_to(args.queue_dir.resolve()) or args.state.resolve().is_relative_to(args.job.parent.resolve())):
         parser.error('Prepare state must be outside queue and job directories.')
     try:
-        approvals = load_approvals(args.approvals)
+        approvals = load_approval_batches(args.approvals, args.approval_batches)
         with queue_lock(args.queue_dir):
             if args.job:
                 job = load_job(args.job, approvals)
@@ -339,7 +391,7 @@ def main(argv=None):
             else:
                 result = run_queue(args.queue_dir, approvals, backend_from_environment(), execute=args.execute)
         print(json.dumps(result, indent=2))
-        return 0
+        return 1 if result.get('errors') else 0
     except Exception as exc:
         message = str(exc) if isinstance(exc, Error) else type(exc).__name__ + '; response details omitted'
         print('Reviewed AI Reel stopped: ' + message, file=sys.stderr)

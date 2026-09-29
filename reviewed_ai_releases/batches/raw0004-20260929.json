@@ -1,0 +1,21 @@
+{
+  "batch_id": "raw0004-20260929",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-09-29T10:18:54.107301+05:30",
+  "videos": [
+    {
+      "id": "full-v1",
+      "version": "1",
+      "sha256": "798146deac76003c1f777297047e208a5268e8620ea2e8284642b641eb9de963",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "short02-v1",
+      "version": "1",
+      "sha256": "ae14589ae2357f2736c354ea753f9e891d540eb40f524bd594e6c0fe9fbafef5",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}

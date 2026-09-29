@@ -46,6 +46,9 @@ class FakeAPI:
         self.publish_failure = False
         self.bad_identity = False
         self.finished = 'FINISHED'
+        self.caption = JOB['caption']
+        self.comment_failure = False
+        self.comment_text = None
 
     def identity(self):
         return {'id': 'wrong' if self.bad_identity else r.ACCOUNT_ID, 'username': r.ACCOUNT_USERNAME}
@@ -66,7 +69,17 @@ class FakeAPI:
         return '456'
 
     def media(self, media):
-        return {'id': media, 'username': r.ACCOUNT_USERNAME, 'owner': {'id': r.ACCOUNT_ID}, 'caption': JOB['caption'], 'is_ai_generated': self.probe_label if media == r.DISCLOSURE_PROBE_ID else self.label}
+        return {'id': media, 'username': r.ACCOUNT_USERNAME, 'owner': {'id': r.ACCOUNT_ID}, 'caption': self.caption, 'is_ai_generated': self.probe_label if media == r.DISCLOSURE_PROBE_ID else self.label}
+
+    def comment(self, media_id, text):
+        self.posts.append(('comment', media_id, text))
+        self.comment_text = text
+        if self.comment_failure:
+            raise r.Error('timeout after comment accepted')
+        return '789'
+
+    def read_comment(self, comment_id):
+        return {'id': comment_id, 'text': self.comment_text}
 
 
 class ReviewedReelTests(unittest.TestCase):
@@ -256,6 +269,119 @@ class ReviewedReelTests(unittest.TestCase):
             r.download_checked('https://example.com/file', self.dir/'file', hashlib.sha256(b'abcdef').hexdigest(), 10)
             with self.assertRaises(r.Error): r.download_checked('https://example.com/file', self.dir/'file', '0'*64, 10)
             with self.assertRaises(r.Error): r.download_checked('https://example.com/file', self.dir/'file', hashlib.sha256(b'abcdef').hexdigest(), 5)
+
+    def kind_job(self, kind):
+        job, approval = copy.deepcopy(JOB), copy.deepcopy(APPROVALS)
+        job['media_kind'] = kind
+        job['is_ai_generated'] = kind != 'original_recording'
+        job['caption'] = 'Buyer lesson.' + ('\n' + r.CLONED_VOICE_DISCLOSURE if kind == 'cloned_voice_screen_recording' else '')
+        approval['videos'][0]['media_kind'] = kind
+        return job, approval
+
+    def load_with_approval(self, job, approval):
+        path = self.dir / 'job.json'
+        path.write_text(json.dumps(job))
+        return r.load_job(path, {approval['batch_id']: approval})
+
+    def test_original_requires_independently_approved_kind(self):
+        job, approval = self.kind_job('original_recording')
+        self.assertEqual(self.load_with_approval(job, approval), job)
+        with self.assertRaises(r.Error): self.load_with_approval(job, APPROVALS)
+        job['is_ai_generated'] = True
+        with self.assertRaises(r.Error): self.load_with_approval(job, approval)
+
+    def test_screen_recording_requires_native_ai_and_truthful_disclosure(self):
+        job, approval = self.kind_job('cloned_voice_screen_recording')
+        self.assertEqual(self.load_with_approval(job, approval), job)
+        for caption in ['No disclosure', r.DISCLOSURE, r.CLONED_VOICE_DISCLOSURE + r.DISCLOSURE]:
+            with self.assertRaises(r.Error): self.load_with_approval(dict(job, caption=caption), approval)
+        with self.assertRaises(r.Error): self.load_with_approval(dict(job, is_ai_generated=False), approval)
+
+    def test_approval_batches_leave_legacy_receipt_unchanged(self):
+        original = self.dir / 'approval.json'
+        original.write_text(json.dumps(APPROVALS))
+        batches = self.dir / 'batches'; batches.mkdir()
+        _, approval = self.kind_job('original_recording')
+        approval['batch_id'] = 'new-batch'
+        (batches / 'new.json').write_text(json.dumps(approval))
+        loaded = r.load_approval_batches(original, batches)
+        self.assertEqual(loaded[APPROVALS['batch_id']], APPROVALS)
+        self.assertEqual(len(loaded), 2)
+        (batches / 'duplicate.json').write_text(json.dumps(approval))
+        with self.assertRaises(r.Error): r.load_approval_batches(original, batches)
+
+    def test_original_publish_sends_false_and_requires_false_readback(self):
+        job, _ = self.kind_job('original_recording')
+        self.api.caption, self.api.label, self.api.probe_label = job['caption'], False, None
+        result = self.run_job(job=job)
+        self.assertEqual(self.api.posts[0][1]['is_ai_generated'], 'false')
+        self.assertTrue(result['native_ai_verified'])
+        self.api.label = True
+        with self.assertRaises(r.Error): self.run_job(job=job)
+        self.assertEqual(len(self.api.posts), 2)
+
+    def test_original_first_comment_verified_once(self):
+        job, _ = self.kind_job('original_recording')
+        job['first_comment'] = 'Arrival date or quantity?'
+        self.api.caption, self.api.label = job['caption'], False
+        self.assertTrue(self.run_job(job=job)['comment_verified'])
+        self.assertTrue(self.run_job(job=job)['comment_verified'])
+        self.assertEqual([p[0] for p in self.api.posts], ['create', 'publish', 'comment'])
+
+    def test_ambiguous_first_comment_blocks_duplicate_media_and_comment(self):
+        job, _ = self.kind_job('original_recording')
+        job['first_comment'] = 'Arrival date or quantity?'
+        self.api.caption, self.api.label, self.api.comment_failure = job['caption'], False, True
+        with self.assertRaises(r.Error): self.run_job(job=job)
+        with self.assertRaises(r.Error): self.run_job(job=job)
+        self.assertEqual(self.store.read()['pending'], 'comment')
+        self.assertEqual([p[0] for p in self.api.posts], ['create', 'publish', 'comment'])
+
+    def test_queue_due_time_lateness_and_retry_do_not_duplicate(self):
+        job, approval = self.kind_job('original_recording')
+        (self.dir / 'job.json').write_text(json.dumps(job))
+        self.api.caption, self.api.label = job['caption'], False
+        early = lambda: datetime(2026, 9, 23, 9, 29, tzinfo=timezone.utc)
+        result = r.run_queue(self.dir, approval, self.backend, api_factory=lambda: self.api, execute=True, clock=early, assets_check=lambda j: None)
+        self.assertEqual(result['results'], [])
+        self.assertEqual(self.api.posts, [])
+        kwargs = dict(api_factory=lambda: self.api, execute=True, clock=lambda: NOW, assets_check=lambda j: None)
+        result = r.run_queue(self.dir, approval, self.backend, **kwargs)
+        self.assertEqual(result['results'][0]['due_lateness_seconds'], 1800)
+        self.assertTrue(r.run_queue(self.dir, approval, self.backend, **kwargs)['results'][0]['already_verified'])
+        self.assertEqual([p[0] for p in self.api.posts], ['create', 'publish'])
+
+    def test_blocked_original_comment_does_not_stop_due_legacy_job(self):
+        first, approval = self.kind_job('original_recording')
+        first['first_comment'] = 'Arrival date or quantity?'
+        self.api.caption, self.api.label, self.api.comment_failure = first['caption'], False, True
+        with self.assertRaises(r.Error): self.run_job(job=first)
+        blocked_state = copy.deepcopy(self.store.read())
+        legacy = copy.deepcopy(JOB)
+        legacy.update(id='warehouse-wh08-v1-0', video_sha256='c' * 64, publish_at='2026-09-23T15:01:00+05:30')
+        legacy['user_selection'].update(id='WH08', sha256='c' * 64)
+        approval['videos'].append({'id':'WH08','version':'1.0','sha256':'c' * 64,'public_release_approved':True})
+        queue = self.dir / 'queue'; queue.mkdir()
+        (queue / 'a.json').write_text(json.dumps(first))
+        (queue / 'b.json').write_text(json.dumps(legacy))
+        legacy_api = FakeAPI()
+        params = dict(api_factory=lambda: legacy_api, execute=True, clock=lambda: NOW, assets_check=lambda j: None)
+        result = r.run_queue(queue, approval, self.backend, **params)
+        self.assertEqual(result['errors'][0]['job_id'], first['id'])
+        self.assertIn('comment POST is ambiguous', result['errors'][0]['error'])
+        self.assertEqual(result['results'][0]['job_id'], legacy['id'])
+        self.assertTrue(result['results'][0]['native_ai_verified'])
+        self.assertEqual([p[0] for p in legacy_api.posts], ['create', 'publish'])
+        self.assertEqual(self.store.read(), blocked_state)
+        again = r.run_queue(queue, approval, self.backend, **params)
+        self.assertEqual(len(again['errors']), 1)
+        self.assertTrue(again['results'][0]['already_verified'])
+        self.assertEqual(len(legacy_api.posts), 2)
+        self.assertEqual(self.store.read(), blocked_state)
+
+    def test_queue_errors_make_cli_fail_visibly(self):
+        with patch.object(r, 'load_approval_batches', return_value={}), patch.object(r, 'backend_from_environment', return_value=self.backend), patch.object(r, 'run_queue', return_value={'results':[], 'errors':[{'job_id':'blocked','error':'ambiguous comment'}]}), patch('builtins.print'):
+            self.assertEqual(r.main(['--queue-dir', str(self.dir)]), 1)
 
 
 class S3Tests(unittest.TestCase):

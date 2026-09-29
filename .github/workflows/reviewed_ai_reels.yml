@@ -1,8 +1,11 @@
-name: Reviewed AI Instagram Reels
+name: Reviewed Instagram Reels
 
 on:
   schedule:
     - cron: '30 9 * * *'
+    - cron: '15,45 7,8 * * *'
+    - cron: '0,30 11 * * *'
+    - cron: '30 12 * * *'
   workflow_dispatch:
     inputs:
       mode:

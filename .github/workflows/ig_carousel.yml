@@ -18,6 +18,7 @@ name: IG Carousel Post (next-day lunch auto-publish)
 on:
   schedule:
     - cron: '30 7 * * *'   # 7:30 UTC = 1:00 PM IST every day
+    - cron: '0,30 11 * * *'
   workflow_dispatch:
     inputs:
       verify_only:
@@ -110,7 +111,7 @@ jobs:
           fi
 
       - name: Publish IG carousel
-        if: steps.curated.outputs.handled_today != 'true'
+        if: steps.curated.outputs.handled_today != 'true' && (github.event_name != 'schedule' || github.event.schedule == '30 7 * * *')
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ID: ${{ secrets.INSTAGRAM_BUSINESS_ID }}

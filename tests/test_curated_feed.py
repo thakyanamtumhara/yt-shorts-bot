@@ -338,6 +338,13 @@ class CuratedFeedSafeguards(unittest.TestCase):
         self.assertIn("CURATED_STATE_PREFIX: p/automation-state-ig-curated", workflow)
         self.assertIn("path: feed_queue/state/*.json", workflow)
 
+    def test_afternoon_catchup_preserves_the_daily_fallback_schedule(self):
+        workflow = (Path(__file__).parents[1] / ".github/workflows/ig_carousel.yml").read_text()
+        self.assertIn("cron: '0,30 11 * * *'", workflow)
+        fallback = workflow.split('- name: Publish IG carousel', 1)[1].split('- name:', 1)[0]
+        self.assertIn("steps.curated.outputs.handled_today != 'true'", fallback)
+        self.assertIn("github.event_name != 'schedule' || github.event.schedule == '30 7 * * *'", fallback)
+
     def remote(self):
         s3 = FakeS3()
         return s3, feed.S3StateBackend(s3, "bulkplaintshirt.com", "p/automation-state-ig-curated")

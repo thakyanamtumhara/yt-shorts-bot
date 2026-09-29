@@ -1,0 +1,14 @@
+{
+  "batch_id": "prebook-20260928",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-09-28T18:02:00+05:30",
+  "videos": [
+    {
+      "id": "igreel",
+      "version": "approved-19.1s",
+      "sha256": "c106b94ba35d6f0430be521833a91393a9869b57d101c96f20446b0c6c618ed7",
+      "public_release_approved": true,
+      "media_kind": "cloned_voice_screen_recording"
+    }
+  ]
+}
