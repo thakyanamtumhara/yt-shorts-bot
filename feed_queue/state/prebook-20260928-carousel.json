@@ -4,7 +4,16 @@
   "job_id": "prebook-20260928-carousel",
   "job_sha256": "97fb9e11a123e784a3e623cb7ebfab7949579e68952f0dd765fddebec72c6793",
   "account_id": "17841407981790313",
-  "phase": "validated",
-  "child_ids": [],
-  "pending": null
+  "phase": "published",
+  "child_ids": [
+    "18346991971266060",
+    "18346992196266060",
+    "18346992226266060"
+  ],
+  "pending": null,
+  "parent_id": "18346992250266060",
+  "publish_attempt_at": "2026-09-29T11:34:38.124494+00:00",
+  "media_id": "18190246360404870",
+  "published_at": "2026-09-29T11:34:38.124494+00:00",
+  "permalink": "https://www.instagram.com/p/Dd3qXWul4Kx/"
 }
