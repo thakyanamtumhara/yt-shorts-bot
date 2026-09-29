@@ -3052,5 +3052,19 @@
       "tts_elevenlabs": 0.0191,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-09-29T15:41:08.715268",
+    "topic": "GSM \u0915\u093e \u092e\u0924\u0932\u092c \u0915\u092a\u0921\u093c\u0947 \u0915\u093e \u0935\u091c\u093c\u0928 \u0939\u0948, \u092a\u0942\u0930\u0940 \u091f\u0940-\u0936\u0930\u094d\u091f \u0915\u093e \u0928\u0939\u0940\u0902 \u2014 \u20b9186 vs \u20b9205 Oversize \u092e\u0947\u0902 \u092b\u093c\u0930\u094d\u0915\u093c \u0938\u092e\u091d\u094b",
+    "title": "\u20b9186 vs \u20b9205 Oversize \u2014 GSM \u0915\u093e \u092e\u0924\u0932\u092c \u0938\u092e\u091d\u094b, \u0935\u0930\u0928\u093e \u092b\u093c\u0930\u094d\u0915\u093c \u0928\u0939\u0940\u0902 \u092a\u0915\u0921\u093c\u094b\u0917\u0947",
+    "total_usd": 5.5339,
+    "duration_min": 20.2,
+    "breakdown": {
+      "claude_opus": 0.6203,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0185,
+      "veo_clips": 4.8,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
