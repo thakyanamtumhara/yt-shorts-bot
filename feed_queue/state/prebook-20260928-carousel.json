@@ -1,0 +1,10 @@
+{
+  "format": "curated-feed-v1",
+  "mode": "publish",
+  "job_id": "prebook-20260928-carousel",
+  "job_sha256": "97fb9e11a123e784a3e623cb7ebfab7949579e68952f0dd765fddebec72c6793",
+  "account_id": "17841407981790313",
+  "phase": "validated",
+  "child_ids": [],
+  "pending": null
+}
