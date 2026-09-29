@@ -1,229 +1,247 @@
 {
-  "founder-yt": {
-    "resolved": true,
-    "note": "confirmed by Ketu 20-Aug: posted Wed 19-Aug"
-  },
-  "rakhi2-ig": {
-    "resolved": true,
-    "note": "confirmed 21-Aug: moved to publish_queue/done/"
-  },
-  "rakhi2-yt": {
-    "nudged": true
-  },
-  "rakhi2-x": {
-    "nudged": true
-  },
-  "founder-x": {
-    "nudged": true
-  },
-  "rakhi2-li": {
-    "nudged": true
-  },
-  "founder-ig-main": {
-    "alerted": true
-  },
-  "founder-li": {
-    "nudged": true
-  },
-  "founder-ig-clip1": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DcydVvpEQRN/"
-  },
-  "v18-ig": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DctpEi0lQVP/"
-  },
-  "v18-x": {
-    "nudged": true
-  },
-  "p17-ig-acid": {
-    "alerted": true
-  },
-  "p17-ig-highlight": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dc3mAsVkmbn/"
-  },
-  "wt-ig-announce": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dc6EflLDgFJ/"
-  },
-  "p17-ig-roundneck": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dc8qwaajLaw/"
-  },
-  "v18-ig-c1": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dc_epIhFS1h/"
-  },
-  "v18-li": {
-    "nudged": true
-  },
-  "p17-ig-sublimation": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdB6mZRCCTj/"
-  },
-  "rakhi2-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/880045628305358/"
-  },
-  "founder-fb": {
-    "alerted": true
-  },
-  "founder-ig-clip2": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdEfrPxDtxZ/"
-  },
-  "v18-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1096160086081671/"
-  },
-  "p17-x": {
-    "nudged": true
-  },
-  "p17-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1027897706971163/"
-  },
-  "wt-ig-fits": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdHDYLIDnUm/"
-  },
-  "p17-ig-polo": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdJoFWFCu6p/"
-  },
-  "wt-ig-colours": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdMHC7pkd0N/"
-  },
-  "p17-ig-ovr210": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdOxcc5CPDL/"
-  },
-  "v18-ig-c2": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdRjnirDiMY/"
-  },
-  "p17-li": {
-    "nudged": true
-  },
-  "p17-ig-ovr260": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdT_OEalQTD/"
-  },
-  "v18-ig-c3": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdWjsbxAehA/"
-  },
-  "wt-ig-delay": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdZe6wNjjuH/"
-  },
-  "p17-ig-winter": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdbqFXcABVh/"
-  },
-  "wh26-warehouse-tour-yt": {
-    "nudged": true
-  },
-  "wh26-stock-proof-ig": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdeKwIdEv9E/"
-  },
-  "wh26-buyer-checklist-ig-feed": {
-    "alerted": true,
-    "resolved": true,
-    "url": "https://www.instagram.com/p/Ddgmn-mGMTW/"
-  },
-  "wh26-stock-proof-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1021231754300659/"
-  },
-  "wh26-stock-proof-x": {
-    "nudged": true
-  },
-  "wh26-stock-proof-yt": {
-    "nudged": true
-  },
-  "wh26-buyer-checklist-fb-feed": {
-    "resolved": true,
-    "url": "https://www.facebook.com/1511281017709324/posts/1511280744376018"
-  },
-  "wh26-stock-proof-li": {
-    "nudged": true
-  },
-  "wh26-printing-yt": {
-    "nudged": true
-  },
-  "wh26-printing-ig": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdmATD5AOew/"
-  },
-  "wh26-printing-li": {
-    "nudged": true
-  },
-  "wh26-printing-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1640578897677797/"
-  },
-  "wh26-printing-x": {
-    "nudged": true
-  },
-  "wh26-sample-order-yt": {
-    "nudged": true
-  },
-  "wh26-sample-order-ig": {
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/DdrLNN7gp5p/"
-  },
-  "wh26-sample-order-fb": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1022198904185954/"
-  },
-  "wh26-sample-order-x": {
-    "nudged": true
-  },
-  "wh26-printing-question-ig-feed": {
-    "alerted": true,
-    "resolved": true,
-    "url": "https://www.instagram.com/p/DdwBc_0oFgi/"
-  },
-  "stock20260917-full-yt": {
-    "nudged": true
-  },
-  "wh26-printing-question-fb-feed": {
-    "resolved": true,
-    "url": "https://www.facebook.com/1511281017709324/posts/1511281111042648"
-  },
-  "stock20260917-raw01-yt": {
-    "nudged": true
-  },
-  "stock20260917-raw01-ig": {
-    "alerted": true,
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dd1zMDPjDo3/"
-  },
-  "wh26-sample-order-li": {
-    "nudged": true
-  },
-  "raw0004-20260929-full-v1-youtube": {
-    "nudged": true,
-    "resolved": true,
-    "url": "https://www.youtube.com/watch?v=eQBzxB_fkog"
-  },
-  "raw0004-20260929-full-v1-instagram": {
-    "alerted": true,
-    "resolved": true,
-    "url": "https://www.instagram.com/reel/Dd32iGIERoK/"
-  },
-  "raw0004-20260929-full-v1-x": {
-    "nudged": true
-  },
-  "raw0004-20260929-full-v1-facebook": {
-    "resolved": true,
-    "url": "https://www.facebook.com/reel/1103540692606950/"
-  },
-  "raw0004-20260929-full-v1-linkedin": {
-    "nudged": true
-  }
+ "founder-yt": {
+  "resolved": true,
+  "note": "confirmed by Ketu 20-Aug: posted Wed 19-Aug"
+ },
+ "rakhi2-ig": {
+  "resolved": true,
+  "note": "confirmed 21-Aug: moved to publish_queue/done/"
+ },
+ "rakhi2-yt": {
+  "nudged": true
+ },
+ "rakhi2-x": {
+  "nudged": true
+ },
+ "founder-x": {
+  "nudged": true
+ },
+ "rakhi2-li": {
+  "nudged": true
+ },
+ "founder-ig-main": {
+  "alerted": true
+ },
+ "founder-li": {
+  "nudged": true
+ },
+ "founder-ig-clip1": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DcydVvpEQRN/"
+ },
+ "v18-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DctpEi0lQVP/"
+ },
+ "v18-x": {
+  "nudged": true
+ },
+ "p17-ig-acid": {
+  "alerted": true
+ },
+ "p17-ig-highlight": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dc3mAsVkmbn/"
+ },
+ "wt-ig-announce": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dc6EflLDgFJ/"
+ },
+ "p17-ig-roundneck": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dc8qwaajLaw/"
+ },
+ "v18-ig-c1": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dc_epIhFS1h/"
+ },
+ "v18-li": {
+  "nudged": true
+ },
+ "p17-ig-sublimation": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdB6mZRCCTj/"
+ },
+ "rakhi2-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/880045628305358/"
+ },
+ "founder-fb": {
+  "alerted": true
+ },
+ "founder-ig-clip2": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdEfrPxDtxZ/"
+ },
+ "v18-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1096160086081671/"
+ },
+ "p17-x": {
+  "nudged": true
+ },
+ "p17-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1027897706971163/"
+ },
+ "wt-ig-fits": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdHDYLIDnUm/"
+ },
+ "p17-ig-polo": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdJoFWFCu6p/"
+ },
+ "wt-ig-colours": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdMHC7pkd0N/"
+ },
+ "p17-ig-ovr210": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdOxcc5CPDL/"
+ },
+ "v18-ig-c2": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdRjnirDiMY/"
+ },
+ "p17-li": {
+  "nudged": true
+ },
+ "p17-ig-ovr260": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdT_OEalQTD/"
+ },
+ "v18-ig-c3": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdWjsbxAehA/"
+ },
+ "wt-ig-delay": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdZe6wNjjuH/"
+ },
+ "p17-ig-winter": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdbqFXcABVh/"
+ },
+ "wh26-warehouse-tour-yt": {
+  "nudged": true
+ },
+ "wh26-stock-proof-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdeKwIdEv9E/"
+ },
+ "wh26-buyer-checklist-ig-feed": {
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/p/Ddgmn-mGMTW/"
+ },
+ "wh26-stock-proof-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1021231754300659/"
+ },
+ "wh26-stock-proof-x": {
+  "nudged": true
+ },
+ "wh26-stock-proof-yt": {
+  "nudged": true
+ },
+ "wh26-buyer-checklist-fb-feed": {
+  "resolved": true,
+  "url": "https://www.facebook.com/1511281017709324/posts/1511280744376018"
+ },
+ "wh26-stock-proof-li": {
+  "nudged": true
+ },
+ "wh26-printing-yt": {
+  "nudged": true
+ },
+ "wh26-printing-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdmATD5AOew/"
+ },
+ "wh26-printing-li": {
+  "nudged": true
+ },
+ "wh26-printing-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1640578897677797/"
+ },
+ "wh26-printing-x": {
+  "nudged": true
+ },
+ "wh26-sample-order-yt": {
+  "nudged": true
+ },
+ "wh26-sample-order-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DdrLNN7gp5p/"
+ },
+ "wh26-sample-order-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1022198904185954/"
+ },
+ "wh26-sample-order-x": {
+  "nudged": true
+ },
+ "wh26-printing-question-ig-feed": {
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/p/DdwBc_0oFgi/"
+ },
+ "stock20260917-full-yt": {
+  "nudged": true
+ },
+ "wh26-printing-question-fb-feed": {
+  "resolved": true,
+  "url": "https://www.facebook.com/1511281017709324/posts/1511281111042648"
+ },
+ "stock20260917-raw01-yt": {
+  "nudged": true
+ },
+ "stock20260917-raw01-ig": {
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dd1zMDPjDo3/"
+ },
+ "wh26-sample-order-li": {
+  "nudged": true
+ },
+ "raw0004-20260929-full-v1-youtube": {
+  "nudged": true,
+  "resolved": true,
+  "url": "https://www.youtube.com/watch?v=eQBzxB_fkog"
+ },
+ "raw0004-20260929-full-v1-instagram": {
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dd32iGIERoK/"
+ },
+ "raw0004-20260929-full-v1-x": {
+  "nudged": true
+ },
+ "raw0004-20260929-full-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1103540692606950/"
+ },
+ "raw0004-20260929-full-v1-linkedin": {
+  "nudged": true
+ },
+ "wh26-delivery-yt": {
+  "nudged": true
+ },
+ "wh26-delivery-ig": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dd4MiFgjGn4/"
+ },
+ "stock20260917-raw01-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1759304475318997/"
+ },
+ "stock20260917-raw01-x": {
+  "nudged": true
+ },
+ "prebook-20260928-carousel-ig-feed": {
+  "resolved": true,
+  "url": "https://www.instagram.com/p/Dd3qXWul4Kx/"
+ }
 }
