@@ -179,6 +179,10 @@
   "eQBzxB_fkog": {
    "title": "PRE-BOOK Kaise Kaam Karta Hai? + DTF Website Option Ka Update | sale91.com",
    "published": "2026-09-29T07:30:39+00:00"
+  },
+  "xdOMbGow7lg": {
+   "title": "Delhi se T-Shirt Delivery Kaise Hoti Hai? | Train, Bus, Courier",
+   "published": "2026-09-29T12:30:29+00:00"
   }
  },
  "instagram": {
@@ -633,6 +637,22 @@
   "18110444644881119": {
    "permalink": "https://www.instagram.com/reel/Dd1zMDPjDo3/",
    "ts": "2026-09-28T18:12:41+0000"
+  },
+  "18129452806698065": {
+   "permalink": "https://www.instagram.com/reel/Dd4MiFgjGn4/",
+   "ts": "2026-09-29T16:32:45+0000"
+  },
+  "18015218069957330": {
+   "permalink": "https://www.instagram.com/reel/Dd4GkTWjGdM/",
+   "ts": "2026-09-29T15:40:37+0000"
+  },
+  "17903468766570228": {
+   "permalink": "https://www.instagram.com/reel/Dd32iGIERoK/",
+   "ts": "2026-09-29T13:20:41+0000"
+  },
+  "18190246360404870": {
+   "permalink": "https://www.instagram.com/p/Dd3qXWul4Kx/",
+   "ts": "2026-09-29T11:34:39+0000"
   }
  },
  "facebook": {
@@ -670,7 +690,19 @@
   },
   "28882650314661940": {
    "queued_at": "2026-09-29 15:41",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-09-30T00:36:41+05:30",
+   "permalink": "https://www.facebook.com/reel/28882650314661940"
   }
  },
  "history": [
@@ -1268,8 +1300,13 @@
    "at": "2026-09-29T16:36:12+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-09-30T00:36:42+05:30",
+   "alerts": 0,
+   "new": 5
   }
  ],
- "last_green_date": "2026-09-29",
- "last_run_ist": "2026-09-29T16:36:12+05:30"
+ "last_green_date": "2026-09-30",
+ "last_run_ist": "2026-09-30T00:36:42+05:30"
 }
