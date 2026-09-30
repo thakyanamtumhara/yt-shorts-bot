@@ -263,5 +263,12 @@
  },
  "raw0004-20260929-short02-v1-linkedin": {
   "nudged": true
+ },
+ "wh26-delivery-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1559872795442145/"
+ },
+ "wh26-delivery-x": {
+  "nudged": true
  }
 }
