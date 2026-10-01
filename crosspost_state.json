@@ -270,5 +270,14 @@
  },
  "wh26-delivery-x": {
   "nudged": true
+ },
+ "wh26-delivery-li": {
+  "nudged": true
+ },
+ "stock20260917-raw02-yt": {
+  "nudged": true
+ },
+ "stock20260917-raw02-ig": {
+  "alerted": true
  }
 }
