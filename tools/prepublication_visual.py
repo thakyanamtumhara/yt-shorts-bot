@@ -242,11 +242,24 @@ def assess_final_visuals(video_path, manifest, *, report_dir):
                        'generation_config': {'max_output_tokens': 12000}}
             if len(json.dumps(payload).encode()) > MAX_REQUEST_BYTES:
                 raise VisualReviewError('Complete visual review request exceeds the bounded inline size; no quality approval.')
-            response = requests.post('https://generativelanguage.googleapis.com/v1beta/interactions',
-                headers={'x-goog-api-key': os.environ['GOOGLE_API_KEY']}, json=payload,
-                timeout=240, allow_redirects=False)
+            # One repeat of the same request when the provider times out or is briefly unavailable
+            # (1-Oct-2026: a 240s ReadTimeout discarded an otherwise finished video). The verdict
+            # rules are unchanged and there is never a different model.
+            for attempt in (1, 2):
+                report['provider_attempts'] = attempt
+                try:
+                    response = requests.post('https://generativelanguage.googleapis.com/v1beta/interactions',
+                        headers={'x-goog-api-key': os.environ['GOOGLE_API_KEY']}, json=payload,
+                        timeout=420, allow_redirects=False)
+                except (requests.Timeout, requests.ConnectionError):
+                    if attempt == 2:
+                        raise
+                    continue
+                if response.status_code in (429, 500, 502, 503, 504) and attempt == 1:
+                    continue
+                break
             if response.status_code != 200:
-                raise VisualReviewError(f'Final visual review failed (HTTP {response.status_code}); no retry or model fallback.')
+                raise VisualReviewError(f'Final visual review failed (HTTP {response.status_code}) after one retry; no model fallback.')
             provider = response.json()
             if provider.get('status') != 'completed':
                 raise VisualReviewError('Final visual review did not complete; no quality approval.')

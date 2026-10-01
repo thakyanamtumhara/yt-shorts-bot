@@ -146,7 +146,7 @@ class VisualProviderAndGateTest(unittest.TestCase):
                 else:
                     result = visual.assess_final_visuals('final.mp4', source, report_dir=folder)
                 payload = post.call_args.kwargs['json']
-                self.assertEqual(post.call_count, 1)
+                self.assertEqual(post.call_count, 2 if http in (429, 500, 502, 503, 504) else 1)
             self.assertNotIn('do-not-copy', (folder / 'visual-assessment.json').read_text())
         return result, payload
 
@@ -175,6 +175,34 @@ class VisualProviderAndGateTest(unittest.TestCase):
                        {'value': {**assessment(), 'verdict': 'uncertain', 'uncertain': True}}):
             result, _ = self.review(**kwargs)
             self.assertFalse(result['passed'])
+
+    def test_one_timeout_is_retried_with_the_same_request_and_model(self):
+        import requests
+        good = Mock(status_code=200)
+        good.json.return_value = {'status': 'completed', 'steps': [
+            {'type': 'model_output', 'content': [{'type': 'text', 'text': json.dumps(assessment())}]}]}
+        for side_effect, passed in (([requests.ReadTimeout('slow'), good], True),
+                                    ([requests.ReadTimeout('slow'), requests.ReadTimeout('slow')], None)):
+            with self.subTest(passed=passed), TemporaryDirectory() as directory:
+                folder = Path(directory)
+                proxy = folder / 'proxy.mp4'; proxy.write_bytes(b'complete-video-with-audio')
+                still = folder / 'cover.jpg'; still.write_bytes(b'actual-rendered-cover')
+                media = {'duration_seconds': 4, 'video_sha256': 'a' * 64, 'segments_requested': SEGMENTS}
+                with patch.object(visual, 'prepare_visual_input', return_value=(proxy, [{'path': still, 'at_seconds': 0.25}], media)), \
+                        patch.dict('os.environ', {'GOOGLE_API_KEY': 'do-not-copy'}), \
+                        patch.object(visual.requests, 'post', side_effect=side_effect) as post:
+                    if passed:
+                        self.assertTrue(visual.assess_final_visuals('final.mp4', manifest(), report_dir=folder)['passed'])
+                    else:
+                        with self.assertRaises(visual.VisualReviewError):
+                            visual.assess_final_visuals('final.mp4', manifest(), report_dir=folder)
+                    self.assertEqual(post.call_count, 2)
+                    self.assertEqual(post.call_args_list[0].kwargs['json'], post.call_args_list[1].kwargs['json'])
+                    self.assertEqual(post.call_args.kwargs['timeout'], 420)
+                saved = json.loads((folder / 'visual-assessment.json').read_text())
+                self.assertEqual(saved['provider_attempts'], 2)
+                if not passed:
+                    self.assertEqual((saved['state'], saved['error']), ('review_error', 'ReadTimeout'))
 
     def test_gate_records_pass_failure_and_provider_error_flags(self):
         for passed in (True, False, 'error'):
