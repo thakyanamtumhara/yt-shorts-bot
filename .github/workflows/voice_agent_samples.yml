@@ -1,0 +1,147 @@
+name: Voice agent samples (Digital Ketu)
+
+# Manual only. Speaks the same Digital Ketu lines with each candidate voice so Ketu can
+# compare them by ear: his ElevenLabs PVC clone on three models, OpenAI voices and Sarvam
+# voices. Records time-to-first-audio per line. Keys stay in GitHub secrets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lines_json:
+        description: 'Optional JSON array of lines to speak (default: built-in Digital Ketu lines)'
+        required: false
+        default: ''
+
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Generate samples
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
+          LINES_JSON: ${{ inputs.lines_json }}
+        run: |
+          pip install -q requests
+          python3 - << 'PY'
+          import base64, json, os, subprocess, time
+          import requests
+
+          lines = [
+            "हाँ जी, नमस्ते! बताइए क्या चाहिए — plain t-shirt, oversize, या hoodie?",
+            "Acid wash black अभी out of stock है sir, तीन October को आ रहा है। Website पे अभी pre-book कर सकते हैं।",
+            "Premium polo black XL अभी खत्म है। तब तक एक size बड़ा, XXL ले सकते हैं, वो available है।",
+            "Round neck 180 GSM में तीन variety हैं — Non-Bio एक सौ सात रुपये, Bio एक सौ पचास, और True Bio एक सौ अट्ठावन। दस piece से ऊपर यही rate लगता है।",
+            "Yes sir, we have plain hoodies in 320 and 430 GSM. Order one sample first and check the fabric yourself.",
+            "कोई दिक्कत नहीं sir। और कुछ पूछना हो तो बेझिझक बोलिए।",
+          ]
+          if os.environ.get("LINES_JSON", "").strip():
+            lines = json.loads(os.environ["LINES_JSON"])
+
+          os.makedirs("samples", exist_ok=True)
+          os.makedirs("per_voice", exist_ok=True)
+          manifest = []
+
+          def timed_stream(url, headers, body, out_path):
+            started = time.time()
+            first = None
+            size = 0
+            with requests.post(url, headers=headers, json=body, stream=True, timeout=120) as r:
+              if r.status_code >= 400:
+                return {"error": f"HTTP {r.status_code}: {r.text[:300]}"}
+              with open(out_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=4096):
+                  if chunk:
+                    if first is None:
+                      first = time.time()
+                    size += len(chunk)
+                    f.write(chunk)
+            return {"ttfa_ms": round(((first or time.time()) - started) * 1000), "total_ms": round((time.time() - started) * 1000), "bytes": size}
+
+          XI = os.environ.get("ELEVENLABS_API_KEY", "")
+          OA = os.environ.get("OPENAI_API_KEY", "")
+          SV = os.environ.get("SARVAM_API_KEY", "")
+          KETU_VOICE = "cejtKjfE9sHUZ1FnUYEV"
+          XI_SETTINGS = {"stability": 0.50, "similarity_boost": 0.75, "style": 0.00, "use_speaker_boost": True}
+          SHOPKEEPER = ("Speak as a warm, confident Delhi wholesale T-shirt shop owner on a phone call. "
+                        "Natural Hinglish: Hindi words with Hindi pronunciation, English product words in Indian English. "
+                        "Conversational pace, friendly, no announcer tone.")
+
+          configs = []
+          for model in ["eleven_v3", "eleven_flash_v2_5", "eleven_multilingual_v2"]:
+            configs.append(("elevenlabs", model, "ketu-pvc"))
+          for voice in ["marin", "cedar", "ash"]:
+            configs.append(("openai", "gpt-4o-mini-tts", voice))
+          for voice in ["amit", "abhilash"]:
+            configs.append(("sarvam", "bulbul:v3", voice))
+
+          for provider, model, voice in configs:
+            files = []
+            for i, text in enumerate(lines, 1):
+              name = f"{provider}__{model.replace(':', '-')}__{voice}__{i}.mp3"
+              path = os.path.join("samples", name)
+              rec = {"provider": provider, "model": model, "voice": voice, "line": i, "text": text, "file": name}
+              try:
+                if provider == "elevenlabs":
+                  if not XI: raise RuntimeError("ELEVENLABS_API_KEY missing")
+                  res = timed_stream(f"https://api.elevenlabs.io/v1/text-to-speech/{KETU_VOICE}/stream?output_format=mp3_44100_128",
+                                     {"xi-api-key": XI, "Content-Type": "application/json"},
+                                     {"text": text, "model_id": model, "voice_settings": XI_SETTINGS}, path)
+                elif provider == "openai":
+                  if not OA: raise RuntimeError("OPENAI_API_KEY missing")
+                  res = timed_stream("https://api.openai.com/v1/audio/speech",
+                                     {"Authorization": f"Bearer {OA}", "Content-Type": "application/json"},
+                                     {"model": model, "voice": voice, "input": text, "instructions": SHOPKEEPER, "response_format": "mp3"}, path)
+                else:
+                  if not SV: raise RuntimeError("SARVAM_API_KEY missing")
+                  started = time.time()
+                  r = requests.post("https://api.sarvam.ai/text-to-speech",
+                                    headers={"api-subscription-key": SV, "Content-Type": "application/json"},
+                                    json={"text": text, "target_language_code": "hi-IN", "speaker": voice, "model": model,
+                                          "speech_sample_rate": 24000, "pace": 1.0, "temperature": 0.7}, timeout=90)
+                  if r.status_code >= 400:
+                    res = {"error": f"HTTP {r.status_code}: {r.text[:300]}"}
+                  else:
+                    wav = path.replace(".mp3", ".wav")
+                    with open(wav, "wb") as f:
+                      f.write(base64.b64decode(r.json()["audios"][0]))
+                    subprocess.run(["ffmpeg", "-y", "-i", wav, "-codec:a", "libmp3lame", "-q:a", "2", path], check=True, capture_output=True)
+                    os.remove(wav)
+                    res = {"ttfa_ms": round((time.time() - started) * 1000), "total_ms": round((time.time() - started) * 1000), "bytes": os.path.getsize(path), "note": "non-streaming request"}
+              except Exception as e:
+                res = {"error": str(e)[:300]}
+              rec.update(res)
+              manifest.append(rec)
+              print(json.dumps({k: rec[k] for k in rec if k != "text"}, ensure_ascii=False))
+              if "error" not in res:
+                files.append(path)
+            if files:
+              out = f"per_voice/{provider}__{model.replace(':', '-')}__{voice}.mp3"
+              cmd = ["ffmpeg", "-y"]
+              for p in files:
+                cmd += ["-i", p]
+              chains = "".join(f"[{n}:a]aresample=44100,aformat=channel_layouts=mono,apad=pad_dur=0.7[a{n}];" for n in range(len(files)))
+              joined = "".join(f"[a{n}]" for n in range(len(files)))
+              cmd += ["-filter_complex", f"{chains}{joined}concat=n={len(files)}:v=0:a=1[out]", "-map", "[out]", "-codec:a", "libmp3lame", "-q:a", "2", out]
+              subprocess.run(cmd, check=True, capture_output=True)
+
+          with open("manifest.json", "w") as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=1)
+          ok = sum(1 for m in manifest if "error" not in m)
+          print(f"done: {ok}/{len(manifest)} samples")
+          PY
+
+      - name: Upload samples
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-agent-samples
+          path: |
+            samples/
+            per_voice/
+            manifest.json
+          retention-days: 1
