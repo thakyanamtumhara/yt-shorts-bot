@@ -198,7 +198,12 @@ def validate_brief(brief, bank, history=()):
     shortcut = unsupported_shortcut(' '.join(brief[key] for key in ('topic', 'lesson', 'buyer_decision')))
     if shortcut:
         raise TopicHold(shortcut)
-    return {**brief, 'evidence': {key: bank['facts'][key] for key in ids}}
+    from tools.current_rates import allowed_amounts, unsupported_amounts
+    evidence = {key: bank['facts'][key] for key in ids}
+    text = ' '.join(brief[key] for key in ('topic', 'buyer_question', 'lesson', 'buyer_decision'))
+    if unsupported_amounts(text, allowed_amounts(evidence)):
+        raise TopicHold('Topic quotes a rupee amount that is not an exact cited website rate.')
+    return {**brief, 'evidence': evidence}
 
 
 def review_result(value):

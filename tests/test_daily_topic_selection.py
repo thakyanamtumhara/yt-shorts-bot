@@ -520,6 +520,19 @@ class LiveRateFactTest(unittest.TestCase):
         self.assertIn('ALLOWED RUPEE AMOUNTS (exact; anything else is rejected): ₹24, ₹107, ₹131', prompt)
         self.assertNotIn('ALLOWED RUPEE AMOUNTS', evidence_prompt(SelectedTopic(brief())))
 
+    def test_topic_ideas_may_quote_only_exact_cited_rates(self):
+        from tools.daily_topic_selection import install_live_facts
+        fact = {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}
+        install_live_facts({'rate_non_bio_rneck': fact})
+        lesson = dict(brief(), topic='Under 10 pieces costs ₹24 more per Non Bio tee', intent_key='sample_vs_bulk_rate',
+                      fact_ids=['rate_non_bio_rneck'])
+        self.assertEqual(validate_brief(lesson, load_bank(), [])['evidence']['rate_non_bio_rneck'], fact)
+        for wrong in ('Under 10 pieces costs ₹30-40 more', 'Non Bio ₹99 vs ₹150'):
+            with self.subTest(topic=wrong), self.assertRaises(TopicHold):
+                validate_brief(dict(lesson, topic=wrong), load_bank(), [])
+        with self.assertRaises(TopicHold):
+            validate_brief(dict(brief(), topic='Biowash at ₹150'), load_bank(), [])
+
     def test_only_complete_rate_facts_can_be_added_at_run_time(self):
         from tools.daily_topic_selection import install_live_facts
         fact = {'claim': 'BulkPlainTshirt.com live rate list checked on 28-Sep-2026: Non Bio Rneck (Non Bio Round neck, 180gsm, 88% Cotton, 12% Polyester). 10 or more pieces: ₹107 per piece for sizes 36, 38. Fewer than 10 pieces: ₹131 per piece. Rates exclude 5% GST and delivery.', 'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list', 'checked_on': '28-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [107, 131]}
