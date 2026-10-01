@@ -1,0 +1,11 @@
+[
+ {
+  "date": "2026-10-01",
+  "topic": "T-Shirt के हेम में दो लाइन दिखें — वो कौन सी सिलाई है और क्यों?",
+  "intent_key": "coverseam_hem_vs_overedge_stitch_jobs",
+  "fact_ids": [
+   "stitch_construction_jobs"
+  ],
+  "reason": "The Short explains the 406 coverseam stitch on T-shirt hems. However, the visual used between 14s and 20s to demonstrate coverseam stretch shows two applied braided trims or heavy decorative cords rather than an authentic 406 coverseam structure."
+ }
+]

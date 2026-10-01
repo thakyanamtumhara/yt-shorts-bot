@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,9 @@ import unicodedata
 
 
 BANK_PATH = Path(__file__).resolve().parents[1] / 'daily_topic_lessons.json'
+VISUAL_HOLDS_PATH = BANK_PATH.parent / 'visual_holds.json'
+VISUAL_HOLD_DAYS = 21
+IST = timezone(timedelta(hours=5, minutes=30))
 DIMENSIONS = {'buyer_interest', 'freshness', 'learning_value', 'shareability'}
 LIVE_FACTS = {}
 
@@ -228,7 +232,53 @@ def review_result(value):
     return total, value['feedback']
 
 
-def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max_candidates=5):
+def load_visual_holds(path=None, today=None):
+    """Lessons whose AI visuals failed the technical review recently (AI video could not draw them)."""
+    try:
+        entries = json.loads(Path(path or VISUAL_HOLDS_PATH).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return []
+    today = today or datetime.now(IST).date()
+    active = []
+    for entry in entries if isinstance(entries, list) else []:
+        try:
+            age = (today - datetime.strptime(entry['date'], '%Y-%m-%d').date()).days
+        except (KeyError, TypeError, ValueError):
+            continue
+        if 0 <= age < VISUAL_HOLD_DAYS:
+            active.append(entry)
+    return active
+
+
+def visual_hold_reason(brief, holds):
+    facts = {key for key in brief.get('fact_ids') or [] if not key.startswith('rate_')}
+    for entry in holds:
+        if facts & set(entry.get('fact_ids') or []) or normalized(brief.get('intent_key', '')) == normalized(entry.get('intent_key', '')):
+            return f"Visuals for this lesson failed the technical review on {entry['date']}; held for {VISUAL_HOLD_DAYS} days."
+    return None
+
+
+def record_visual_hold(brief, report, path=None, today=None):
+    """Hold a lesson only after a completed visual verdict found the technical demonstration wrong."""
+    assessment = (report or {}).get('assessment') or {}
+    if not isinstance(brief, dict) or (report or {}).get('state') != 'fail' \
+            or assessment.get('technical_visuals_match_facts') is not False:
+        return False
+    path = Path(path or VISUAL_HOLDS_PATH)
+    try:
+        entries = json.loads(path.read_text(encoding='utf-8'))
+        entries = entries if isinstance(entries, list) else []
+    except (OSError, ValueError):
+        entries = []
+    entries.append({'date': (today or datetime.now(IST).date()).isoformat(),
+                    'topic': str(brief.get('topic', ''))[:200], 'intent_key': str(brief.get('intent_key', ''))[:120],
+                    'fact_ids': [key for key in brief.get('fact_ids') or [] if not key.startswith('rate_')],
+                    'reason': str(assessment.get('summary') or '')[:300]})
+    path.write_text(json.dumps(entries[-60:], ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    return True
+
+
+def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max_candidates=5, holds=()):
     pending = []
     seen = set()
     for raw in candidates:
@@ -236,6 +286,10 @@ def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max
             brief = validate_brief(raw, bank, history)
         except TopicHold as error:
             print(f'   Topic excluded: {error}')
+            continue
+        held = visual_hold_reason(brief, holds)
+        if held:
+            print(f'   Topic excluded: {held}')
             continue
         key = normalized(brief['intent_key'])
         if key in seen:

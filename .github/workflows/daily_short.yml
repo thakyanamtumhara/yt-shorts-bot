@@ -249,6 +249,7 @@ jobs:
           git add voice_vocab.json || true
           git add learned_pronunciations.json || true
           git add urgent_actions.json || true
+          git add visual_holds.json || true
           git commit -m "Update tracking files (topic + cost + engagement + clips + source insights + blog + IG + reddit) [skip ci]" || true
           # Parallel sessions push to main while this job runs (verified 15-Aug: run
           # 31858435175 lost the race and the whole job went red). --autostash is

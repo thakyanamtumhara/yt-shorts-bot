@@ -543,5 +543,35 @@ class LiveRateFactTest(unittest.TestCase):
         self.assertNotIn('rate_x', load_bank()['facts'])
 
 
+
+class VisualHoldTest(unittest.TestCase):
+    def test_only_a_completed_wrong_technical_visual_verdict_holds_the_lesson(self):
+        from datetime import date
+        from tools.daily_topic_selection import load_visual_holds, record_visual_hold
+        lesson = dict(brief(), fact_ids=['stitch_construction_jobs', 'rate_bio_rneck'], intent_key='coverseam_hem')
+        wrong = {'state': 'fail', 'assessment': {'technical_visuals_match_facts': False, 'summary': 'braided cords, not a coverseam'}}
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'visual_holds.json'
+            for report in ({'state': 'review_error', 'error': 'ReadTimeout'},
+                           {'state': 'caption_timing_unverified', 'assessment': {'technical_visuals_match_facts': True}},
+                           {'state': 'fail', 'assessment': {'technical_visuals_match_facts': True}}):
+                self.assertFalse(record_visual_hold(lesson, report, path, date(2026, 10, 1)))
+            self.assertFalse(path.exists())
+            self.assertTrue(record_visual_hold(lesson, wrong, path, date(2026, 10, 1)))
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved[0]['fact_ids'], ['stitch_construction_jobs'])
+            self.assertEqual(len(load_visual_holds(path, date(2026, 10, 21))), 1)
+            self.assertEqual(load_visual_holds(path, date(2026, 10, 22)), [])
+
+    def test_held_fact_or_intent_is_skipped_but_price_facts_are_never_held(self):
+        from tools.daily_topic_selection import visual_hold_reason
+        holds = [{'date': '2026-10-01', 'fact_ids': ['stitch_construction_jobs'], 'intent_key': 'coverseam_hem'}]
+        self.assertIsNotNone(visual_hold_reason({'fact_ids': ['stitch_construction_jobs'], 'intent_key': 'new_words'}, holds))
+        self.assertIsNotNone(visual_hold_reason({'fact_ids': ['other'], 'intent_key': 'Coverseam_Hem'}, holds))
+        self.assertIsNone(visual_hold_reason({'fact_ids': ['rate_bio_rneck'], 'intent_key': 'sample_vs_bulk'},
+                                             [{'date': '2026-10-01', 'fact_ids': [], 'intent_key': 'x'}]))
+        self.assertIsNone(visual_hold_reason({'fact_ids': ['knit_loop_stretch'], 'intent_key': 'stretch'}, holds))
+
+
 if __name__ == '__main__':
     unittest.main()

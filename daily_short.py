@@ -7731,8 +7731,20 @@ def _rate_amounts(topic=None):
     return allowed_amounts(facts or CITED_RATE_FACTS)
 
 
+def _hold_failed_visual_topic(topic):
+    """A lesson whose AI footage drew the wrong construction is skipped for a while, not re-rendered daily."""
+    from tools.daily_topic_selection import record_visual_hold
+    try:
+        with open(f"{WORK_DIR}/visual-assessment.json", encoding="utf-8") as f:
+            report = json.load(f)
+        if record_visual_hold(getattr(topic, "brief", None), report):
+            print("   ⏸️ Topic held for 21 days: its AI visuals failed the technical review")
+    except Exception as error:
+        print(f"   ⚠️ Visual hold not recorded ({type(error).__name__})")
+
+
 def smart_pick_topic(claude_client, topic_bank, topic_history):
-    from tools.daily_topic_selection import load_bank, choose_topic
+    from tools.daily_topic_selection import load_bank, choose_topic, load_visual_holds
     _install_live_rates()
     bank = load_bank()
     candidates = search_trending_topics(claude_client, topic_history)
@@ -7742,7 +7754,7 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
         candidates, bank=bank, history=topic_history,
         review=lambda brief: review_topic(claude_client, brief, topic_history),
         viable=lambda title: True,
-        min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES)
+        min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES, holds=load_visual_holds())
     flag("topic_lesson", topic.brief)
     flag("topic_approved", True)
     CITED_RATE_FACTS.clear()
@@ -13478,8 +13490,12 @@ def main():
     if not TEST_MODE:
         from tools.prepublication_audio import require_native_audio_review
         flag('native_audio_review', require_native_audio_review(output_path, review_path))
-        from tools.prepublication_visual import require_native_visual_review
-        flag('native_visual_review', require_native_visual_review(output_path, review_path))
+        from tools.prepublication_visual import VisualReviewError, require_native_visual_review
+        try:
+            flag('native_visual_review', require_native_visual_review(output_path, review_path))
+        except VisualReviewError:
+            _hold_failed_visual_topic(fresh_topic)
+            raise
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
