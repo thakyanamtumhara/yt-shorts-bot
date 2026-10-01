@@ -22,7 +22,7 @@ def main(argv=None):
     import anthropic
     import daily_short
     from tools.daily_topic_selection import (
-        TopicHold, choose_topic, load_bank, load_topic_history, validate_brief,
+        TopicHold, choose_topic, load_bank, load_topic_history, load_visual_holds, validate_brief,
         response_json, safe_failure_details,
     )
 
@@ -68,7 +68,7 @@ def main(argv=None):
             generated + remaining, bank=bank, history=history,
             review=lambda brief: daily_short.review_topic(api, brief, history),
             viable=lambda title: True, min_score=daily_short.TOPIC_MIN_SCORE,
-            max_candidates=args.max_reviews)
+            max_candidates=args.max_reviews, holds=load_visual_holds())
     except TopicHold as error:
         print(json.dumps({'approved': False, 'reason': str(error)}))
         return 1
