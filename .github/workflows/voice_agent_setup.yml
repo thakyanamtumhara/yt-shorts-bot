@@ -25,6 +25,10 @@ on:
         description: 'Run simulated buyer chats after setup (yes/no)'
         required: false
         default: 'yes'
+      sim_questions:
+        description: 'Buyer questions for the simulated chats, separated by ||'
+        required: false
+        default: ''
 
 jobs:
   setup:
@@ -40,6 +44,7 @@ jobs:
           PUBKEY_B64: ${{ inputs.pubkey_b64 }}
           LLM_FALLBACKS: ${{ inputs.llm_fallbacks }}
           SIMULATE: ${{ inputs.simulate }}
+          SIM_QUESTIONS: ${{ inputs.sim_questions }}
         run: |
           pip install -q requests
           python3 - << 'PY'
@@ -117,11 +122,13 @@ jobs:
           print("ENCRYPTED_RESULT:" + base64.b64encode(enc).decode())
 
           if os.environ.get("SIMULATE", "yes") == "yes":
-            buyer = ("You are a Delhi shop owner who buys plain T-shirts. Speak short Hinglish. Ask only your first question, "
-                     "reply once to the answer with a short thanks, then stop.")
-            for first in ["Bhai acid wash black XL milega?", "Premium polo ka rate kya hai, 50 piece lene hain", "Mera order abhi tak nahi aaya, refund chahiye"]:
+            questions = [x.strip() for x in os.environ.get("SIM_QUESTIONS", "").split("||") if x.strip()] or [
+              "Bhai acid wash black XL milega?", "Premium polo ka rate kya hai, 50 piece lene hain", "Mera order abhi tak nahi aaya, refund chahiye"]
+            for first in questions:
+              buyer = (f"You are a Delhi shop owner calling a plain T-shirt wholesaler. When the agent greets you, say exactly: \"{first}\" "
+                       "After the agent answers, reply once with a short thanks in Hinglish, then stop.")
               r = requests.post(f"{B}/agents/{agent_id}/simulate-conversation", headers=H, timeout=240, json={
-                "simulation_specification": {"simulated_user_config": {"first_message": first, "language": "hi", "prompt": {"prompt": buyer}}},
+                "simulation_specification": {"simulated_user_config": {"language": "hi", "prompt": {"prompt": buyer}}},
                 "new_turns_limit": 4})
               print("\n=== SIMULATION:", first)
               if not r.ok:
