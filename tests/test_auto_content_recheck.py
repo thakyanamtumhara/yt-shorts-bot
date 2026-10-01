@@ -25,6 +25,13 @@ class RecheckTests(unittest.TestCase):
         self.assertIsNone(check.latest_today([run(23), run(inputs={'test_mode': True})], NOW))
         self.assertEqual(check.latest_today([run(23), run()], NOW)['created_at'], run()['created_at'])
 
+    def test_labelled_tests_and_cancelled_duplicates_are_not_todays_run(self):
+        self.assertIsNone(check.latest_today([run(display_title='Daily YouTube Short (test)')], NOW))
+        real = run(id=1, display_title='Daily YouTube Short', conclusion='success')
+        duplicate = run(id=2, display_title='Daily YouTube Short', conclusion='cancelled',
+                        created_at='2026-09-24T23:30:00+05:30')
+        self.assertEqual(check.latest_today([real, duplicate], NOW)['id'], 1)
+
     @patch.object(audit, 'github_json', return_value={'workflow_runs': []})
     def test_missing_after_deadline_is_issue_but_morning_is_not_due(self, api):
         self.assertEqual(check.daily_check(NOW)['state'], 'issue')

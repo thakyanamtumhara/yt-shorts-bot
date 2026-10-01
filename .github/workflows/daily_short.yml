@@ -1,4 +1,5 @@
 name: Daily YouTube Short
+run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_test || inputs.test_thumbnail) && 'Daily YouTube Short (test)' || 'Daily YouTube Short' }}
 
 on:
   schedule:
@@ -70,10 +71,28 @@ jobs:
     permissions:
       contents: write
       issues: write
+      actions: write
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
+      # GitHub has started this cron 3-11 hours late since 27-Aug-2026, so the day's Short is
+      # sometimes started by hand. A late scheduled run must not publish a second one.
+      - name: Skip a duplicate scheduled run
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          today=$(TZ=Asia/Kolkata date +%F)
+          done_today=$(gh run list -R "$GITHUB_REPOSITORY" --workflow=daily_short.yml --limit 30 \
+            --json databaseId,displayTitle,conclusion,createdAt \
+            --jq "[.[] | select(.databaseId != $GITHUB_RUN_ID and .conclusion == \"success\" and .displayTitle == \"Daily YouTube Short\" and (((.createdAt | fromdateiso8601) + 19800 | strftime(\"%Y-%m-%d\")) == \"$today\"))] | length")
+          if [ "${done_today:-0}" -gt 0 ]; then
+            echo "::notice::Today's Short already ran successfully; this late scheduled run is cancelled, not repeated."
+            gh run cancel "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY"
+            sleep 120
+          fi
+
       - name: Checkout repo
         uses: actions/checkout@v4
         with:

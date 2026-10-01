@@ -43,7 +43,10 @@ def latest_today(runs, now):
     for run in runs:
         created = timestamp(run.get('created_at'))
         inputs = run.get('inputs') or {}
-        test = any(str(inputs.get(key, '')).lower() == 'true' for key in TEST_INPUTS)
+        test = (any(str(inputs.get(key, '')).lower() == 'true' for key in TEST_INPUTS)
+                or str(run.get('display_title') or '').endswith('(test)'))
+        if run.get('conclusion') == 'cancelled':
+            continue
         if (created and created.date() == now.date() and run.get('head_branch') == 'main'
                 and run.get('event') in ('schedule', 'workflow_dispatch') and not test):
             eligible.append(run)
