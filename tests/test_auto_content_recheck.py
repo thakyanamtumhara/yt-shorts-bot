@@ -162,6 +162,26 @@ class RecheckTests(unittest.TestCase):
         self.assertEqual(output['checks']['instagram']['state'], 'ok')
         ig.assert_called_once()
 
+    def test_failed_run_without_upload_is_an_issue_not_unknown(self):
+        manifest = manifest_data()
+        manifest['source_posts'] = {'bot_youtube': None}
+        failed = run(conclusion='failure')
+        with patch.object(audit, 'github_json', side_effect=[{'workflow_runs': [failed]}, failed]), \
+                patch.object(audit, 'download_artifact', return_value=(archive_data(manifest), 7)):
+            output = check.guarded(lambda: check.daily_check(NOW))
+        self.assertEqual(output['state'], 'issue')
+        self.assertEqual(output['conclusion'], 'failure')
+        self.assertIn('before publishing', output['note'])
+
+    def test_successful_run_with_invalid_archive_still_raises(self):
+        manifest = manifest_data()
+        manifest['source_posts'] = {'bot_youtube': None}
+        passed = run(conclusion='success')
+        with patch.object(audit, 'github_json', side_effect=[{'workflow_runs': [passed]}, passed]), \
+                patch.object(audit, 'download_artifact', return_value=(archive_data(manifest), 7)):
+            output = check.guarded(lambda: check.daily_check(NOW))
+        self.assertEqual(output['state'], 'unknown')
+
 
 if __name__ == '__main__':
     unittest.main()

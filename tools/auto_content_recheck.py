@@ -130,7 +130,13 @@ def daily_check(now, observed_now=None):
         return result('issue', 'Run has no verifiable finished output archive',
                       run_id=run['id'], conclusion=run.get('conclusion'), error_type=type(error).__name__)
     with tempfile.TemporaryDirectory() as folder:
-        manifest, _ = audit.validate_archive(data, run, Path(folder))
+        try:
+            manifest, _ = audit.validate_archive(data, run, Path(folder))
+        except audit.AuditError as error:
+            if state['state'] == 'ok':
+                raise
+            return result('issue', 'Run failed before publishing; its archive has no verified upload',
+                          run_id=run['id'], conclusion=run.get('conclusion'), error_type=type(error).__name__)
     flags = manifest.get('run_flags') or {}
     checks = {'audio': result('ok' if (flags.get('native_audio_review') or {}).get('passed') is True else 'issue',
                               'Saved native audio review; no new model assessment'),
