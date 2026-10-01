@@ -105,16 +105,18 @@ jobs:
           python-version: '3.12'
 
       - name: Install system dependencies
+        timeout-minutes: 12
         run: |
           # Kill background apt processes that hold the lock on GitHub runners
           sudo killall -9 apt-get apt unattended-upgr 2>/dev/null || true
           sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock
           sudo dpkg --configure -a 2>/dev/null || true
           export DEBIAN_FRONTEND=noninteractive
-          sudo -E apt-get update -qq
+          APT_NET="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo -E apt-get $APT_NET update -qq
           # libraqm* = correct Devanagari shaping (ि-matra reorder, conjuncts)
           # for the thumbnail text renderer; fonts-noto-* for Hindi glyph coverage.
-          sudo -E apt-get install -y -qq imagemagick ffmpeg fonts-noto-core fonts-noto-cjk fonts-freefont-ttf libraqm0 libraqm-dev
+          sudo -E apt-get $APT_NET install -y -qq imagemagick ffmpeg fonts-noto-core fonts-noto-cjk fonts-freefont-ttf libraqm0 libraqm-dev
           sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
 
       - name: Install Python packages
