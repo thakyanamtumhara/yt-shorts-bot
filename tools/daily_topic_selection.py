@@ -347,7 +347,10 @@ def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max
     # Blog viability orders otherwise valid lessons; it cannot waive a content gate.
     ranked = sorted(pending[:10], key=lambda brief: not viable(brief['topic']))
     approved = []
-    for brief in ranked[:max_candidates]:
+    # A second round of reviews runs only when the first round approved nothing.
+    for index, brief in enumerate(ranked):
+        if index >= max_candidates * (1 if approved else 2):
+            break
         try:
             score, feedback = review(brief)
         except Exception as error:

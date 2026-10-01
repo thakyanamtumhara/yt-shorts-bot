@@ -81,10 +81,10 @@ class EvidenceAndSelectionTest(unittest.TestCase):
             self.assertNotIn('₹', result['topic'])
 
     def test_observed_10_september_all_below_threshold_never_selects_best_bad_topic(self):
-        reviewer = Mock(side_effect=[(score, 'Same lesson as recent output') for score in [18, 14, 14, 14, 14]])
+        reviewer = Mock(side_effect=[(score, 'Same lesson as recent output') for score in [18, 14, 14, 14, 14] * 2])
         with self.assertRaisesRegex(TopicHold, 'No distinct'):
             choose(BANK['seed_lessons'], reviewer)
-        self.assertEqual(reviewer.call_count, 5)
+        self.assertEqual(reviewer.call_count, 10)
 
     def test_twenty_four_cannot_pass_in_any_bank_position(self):
         with self.assertRaises(TopicHold):
@@ -145,6 +145,19 @@ class EvidenceAndSelectionTest(unittest.TestCase):
         choose(many, reviewer, viable=viable)
         self.assertEqual(reviewer.call_count, 5)
         self.assertEqual(viable.call_count, 10)
+
+    def test_second_round_reviews_only_after_five_rejections_and_stops_at_ten(self):
+        many = []
+        for index in range(15):
+            item = brief(); item.update(topic=f'Proposed lesson {index}', intent_key=f'angle_{index}'); many.append(item)
+        reviewer = Mock(side_effect=[(0, 'Duplicate')] * 6 + [(27, 'Fresh')] + [(30, 'Unreached')] * 8)
+        selected = choose(many, reviewer)
+        self.assertEqual(selected, 'Proposed lesson 6')
+        self.assertEqual(reviewer.call_count, 7)
+        rejecting = Mock(return_value=(0, 'Duplicate'))
+        with self.assertRaises(TopicHold):
+            choose(many, rejecting)
+        self.assertEqual(rejecting.call_count, 10)
 
 
 class TopicConsumptionTest(unittest.TestCase):

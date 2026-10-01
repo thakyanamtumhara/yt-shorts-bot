@@ -7661,7 +7661,8 @@ cited fact text, not merely mention a valid source ID. A price is supported only
 cited rate_ fact states that exact amount (today's website rate, before GST); the reason
 for a price gap must come from the cited product details, not guesswork. Universal
 settings, stock, discounts, customer incidents and simulated test results are unsupported.
-Ear rub, fuzz and stretch recovery do not certify yarn/finishing.
+Ear rub, fuzz and stretch recovery do not certify yarn/finishing. A brief that breaks any cited
+fact's limits (for example a promise the limits forbid) is not supported.
 
 Return JSON only:
 {{"score": 0, "scores": {{"buyer_interest": 0, "freshness": 0,
