@@ -278,6 +278,15 @@
   "nudged": true
  },
  "stock20260917-raw02-ig": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dd9ZoSOiACX/"
+ },
+ "stock20260917-raw02-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2547776809062724/"
+ },
+ "stock20260917-raw02-x": {
+  "nudged": true
  }
 }
