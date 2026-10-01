@@ -27,6 +27,7 @@ def main(argv=None):
     )
 
     history = load_topic_history(ROOT / 'topic_history.json')
+    daily_short._install_live_rates()
     bank = load_bank()
     remaining = []
     for seed in bank.get('seed_lessons', []):
@@ -48,7 +49,7 @@ def main(argv=None):
         daily_short.search_trending_topics(SimpleNamespace(messages=SimpleNamespace(create=capture)), history)
         captured['max_tokens'] = 2400
         captured['messages'][0]['content'] = captured['messages'][0]['content'].replace(
-            'up to three DISTINCT lesson briefs', 'up to ten DISTINCT lesson briefs')
+            'up to five DISTINCT lesson briefs', 'up to ten DISTINCT lesson briefs')
         response = None
         try:
             response = api.messages.create(**captured)

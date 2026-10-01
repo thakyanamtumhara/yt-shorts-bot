@@ -174,6 +174,33 @@ class LiveRateCaptionTest(unittest.TestCase):
         self.assertIsNone(hold('<p>Check the live price list for the current rate.</p>', rates=False))
 
 
+class OldArticleSourceTest(unittest.TestCase):
+    def tearDown(self):
+        from tools import daily_topic_selection
+        daily_topic_selection.LIVE_FACTS.clear()
+
+    def test_old_article_carousel_source_carries_no_live_rate(self):
+        from tools.daily_topic_selection import install_live_facts
+        install_live_facts({'rate_bio_rneck': {
+            'claim': 'BulkPlainTshirt.com live rate list checked on 29-Sep-2026: Bio Rneck. 10 or more pieces: ₹150 per piece.',
+            'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list',
+            'checked_on': '29-Sep-2026', 'limits': 'Website rate on the checked date only.', 'amounts': [150]}})
+        scope = load_functions('_auto_content_text', '_auto_content_hold_reason', '_editorial_evidence')
+        article = 'Title: Biowash vs preshrunk\nTopic: Biowash vs preshrunk\nSource: Finishing differs.'
+        evidence = scope['_editorial_evidence']('Biowash vs preshrunk')
+        self.assertNotIn('₹', evidence)
+        self.assertNotIn('rate_bio_rneck', evidence)
+        self.assertIn('REVIEWED PRIMARY-SOURCE FACTS', evidence)
+        self.assertIsNone(scope['_auto_content_hold_reason'](article))
+
+    def test_reviewed_fact_caveats_are_not_checked_as_article_claims(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        for start, label in (('def generate_ig_carousel_draft(', 'IG carousel source held'),
+                             ('def generate_blog_post(', 'Blog source held')):
+            block = source[source.index(start):]
+            self.assertLess(block.index(label), block.index('source += _editorial_evidence(topic)'))
+
+
 if __name__ == '__main__':
     unittest.main()
 

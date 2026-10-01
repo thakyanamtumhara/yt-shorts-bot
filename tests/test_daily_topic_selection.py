@@ -321,17 +321,17 @@ class TopicResponseReliabilityTest(unittest.TestCase):
 
     def test_truncation_retries_smaller_request_and_reports_safe_cause(self):
         api = client([])
-        api.messages.create.side_effect = [self.response('[{"topic":', 'max_tokens', 3200),
+        api.messages.create.side_effect = [self.response('[{"topic":', 'max_tokens', 4500),
                                            self.response(json.dumps([brief()]))]
         output = StringIO()
         with redirect_stdout(output):
             self.assertEqual(self.brainstorm()(api, []), [brief()])
         self.assertIn('stop_reason=max_tokens', output.getvalue())
-        self.assertIn('output_tokens=3200', output.getvalue())
+        self.assertIn('output_tokens=4500', output.getvalue())
         self.assertEqual(api.messages.create.call_count, 2)
         for call in api.messages.create.call_args_list:
             self.assertEqual(call.kwargs['model'], 'claude-opus-4-6')
-            self.assertEqual(call.kwargs['max_tokens'], 3200)
+            self.assertEqual(call.kwargs['max_tokens'], 4500)
         self.assertIn('at most TWO', api.messages.create.call_args.kwargs['messages'][0]['content'])
 
     def test_invalid_array_or_repeated_malformed_json_still_falls_back_to_seeds(self):

@@ -3024,7 +3024,9 @@ def _editorial_evidence(topic):
     selected = evidence_prompt(topic)
     if selected:
         return selected
-    return '\nREVIEWED PRIMARY-SOURCE FACTS AND LIMITS:\n' + json.dumps(load_bank()['facts'], ensure_ascii=False)
+    # Live rate facts belong only to a lesson that cites them; an older article quotes no price.
+    facts = {key: fact for key, fact in load_bank()['facts'].items() if not key.startswith('rate_')}
+    return '\nREVIEWED PRIMARY-SOURCE FACTS AND LIMITS:\n' + json.dumps(facts, ensure_ascii=False)
 
 
 def _review_derived_content(claude_client, cost_tracker, content, source, format_name, model, rates=True):
@@ -3123,11 +3125,13 @@ def generate_ig_carousel_draft(claude_client, cost_tracker, blog_title, blog_url
         records = [item for item in _load_blog_history_active() if item.get('slug') == blog_slug]
         image_assets = records[-1].get('image_assets') if records else None
     source = f'Title: {blog_title}\nTopic: {topic}\nSource: {script_english}'
-    source += _editorial_evidence(topic)
+    # Check the article text only: the appended reviewed facts carry caveats ("do not infer that
+    # visible fuzz proves no biowash") that the shortcut detector would read as claims.
     reason = _auto_content_hold_reason(source)
     if reason:
         print(f'   🚫 IG carousel source held: {reason}')
         return None
+    source += _editorial_evidence(topic)
     today = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d")
     os.makedirs(IG_CAROUSEL_DRAFTS_DIR, exist_ok=True)
     out_path = os.path.join(IG_CAROUSEL_DRAFTS_DIR, f"{today}.json")
@@ -7526,7 +7530,7 @@ def search_trending_topics(anthropic_client, topic_history=()):
     bank = load_bank()
     context = brainstorming_context(bank, topic_history)
     prompt = f"""Select useful instructional topics for Indian T-shirt printing businesses,
-new clothing brands and wholesale buyers. Propose up to three DISTINCT lesson briefs.
+new clothing brands and wholesale buyers. Propose up to five DISTINCT lesson briefs.
 A viewer must understand a fabric mechanism, construction or meaningful distinction,
 and its practical consequence. A checklist telling people to check, ask or confirm
 without explaining why is not a lesson. No forced story, invented incident or sales CTA.
@@ -7553,6 +7557,16 @@ GSM, finish, fit, construction). Buyers respond to real rates with a reason; a d
 alone is weaker. Cite every rate_ fact whose amount appears. Use amounts exactly as written
 in digits with ₹; never round, never invent a reason for the price gap, never mention a
 discount, never call something cheapest or better value.
+
+TOPIC SUPPLY: most textile facts in this bank have already been taught (compare RECENT TOPICS).
+A new lesson must change the buyer decision, not just the wording or the prices. When a concept
+such as GSM, pique, combing or single-jersey sides is already in RECENT TOPICS, do not explain it
+again, even with new rates. Distinct price lessons can come from different product pairs or pricing
+rules in the rate_ facts, for example: cotton-polyester blend vs 100% cotton round neck, biowash vs
+true-biowash supercombed round neck, blend matty polo vs cotton honeycomb polo, regular hoodie vs
+heavy drop-shoulder hoodie, the under-10 sample rate vs the 10+ rate of the same product, or why the
+largest sizes cost a little more. Each must cite the rate_ facts it uses and state only the
+differences those facts list.
 
 OBSERVED BUYER INTEREST, not proof of technical facts:
 {bank['audience_evidence']}
@@ -7587,13 +7601,13 @@ Use the supplied limits. Return [] if no distinct supported lesson is available.
             retry_prompt = ("\nThe previous response could not be read. Return at most TWO "
                             "complete brief objects in valid JSON, with concise lessons.") if attempt > 1 else ""
             resp = anthropic_client.messages.create(
-                model="claude-opus-4-6", max_tokens=3200,
+                model="claude-opus-4-6", max_tokens=4500,
                 messages=[{"role": "user", "content": prompt + retry_prompt}])
             topics = response_json(resp)
             if not isinstance(topics, list) or any(not isinstance(item, dict) for item in topics):
                 raise TopicHold('Topic brainstorming must return an array of brief objects.')
-            print(f"   Topic brainstorming returned {min(len(topics), 3)} complete candidates.")
-            return topics[:3]
+            print(f"   Topic brainstorming returned {min(len(topics), 5)} complete candidates.")
+            return topics[:5]
         except Exception as error:
             print(f"   Topic brainstorming attempt {attempt}/2 failed: {safe_failure_details(error, resp)}")
             if not retryable_failure(error):
@@ -9055,11 +9069,12 @@ def generate_blog_post(claude_client, cost_tracker, topic, title, description,
     force_slug keeps a specific URL (used when rewriting a thin legacy page in place).
     Returns (html_content, slug, blog_url, blog_images) or (None, None, None, []) on failure."""
     print("   📝 Blog: Generating SEO article with images...")
-    source = f'Topic: {topic}\nTitle: {title}\nDescription: {description}\nScript: {script_english}' + _editorial_evidence(topic)
+    source = f'Topic: {topic}\nTitle: {title}\nDescription: {description}\nScript: {script_english}'
     reason = _auto_content_hold_reason(source)
     if reason:
         print(f'   🚫 Blog source held: {reason}')
         return None, None, None, []
+    source += _editorial_evidence(topic)
 
     slug = force_slug or generate_blog_slug(title)
     blog_url = f"{BLOG_BASE_URL}/p/{slug}.html"
