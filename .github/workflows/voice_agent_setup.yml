@@ -135,6 +135,7 @@ jobs:
                 print("simulation failed HTTP", r.status_code, r.text[:300])
                 continue
               for turn in r.json().get("simulated_conversation", []):
-                calls = [c.get("tool_name") or c.get("name") for c in (turn.get("tool_calls") or [])]
-                print(f"[{turn.get('role')}] {turn.get('message') or ''}" + (f"  (tools: {calls})" if calls else ""))
+                calls = [f"{c.get('tool_name') or c.get('name')}({c.get('params_as_json') or c.get('parameters') or ''})" for c in (turn.get("tool_calls") or [])]
+                results = [str(r.get("result_value") or r.get("result") or "")[:500].replace("\n", " / ") for r in (turn.get("tool_results") or [])]
+                print(f"[{turn.get('role')}] {turn.get('message') or ''}" + (f"  (tools: {calls})" if calls else "") + (f"  (results: {results})" if results else ""))
           PY
