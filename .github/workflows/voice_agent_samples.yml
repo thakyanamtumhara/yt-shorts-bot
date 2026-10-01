@@ -11,6 +11,18 @@ on:
         description: 'Optional JSON array of lines to speak (default: built-in Digital Ketu lines)'
         required: false
         default: ''
+      xi_models:
+        description: 'ElevenLabs model ids, comma separated; "auto" = every v4 model on the account plus eleven_flash_v2_5'
+        required: false
+        default: 'eleven_v3,eleven_flash_v2_5,eleven_multilingual_v2'
+      openai_voices:
+        description: 'OpenAI gpt-4o-mini-tts voices, comma separated (empty = skip)'
+        required: false
+        default: 'marin,cedar,ash'
+      sarvam_voices:
+        description: 'Sarvam bulbul:v3 speakers, comma separated (empty = skip)'
+        required: false
+        default: ''
 
 jobs:
   samples:
@@ -26,6 +38,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
           LINES_JSON: ${{ inputs.lines_json }}
+          XI_MODELS: ${{ inputs.xi_models }}
+          OPENAI_VOICES: ${{ inputs.openai_voices }}
+          SARVAM_VOICES: ${{ inputs.sarvam_voices }}
         run: |
           pip install -q requests
           python3 - << 'PY'
@@ -72,12 +87,32 @@ jobs:
                         "Natural Hinglish: Hindi words with Hindi pronunciation, English product words in Indian English. "
                         "Conversational pace, friendly, no announcer tone.")
 
+          split = lambda v: [x.strip() for x in (v or "").split(",") if x.strip()]
+          xi_models = split(os.environ.get("XI_MODELS"))
+          if XI:
+            try:
+              models = requests.get("https://api.elevenlabs.io/v1/models", headers={"xi-api-key": XI}, timeout=30).json()
+              print("ELEVENLABS MODELS:")
+              for m in models:
+                print("  ", m.get("model_id"), "|", m.get("name"), "| tts:", m.get("can_do_text_to_speech"), "| languages:", len(m.get("languages") or []))
+              voice = requests.get(f"https://api.elevenlabs.io/v1/voices/{KETU_VOICE}", headers={"xi-api-key": XI}, timeout=30).json()
+              ft = (voice.get("fine_tuning") or {})
+              print("KETU PVC:", voice.get("name"), "| category:", voice.get("category"))
+              print("  fine-tuning state by model:", json.dumps(ft.get("state") or {}, ensure_ascii=False))
+              if xi_models == ["auto"]:
+                xi_models = [m["model_id"] for m in models if "v4" in m.get("model_id", "") and m.get("can_do_text_to_speech")] + ["eleven_flash_v2_5"]
+            except Exception as e:
+              print("model probe failed:", str(e)[:200])
+              if xi_models == ["auto"]:
+                xi_models = ["eleven_flash_v2_5"]
+          print("ELEVENLABS MODELS TO SAMPLE:", xi_models)
+
           configs = []
-          for model in ["eleven_v3", "eleven_flash_v2_5", "eleven_multilingual_v2"]:
+          for model in xi_models:
             configs.append(("elevenlabs", model, "ketu-pvc"))
-          for voice in ["marin", "cedar", "ash"]:
+          for voice in split(os.environ.get("OPENAI_VOICES")):
             configs.append(("openai", "gpt-4o-mini-tts", voice))
-          for voice in ["amit", "abhilash"]:
+          for voice in split(os.environ.get("SARVAM_VOICES")):
             configs.append(("sarvam", "bulbul:v3", voice))
 
           for provider, model, voice in configs:
