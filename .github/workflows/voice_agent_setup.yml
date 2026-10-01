@@ -1,0 +1,133 @@
+name: Voice agent setup (Digital Ketu, ElevenLabs)
+
+# Manual only. Creates or updates the Digital Ketu ElevenLabs voice agent and its webhook tools
+# from base64 JSON inputs, then runs short simulated buyer chats. Agent and tool ids are masked
+# in the log and returned encrypted to the operator's public key, because this repo is public and
+# a public agent id is enough to talk to the agent. Set secret VOICE_AGENT_ID to update in place.
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_b64:
+        description: 'Base64 JSON agent payload (conversation_config, platform_settings, name)'
+        required: true
+      tools_b64:
+        description: 'Base64 JSON array of {tool_config} webhook tools'
+        required: true
+      pubkey_b64:
+        description: 'Base64 PEM public key that encrypts the returned ids'
+        required: true
+      llm_fallbacks:
+        description: 'LLMs to try, in order, if the payload LLM is rejected'
+        required: false
+        default: 'claude-sonnet-4-5,gemini-2.5-flash'
+      simulate:
+        description: 'Run simulated buyer chats after setup (yes/no)'
+        required: false
+        default: 'yes'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Create or update the agent
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          VOICE_AGENT_ID: ${{ secrets.VOICE_AGENT_ID }}
+          AGENT_B64: ${{ inputs.agent_b64 }}
+          TOOLS_B64: ${{ inputs.tools_b64 }}
+          PUBKEY_B64: ${{ inputs.pubkey_b64 }}
+          LLM_FALLBACKS: ${{ inputs.llm_fallbacks }}
+          SIMULATE: ${{ inputs.simulate }}
+        run: |
+          pip install -q requests
+          python3 - << 'PY'
+          import base64, json, os, subprocess, sys
+          import requests
+
+          H = {"xi-api-key": os.environ["ELEVENLABS_API_KEY"], "Content-Type": "application/json"}
+          B = "https://api.elevenlabs.io/v1/convai"
+          mask = lambda value: print(f"::add-mask::{value}", flush=True)
+          agent = json.loads(base64.b64decode(os.environ["AGENT_B64"]))
+          tools = json.loads(base64.b64decode(os.environ["TOOLS_B64"]))
+
+          listed = requests.get(f"{B}/tools", headers=H, timeout=30)
+          existing = {t["tool_config"]["name"]: t["id"] for t in (listed.json().get("tools") or [])} if listed.ok else {}
+          tool_ids = []
+          for tool in tools:
+            name = tool["tool_config"]["name"]
+            if name in existing:
+              tid = existing[name]
+              mask(tid)
+              r = requests.patch(f"{B}/tools/{tid}", headers=H, json=tool, timeout=30)
+              print(f"tool {name}: update HTTP {r.status_code}", "" if r.ok else r.text[:300])
+            else:
+              r = requests.post(f"{B}/tools", headers=H, json=tool, timeout=30)
+              if not r.ok:
+                print(f"tool {name}: create failed HTTP {r.status_code} {r.text[:400]}")
+                sys.exit(1)
+              tid = r.json()["id"]
+              mask(tid)
+              print(f"tool {name}: created")
+            tool_ids.append(tid)
+          agent["conversation_config"]["agent"]["prompt"]["tool_ids"] = tool_ids
+
+          llms = [agent["conversation_config"]["agent"]["prompt"].get("llm")] + [x.strip() for x in os.environ.get("LLM_FALLBACKS", "").split(",") if x.strip()]
+          agent_id = os.environ.get("VOICE_AGENT_ID", "").strip()
+          if agent_id:
+            mask(agent_id)
+          result = None
+          for llm in [x for x in llms if x]:
+            agent["conversation_config"]["agent"]["prompt"]["llm"] = llm
+            if agent_id:
+              r = requests.patch(f"{B}/agents/{agent_id}", headers=H, json=agent, timeout=60)
+            else:
+              r = requests.post(f"{B}/agents/create", headers=H, json=agent, timeout=60)
+            if r.ok:
+              result = r.json()
+              print(f"agent saved with llm {llm}")
+              break
+            print(f"llm {llm}: HTTP {r.status_code} {r.text[:600]}")
+          if result is None:
+            sys.exit(1)
+          agent_id = agent_id or result["agent_id"]
+          mask(agent_id)
+
+          info = requests.get(f"{B}/agents/{agent_id}", headers=H, timeout=30).json()
+          cc = info.get("conversation_config", {})
+          ps = info.get("platform_settings", {})
+          print("SUMMARY:", json.dumps({
+            "name": info.get("name"),
+            "llm": cc.get("agent", {}).get("prompt", {}).get("llm"),
+            "language": cc.get("agent", {}).get("language"),
+            "hinglish_mode": cc.get("agent", {}).get("hinglish_mode"),
+            "tools": len(cc.get("agent", {}).get("prompt", {}).get("tool_ids") or []),
+            "tts_model": cc.get("tts", {}).get("model_id"),
+            "voice_is_ketu": cc.get("tts", {}).get("voice_id") == "cejtKjfE9sHUZ1FnUYEV",
+            "max_duration": cc.get("conversation", {}).get("max_duration_seconds"),
+            "auth": ps.get("auth", {}).get("enable_auth"),
+            "daily_limit": ps.get("call_limits", {}).get("daily_limit"),
+          }, ensure_ascii=False))
+
+          with open("pub.pem", "wb") as f:
+            f.write(base64.b64decode(os.environ["PUBKEY_B64"]))
+          secret = json.dumps({"agent_id": agent_id, "tool_ids": tool_ids}).encode()
+          enc = subprocess.run(["openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", "pub.pem", "-pkeyopt", "rsa_padding_mode:oaep", "-pkeyopt", "rsa_oaep_md:sha256"], input=secret, capture_output=True, check=True).stdout
+          print("ENCRYPTED_RESULT:" + base64.b64encode(enc).decode())
+
+          if os.environ.get("SIMULATE", "yes") == "yes":
+            buyer = ("You are a Delhi shop owner who buys plain T-shirts. Speak short Hinglish. Ask only your first question, "
+                     "reply once to the answer with a short thanks, then stop.")
+            for first in ["Bhai acid wash black XL milega?", "Premium polo ka rate kya hai, 50 piece lene hain", "Mera order abhi tak nahi aaya, refund chahiye"]:
+              r = requests.post(f"{B}/agents/{agent_id}/simulate-conversation", headers=H, timeout=240, json={
+                "simulation_specification": {"simulated_user_config": {"first_message": first, "language": "hi", "prompt": {"prompt": buyer}}},
+                "new_turns_limit": 4})
+              print("\n=== SIMULATION:", first)
+              if not r.ok:
+                print("simulation failed HTTP", r.status_code, r.text[:300])
+                continue
+              for turn in r.json().get("simulated_conversation", []):
+                calls = [c.get("tool_name") or c.get("name") for c in (turn.get("tool_calls") or [])]
+                print(f"[{turn.get('role')}] {turn.get('message') or ''}" + (f"  (tools: {calls})" if calls else ""))
+          PY
