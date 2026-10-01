@@ -7564,9 +7564,10 @@ such as GSM, pique, combing or single-jersey sides is already in RECENT TOPICS, 
 again, even with new rates. Distinct price lessons can come from different product pairs or pricing
 rules in the rate_ facts, for example: cotton-polyester blend vs 100% cotton round neck, biowash vs
 true-biowash supercombed round neck, blend matty polo vs cotton honeycomb polo, regular hoodie vs
-heavy drop-shoulder hoodie, the under-10 sample rate vs the 10+ rate of the same product, or why the
-largest sizes cost a little more. Each must cite the rate_ facts it uses and state only the
-differences those facts list.
+heavy drop-shoulder hoodie, or an acid-wash oversize vs a plain oversize of the same GSM (pair it with
+the reviewed acid-wash fact). A quantity-tier or size-tier rate gap alone teaches no fabric mechanism.
+Each must cite the rate_ facts it uses and state only the differences those facts list. A price
+difference must be the exact subtraction of two cited amounts (₹43, never ₹40+ or about ₹40).
 
 OBSERVED BUYER INTEREST, not proof of technical facts:
 {bank['audience_evidence']}

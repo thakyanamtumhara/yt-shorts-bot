@@ -1,7 +1,7 @@
 {
   "format": "daily-topic-facts-v1",
   "reviewed": true,
-  "reviewed_on": "2026-09-23",
+  "reviewed_on": "2026-10-01",
   "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted.",
   "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
@@ -88,6 +88,55 @@
       "source_title": "Coats: Basic Stitch Types",
       "checked_on": "2026-09-23",
       "limits": "Describe specified common constructions, not every T-shirt. Two visible rows alone cannot identify the stitch or certify quality; no universal strength claim. Tubular garments may lack side seams."
+    },
+    "garment_skew_after_laundering": {
+      "claim": "Skewness or torque is the tendency of some fabrics and garments to twist after laundering. Skewing displaces side seams, sleeves, legs and other parts of a garment, giving an unsatisfactory appearance.",
+      "source_url": "https://cottonworks.com/learning-hub/quality-assurance/quality-testing/",
+      "source_title": "CottonWorks: Quality Testing",
+      "checked_on": "2026-10-01",
+      "limits": "Describes the defect, not its size in any product. No zero-twist promise, fixed percentage or claim that a specific supplied T-shirt will or will not skew. A new unwashed garment may not show it."
+    },
+    "singles_twist_liveliness_skew": {
+      "claim": "Garment twist, also called torque, comes from releasing latent stresses that build up in manufacturing; they are released during wet processing and laundering. In single jersey, wale skew is caused in part by singles spun yarn trying to untwist after knitting (twist liveliness), which deforms the loops; Z-twist yarns lean the wales right and S-twist yarns left. Plying two Z-twist singles together in the S direction can remove the liveliness, and in the cited trials looser stitches skewed more than tighter ones. AATCC Test Method 179 measures skewness change and garment twist after automatic home laundering.",
+      "source_url": "https://cottonworks.com/wp-content/uploads/2017/11/Skewness_Presentation_CUFinal.pdf",
+      "source_title": "Cotton Incorporated webinar slides: Understanding & Overcoming Skewing",
+      "checked_on": "2026-10-01",
+      "limits": "Trial percentages belong to the cited greige test fabrics; never quote them as product specifications. Do not identify twist, ply or spinning system by look or feel, or claim what yarn or finish a specific product uses. Mill controls (tighter knitting, plied balanced yarn, alternating S/Z feeds, pre-skew, crosslinking resin) are not home fixes."
+    },
+    "discharge_printing": {
+      "claim": "In discharge printing, fabric is first dyed to the desired ground colour, usually a dark shade, and then printed with a chemical that selectively destroys the dye, leaving a white design. Alternatively, a discharge agent is printed together with a dye that the agent does not affect, so that dye replaces the ground colour in the design. Ground colours must be chosen that can be selectively destroyed without extraordinary means and without damaging the fabric, and discharge printing has higher production costs than normal printing techniques.",
+      "source_url": "https://cottonworks.com/learning-hub/printing/cotton-printing-types-and-techniques/",
+      "source_title": "CottonWorks: Cotton Printing Types & Techniques",
+      "checked_on": "2026-10-01",
+      "limits": "Describes the method on dyed fabric. Do not claim a specific T-shirt colour or dye will discharge, name a home chemical, or promise print softness, durability or a price; no rupee amounts."
+    },
+    "acid_wash_discharge": {
+      "claim": "Acid wash is one of the effects achieved by wet discharge garment washing. 'Acid-washed' is a misnomer because the process uses no acid; typically the discharging agent is sodium hypochlorite or potassium permanganate. An abrasion cycle before acid washing gives the fabric surface variation; without it the effect looks flat.",
+      "source_url": "https://cottonworks.com/learning-hub/finishing/garment-finishing/",
+      "source_title": "CottonWorks: Garment Finishing",
+      "checked_on": "2026-10-01",
+      "limits": "The source's step-by-step procedure is written for jeans; do not claim which chemical, steps, durability, colour fastness or pattern a specific T-shirt has. No home method or chemical-handling advice."
+    },
+    "pilling_causes": {
+      "claim": "Pills are small balls of entangled fibres attached to the surface of a fabric. Pilling is affected by many factors, including the type of fibre or blend, fibre dimensions, yarn and fabric construction, fabric finishing treatments and end use. Its causes are construction and mill processing, so control must begin in material specification and mill processing; once goods show a tendency to pill there is normally no solution for the pills. With no universal durability standards, customer and supplier need to agree satisfactory performance levels for each product and end use.",
+      "source_url": "https://cottonworks.com/learning-hub/quality-assurance/garment-durability/",
+      "source_title": "CottonWorks: Garment Durability",
+      "checked_on": "2026-10-01",
+      "limits": "Do not rank fibres or blends for pilling, judge pilling resistance by touch, or connect fuzz with the presence or absence of a biowash. No guarantee of zero pilling or a number of washes."
+    },
+    "mercerization_lustre": {
+      "claim": "Cotton is a low-lustre fibre because of its convolutions. Mercerization of yarn or fabric improves lustre by permanently swelling the fibre: treatment with a strong sodium hydroxide solution (the source cites 25%) swells cotton and changes its cellulose structure, and under tension the fibre or fabric attains a high degree of lustre. Mercerized cotton is significantly stronger than natural cotton fibre.",
+      "source_url": "https://www.cottonworks.com/wp-content/uploads/2017/11/Fibers_Booklet_edited-1.pdf",
+      "source_title": "Cotton Incorporated: Textile Fibers (2013)",
+      "checked_on": "2026-10-01",
+      "limits": "Do not identify mercerization by shine or touch, claim a specific product is mercerized, or give home chemical instructions. No claims about softness, pilling, colour fastness or price."
+    },
+    "polyester_oleophilic": {
+      "claim": "Polyesters are oleophilic, having a strong affinity for oils, and therefore must be treated with a soil-release chemistry to prevent soiling and body-odour retention. All polyesters are inert, so they are not easily modified.",
+      "source_url": "https://www.cottonworks.com/wp-content/uploads/2017/11/Fibers_Booklet_edited-1.pdf",
+      "source_title": "Cotton Incorporated: Textile Fibers (2013)",
+      "checked_on": "2026-10-01",
+      "limits": "General fibre property from a cotton industry body. Do not claim a specific polyester T-shirt has or lacks a soil-release finish, promise odour-free wear, or rank odour against cotton."
     }
   },
   "seed_lessons": [
@@ -160,7 +209,8 @@
       "intent_key": "single_jersey_face_back_loop_orientation",
       "fact_ids": [
         "jersey_face_back"
-      ]
+      ],
+      "published_as": "सिंगल जर्सी टी-शर्ट का सीधा-उल्टा अलग क्यों दिखता है?"
     },
     {
       "topic": "पोलो की जाली जैसी बनावट: कपास का नाम या बुनाई का?",
@@ -170,7 +220,8 @@
       "intent_key": "pique_texture_is_construction_not_fibre",
       "fact_ids": [
         "pique_tuck_structure"
-      ]
+      ],
+      "published_as": "पोलो की जालीदार बुनावट कैसे बनती है — पीके (Pique) fabric का असली मतलब"
     },
     {
       "topic": "टी-शर्ट का वजन और GSM एक नंबर क्यों नहीं हैं?",
@@ -180,7 +231,8 @@
       "intent_key": "fabric_area_mass_vs_whole_garment_mass",
       "fact_ids": [
         "fabric_mass_per_area"
-      ]
+      ],
+      "published_as": "GSM का मतलब कपड़े का वज़न है, पूरी टी-शर्ट का नहीं — ₹186 vs ₹205 Oversize में फ़र्क़ समझो"
     },
     {
       "topic": "टी-शर्ट के नीचे और जोड़ पर अलग सिलाई क्यों होती है?",
@@ -190,6 +242,67 @@
       "intent_key": "knit_hem_coverseam_vs_joining_overedge",
       "fact_ids": [
         "stitch_construction_jobs"
+      ]
+    },
+    {
+      "topic": "धुलाई के बाद टी-शर्ट की साइड सिलाई आगे क्यों घूम जाती है?",
+      "buyer_question": "Why does a T-shirt's side seam twist towards the front after washing?",
+      "lesson": "Skew or torque is the tendency of some knitted garments to twist after laundering, displacing side seams and sleeves. In single jersey, singles spun yarn tries to untwist after knitting; this twist liveliness deforms the loops so the wales lean, and stresses built up in manufacturing are released in wet processing and washing.",
+      "buyer_decision": "Judge side-seam twist on a washed sample rather than a new piece, because the stresses behind it are released in laundering; for stripes and large prints, ask how the mill controls skew.",
+      "intent_key": "single_jersey_skew_after_washing",
+      "fact_ids": [
+        "garment_skew_after_laundering",
+        "singles_twist_liveliness_skew"
+      ]
+    },
+    {
+      "topic": "डार्क टी-शर्ट पर डिस्चार्ज प्रिंट: रंग ऊपर लगता है या कपड़े से हटता है?",
+      "buyer_question": "Is a discharge print an ink layer sitting on top of a dark fabric?",
+      "lesson": "Discharge printing starts from fabric already dyed to a ground colour, usually dark, and prints a chemical that selectively destroys that dye, leaving a white design. Printing the discharge agent with a dye it cannot affect puts a new colour in place of the ground. Not every ground colour can be destroyed without extraordinary means or fabric damage.",
+      "buyer_decision": "Choose discharge only after the printer confirms your ground colour can be discharged, instead of assuming any dark shade will lift cleanly.",
+      "intent_key": "discharge_print_removes_ground_dye",
+      "fact_ids": [
+        "discharge_printing"
+      ]
+    },
+    {
+      "topic": "एसिड वॉश टी-शर्ट में एसिड होता है क्या?",
+      "buyer_question": "Does an acid-wash finish actually use acid?",
+      "lesson": "Acid wash is one of the effects made by wet discharge washing, and the name is a misnomer: the process uses no acid. The discharging agent is typically sodium hypochlorite or potassium permanganate, which removes colour after dyeing; an abrasion step beforehand gives surface variation, otherwise the effect looks flat.",
+      "buyer_decision": "Treat acid wash as a colour-removal finish added to a base fabric, and compare the base fabric specification separately from the wash effect.",
+      "intent_key": "acid_wash_is_discharge_without_acid",
+      "fact_ids": [
+        "acid_wash_discharge"
+      ]
+    },
+    {
+      "topic": "टी-शर्ट पर छोटी-छोटी गोलियाँ (पिलिंग) क्यों बनती हैं?",
+      "buyer_question": "What are the small balls on a worn T-shirt, and can a later wash remove them?",
+      "lesson": "Pills are small balls of entangled fibres attached to the fabric surface. How readily a fabric pills depends on its fibre or blend, fibre dimensions, yarn and fabric construction, finishing treatments and end use; these causes come from construction and mill processing, and once goods show a pilling tendency there is normally no fix.",
+      "buyer_decision": "Agree a pilling-performance level with the supplier at the material-specification stage, because a finished batch that pills normally cannot be corrected.",
+      "intent_key": "pilling_set_by_materials_and_processing",
+      "fact_ids": [
+        "pilling_causes"
+      ]
+    },
+    {
+      "topic": "मर्सराइज़्ड कॉटन में चमक कहाँ से आती है?",
+      "buyer_question": "Is mercerized cotton a different kind of cotton?",
+      "lesson": "Mercerization treats cotton yarn or fabric with a strong sodium hydroxide solution that permanently swells the fibre and changes its cellulose structure. Natural cotton is low in lustre because of its convolutions; held under tension during the treatment it attains a high lustre, and mercerized cotton is significantly stronger than natural cotton fibre.",
+      "buyer_decision": "Specify mercerization as a separate processing step, not as a cotton variety or a substitute for combing or GSM.",
+      "intent_key": "mercerization_swells_cotton_for_lustre",
+      "fact_ids": [
+        "mercerization_lustre"
+      ]
+    },
+    {
+      "topic": "पॉलिएस्टर टी-शर्ट में तेल के दाग और पसीने की बदबू क्यों टिकती है?",
+      "buyer_question": "Why can polyester T-shirts hold oily stains and body odour?",
+      "lesson": "Polyester fibres are oleophilic, meaning they have a strong affinity for oils. Because of that, polyester must be treated with a soil-release chemistry to prevent soiling and body-odour retention; polyesters are inert, so the fibre itself is not easily modified.",
+      "buyer_decision": "For polyester or sublimation T-shirts meant for sport or daily wear, ask whether a soil-release finish was applied rather than assuming the fibre resists oily soil.",
+      "intent_key": "polyester_oil_affinity_needs_soil_release",
+      "fact_ids": [
+        "polyester_oleophilic"
       ]
     }
   ]

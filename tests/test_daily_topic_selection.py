@@ -573,5 +573,71 @@ class VisualHoldTest(unittest.TestCase):
         self.assertIsNone(visual_hold_reason({'fact_ids': ['knit_loop_stretch'], 'intent_key': 'stretch'}, holds))
 
 
+class LessonHistoryTest(unittest.TestCase):
+    VIDEO_ID = 'aB3dE5gH7_-'
+
+    def published(self, folder):
+        lesson = dict(brief(), topic='A hook title that is not the seed topic', intent_key='renamed_stretch_angle')
+        topic = SelectedTopic(validate_brief(lesson, BANK))
+        history = Path(folder) / 'topic_history.json'
+        history.write_text('[]')
+        self.assertTrue(consume_uploaded_topic(history, topic, self.VIDEO_ID))
+        return topic, load_topic_history(history), Path(folder) / 'lesson_history.json'
+
+    def test_upload_records_the_lesson_beside_topic_history_once(self):
+        from tools.daily_topic_selection import load_lesson_history, record_published_lesson
+        with TemporaryDirectory() as folder:
+            topic, history, path = self.published(folder)
+            saved = load_lesson_history(path)
+            self.assertEqual([(item['topic'], item['intent_key'], item['video_id']) for item in saved],
+                             [(str(topic), 'renamed_stretch_angle', self.VIDEO_ID)])
+            self.assertEqual(saved[0]['fact_ids'], ['knit_loop_stretch'])
+            self.assertFalse(record_published_lesson(topic, self.VIDEO_ID, path))
+            self.assertFalse(record_published_lesson('bare title', 'zZ3dE5gH7_-', path))
+            self.assertEqual(len(load_lesson_history(path)), 1)
+
+    def test_lesson_published_under_another_title_counts_as_completed(self):
+        from tools.daily_topic_selection import load_lesson_history
+        with TemporaryDirectory() as folder:
+            _, history, path = self.published(folder)
+            lessons = load_lesson_history(path)
+            context = brainstorming_context(BANK, history, lessons)
+            self.assertNotIn('knit_loop_stretch', context['preferred_fact_ids'])
+            self.assertIn('renamed_stretch_angle', [item['intent_key'] for item in context['completed_lessons']])
+            self.assertEqual(brainstorming_context(BANK, [], lessons)['completed_lessons'], [])
+            repeat = dict(brief(), topic='Yet another hook', intent_key='renamed_stretch_angle')
+            with patch('tools.daily_topic_selection.LESSON_HISTORY_PATH', path):
+                with self.assertRaisesRegex(TopicHold, 'completed reviewed lesson intent'):
+                    validate_brief(repeat, BANK, history)
+
+    def test_seed_taught_under_a_different_title_is_completed(self):
+        seed = next(item for item in BANK['seed_lessons'] if item.get('published_as'))
+        context = brainstorming_context(BANK, [seed['published_as']], [])
+        self.assertEqual([item['intent_key'] for item in context['completed_lessons']], [seed['intent_key']])
+        for key in seed['fact_ids']:
+            self.assertNotIn(key, context['preferred_fact_ids'])
+        with patch('tools.daily_topic_selection.load_lesson_history', return_value=[]):
+            with self.assertRaisesRegex(TopicHold, 'completed reviewed lesson intent'):
+                validate_brief(copy.deepcopy(seed), BANK, [seed['published_as']])
+
+    def test_corrupt_lesson_history_blocks_selection(self):
+        from tools.daily_topic_selection import load_lesson_history
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'lesson_history.json'
+            for body in ('broken', '{}', '[{"topic": "t"}]', '[{"topic": "t", "intent_key": "", "fact_ids": []}]'):
+                path.write_text(body)
+                with self.assertRaises(TopicHold):
+                    load_lesson_history(path)
+            self.assertEqual(load_lesson_history(Path(folder) / 'missing.json'), [])
+
+    def test_every_new_seed_is_valid_and_cites_a_primary_source(self):
+        for seed in BANK['seed_lessons']:
+            if seed.get('published_as'):
+                continue
+            validated = validate_brief(copy.deepcopy(seed), BANK, [])
+            self.assertTrue(all(fact['source_url'].startswith('https://') for fact in validated['evidence'].values()))
+            self.assertIsNone(unsupported_shortcut(' '.join(seed[key] for key in ('topic', 'lesson', 'buyer_decision'))))
+
+
 if __name__ == '__main__':
     unittest.main()

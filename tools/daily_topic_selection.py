@@ -9,6 +9,7 @@ import unicodedata
 
 BANK_PATH = Path(__file__).resolve().parents[1] / 'daily_topic_lessons.json'
 VISUAL_HOLDS_PATH = BANK_PATH.parent / 'visual_holds.json'
+LESSON_HISTORY_PATH = BANK_PATH.parent / 'lesson_history.json'
 VISUAL_HOLD_DAYS = 21
 IST = timezone(timedelta(hours=5, minutes=30))
 DIMENSIONS = {'buyer_interest', 'freshness', 'learning_value', 'shareability'}
@@ -151,12 +152,21 @@ def consume_uploaded_topic(path, topic, video_id, *, test_mode=False,
     if normalized(topic) in {normalized(title) for title in history}:
         return False
     history.append(str(topic))
+    _write_json(path, history)
+    try:
+        record_published_lesson(topic, video_id, path.parent / LESSON_HISTORY_PATH.name)
+    except (OSError, TopicHold) as error:
+        print(f'   ⚠️ Published lesson not recorded ({type(error).__name__})')
+    return True
+
+
+def _write_json(path, value):
     temporary = None
     try:
         with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=path.parent,
                                          prefix=path.name + '.', suffix='.tmp', delete=False) as handle:
             temporary = Path(handle.name)
-            json.dump(history, handle, ensure_ascii=False, indent=2)
+            json.dump(value, handle, ensure_ascii=False, indent=2)
             handle.write('\n')
             handle.flush()
             os.fsync(handle.fileno())
@@ -164,13 +174,51 @@ def consume_uploaded_topic(path, topic, video_id, *, test_mode=False,
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def load_lesson_history(path=None):
+    """Lessons already published, whatever title they went out under."""
+    path = Path(path or LESSON_HISTORY_PATH)
+    if not path.exists():
+        return []
+    try:
+        lessons = json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(lessons, list) or any(
+                not isinstance(item, dict) or not isinstance(item.get('fact_ids'), list)
+                or not all(isinstance(item.get(key), str) and item[key].strip() for key in ('topic', 'intent_key'))
+                for item in lessons):
+            raise ValueError('Wrong lesson history schema')
+        return lessons
+    except (OSError, ValueError) as error:
+        raise TopicHold('Lesson history is unavailable or invalid; freshness cannot be verified.') from error
+
+
+def record_published_lesson(topic, video_id, path=None, today=None):
+    brief = getattr(topic, 'brief', None)
+    if not isinstance(brief, dict) or not isinstance(brief.get('intent_key'), str) or not brief['intent_key'].strip():
+        return False
+    path = Path(path or LESSON_HISTORY_PATH)
+    lessons = load_lesson_history(path)
+    if any(item.get('video_id') == video_id for item in lessons):
+        return False
+    lessons.append({'topic': str(topic), 'intent_key': brief['intent_key'],
+                    'fact_ids': [key for key in brief.get('fact_ids') or [] if isinstance(key, str)],
+                    'lesson': str(brief.get('lesson', '')), 'buyer_decision': str(brief.get('buyer_decision', '')),
+                    'video_id': video_id, 'published_on': (today or datetime.now(IST).date()).isoformat()})
+    _write_json(path, lessons)
     return True
 
 
-def brainstorming_context(bank, history):
+def brainstorming_context(bank, history, lessons=None):
     titles = {normalized(title) for title in history if isinstance(title, str)}
     completed = [brief for brief in bank.get('seed_lessons', [])
-                 if normalized(brief.get('topic', '')) in titles]
+                 if {normalized(value) for value in (brief.get('topic'), brief.get('published_as'))
+                     if isinstance(value, str) and value.strip()} & titles]
+    known = {normalized(brief.get('intent_key', '')) for brief in completed}
+    for item in load_lesson_history() if lessons is None else lessons:
+        if normalized(item['topic']) in titles and normalized(item['intent_key']) not in known:
+            known.add(normalized(item['intent_key']))
+            completed.append({'lesson': '', 'buyer_decision': '', **item})
     used = {key for brief in completed for key in brief.get('fact_ids', [])}
     preferred = [key for key in bank['facts'] if key not in used]
     ordered = {key: bank['facts'][key] for key in preferred}

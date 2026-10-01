@@ -9,11 +9,22 @@ QUESTIONS = {
     'pique_texture_is_construction_not_fibre': 'When choosing a polo, are you comparing its texture or its fibre blend?',
     'fabric_area_mass_vs_whole_garment_mass': 'Does your specification show fabric GSM or the weight of the complete T-shirt?',
     'knit_hem_coverseam_vs_joining_overedge': 'Which seam would you like explained on a sample: the hem or a joining seam?',
+    'single_jersey_skew_after_washing': 'After washing, did the side seam of your T-shirt move towards the front or stay straight?',
+    'discharge_print_removes_ground_dye': 'For a dark T-shirt design, would you choose ink on top or a print that lifts the dye?',
+    'acid_wash_is_discharge_without_acid': 'When you compare acid-wash tees, is your doubt about the base fabric or the wash effect?',
+    'pilling_set_by_materials_and_processing': 'Does your fabric specification say anything about pilling performance?',
+    'mercerization_swells_cotton_for_lustre': 'Have you seen mercerized listed as a separate process on a cotton specification?',
+    'polyester_oil_affinity_needs_soil_release': 'For polyester tees, has your supplier ever mentioned a soil-release finish?',
 }
 
 FACT_QUESTIONS = {
     'jersey_face_back': QUESTIONS['single_jersey_face_back_loop_orientation'],
     'pique_tuck_structure': QUESTIONS['pique_texture_is_construction_not_fibre'],
+    'discharge_printing': QUESTIONS['discharge_print_removes_ground_dye'],
+    'acid_wash_discharge': QUESTIONS['acid_wash_is_discharge_without_acid'],
+    'pilling_causes': QUESTIONS['pilling_set_by_materials_and_processing'],
+    'mercerization_lustre': QUESTIONS['mercerization_swells_cotton_for_lustre'],
+    'polyester_oleophilic': QUESTIONS['polyester_oil_affinity_needs_soil_release'],
 }
 
 
