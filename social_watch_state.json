@@ -191,6 +191,10 @@
   "D3UnAtIs0Ag": {
    "title": "Online T-Shirt Bech Rahe Ho? Ye Photos Bhi Dikhao",
    "published": "2026-09-30T12:30:37+00:00"
+  },
+  "RKgshUn--zk": {
+   "title": "Stock Aane Mein Deri Kyun? | Raw Material Ki Baat",
+   "published": "2026-10-01T12:30:36+00:00"
   }
  },
  "instagram": {
@@ -669,6 +673,10 @@
   "18115532522068458": {
    "permalink": "https://www.instagram.com/reel/Dd5yESQEQ7z/",
    "ts": "2026-09-30T07:20:32+0000"
+  },
+  "18122412136714039": {
+   "permalink": "https://www.instagram.com/reel/Dd9ZoSOiACX/",
+   "ts": "2026-10-01T17:03:24+0000"
   }
  },
  "facebook": {
@@ -1336,8 +1344,13 @@
    "at": "2026-10-01T16:52:24+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-10-02T00:46:32+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-10-01",
- "last_run_ist": "2026-10-01T16:52:24+05:30"
+ "last_green_date": "2026-10-02",
+ "last_run_ist": "2026-10-02T00:46:32+05:30"
 }
