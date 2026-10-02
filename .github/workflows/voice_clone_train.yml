@@ -1,0 +1,53 @@
+name: Voice clone training (Ketu PVC)
+
+# Manual only. Starts ElevenLabs fine-tuning of Ketu's Professional Voice Clone for the given
+# models (or just reports status), then prints the per-model training state. Fine-tunes are per
+# model, so training v4 does not touch the v3 voice the daily Shorts use.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_ids:
+        description: 'Models to train, comma separated'
+        required: false
+        default: 'eleven_v4_turbo,eleven_v4'
+      action:
+        description: 'train = start training then report; status = report only'
+        required: false
+        default: 'train'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Train and report
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          MODEL_IDS: ${{ inputs.model_ids }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          pip install -q requests
+          python3 - << 'PY'
+          import json, os, time, requests
+          H = {"xi-api-key": os.environ["ELEVENLABS_API_KEY"], "Content-Type": "application/json"}
+          VOICE = "cejtKjfE9sHUZ1FnUYEV"
+          models = [m.strip() for m in os.environ.get("MODEL_IDS", "").split(",") if m.strip()]
+          def state():
+            v = requests.get(f"https://api.elevenlabs.io/v1/voices/{VOICE}", headers=H, timeout=30).json()
+            ft = v.get("fine_tuning") or {}
+            return {"state": ft.get("state") or {}, "progress": ft.get("progress") or {}, "message": ft.get("message") or {}}
+          print("BEFORE:", json.dumps(state(), ensure_ascii=False))
+          if os.environ.get("ACTION", "train") == "train":
+            for model in models:
+              r = requests.post(f"https://api.elevenlabs.io/v1/voices/pvc/{VOICE}/train", headers=H, json={"model_id": model}, timeout=60)
+              print(f"TRAIN {model}: HTTP {r.status_code} {r.text[:400]}")
+          for i in range(24):
+            s = state()
+            wanted = {m: s["state"].get(m) for m in models}
+            print(f"[{i*60}s] " + json.dumps({"state": wanted, "progress": {m: s['progress'].get(m) for m in models}}, ensure_ascii=False))
+            if all(v in ("fine_tuned", "failed") for v in wanted.values()):
+              break
+            time.sleep(60)
+          print("AFTER:", json.dumps(state(), ensure_ascii=False))
+          PY
