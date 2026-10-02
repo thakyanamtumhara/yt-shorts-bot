@@ -129,18 +129,15 @@ SARVAM_TEMPERATURE = float(os.environ.get("SARVAM_TEMP", "0.7"))
 SARVAM_TARGET_LANG = "hi-IN"
 SARVAM_SAMPLE_RATE = 22050
 
-# ── ElevenLabs TTS (Fallback 1) ──
+# ── ElevenLabs TTS (primary: Ketu's cloned voice) ──
 ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "cejtKjfE9sHUZ1FnUYEV")  # Ketu Original (PVC clone)
-# Set ELEVENLABS_MODEL=eleven_v3 to use the newest (more natural) model.
-# Defaults to multilingual_v2 (stable, broad availability). v3 access is account-tier dependent.
-ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-# ElevenLabs Voice Library DEFAULT settings — what their web previews use.
-# We match these so bot output sounds identical to the preview the user heard.
+# Ketu picked Eleven v4 in a blind listening test on 2-Oct-2026 and wants it for all the work.
+# v4 reads only stability + similarity; it ignores speed and SSML <break> tags (natural pace,
+# ~27% slower than eleven_v3, so the script length target in tools/script_length.py follows it).
+ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_v4")
 ELEVENLABS_VOICE_SETTINGS = {
-    "stability": 0.50,        # was 0.62 — preview uses 0.50
-    "similarity_boost": 0.75,
-    "style": 0.00,            # was 0.22 — preview uses 0.00 (less artificial emphasis)
-    "use_speaker_boost": True,
+    "stability": 0.5,
+    "similarity_boost": 0.9,
 }
 
 # ── OpenAI TTS (Fallback) ──
@@ -5114,6 +5111,8 @@ def _own_channel_performance_signal():
 def get_script_prompt(topic):
     from tools.spoken_style import style_prompt
     from tools.daily_topic_selection import evidence_prompt
+    from tools.script_length import SENTENCE_WORDS, TARGET_WORDS
+    words = f"{TARGET_WORDS[0]}-{TARGET_WORDS[1]}"
     lesson_evidence = evidence_prompt(topic)
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
@@ -5144,7 +5143,11 @@ Past winners include invented losses and incidents: never copy those narratives.
 You are writing EXACTLY like a real Indian textile manufacturer talks — but using
 MICRO-STORYTELLING to hook the viewer in the first 2 seconds.
 
-TARGET LENGTH: 6-8 sentences. The Short should be 30-35 seconds long when spoken naturally.
+TARGET LENGTH — HARD LIMIT: 6-7 sentences and {words} words in total, never more than
+{TARGET_WORDS[1]}. Hook up to 10 words, every other sentence up to {SENTENCE_WORDS} words, final
+line 3-6 words. Count before you answer (numbers and ₹ amounts count as the words said
+aloud). Ketu's cloned voice speaks at his natural, unhurried pace, so this is a 30-35
+second Short; a longer script runs past the five video clips and is sent back.
 Tight and dense — every sentence earns its place. Still a MINI STORY with a
 beginning, middle, and end, just leaner.
 
@@ -5170,7 +5173,7 @@ STRUCTURE (follow this EVERY time):
    sheet. Never a loss, never a rejection, never "ek customer ne...".
    Sentence 2 then opens the explanation.
 
-2. PROBLEM BUILD-UP (2-3 sentences) — Explain the actual mistake buyers make.
+2. PROBLEM BUILD-UP (1-2 sentences) — Explain the actual mistake buyers make.
    Speak about it in GENERAL terms — "log aksar...", "bahut baar hota hai ki..."
    — never as a specific incident with a named customer, an order size and a
    loss figure attached, because you do not know of any such incident.
@@ -5182,7 +5185,7 @@ STRUCTURE (follow this EVERY time):
    story "feel REAL" by inventing detail is exactly the fabrication that got
    this pipeline stopped. General truth beats a specific lie.
 
-3. KNOWLEDGE DROP (3-4 sentences) — The actual gyaan, with practical examples:
+3. KNOWLEDGE DROP (2-3 sentences) — The actual gyaan, with practical examples:
    - Explain the concept with REAL comparisons
    - Give a practical test or check the viewer can do themselves
    - Use details supported by the supplied material/process information; numbers are optional.
@@ -5218,7 +5221,7 @@ Sample par check kar lo."
 
 ━━━ RULES EXTRACTED FROM THESE EXAMPLES ━━━
 
-1. 6-8 SENTENCES for a 30-35 second Short. Hook hard, build fast, drop knowledge, loop back to the hook at the end.
+1. 6-7 SENTENCES, {words} WORDS (never more than {TARGET_WORDS[1]}; up to {SENTENCE_WORDS} words per sentence) for a 30-35 second Short. Hook hard, build fast, drop knowledge, loop back to the hook at the end.
 2. FIRST SENTENCE = PATTERN-INTERRUPT — max 10 words, and it must be TRUE.
    🚨 NEVER an invented loss, rejection or customer. Use a checkable fact instead:
    a relevant material distinction, a checked current rate, or a
@@ -5482,7 +5485,7 @@ OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
     "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
-    "script_voice": "The ROMAN HINGLISH script. 6-8 sentences for 30-35 seconds spoken. First sentence = a TRUE pattern-interrupt (max 10 words) - a spec, a real rate or a checkable fact, NEVER an invented loss. Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
+    "script_voice": "The ROMAN HINGLISH script. 6-7 sentences, {words} words, never more than {TARGET_WORDS[1]}, each sentence up to {SENTENCE_WORDS} words (30-35 seconds spoken). First sentence = a TRUE pattern-interrupt (max 10 words) - a spec, a real rate or a checkable fact, NEVER an invented loss. Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
     "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
     "hook_text": "3-6 words, UPPERCASE, driven by a TRUE fact or real rate (never an invented loss), paired with the spoken first sentence",
     "music_mood": "Pick ONE mood for background music that matches this topic's emotion: upbeat | calm | serious | motivational | trendy",
@@ -7762,6 +7765,11 @@ def smart_pick_topic(claude_client, topic_bank, topic_history):
     CITED_RATE_FACTS.clear()
     CITED_RATE_FACTS.update(_cited_rate_facts(topic.brief))
     return topic
+
+
+def script_voice_feedback(script_voice):
+    from tools.script_length import voice_text_feedback
+    return voice_text_feedback(script_voice, normalize_for_tts(script_voice))
 
 
 def review_script(claude_client, script_voice, script_english, topic, video_prompts=None):
@@ -12355,6 +12363,13 @@ def main():
         script_english = candidate["script_english"]
 
         print(f"   🗣️ Script: {script_voice[:80]}...")
+
+        voice_issue = script_voice_feedback(script_voice)
+        if voice_issue:
+            print(f"   ❌ Script REJECTED (voice length/markup): {voice_issue}")
+            previous_feedback = voice_issue
+            candidate = None
+            continue
 
         # Quality gate: Claude reviews its own script + video prompts alignment
         candidate_prompts = [candidate.get(f"video_prompt_{i}", "") for i in range(1, VEO_CLIPS_PER_VIDEO + 1)]

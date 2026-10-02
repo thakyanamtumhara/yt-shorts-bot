@@ -13,10 +13,10 @@ import private_dialogue_episodes as episodes
 
 
 OUT = Path('delivery-audition-output')
-FORMAT = 'private-delivery-audition-v1'
+FORMAT = 'private-delivery-audition-v2'
 MAGIC = b'DELIVERYAUDITION1\n'
-VOICE_ID = 'cejtKjfE9sHUZ1FnUYEV'
-MODEL_ID = 'eleven_multilingual_v2'
+VOICE_ID = episodes.VOICE_ID
+MODEL_ID = episodes.VOICE_MODEL
 IDS = ('fit-open', 'fit-close-a', 'fit-close-b', 'print-close-a', 'print-close-b')
 GROUPS = ('fit', 'print-sample')
 MAX_PACK = 20 * 1024 * 1024
@@ -56,15 +56,15 @@ def validate_pack(pack):
     fields = {'format', 'voice_id', 'model_id', 'snippets', 'baselines'}
     if (not isinstance(pack, dict) or set(pack) != fields or pack['format'] != FORMAT
             or pack['voice_id'] != VOICE_ID or pack['model_id'] != MODEL_ID):
-        raise ValueError('Only the existing approved professional voice and v2 are allowed')
+        raise ValueError('Only the existing approved professional voice and the daily voice model are allowed')
     snippets = pack['snippets']
     if (not isinstance(snippets, list) or len(snippets) != 5
             or any(not isinstance(s, dict) for s in snippets)
             or [s.get('id') for s in snippets] != list(IDS)):
         raise ValueError('Exactly the five reviewed audition snippets are allowed in order')
     for snippet in snippets:
-        if set(snippet) != {'id', 'script', 'previous_text', 'next_text', 'settings'}:
-            raise ValueError('Unexpected snippet fields')
+        if set(snippet) != {'id', 'script', 'previous_text', 'next_text'}:
+            raise ValueError('Unexpected snippet fields; Eleven v4 takes no per-snippet speed or style')
         plain_text(snippet['script'], 260, 10)
         if not re.search('[ऄ-हक़-ॡ]', snippet['script']) or snippet['script'][-1] not in '।?!':
             raise ValueError('Snippet must be a complete Hindi sentence')
@@ -74,13 +74,6 @@ def validate_pack(pack):
         if ((opening and (snippet['previous_text'] or not snippet['next_text']))
                 or (not opening and (not snippet['previous_text'] or snippet['next_text']))):
             raise ValueError('Opening needs following context; endings need preceding context only')
-        settings = snippet['settings']
-        if (not isinstance(settings, dict) or set(settings) != {'speed', 'stability', 'style'}
-                or any(type(v) not in (int, float) or not math.isfinite(v) for v in settings.values())
-                or not 0.35 <= settings['stability'] <= 0.5 or not 0 <= settings['style'] <= 0.35
-                or (opening and settings['speed'] not in (0.94, 1.0))
-                or (not opening and not 0.90 <= settings['speed'] <= 0.94)):
-            raise ValueError('Voice settings exceed the bounded audition')
     if not isinstance(pack['baselines'], dict) or set(pack['baselines']) != set(GROUPS):
         raise ValueError('Both immutable original ending baselines are required')
     baselines = {}
@@ -136,9 +129,8 @@ class Claim:
 def preflight(manifest):
     headers = {'xi-api-key': os.environ['ELEVENLABS_API_KEY']}
     voice = episodes.request('GET', 'https://api.elevenlabs.io/v1/voices/' + VOICE_ID, headers=headers).json()
-    tuning = (voice.get('fine_tuning') or {}).get('state') or {}
-    if voice.get('voice_id') != VOICE_ID or voice.get('category') != 'professional' or tuning.get(MODEL_ID) != 'fine_tuned':
-        raise ValueError('Existing professional v2 voice readiness is not confirmed')
+    if voice.get('voice_id') != VOICE_ID or voice.get('category') != 'professional':
+        raise ValueError('Existing professional voice is not available')
     usage = episodes.request('GET', 'https://api.elevenlabs.io/v1/user/subscription', headers=headers).json()
     characters = sum(len(s['script']) for s in manifest['snippets'])
     if usage.get('character_limit', 0) - usage.get('character_count', 0) < characters:
@@ -148,7 +140,7 @@ def preflight(manifest):
     if model.get('name') != 'models/' + episodes.QA_MODEL:
         raise ValueError('Existing native audio reviewer is unavailable')
     save('preflight-private.json', {'voice_id': VOICE_ID, 'model_id': MODEL_ID,
-        'fine_tuning': tuning.get(MODEL_ID), 'tts_characters': characters,
+        'voice_settings': episodes.VOICE_SETTINGS, 'tts_characters': characters,
         'max_tts_submissions': 5, 'max_comparison_submissions': 2, 'qa_model': episodes.QA_MODEL})
     save('usage-before-private.json', usage)
 
@@ -174,8 +166,7 @@ def validate_alignment(script, duration, alignment):
 
 def make_snippet(snippet, claim):
     id_, script = snippet['id'], snippet['script']
-    payload = {'text': script, 'model_id': MODEL_ID, 'language_code': 'hi',
-               'voice_settings': {**snippet['settings'], 'similarity_boost': 0.75, 'use_speaker_boost': True}}
+    payload = {'text': script, 'model_id': MODEL_ID, 'voice_settings': dict(episodes.VOICE_SETTINGS)}
     for key in ('previous_text', 'next_text'):
         if snippet[key]:
             payload[key] = snippet[key]

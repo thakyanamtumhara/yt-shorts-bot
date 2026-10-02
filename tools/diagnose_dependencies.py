@@ -4,12 +4,17 @@ import base64
 import json
 import os
 import re
+import sys
 import urllib.error
 import urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from tools.voice_runtime import production_voice_config  # noqa: E402
 
-VOICE_ID = 'cejtKjfE9sHUZ1FnUYEV'
-MODEL_ID = 'eleven_v3'
+VOICE = production_voice_config()
+VOICE_ID = VOICE['voice_id']
+MODEL_ID = VOICE['model_id']
+VOICE_SETTINGS = VOICE['voice_settings']
 
 
 def safe_code(value):
@@ -97,8 +102,7 @@ def main(argv=None):
         return 0 if status == 200 and voice_status == 200 else 1
     status, content_type, audio = request('text-to-speech/' + VOICE_ID + '?output_format=mp3_44100_128', key, {
         'text': 'यह आवाज़ की जाँच है।', 'model_id': MODEL_ID,
-        'voice_settings': {'stability': 0.50, 'similarity_boost': 0.75,
-                           'style': 0.00, 'use_speaker_boost': True}})
+        'voice_settings': VOICE_SETTINGS})
     valid_audio = status == 200 and len(audio) > 100 and (
         audio.startswith(b'ID3') or (audio[0] == 255 and audio[1] & 224 == 224))
     print(json.dumps({'tts_probe': 'passed' if valid_audio else 'failed', 'http_status': status,
@@ -137,8 +141,7 @@ def alignment_summary(text, alignment, audio_seconds):
 def alignment_probe(key):
     status, _, body = request('text-to-speech/' + VOICE_ID + '/with-timestamps?output_format=mp3_44100_128', key, {
         'text': ALIGNMENT_TEXT, 'model_id': MODEL_ID,
-        'voice_settings': {'stability': 0.50, 'similarity_boost': 0.75,
-                           'style': 0.00, 'use_speaker_boost': True}})
+        'voice_settings': VOICE_SETTINGS})
     value = object_body(body) if status == 200 else {}
     try:
         audio = base64.b64decode(value.get('audio_base64') or '', validate=True)

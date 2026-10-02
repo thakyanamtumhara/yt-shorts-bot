@@ -14,6 +14,7 @@ import requests
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import private_video_pilot as shared
 from spoken_style import require_spoken_style
+from voice_runtime import production_voice_config
 
 
 OUT = Path('dialogue-episodes-output')
@@ -38,8 +39,10 @@ RESUME_FILES = {
     'fit-audio-qa-provider.json': '6779424e540cdbde0ea91bee8e0bf9747830d3da0228cae7a7bc8296008f120d',
     'fit-tts-receipt.json': 'dae15c44a5a2aee6d275a6d4eb8fcc769c64f63b86fafe0f2b72b94e6dcda5c7',
     'claim-private.json': 'f65f944551edbc1e08f0e04d7e4385ecfd87d047040c2e3d4070c26c97e85331'}
-VOICE_ID = 'cejtKjfE9sHUZ1FnUYEV'
-VOICE_MODEL = 'eleven_multilingual_v2'
+VOICE = production_voice_config()
+VOICE_ID = VOICE['voice_id']
+VOICE_MODEL = VOICE['model_id']
+VOICE_SETTINGS = VOICE['voice_settings']
 VIDEO_MODEL = 'heygen/lipsync-precision'
 QA_MODEL = 'gemini-3.8-flash'
 GOOGLE = 'https://generativelanguage.googleapis.com/v1beta'
@@ -281,9 +284,8 @@ def guard_execution():
 def preflight(episodes):
     eleven = {'xi-api-key': os.environ['ELEVENLABS_API_KEY']}
     voice = request('GET', f'https://api.elevenlabs.io/v1/voices/{VOICE_ID}', headers=eleven).json()
-    state = (voice.get('fine_tuning') or {}).get('state') or {}
-    if voice.get('voice_id') != VOICE_ID or state.get(VOICE_MODEL) != 'fine_tuned':
-        raise ValueError('Existing professional voice is not ready for Multilingual v2')
+    if voice.get('voice_id') != VOICE_ID or voice.get('category') != 'professional':
+        raise ValueError('Existing professional voice is not available')
     usage = request('GET', 'https://api.elevenlabs.io/v1/user/subscription', headers=eleven).json()
     save('voice-usage-before-private.json', usage)
     characters = sum(len(episode['script']) for episode in episodes)
@@ -308,15 +310,12 @@ def preflight(episodes):
 
 def make_speech(episode, source_seconds, claim):
     id_, script = episode['id'], episode['script']
-    ending = episode.get('ending')
-    settings = {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0.0, 'use_speaker_boost': True}
-    if ending:
-        settings['speed'] = ending['speed']
     claim.begin(id_, 'tts')
+    # Same voice as the daily Short. Eleven v4 has no speed control, so a manifest's ending
+    # speed is not sent; the ending settles through its wording and settle_seconds.
     response = request('POST', f'https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/with-timestamps',
         headers={'xi-api-key': os.environ['ELEVENLABS_API_KEY']}, params={'output_format': 'mp3_44100_128'},
-        json={'text': script, 'model_id': VOICE_MODEL, 'language_code': 'hi',
-              'voice_settings': settings})
+        json={'text': script, 'model_id': VOICE_MODEL, 'voice_settings': dict(VOICE_SETTINGS)})
     data = response.json()
     raw = base64.b64decode(data.pop('audio_base64'), validate=True)
     (OUT / f'{id_}-speech-raw.mp3').write_bytes(raw)

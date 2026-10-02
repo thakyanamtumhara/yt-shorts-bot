@@ -145,7 +145,7 @@ class EpisodeTests(unittest.TestCase):
              patch.object(pilot.shared, 'probe', side_effect=[34, 34.65]):
             self.assertAlmostEqual(pilot.make_speech(item, 45, self.claim), 34.65)
         self.assertEqual(request.call_args.kwargs['json']['text'], item['script'])
-        self.assertEqual(request.call_args.kwargs['json']['voice_settings']['speed'], 0.94)
+        self.assertEqual(request.call_args.kwargs['json']['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.9})
         self.assertIn(pilot.AUDIO_FILTER, run.call_args_list[0].args)
         self.assertIn('apad=pad_dur=0.65', run.call_args_list[1].args)
         self.assertNotIn('-t', run.call_args_list[1].args)
@@ -275,10 +275,10 @@ class EpisodeTests(unittest.TestCase):
         self.assertEqual(request.call_count, 1)
         payload = request.call_args.kwargs['json']
         self.assertEqual(payload['text'], item['script'])
-        self.assertEqual(payload['model_id'], 'eleven_multilingual_v2')
+        self.assertEqual(payload['model_id'], 'eleven_v4')
         self.assertIn(pilot.VOICE_ID, request.call_args.args[1])
-        self.assertEqual(payload['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0.0,
-                                                    'use_speaker_boost': True, 'speed': item['ending']['speed']})
+        self.assertEqual(payload, {'text': item['script'], 'model_id': 'eleven_v4',
+                                   'voice_settings': {'stability': 0.5, 'similarity_boost': 0.9}})
         self.assertEqual(finish.call_args.args, (item, 32, response.json.return_value['alignment'], pilot.AUDIO_FILTER))
 
     def test_refinement_requires_exact_provided_audio_contract_and_reviewed_source_duration(self):
@@ -401,10 +401,22 @@ class EpisodeTests(unittest.TestCase):
             self.assertEqual(pilot.make_speech(episode(), 30, self.claim), 22)
         payload = request.call_args.kwargs['json']
         self.assertEqual(payload['text'], SCRIPT)
-        self.assertEqual(payload['model_id'], 'eleven_multilingual_v2')
+        self.assertEqual(payload['model_id'], 'eleven_v4')
+        self.assertEqual(payload['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.9})
         self.assertIn(pilot.VOICE_ID, request.call_args.args[1])
         self.assertEqual(run.call_args.args[run.call_args.args.index('-af') + 1],
                          'highpass=f=60,loudnorm=I=-16:TP=-1.5:LRA=11')
+
+    def test_preflight_needs_the_professional_clone_not_a_v2_fine_tune(self):
+        voices = {'voice_id': pilot.VOICE_ID, 'category': 'cloned', 'fine_tuning': {'state': {'eleven_multilingual_v2': 'fine_tuned'}}}
+        with patch.object(pilot, 'request', return_value=Mock(json=lambda: voices)) as request, self.assertRaises(ValueError):
+            pilot.preflight([episode()])
+        self.assertEqual(request.call_count, 1)
+        ready = {'voice_id': pilot.VOICE_ID, 'category': 'professional', 'fine_tuning': {'state': {}}}
+        with patch.object(pilot, 'request', side_effect=[Mock(json=lambda: ready), Mock(json=lambda: {'character_limit': 0})]) as request, \
+                self.assertRaisesRegex(ValueError, 'allowance'):
+            pilot.preflight([episode()])
+        self.assertEqual(request.call_count, 2)
 
     def test_native_audio_request_contains_wav_and_structured_machine_review(self):
         (self.out / 'fit-speech.wav').write_bytes(b'RIFF-private-speech')

@@ -40,7 +40,8 @@ class DependencyProbeTest(unittest.TestCase):
         self.assertEqual(request.call_count, 3)
         self.assertIn('payment_required', output.getvalue())
         self.assertNotIn('secret', output.getvalue())
-        self.assertEqual(request.call_args.args[2]['model_id'], 'eleven_v3')
+        self.assertEqual(request.call_args.args[2]['model_id'], 'eleven_v4')
+        self.assertEqual(request.call_args.args[2]['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.9})
 
     def test_success_requires_real_audio_bytes(self):
         for data, expected in [(b'ID3' + b'a' * 300, 0), (b'{"ok":true}', 1)]:
@@ -67,7 +68,8 @@ class DependencyProbeTest(unittest.TestCase):
                     probe, 'request', side_effect=values) as request, redirect_stdout(output):
                 self.assertEqual(probe.main(['--alignment-probe']), expected)
             self.assertIn('/with-timestamps', request.call_args.args[0])
-            self.assertEqual(request.call_args.args[2]['model_id'], 'eleven_v3')
+            self.assertEqual(request.call_args.args[2]['model_id'], 'eleven_v4')
+            self.assertEqual(request.call_args.args[2]['voice_settings'], probe.VOICE_SETTINGS)
             self.assertNotIn(audio, output.getvalue())
 
 

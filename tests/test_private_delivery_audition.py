@@ -32,8 +32,7 @@ def pack():
     return {'format': audition.FORMAT, 'voice_id': audition.VOICE_ID, 'model_id': audition.MODEL_ID,
             'snippets': [{'id': id_, 'script': 'पहले “सैंपल का फिट” तय करो।',
                           'previous_text': '' if id_ == 'fit-open' else 'सैंपल को साथ रखकर दोनों की नाप मिला लो।',
-                          'next_text': 'फिर सही फिट चुनो।' if id_ == 'fit-open' else '',
-                          'settings': {'speed': 0.94, 'stability': 0.5, 'style': 0.2}}
+                          'next_text': 'फिर सही फिट चुनो।' if id_ == 'fit-open' else ''}
                          for id_ in audition.IDS],
             'baselines': {group: {'script': 'पहले सैंपल का फिट तय करो।',
                                   'wav_base64': base64.b64encode(raw).decode(), 'wav_sha256': audition.digest(raw)}
@@ -98,7 +97,7 @@ class AuditionTests(unittest.TestCase):
         return result
 
     def test_only_five_exact_ids_fixed_professional_voice_and_model(self):
-        for field, value in [('voice_id', 'other'), ('model_id', 'eleven_v3'),
+        for field, value in [('voice_id', 'other'), ('model_id', 'eleven_v3'), ('model_id', 'eleven_multilingual_v2'),
                              ('snippets', pack()['snippets'] + [pack()['snippets'][0]])]:
             with self.subTest(field=field):
                 data = pack()
@@ -110,14 +109,11 @@ class AuditionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audition.validate_pack(data)
 
-    def test_curly_quotes_allowed_but_markup_and_out_of_bounds_settings_denied(self):
+    def test_curly_quotes_allowed_but_markup_and_per_snippet_settings_denied(self):
         audition.validate_pack(pack())
         cases = [('script', '<break time="1s" /> फिर चुनो।'), ('script', '[emphatic] फिर चुनो।'),
-                 ('script', 'क' * 260 + '।'), ('settings', {'speed': 0.89, 'stability': 0.5, 'style': 0.2}),
-                 ('settings', {'speed': 0.94, 'stability': 0.2, 'style': 0.2}),
-                 ('settings', {'speed': 0.94, 'stability': 0.5, 'style': 0.36}),
-                 ('settings', {'speed': True, 'stability': 0.5, 'style': 0.2}),
-                 ('settings', {'speed': float('nan'), 'stability': 0.5, 'style': 0.2})]
+                 ('script', 'क' * 260 + '।'), ('settings', {'speed': 0.94, 'stability': 0.5, 'style': 0.2}),
+                 ('settings', {'stability': 0.35})]
         for field, value in cases:
             with self.subTest(value=value):
                 data = pack()
@@ -220,9 +216,10 @@ class AuditionTests(unittest.TestCase):
         self.assertEqual(payload['text'], snippet['script'])
         self.assertEqual(payload['previous_text'], snippet['previous_text'])
         self.assertNotIn('next_text', payload)
-        self.assertEqual(payload['model_id'], audition.MODEL_ID)
+        self.assertEqual(payload['model_id'], 'eleven_v4')
         self.assertIn(audition.VOICE_ID, request.call_args.args[1])
-        self.assertEqual(payload['voice_settings']['similarity_boost'], 0.75)
+        self.assertEqual(payload['voice_settings'], {'stability': 0.5, 'similarity_boost': 0.9})
+        self.assertEqual(set(payload), {'text', 'model_id', 'voice_settings', 'previous_text'})
         self.assertIn('highpass=f=60,loudnorm=I=-16:TP=-1.5:LRA=11', run.call_args.args)
         self.assertNotIn('-t', run.call_args.args)
         self.assertEqual(self.claim.state['stages'][snippet['id']]['attempts'], 1)
@@ -279,7 +276,7 @@ class AuditionTests(unittest.TestCase):
 
     def test_preflight_denies_unready_voice_before_any_generation(self):
         request = self.patch(audition.episodes, 'request', return_value=Mock(json=Mock(return_value={
-            'voice_id': audition.VOICE_ID, 'category': 'professional', 'fine_tuning': {'state': {audition.MODEL_ID: 'not_started'}}})))
+            'voice_id': audition.VOICE_ID, 'category': 'cloned', 'fine_tuning': {'state': {'eleven_multilingual_v2': 'fine_tuned'}}})))
         with self.assertRaises(ValueError):
             audition.preflight(self.manifest)
         self.assertEqual(request.call_args.args[0], 'GET')

@@ -112,7 +112,7 @@ class DailyReviewSchemaTest(unittest.TestCase):
 
 
 class DailyAcceptanceFlowTest(unittest.TestCase):
-    def run_acceptance(self,reviews,payloads=None):
+    def run_acceptance(self,reviews,payloads=None,voice_feedback=None):
         start=SOURCE.index('    # ── 3. Generate Script (with quality gate)')
         end=SOURCE.index('    script_voice = data["script_voice"]',start)
         block=textwrap.dedent(SOURCE[start:end])
@@ -120,8 +120,8 @@ class DailyAcceptanceFlowTest(unittest.TestCase):
         candidate={'script_voice':'Pehle sample ka fit check kar lo.','script_english':'Check the fit of a sample first.'}
         payloads=payloads or [candidate]*len(reviews)
         responses=[SimpleNamespace(content=[SimpleNamespace(text=json.dumps(p))],usage=SimpleNamespace(input_tokens=1,output_tokens=1)) for p in payloads]
-        paid=Mock();flags=Mock();review=Mock(side_effect=reviews)
-        scope={'json':json,'re':__import__('re'),'time':SimpleNamespace(sleep=Mock()),'print':Mock(),'SCRIPT_MAX_ATTEMPTS':len(payloads),'VEO_CLIPS_PER_VIDEO':5,'fresh_topic':'Fit before the size letter','get_script_prompt':lambda topic:'Write useful buyer advice.','claude':SimpleNamespace(messages=SimpleNamespace(create=Mock(side_effect=responses))),'cost':SimpleNamespace(track_claude_call=Mock()),'review_script':review,'flag':flags,'paid_stage':paid}
+        paid=Mock();flags=Mock();review=Mock(side_effect=reviews);self.writer=Mock(side_effect=responses)
+        scope={'json':json,'re':__import__('re'),'time':SimpleNamespace(sleep=Mock()),'print':Mock(),'SCRIPT_MAX_ATTEMPTS':len(payloads),'VEO_CLIPS_PER_VIDEO':5,'fresh_topic':'Fit before the size letter','get_script_prompt':lambda topic:'Write useful buyer advice.','claude':SimpleNamespace(messages=SimpleNamespace(create=self.writer)),'cost':SimpleNamespace(track_claude_call=Mock()),'review_script':review,'script_voice_feedback':voice_feedback or (lambda script:None),'flag':flags,'paid_stage':paid}
         try:
             exec(compile(block+'\npaid_stage(data)\n','actual-main-script-acceptance','exec'),scope)
             return paid,flags,review,None
@@ -147,6 +147,36 @@ class DailyAcceptanceFlowTest(unittest.TestCase):
         paid,flags,review,error=self.run_acceptance([(False,30,'value','Fix it'),(True,42,'hook','Useful')],[first,second])
         self.assertIsNone(error);paid.assert_called_once_with(second);flags.assert_not_called();self.assertEqual(review.call_count,2)
 
+    def test_voice_length_rejection_is_fed_back_and_never_reaches_reviewer(self):
+        long={'script_voice':'Too long for the voice.','script_english':'Too long.'}
+        short={'script_voice':'Fits the voice.','script_english':'Fits.'}
+        check=Mock(side_effect=['Script is too long for the voice: 127 spoken words.',None])
+        paid,flags,review,error=self.run_acceptance([(True,42,'hook','Useful')],[long,short],check)
+        self.assertIsNone(error);paid.assert_called_once_with(short);flags.assert_not_called()
+        self.assertEqual(review.call_count,1);self.assertEqual(review.call_args.args[1],'Fits the voice.')
+        self.assertEqual([c.args[0] for c in check.call_args_list],['Too long for the voice.','Fits the voice.'])
+        self.assertIn('127 spoken words',self.writer.call_args_list[1].kwargs['messages'][0]['content'])
+
+    def test_scripts_that_never_fit_the_voice_stop_before_any_paid_stage(self):
+        paid,flags,review,error=self.run_acceptance([(True,42,'hook','Useful')]*3,None,Mock(return_value='Script is too long for the voice.'))
+        self.assertIsInstance(error,RuntimeError);self.assertIn('No approved script',str(error))
+        review.assert_not_called();paid.assert_not_called();flags.assert_called_once_with('script_approved',False)
+
+    def test_real_voice_check_uses_the_production_normalizer(self):
+        from tools.voice_runtime import load_normalize_for_tts
+        check=load_function('script_voice_feedback',{'normalize_for_tts':load_normalize_for_tts()})
+        published=('Ek oversize ₹186 aur doosra ₹205, kyun? Dekho, dono oversize hain par ek 180 GSM hai aur doosra 240 GSM, '
+                   'aur construction aur finish bhi alag listed hai. Ab GSM ka matlab ye nahi ki poori T-shirt ka weight kitna hai. '
+                   'GSM basically fabric ka ek defined area kitna heavy hai, wo measure karta hai. Matlab same 240 GSM fabric se '
+                   'agar size S kaatoge toh garment halka banega, size L kaatoge toh bhaari, par fabric ka GSM wahi rahega. Toh jab '
+                   'aap do blanks compare karo, sirf GSM number mat dekho, uske saath jo construction aur finish likhi hai wo bhi '
+                   'padho. Bas itna samajh lo toh sahi comparison kar paoge. Theek hai.')
+        self.assertIn('127 spoken words',check(published))
+        six=published.replace('Ab GSM ka matlab ye nahi ki poori T-shirt ka weight kitna hai. GSM basically fabric ka ek '
+                              'defined area kitna heavy hai, wo measure karta hai. ','')
+        self.assertIsNone(check(six))
+        self.assertIn('markup',check('[pause] '+six))
+
     def test_bad_writer_payloads_never_reach_reviewer_or_paid_stage(self):
         for payload in ([],None,{}, {'script_voice':False,'script_english':'text'}, {'script_voice':'','script_english':'text'}):
             with self.subTest(payload=payload):
@@ -163,6 +193,15 @@ class WriterContradictionRegressionTest(unittest.TestCase):
         self.assertIn('not evidence of an actual test result',prompt)
         self.assertIn('A useful buyer question can be strong without money',prompt)
         self.assertIn('Never prescribe a universal GSM minimum',prompt)
+
+    def test_writer_length_target_follows_the_v4_voice_pace(self):
+        prompt=load_function('get_script_prompt',{'BUSINESS_CONTEXT':'Plain T shirts.','get_source_channel_top_topics':lambda n:[],'_own_channel_performance_signal':lambda:'','extract_voice_corpus_style_hints':lambda:'','_get_recent_clip_prompts':lambda:''})('Printing samples')
+        self.assertIn('6-7 sentences and 75-85 words in total, never more than\n85.',prompt)
+        self.assertIn('every other sentence up to 14 words',prompt)
+        self.assertIn('6-7 SENTENCES, 75-85 WORDS (never more than 85; up to 14 words per sentence) for a 30-35 second Short',prompt)
+        self.assertIn('6-7 sentences, 75-85 words, never more than 85, each sentence up to 14 words (30-35 seconds spoken)',prompt)
+        for stale in ('6-8 sentences','6-8 SENTENCES','<break','[pause]','audio tag'):
+            with self.subTest(stale=stale):self.assertNotIn(stale,prompt)
 
 
 if __name__=='__main__':unittest.main()

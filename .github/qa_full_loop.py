@@ -19,8 +19,12 @@ from pathlib import Path
 
 import requests
 
-ELEVENLABS_VOICE_ID = "cejtKjfE9sHUZ1FnUYEV"
-ELEVENLABS_MODEL = "eleven_multilingual_v2"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.voice_runtime import production_voice_config
+
+VOICE_CONFIG = production_voice_config()
+ELEVENLABS_VOICE_ID = VOICE_CONFIG['voice_id']
+ELEVENLABS_MODEL = VOICE_CONFIG['model_id']
 
 OUT_DIR = Path("/tmp/qa_out")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -89,12 +93,7 @@ def elevenlabs_tts(text: str, out_path: Path, api_key: str) -> None:
         json={
             "text": text,
             "model_id": ELEVENLABS_MODEL,
-            "voice_settings": {
-                "stability": 0.50,
-                "similarity_boost": 0.75,
-                "style": 0.00,
-                "use_speaker_boost": True,
-            },
+            "voice_settings": VOICE_CONFIG['voice_settings'],
         },
         timeout=120,
     )

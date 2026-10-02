@@ -16,11 +16,22 @@ ROOT=Path(__file__).resolve().parents[1]
 class VoiceRuntimeTest(unittest.TestCase):
     def test_daily_workflow_model_settings_and_learned_aliases_are_loaded(self):
         config=production_voice_config()
-        self.assertEqual(config['model_id'],'eleven_v3')
+        self.assertEqual(config['model_id'],'eleven_v4')
+        self.assertEqual(config['voice_settings'],{'stability':0.5,'similarity_boost':0.9})
         self.assertEqual(config['voice_tempo'],1.0)
         normalize=load_normalize_for_tts()
         self.assertEqual(normalize('saimpal order GSM combed galat seekha'),'सैंपल order GSM कोम्ड ग़लत सीखा')
         self.assertEqual(normalize('ऑर्डर सैंपल एम मीडियम बायो वॉश'),'ऑर्डर सैंपल एम मीडियम बायो वॉश')
+
+    def test_code_default_is_v4_and_spoken_text_carries_no_ssml_or_tags(self):
+        tree=ast.parse((ROOT/'daily_short.py').read_text())
+        default=next(node.value for node in tree.body if isinstance(node,ast.Assign)
+                     and any(isinstance(t,ast.Name) and t.id=='ELEVENLABS_MODEL' for t in node.targets))
+        self.assertEqual(ast.literal_eval(default.args[1]),'eleven_v4')
+        normalize=load_normalize_for_tts()
+        for text in ('Dekho, sample check kar lo... matlab, fit pehle. Bas itna hi...',
+                     'Ek oversize ₹186 aur doosra ₹205, kyun? Theek hai.'):
+            with self.subTest(text=text):self.assertNotRegex(normalize(text),r'<|>|\[|\]')
 
     def test_complete_normalizer_matches_independent_production_slice(self):
         spec=importlib.util.spec_from_file_location('corpus_fixture',ROOT/'tests/test_voice_corpus_speech.py')
@@ -40,7 +51,7 @@ class VoiceRuntimeTest(unittest.TestCase):
     def test_config_follows_explicit_daily_workflow_not_stale_v2_default(self):
         with TemporaryDirectory() as folder:
             root=self.fixture(folder);path=root/'.github/workflows/daily_short.yml'
-            path.write_text(path.read_text().replace('ELEVENLABS_MODEL: eleven_v3','ELEVENLABS_MODEL: test_production_model').replace('VOICE_TEMPO: "1.0"','VOICE_TEMPO: "0.94"'))
+            path.write_text(path.read_text().replace('ELEVENLABS_MODEL: eleven_v4','ELEVENLABS_MODEL: test_production_model').replace('VOICE_TEMPO: "1.0"','VOICE_TEMPO: "0.94"'))
             self.assertEqual(production_voice_config(root)['model_id'],'test_production_model')
             self.assertEqual(production_voice_config(root)['voice_tempo'],0.94)
             path.write_text(path.read_text().replace('ELEVENLABS_MODEL: test_production_model','ELEVENLABS_MODEL: ${{ secrets.MODEL }}'))
@@ -61,7 +72,7 @@ class VoiceRuntimeTest(unittest.TestCase):
             self.assertEqual(text,'सैंपल');post.assert_not_called()
             post.return_value=Mock(content=b'fake-audio')
             with TemporaryDirectory() as folder:module.elevenlabs_tts(text,Path(folder)/'test.mp3','not-real')
-            self.assertEqual(post.call_args.kwargs['json']['model_id'],'eleven_v3')
+            self.assertEqual(post.call_args.kwargs['json']['model_id'],'eleven_v4')
             self.assertEqual(post.call_args.kwargs['json']['text'],'सैंपल')
             self.assertEqual(post.call_args.kwargs['json']['voice_settings'],production_voice_config()['voice_settings'])
 

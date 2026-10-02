@@ -13,12 +13,15 @@ import requests
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import private_video_pilot as shared
+from voice_runtime import production_voice_config
 
 
 OUT = Path('dialogue-output')
 shared.OUT = OUT
-VOICE_ID = 'cejtKjfE9sHUZ1FnUYEV'
-VOICE_MODEL = 'eleven_multilingual_v2'
+VOICE = production_voice_config()
+VOICE_ID = VOICE['voice_id']
+VOICE_MODEL = VOICE['model_id']
+VOICE_SETTINGS = VOICE['voice_settings']
 VIDEO_MODEL = 'heygen/lipsync-precision'
 API = 'https://api.replicate.com/v1'
 SCRIPT = ('बल्क ऑर्डर से पहले एक-दो सैंपल मंगाकर कपड़ा, फिटिंग और सिलाई चेक करो। '
@@ -57,8 +60,8 @@ def preflight(skip_voice=False):
         voice_check = {'voice_id': voice.get('voice_id'), 'name': voice.get('name'),
                        'category': voice.get('category'), 'fine_tuning': fine_tuning}
         save('voice-preflight-private.json', voice_check)
-        if voice.get('voice_id') != VOICE_ID or fine_tuning.get(VOICE_MODEL) != 'fine_tuned':
-            raise ValueError('The existing Ketu professional voice is not ready for Multilingual v2; no generation')
+        if voice.get('voice_id') != VOICE_ID or voice.get('category') != 'professional':
+            raise ValueError('The existing Ketu professional voice is not available; no generation')
         usage = request('GET', 'https://api.elevenlabs.io/v1/user/subscription', headers=eleven_headers).json()
         save('voice-usage-before-private.json', usage)
         remaining = usage.get('character_limit', 0) - usage.get('character_count', 0)
@@ -159,9 +162,7 @@ def make_speech(meta):
     save('metadata.json', meta)
     response = request('POST', f'https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/with-timestamps',
         headers={'xi-api-key': os.environ['ELEVENLABS_API_KEY']}, params={'output_format': 'mp3_44100_128'},
-        json={'text': SCRIPT, 'model_id': VOICE_MODEL, 'language_code': 'hi',
-              'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75, 'style': 0.0,
-                                 'use_speaker_boost': True}})
+        json={'text': SCRIPT, 'model_id': VOICE_MODEL, 'voice_settings': dict(VOICE_SETTINGS)})
     data = response.json()
     (OUT / 'speech-raw.mp3').write_bytes(base64.b64decode(data.pop('audio_base64'), validate=True))
     save('speech-timestamps.json', data)

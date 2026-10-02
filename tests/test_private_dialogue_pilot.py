@@ -74,6 +74,20 @@ class DialogueResumeTest(unittest.TestCase):
                                        expected_hash or hashlib.sha256(blob).hexdigest(), self.source_hash, meta)
         return duration, meta
 
+    def test_new_speech_uses_the_daily_voice_model_and_settings(self):
+        count = len(pilot.SCRIPT)
+        data = {'audio_base64': base64.b64encode(b'ID3-fixture').decode(), 'alignment': {
+            'characters': list(pilot.SCRIPT),
+            'character_start_times_seconds': [i * 14.5 / count for i in range(count)],
+            'character_end_times_seconds': [(i + 1) * 14.5 / count for i in range(count)]}}
+        self.probe.return_value = 14.64
+        with patch.dict(os.environ, {'ELEVENLABS_API_KEY': 'fake-voice'}), \
+             patch.object(pilot, 'request', return_value=Mock(json=lambda: data, headers={})) as request, \
+             patch.object(pilot.shared, 'run'):
+            self.assertEqual(pilot.make_speech({}), 14.64)
+        self.assertEqual(request.call_args.kwargs['json'], {'text': pilot.SCRIPT, 'model_id': 'eleven_v4',
+                                                            'voice_settings': {'stability': 0.5, 'similarity_boost': 0.9}})
+
     def test_complete_original_11_second_speech_is_reused_without_modification(self):
         duration, meta = self.resume()
         self.assertEqual(duration, 11.517098)

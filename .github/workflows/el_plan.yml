@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+      scripts:
+        description: 'With topics: write this many scripts (0-5) for the approved topic; report length, voice check and review only'
+        required: false
+        type: string
+        default: '0'
 
 permissions:
   contents: read
@@ -54,7 +59,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COMPARE_ORIGINAL: ${{ inputs.compare_original }}
+          SCRIPTS: ${{ inputs.scripts }}
         run: |
           args=(--max-reviews 5)
           if [ "$COMPARE_ORIGINAL" = "true" ]; then args+=(--compare-original); fi
+          if [ -n "$SCRIPTS" ] && [ "$SCRIPTS" != "0" ]; then args+=(--scripts "$SCRIPTS"); fi
           python tools/diagnose_topics.py "${args[@]}"
