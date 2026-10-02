@@ -7,5 +7,15 @@
    "stitch_construction_jobs"
   ],
   "reason": "The Short explains the 406 coverseam stitch on T-shirt hems. However, the visual used between 14s and 20s to demonstrate coverseam stretch shows two applied braided trims or heavy decorative cords rather than an authentic 406 coverseam structure."
+ },
+ {
+  "date": "2026-10-02",
+  "topic": "धुलाई के बाद टी-शर्ट टेढ़ी क्यों हो जाती है? — Twist Liveliness का असली कारण",
+  "intent_key": "singles_twist_liveliness_skew_cause",
+  "fact_ids": [
+   "singles_twist_liveliness_skew",
+   "garment_skew_after_laundering"
+  ],
+  "reason": "The video uses a heavy rib-knit fabric to illustrate single jersey loop deformation and demonstrates garment skew using an artificially hand-pinched swirl."
  }
 ]
