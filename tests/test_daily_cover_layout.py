@@ -68,6 +68,34 @@ class DailyCoverLayoutTest(unittest.TestCase):
             self.assertEqual(selected['key'],expected)
             self.assertNotIn('हल्का',selected['labels'])
 
+    def test_dtf_lessons_get_their_own_comparison_only_when_the_script_speaks_it(self):
+        rows=[(['dtf_transparent_background'],'White background rakha toh rectangle chhapa; transparent rakho.','dtf_white_vs_transparent'),
+              (['dtf_canva_png_size','dtf_min_resolution'],'Canva mein size 3.125x chuno, tab 300 DPI pixel milenge.','dtf_canva_size'),
+              (['dtf_min_resolution'],'DPI number badalne se pixel nahi badhte.','dtf_dpi_vs_pixels'),
+              (['dtf_pieces_whole_sheet','dtf_sheet_size'],'Pieces matlab poori sheet; 28 design ek sheet par.','dtf_pieces_vs_designs'),
+              (['dtf_sheet_size','dtf_pieces_whole_sheet'],'Gang sheet: ek sheet par kai design.','dtf_separate_vs_gang'),
+              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.','dtf_tee_vs_hoodie')]
+        for facts,script,expected in rows:
+            self.assertEqual(supported_comparison(topic('dtf',facts),script)['key'],expected)
+        self.assertIsNone(supported_comparison(topic('dtf',['dtf_transparent_background']),'Glow aur shadow patchy chhapte hain.'))
+        self.assertIsNone(supported_comparison(topic('dtf',['dtf_press_settings']),'Press karo, phir thanda hone do.'))
+        self.assertIsNone(supported_comparison(topic('dtf',['dtf_service_launch']),'DTF sheet online order karo.'))
+
+    @unittest.skipUnless(features.check('raqm'),'Hindi shaping required')
+    def test_actual_dtf_renders_fit(self):
+        rows=[(['dtf_transparent_background'],'White background rakha toh rectangle chhapa; transparent rakho.',['WHITE BG रखा','RECTANGLE क्यों छपा?']),
+              (['dtf_canva_png_size'],'Canva mein size 3.125x chuno, tab 300 DPI milega.',['CANVA से PNG','300 DPI कैसे?']),
+              (['dtf_min_resolution'],'DPI number badalne se pixel nahi badhte.',['DPI बदला फिर भी','फ़ाइल रिजेक्ट क्यों?']),
+              (['dtf_pieces_whole_sheet'],'Pieces matlab poori sheet, design nahi.',['पीस मतलब','डिज़ाइन या शीट?']),
+              (['dtf_sheet_size'],'Gang sheet: ek sheet par kai design.',['हर डिज़ाइन','अलग शीट पर?']),
+              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.',['DTF प्रेस','कितने डिग्री पर?'])]
+        with tempfile.TemporaryDirectory() as tmp:
+            for i,(facts,script,lines) in enumerate(rows):
+                result=render_buyer_cover(Image.new('RGB',(1080,1920),'#456678'),lines,Path(tmp)/f'{i}.png',topic=topic('dtf',facts),script=script)
+                self.assertTrue(result['comparison_illustrated'],facts)
+                self.assertEqual(Image.open(Path(tmp)/f'{i}.png').size,(1080,1920))
+                self.assertEqual(Image.open(Path(tmp)/f'{i}_youtube.png').size,(1280,720))
+
     def test_missing_evidence_does_not_enable_profile(self):
         selected=SelectedTopic({'topic':'GSM','fact_ids':['fabric_mass_per_area']})
         self.assertIsNone(supported_comparison(selected,'GSM lighter heavier quality'))

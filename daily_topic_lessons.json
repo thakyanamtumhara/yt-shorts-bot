@@ -434,34 +434,37 @@
       "dtf_service_launch"
     ],
     "clips": {
-      "dtf_sheet_size": [
-        "home",
-        "about"
-      ],
-      "dtf_min_resolution": [
-        "tips",
-        "lowres"
+      "dtf_transparent_background": [
+        "transparent"
       ],
       "dtf_canva_png_size": [
-        "lowres",
-        "tips"
+        "canva"
       ],
-      "dtf_transparent_background": [
-        "tips"
+      "dtf_min_resolution": [
+        "resolution"
       ],
       "dtf_pieces_whole_sheet": [
-        "about",
-        "home"
+        "pieces"
+      ],
+      "dtf_sheet_size": [
+        "gang"
       ],
       "dtf_press_settings": [
         "press"
       ],
       "dtf_service_launch": [
-        "home",
-        "about"
+        "launch"
       ]
     },
+    "generic_clip_facts": [
+      "dtf_service_launch"
+    ],
     "cta_text": "Naya: DTF sheets - dtf.bulkplaintshirt.com",
+    "outro": {
+      "title": "Sale91 DTF",
+      "sub": "Apne PNG se DTF sheets",
+      "cta": "dtf.bulkplaintshirt.com"
+    },
     "link": "https://dtf.bulkplaintshirt.com/?utm_source=youtube&utm_medium=shorts_description&utm_campaign=dtf_launch",
     "ig_line": "Naya: DTF sheets ab Sale91 pe - dtf.bulkplaintshirt.com par PNG upload karke order karo.",
     "owner_review": true

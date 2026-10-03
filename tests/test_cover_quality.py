@@ -53,6 +53,14 @@ class CoverQualityTest(unittest.TestCase):
             validate_cover_text('DTF PRINT | 7 DEGREE CHANGE', '70 degrees')
         validate_cover_text('180 GSM | क्या जाँचें?', '180 GSM')
 
+    def test_dtf_resolution_values_need_the_exact_spoken_value(self):
+        validate_cover_text('CANVA से PNG | 300 DPI कैसे?', 'Size 3.125x chuno, tab 300 DPI milega.')
+        validate_cover_text('SIZE 3.125x | कैनवा में कहाँ?', 'Size 3.125x chuno, tab 300 DPI milega.')
+        for text, script in (('CANVA से PNG | 300 DPI कैसे?', 'Canva se 250 DPI'), ('DTF शीट | 5700 px क्यों?', '5700 pixels'),
+                             ('DTF शीट | 28 डिज़ाइन?', '28 design'), ('DTF प्रेस | 165 डिग्री?', '165 degree')):
+            with self.assertRaises(ValueError):
+                validate_cover_text(text, script)
+
     def test_neutral_topic_covers_pass_without_prices_or_numbers(self):
         for topic in ('DTF humidity','DTF print','regular fit','polo collar','wet rub dye','polyester','MOQ','biowash','cotton','screen print','wholesale tips'):
             for text in neutral_cover(topic):

@@ -75,3 +75,28 @@ class VisualTimelineTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ScreenRecordingFitTests(unittest.TestCase):
+    def test_rate_ends_the_recording_with_the_narration_inside_the_allowed_range(self):
+        from tools.daily_visual_timeline import screen_recording_rate
+        self.assertAlmostEqual(screen_recording_rate(38.9, 32.0), 38.9 / 32.0)
+        self.assertAlmostEqual(screen_recording_rate(27.0, 36.0), 0.75)
+        self.assertEqual(screen_recording_rate(40, 10), 1.6)
+        self.assertEqual(screen_recording_rate(10, 40), 0.7)
+        for bad in ((0, 30), (30, 0), (math.nan, 30), (30, math.inf)):
+            with self.assertRaises(ValueError):
+                screen_recording_rate(*bad)
+
+    @unittest.skipUnless(importlib.util.find_spec('moviepy'), 'MoviePy render dependency unavailable')
+    def test_actual_recording_plays_once_and_covers_the_narration(self):
+        import numpy as np
+        from moviepy.editor import VideoClip
+        from tools.daily_visual_timeline import fit_screen_recording
+        source = VideoClip(lambda t: np.full((16, 9, 3), min(255, int(t * 10)), dtype=np.uint8), duration=20).set_fps(30)
+        for target, last_value in ((16.0, 199), (25.0, 199), (40.0, 199), (10.0, 160)):
+            fitted = fit_screen_recording(source, target)
+            self.assertAlmostEqual(fitted.duration, target, places=2)
+            values = [int(fitted.get_frame(t)[0, 0, 0]) for t in np.linspace(0, target - 0.05, 40)]
+            self.assertEqual(values, sorted(values), target)
+            self.assertAlmostEqual(values[-1], last_value, delta=6)

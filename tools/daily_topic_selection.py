@@ -230,20 +230,22 @@ def cites_campaign(brief, campaign):
     return any(key in campaign['fact_ids'] for key in brief['fact_ids'])
 
 
-def campaign_clips(brief, campaign, assets_dir, count=5):
-    """Real screen recordings for a campaign lesson: only the clips mapped to the facts it cites (the timeline loops
-    them), because the final visual review compares every segment with the spoken lesson. Only files that exist;
-    [] for any lesson that cites no campaign fact."""
+def campaign_clips(brief, campaign, assets_dir):
+    """The ONE real screen recording for a campaign lesson: the clip of the first fact it cites, in its own order, with
+    the campaign's "generic_clip_facts" (broad facts like the launch itself) used only when no more specific cited fact
+    has a clip. Each clip is a complete demonstration of its fact and plays once over the whole narration, because the
+    final reviews compare the picture with the spoken lesson. [] when no cited fact has a clip file."""
     if not cites_campaign(brief, campaign):
         return []
     mapping = campaign.get('clips') if isinstance(campaign.get('clips'), dict) else {}
-    order = []
-    for key in brief['fact_ids']:
+    generic = set(campaign.get('generic_clip_facts') or [])
+    cited = [key for key in brief['fact_ids'] if key not in generic] + [key for key in brief['fact_ids'] if key in generic]
+    for key in cited:
         for name in mapping.get(key) or []:
-            if isinstance(name, str) and name not in order:
-                order.append(name)
-    paths = [Path(assets_dir) / f'{name}.mp4' for name in order if re.fullmatch(r'[a-z0-9_]{1,40}', name)]
-    return [str(path) for path in paths if path.is_file()][:count]
+            path = Path(assets_dir) / f'{name}.mp4'
+            if isinstance(name, str) and re.fullmatch(r'[a-z0-9_]{1,40}', name) and path.is_file():
+                return [str(path)]
+    return []
 
 
 def campaign_prompt(campaign):

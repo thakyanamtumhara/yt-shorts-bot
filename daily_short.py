@@ -1404,7 +1404,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
 
 def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
-                          claude_client=None, genai_client=None, cost_tracker=None):
+                          claude_client=None, genai_client=None, cost_tracker=None, real_scene=False):
     """High-CTR cover: Claude writes SHORT punchy text (with vision on the Veo
     frame) -> Gemini paints a TEXT-FREE hero scene -> our PIL renderer
     composites big, crisp, keyword-highlighted text. The image model never
@@ -1448,7 +1448,9 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         # 3. Gemini paints a TEXT-FREE hero scene (background only). If it fails
         #    or is unavailable, the Veo frame is already a fine background.
         scene = frame_image
-        if genai_client and frame_image is not None:
+        # real_scene: a real website recording; a generated scene would show something that is not the product
+        # (owner review of run 336 rejected an AI warehouse man on a DTF cover).
+        if genai_client and frame_image is not None and not real_scene:
             scene_prompt = (
                 "You are a product photographer creating a background plate for an Indian "
                 "wholesale plain t-shirt brand's Reel cover (1080x1920, 9:16).\n"
@@ -13206,6 +13208,8 @@ def main():
             video_objects.append(v)
             print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
         except Exception as e:
+            if "dtf_demo_" in os.path.basename(fname):
+                raise RuntimeError(f"Real screen recording unusable ({fname}): {e}") from e
             print(f"   ⚠️ Corrupted clip {fname}: {e} — substituting placeholder")
             color = placeholder_colors[clip_idx % len(placeholder_colors)]
             placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
@@ -13215,8 +13219,13 @@ def main():
         print("❌ No usable clips")
         return
 
-    from tools.daily_visual_timeline import assemble_visual_timeline
-    base_video = assemble_visual_timeline(video_objects, total_duration, CLIP_FADE_DURATION)
+    from tools.daily_visual_timeline import assemble_visual_timeline, fit_screen_recording
+    if real_clips:
+        # One complete topic recording, played once and timed to the narration (owner review of run 336 rejected a
+        # recording that looped and scrolled into unrelated sections).
+        base_video = fit_screen_recording(video_objects[0], total_duration)
+    else:
+        base_video = assemble_visual_timeline(video_objects, total_duration, CLIP_FADE_DURATION)
 
     print(f"   🎬 Ken Burns zoom applied to all clips")
 
@@ -13285,6 +13294,10 @@ def main():
                     w_start = max(line_start, w["start"])
                     w_end = line[wi + 1]["start"] if wi + 1 < len(line) else line_end
                     w_end = max(w_end, w_start + 0.04)
+                    if real_clips and ADD_HOOK_TEXT:
+                        if w_end <= HOOK_DURATION:
+                            continue
+                        w_start = max(w_start, HOOK_DURATION)
                     arr = _karaoke_line_img(texts, wi)
                     ih, iw = arr.shape[0], arr.shape[1]
                     ic = (ImageClip(arr)
@@ -13370,7 +13383,18 @@ def main():
 
     # Hook — scroll-stopping text overlay (first 2 seconds)
     # Design: large bold white text, first word in YELLOW for attention
-    if ADD_HOOK_TEXT:
+    if ADD_HOOK_TEXT and real_clips:
+        try:
+            import numpy as _np
+            from tools.screen_short_layout import HOOK_BOTTOM, HOOK_TOP, hook_band_image
+            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
+            hook_img = hook_band_image(hook_line, VIDEO_WIDTH)
+            hook_y = HOOK_TOP + (HOOK_BOTTOM - HOOK_TOP - hook_img.height) // 2
+            layers.append(ImageClip(_np.array(hook_img)).set_position((0, hook_y)).set_start(0)
+                          .set_duration(HOOK_DURATION).crossfadeout(0.4))
+        except Exception as e:
+            print(f"   ⚠️ Hook text overlay failed: {e}")
+    elif ADD_HOOK_TEXT:
         try:
             hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
             hook_words = hook_line.split()[:6]
@@ -13430,7 +13454,18 @@ def main():
             print(f"   ⚠️ Hook text overlay failed: {e}")
 
     # CTA — end-of-video branded strip (professional bar style)
-    if ADD_CTA_OVERLAY:
+    if ADD_CTA_OVERLAY and real_clips:
+        try:
+            import numpy as _np
+            from tools.screen_short_layout import cta_strip_image, screen_top
+            strip = cta_strip_image((_campaign.get("cta_text") if campaign_lesson else "") or CTA_TEXT, VIDEO_WIDTH)
+            strip_y = screen_top(VIDEO_HEIGHT, SCREEN_CLIP_SCALE, SCREEN_CLIP_BOTTOM) + 21
+            cta_start = max(0, total_duration - 4.0)
+            layers.append(ImageClip(_np.array(strip)).set_position((0, strip_y)).set_start(cta_start)
+                          .set_duration(total_duration - cta_start).crossfadein(0.4))
+        except Exception as e:
+            print(f"   ⚠️ CTA overlay failed: {e}")
+    elif ADD_CTA_OVERLAY:
         try:
             cta_start = max(0, total_duration - 4.0)
             cta_dur = 4.0
@@ -13495,40 +13530,51 @@ def main():
     final_video = final_video.set_audio(mixed_audio_with_ambient)
 
     # ── 8b. Branded 2-second outro card (replaces orphan black-frame ending) ──
-    try:
-        outro_dur = 2.0
-        outro_bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT),
-                             color=(15, 15, 25), duration=outro_dur)
-        outro_title = TextClip("Sale91.com", fontsize=132, font=SUBTITLE_FONT,
-                               color="white", stroke_color="black", stroke_width=3,
-                               method='label')
-        otw, oth = outro_title.size
-        outro_title = (outro_title
-                       .set_position(((VIDEO_WIDTH - otw) // 2, int(VIDEO_HEIGHT * 0.36)))
-                       .set_duration(outro_dur)
-                       .crossfadein(0.3))
-        outro_sub = TextClip("MOQ sirf 10 pieces", fontsize=70, font=SUBTITLE_FONT,
-                             color="#FFD700", method='label')
-        osw, osh = outro_sub.size
-        outro_sub = (outro_sub
-                     .set_position(((VIDEO_WIDTH - osw) // 2, int(VIDEO_HEIGHT * 0.50)))
-                     .set_duration(outro_dur)
-                     .crossfadein(0.3))
-        outro_cta = TextClip("Order now → Sale91.com", fontsize=48, font=SUBTITLE_FONT,
-                             color="white", method='label')
-        ocw, och = outro_cta.size
-        outro_cta = (outro_cta
-                     .set_position(((VIDEO_WIDTH - ocw) // 2, int(VIDEO_HEIGHT * 0.60)))
-                     .set_duration(outro_dur)
-                     .crossfadein(0.3))
-        outro_card = CompositeVideoClip(
-            [outro_bg, outro_title, outro_sub, outro_cta],
-            size=(VIDEO_WIDTH, VIDEO_HEIGHT)
-        ).set_duration(outro_dur)
+    campaign_outro = _campaign.get("outro") if campaign_lesson and isinstance(_campaign.get("outro"), dict) else None
+    if campaign_outro:
+        # A launch campaign Short ends on its own card (owner review of run 336: "MOQ sirf 10 pieces" is a T-shirt line).
+        import numpy as _np
+        from tools.screen_short_layout import outro_card_image
+        outro_img = outro_card_image(campaign_outro.get("title", ""), campaign_outro.get("sub", ""),
+                                     campaign_outro.get("cta", ""), (VIDEO_WIDTH, VIDEO_HEIGHT))
+        outro_card = ImageClip(_np.array(outro_img)).set_duration(2.0).crossfadein(0.3)
         final_video = concatenate_videoclips([final_video, outro_card], method="chain")
-        print(f"   🎬 Appended {outro_dur}s outro card")
-    except Exception as e:
-        print(f"   ⚠️ Outro card skipped: {e}")
+        print("   🎬 Appended 2.0s campaign outro card")
+    else:
+        try:
+            outro_dur = 2.0
+            outro_bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT),
+                                 color=(15, 15, 25), duration=outro_dur)
+            outro_title = TextClip("Sale91.com", fontsize=132, font=SUBTITLE_FONT,
+                                   color="white", stroke_color="black", stroke_width=3,
+                                   method='label')
+            otw, oth = outro_title.size
+            outro_title = (outro_title
+                           .set_position(((VIDEO_WIDTH - otw) // 2, int(VIDEO_HEIGHT * 0.36)))
+                           .set_duration(outro_dur)
+                           .crossfadein(0.3))
+            outro_sub = TextClip("MOQ sirf 10 pieces", fontsize=70, font=SUBTITLE_FONT,
+                                 color="#FFD700", method='label')
+            osw, osh = outro_sub.size
+            outro_sub = (outro_sub
+                         .set_position(((VIDEO_WIDTH - osw) // 2, int(VIDEO_HEIGHT * 0.50)))
+                         .set_duration(outro_dur)
+                         .crossfadein(0.3))
+            outro_cta = TextClip("Order now → Sale91.com", fontsize=48, font=SUBTITLE_FONT,
+                                 color="white", method='label')
+            ocw, och = outro_cta.size
+            outro_cta = (outro_cta
+                         .set_position(((VIDEO_WIDTH - ocw) // 2, int(VIDEO_HEIGHT * 0.60)))
+                         .set_duration(outro_dur)
+                         .crossfadein(0.3))
+            outro_card = CompositeVideoClip(
+                [outro_bg, outro_title, outro_sub, outro_cta],
+                size=(VIDEO_WIDTH, VIDEO_HEIGHT)
+            ).set_duration(outro_dur)
+            final_video = concatenate_videoclips([final_video, outro_card], method="chain")
+            print(f"   🎬 Appended {outro_dur}s outro card")
+        except Exception as e:
+            print(f"   ⚠️ Outro card skipped: {e}")
 
     # ── 9. Render (with safety net for ambient audio issues) ──
     filename = f"SHORT_{random.randint(1000,9999)}.mp4"
@@ -13556,7 +13602,7 @@ def main():
         thumbnail_path = generate_ai_thumbnail(
             hook_text_from_claude, fresh_topic, script_voice,
             veo_clip_path=first_clip, claude_client=claude,
-            genai_client=veo_client, cost_tracker=cost
+            genai_client=veo_client, cost_tracker=cost, real_scene=bool(real_clips)
         )
     if not thumbnail_path:
         thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip, script_text=script_voice)

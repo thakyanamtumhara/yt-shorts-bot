@@ -61,3 +61,28 @@ def assemble_visual_timeline(video_objects, target_seconds, overlap_seconds=0.3)
     result = CompositeVideoClip(clips, size=video_objects[0].size)
     verify_visual_coverage(result.duration, target_seconds)
     return result.subclip(0, target_seconds)
+
+
+def screen_recording_rate(source_seconds, target_seconds, slowest=0.7, fastest=1.6):
+    """Playback rate that lets ONE real screen recording run once over the whole narration (owner review of run 336:
+    a looping recording that scrolled into unrelated sections was rejected)."""
+    source, target = float(source_seconds), float(target_seconds)
+    if not all(math.isfinite(value) and value > 0 for value in (source, target)) or not 0 < slowest <= 1 <= fastest:
+        raise ValueError('Invalid screen recording timing')
+    return min(fastest, max(slowest, source / target))
+
+
+def fit_screen_recording(clip, target_seconds, slowest=0.7, fastest=1.6):
+    """The recording sped up or slowed down to end with the narration. Outside the allowed rates it is cut at the end
+    or holds its last frame; it never starts again from the beginning."""
+    from moviepy.video.compositing.concatenate import concatenate_videoclips
+    from moviepy.video.fx.all import speedx
+    target = float(target_seconds)
+    rate = screen_recording_rate(clip.duration, target, slowest, fastest)
+    fitted = clip if abs(rate - 1) < 1e-6 else speedx(clip, factor=rate)
+    if fitted.duration < target:
+        still = fitted.to_ImageClip(t=max(0.0, fitted.duration - 0.05)).set_duration(target - fitted.duration + 0.05)
+        fitted = concatenate_videoclips([fitted, still])
+    fitted = fitted.subclip(0, target)
+    verify_visual_coverage(fitted.duration, target)
+    return fitted

@@ -35,19 +35,40 @@ class DailyCampaignTests(unittest.TestCase):
         self.assertEqual(active_campaign(bank)['fact_ids'], ['dtf_press_settings'])
         self.assertIsNone(active_campaign({'facts': {}}))
 
-    def test_every_campaign_lesson_validates_and_has_only_its_own_real_clips(self):
+    def test_every_campaign_lesson_validates_and_gets_one_recording_of_its_own_topic(self):
         campaign = active_campaign(with_window('2000-01-01', '2999-12-31'))
-        lessons = [seed for seed in BANK['seed_lessons'] if cites_campaign(seed, campaign)]
-        self.assertGreaterEqual(len(lessons), 6)
-        for seed in lessons:
+        lessons = {seed['intent_key']: seed for seed in BANK['seed_lessons'] if cites_campaign(seed, campaign)}
+        expected = {'dtf_canva_png_3125': 'canva', 'dtf_dpi_label_not_pixels': 'resolution',
+                    'dtf_transparent_background': 'transparent', 'dtf_gang_sheet_layout': 'gang',
+                    'dtf_pieces_means_sheets': 'pieces', 'dtf_press_165_180': 'press'}
+        self.assertEqual(set(expected), set(lessons))
+        for key, seed in lessons.items():
             self.assertTrue(validate_brief(seed, BANK)['evidence'])
             clips = campaign_clips(seed, campaign, ASSETS)
-            self.assertTrue(clips, seed['intent_key'])
-            mapped = {name for key in seed['fact_ids'] for name in campaign['clips'].get(key, [])}
-            self.assertTrue(all(Path(path).stem in mapped for path in clips), (seed['intent_key'], clips))
-            self.assertTrue(all(Path(path).is_file() for path in clips))
+            self.assertEqual([Path(path).stem for path in clips], [expected[key]], key)
+            self.assertTrue(Path(clips[0]).is_file())
         textile = next(seed for seed in BANK['seed_lessons'] if not cites_campaign(seed, campaign))
         self.assertEqual(campaign_clips(textile, campaign, ASSETS), [])
+
+    def test_the_broad_launch_fact_yields_to_a_specific_one(self):
+        campaign = active_campaign(with_window('2000-01-01', '2999-12-31'))
+        stem = lambda ids: [Path(p).stem for p in campaign_clips({'fact_ids': ids}, campaign, ASSETS)]
+        self.assertEqual(stem(['dtf_service_launch']), ['launch'])
+        self.assertEqual(stem(['dtf_service_launch', 'dtf_transparent_background']), ['transparent'])
+        self.assertEqual(stem(['dtf_min_resolution', 'dtf_canva_png_size']), ['resolution'])
+        self.assertEqual(stem(['dtf_canva_png_size', 'dtf_min_resolution']), ['canva'])
+
+    def test_every_recording_is_a_full_screen_clip_long_enough_to_play_once(self):
+        import json
+        import subprocess
+        campaign = BANK['campaign']
+        names = {name for names in campaign['clips'].values() for name in names}
+        self.assertEqual(names, {p.stem for p in ASSETS.glob('*.mp4')})
+        for name in names:
+            probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'stream=width,height:format=duration',
+                                               '-of', 'json', str(ASSETS / f'{name}.mp4')], check=True, capture_output=True, text=True).stdout)
+            self.assertEqual((probe['streams'][0]['width'], probe['streams'][0]['height']), (1080, 1920), name)
+            self.assertGreaterEqual(float(probe['format']['duration']), 25, name)
 
     def test_missing_files_and_odd_names_never_become_clips(self):
         campaign = copy.deepcopy(active_campaign(with_window('2000-01-01', '2999-12-31')))
@@ -89,12 +110,33 @@ class DailyCampaignTests(unittest.TestCase):
 
     def test_launch_texts_are_short_and_carry_the_dtf_site(self):
         campaign = BANK['campaign']
+        self.assertEqual(campaign['outro']['cta'], 'dtf.bulkplaintshirt.com')
+        self.assertNotIn('MOQ', ' '.join(campaign['outro'].values()))
         self.assertLessEqual(len(campaign['cta_text']), 44)
         for key in ('cta_text', 'link', 'ig_line'):
             self.assertIn('dtf.bulkplaintshirt.com', campaign[key])
         self.assertTrue(campaign['link'].startswith('https://'))
         self.assertTrue(all(ord(c) < 128 for c in campaign['cta_text']))
 
+
+
+class RealScreenLayoutSourceTests(unittest.TestCase):
+    source = (ROOT / 'daily_short.py').read_text()
+
+    def test_one_recording_is_fitted_to_the_narration_never_looped(self):
+        block = self.source[self.source.index('from tools.daily_visual_timeline import assemble_visual_timeline, fit_screen_recording'):]
+        block = block[:block.index('# ── 8. Overlays ──')]
+        self.assertIn('if real_clips:', block)
+        self.assertLess(block.index('fit_screen_recording(video_objects[0], total_duration)'), block.index('assemble_visual_timeline(video_objects'))
+
+    def test_hook_cta_and_end_card_have_real_screen_branches(self):
+        self.assertIn('if ADD_HOOK_TEXT and real_clips:', self.source)
+        self.assertIn('if ADD_CTA_OVERLAY and real_clips:', self.source)
+        self.assertIn('campaign_outro = _campaign.get("outro")', self.source)
+        self.assertIn('real_scene=bool(real_clips)', self.source)
+        captions = self.source[self.source.index('for wi, w in enumerate(line):'):]
+        captions = captions[:captions.index('k_clips.append(ic)')]
+        self.assertIn('w_start = max(w_start, HOOK_DURATION)', captions)
 
 
 class TestModeNeverPublishesTests(unittest.TestCase):

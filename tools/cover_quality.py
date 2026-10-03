@@ -56,9 +56,10 @@ def validate_cover_text(text, script, rates=()):
     for match in re.finditer(r'\d+(?:\.\d+)?', normalized):
         if match.start() in priced:
             continue
-        claim = re.match(r'\d+(?:\.\d+)?\s*GSM\b', normalized[match.start():], re.I)
+        # A GSM, DPI, pixel or export-size value (DTF lessons, 3-Oct-2026) only when the script says exactly that value.
+        claim = re.match(r'\d+(?:\.\d+)?\s*(?:GSM|DPI|px)\b|\d+(?:\.\d+)?x\b', normalized[match.start():], re.I)
         if not claim or not re.search(r'(?<!\d)' + re.escape(claim.group()).replace(r'\ ', r'\s*') + r'(?!\w)', normalized_script, re.I):
-            raise ValueError('Only an exact script-grounded GSM value is allowed; omit prices, counts and outcomes')
+            raise ValueError('Only an exact script-grounded GSM, DPI, px or export-size value is allowed; omit prices, counts and outcomes')
     for line in lines:
         if re.search(r'(?:^|\s)(?:बिना|में|का|की|के|से|और|या|vs|with|without|of|the|and|or)\s*[?!।.]*$', line, re.I):
             raise ValueError('Cover ends on an unfinished phrase')
