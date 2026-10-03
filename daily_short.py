@@ -13685,7 +13685,9 @@ def main():
         yt_title = corrections.get("youtube_title", yt_title)
         ig_title = corrections.get("instagram_title", ig_title)
         if "youtube_description" in corrections:
-            yt_description = (campaign_safe_description(fresh_topic, corrections["youtube_description"]).rstrip()
+            _body = "\n".join(line for line in corrections["youtube_description"].split("\n")
+                              if not line.startswith("📖 More buyer guides"))
+            yt_description = (campaign_safe_description(fresh_topic, _body).rstrip()
                               + f"\n\n📖 More buyer guides: {BLOG_BASE_URL}/p/")
         flag("owner_review", {"decision": "approve", "reviewer": review_decision["reviewer"],
                               "notes": review_decision.get("notes", ""), "video_sha256": video_sha,

@@ -2,9 +2,10 @@ name: Daily YouTube Short
 run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_test || inputs.test_thumbnail) && 'Daily YouTube Short (test)' || 'Daily YouTube Short' }}
 
 on:
-  # Schedule PAUSED 3-Oct-2026: during the DTF launch campaign every Short waits for Claude's written review (owner
-  # request: "verify ... give it 100% thumbs up, then only you move forward"), so runs are started by hand while the
-  # reviewer is present. Restore after the campaign (14-Oct-2026) by uncommenting:
+  # GitHub schedule OFF since 3-Oct-2026: every Short waits for Claude's written review (owner: "verify ... give it
+  # 100% thumbs up, then only you move forward"). The day's run is started Mon-Sat 14:30 IST on Ketu's Mac by launchd
+  # com.ketu.dailyshortreview (tools/daily_review_agent/run_daily.sh), which also runs the Claude Opus 5.5 review.
+  # Only if that Mac job is retired, restore the GitHub schedule by uncommenting:
   # schedule:
   #   # Mon-Sat 09:00 UTC = 2:30 PM IST start; video ready ~3:15 PM IST.
   #   # YouTube publishAt handles the actual 19:00 IST release; the IG container
