@@ -1,0 +1,7 @@
+{
+ "run_id": "37119628280",
+ "video_sha256": "78a5d1e741610ac737297863b86e83af4cf95f3bdd40f28ade945ddb5083aa60",
+ "decision": "approve",
+ "reviewer": "Claude Opus 5.5",
+ "notes": "Checked every second of the file: Option B cover (Canva size 1x vs 3.125x), hook above the screen, captions match the script word for word, real DTF form story matches the voice (2189 px / 96 DPI pop-up, 5700 px minimum, 3.125x sheet accepted, DPI tip), launch strip covers only the site header, DTF end card. Voice transcript = script; every number matches the cited facts (Canva 96 px/in, Free 1x = 2189 px, minimum 5700 px, best 6840 px = 3.125x). Titles, tags and description correct (no Sale91.com DTF claim). Loudness -15.6 LUFS. Machine audio and visual reviews passed. Pronunciation is covered by the machine audio review, not by human listening."
+}
