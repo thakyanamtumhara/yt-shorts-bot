@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-09-29 15:41)",
+   "detail": "ElevenLabs ✅ (2026-10-03 09:04)",
    "provider": "elevenlabs",
-   "at": "2026-09-29 15:41",
-   "title": "₹186 vs ₹205 Oversize — GSM का मतलब समझो, वरना फ़र्क़ नहीं पकड़ोगे"
+   "at": "2026-10-03 09:04",
+   "title": "Canva Free का PNG DTF पर Blurry क्यों? — 96 DPI vs 250 DPI का फर्क"
   },
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 246,797 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 246,578 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 246797,
+   "chars_left": 246578,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -712,9 +712,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-03T14:51:33+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-02T23:28:24+05:30",
- "last_green_date": "2026-10-02",
+ "last_run_ist": "2026-10-03T14:51:33+05:30",
+ "last_green_date": "2026-10-03",
  "last_still_down_date": "2026-09-23"
 }
