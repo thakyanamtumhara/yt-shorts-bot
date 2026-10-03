@@ -2300,5 +2300,30 @@
       "container_id": "18347023069266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "17986641237060023",
+    "title": "Canva Export 96 DPI vs 300 DPI — Why Your DTF Print Looks Blurry",
+    "topic": "Canva से DTF शीट बनाई — Print में Blurry क्यों आया? 96 DPI vs 300 DPI का फ़र्क़",
+    "published_at": "2026-10-03T17:09:52.324023+05:30",
+    "checked": false,
+    "bot_youtube_id": "wR4EG8j1gKk",
+    "workflow_run_id": "37119628280",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "CANVA PRINT BLURRY क्यों?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "dtf_canva_size",
+    "cover_labels": [
+      "साइज़ 1x",
+      "साइज़ 3.125x"
+    ],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18347593033266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]

@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "topic": "Canva से DTF शीट बनाई — Print में Blurry क्यों आया? 96 DPI vs 300 DPI का फ़र्क़",
+    "intent_key": "canva_export_multiplier_for_dtf_pixel_count",
+    "fact_ids": [
+      "dtf_canva_png_size",
+      "dtf_min_resolution"
+    ],
+    "lesson": "Canva internally 96 pixels per inch पर काम करता है। Free plan पर PNG 1x (96 DPI) पर download होता है — 22.8 inch चौड़ी DTF शीट के लिए यह सिर्फ़ ~2189 pixels चौड़ा होगा, जबकि Sale91 का minimum 5700 pixels (250 DPI) है और best 6840 pixels (300 DPI) है। Canva Pro का Size slider 3.125x तक जाता है, जो 22.8 inch design को 6840 pixels (300 DPI) बना देता है। सिर्फ़ image settings में DPI number बदलने से pixels नहीं बढ़ते, इसलिए छोटी file blurry ही रहेगी।",
+    "buyer_decision": "Canva से DTF शीट export करते समय Pro plan का 3.125x slider use करो ताकि actual pixel count 6840 तक पहुँचे; Free plan का 1x export DTF sheet resolution gate पास नहीं करेगा।",
+    "video_id": "wR4EG8j1gKk",
+    "published_on": "2026-10-03"
+  }
+]

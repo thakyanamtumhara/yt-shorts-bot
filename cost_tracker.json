@@ -3079,5 +3079,17 @@
       "tts_elevenlabs": 0.0146,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-10-03T11:40:12.723057",
+    "topic": "Canva \u0938\u0947 DTF \u0936\u0940\u091f \u092c\u0928\u093e\u0908 \u2014 Print \u092e\u0947\u0902 Blurry \u0915\u094d\u092f\u094b\u0902 \u0906\u092f\u093e? 96 DPI vs 300 DPI \u0915\u093e \u092b\u093c\u0930\u094d\u0915\u093c",
+    "title": "Canva \u0938\u0947 DTF \u0936\u0940\u091f \u092c\u0928\u093e\u0908 \u2014 Print Blurry \u0915\u094d\u092f\u094b\u0902? 96 vs 300 DPI \u0915\u093e \u092b\u093c\u0930\u094d\u0915\u093c",
+    "total_usd": 0.6378,
+    "duration_min": 11.9,
+    "breakdown": {
+      "claude_opus": 0.5736,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0142
+    }
   }
 ]
