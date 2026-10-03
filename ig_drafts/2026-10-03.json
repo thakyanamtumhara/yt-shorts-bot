@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-03",
+  "blog_title": "DTF launch: real order-form screens (3 slides)",
+  "image_urls": [
+    "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-1.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-2.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-3.jpg"
+  ],
+  "image_assets": [
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-1.jpg",
+      "origin": "curated_photo",
+      "approved": true,
+      "sha256": "723b986798317acf58322639b366d71a2c692ee8c494be91897c33a126943731"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-2.jpg",
+      "origin": "curated_photo",
+      "approved": true,
+      "sha256": "e0fdb7f9b88ded47279329fcecbf639c1242a67f3621a295bfa7bd7068a48b26"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-launch-2026-10-03-3.jpg",
+      "origin": "curated_photo",
+      "approved": true,
+      "sha256": "76451aa29da69d6ea7fa70905aff094e3ccdb984613c4d24a008ece79ef04977"
+    }
+  ],
+  "caption": "Naya: Sale91 DTF Print 🖨️\nApni PNG sheet upload karo. Print Surat mein hota hai, delivery courier se.\n\n✅ Sheet 22.8 inch chaudi, 39 se 390 inch tak lambi\n✅ Kam se kam 250 DPI (22.8 inch par 5700+ pixel), 300 DPI best\n✅ Canva Pro: design 22.8 inch chauda banao → Download > PNG > Size 3.125x (Canva help, Oct 2026)\n✅ Background transparent rakho, warna poora rectangle print hoga\n\nOrder: dtf.bulkplaintshirt.com\n\nAap DTF sheet kis app mein banate ho?",
+  "hashtags": [
+    "#dtfprinting",
+    "#dtftransfer",
+    "#dtfsheet",
+    "#tshirtprinting",
+    "#canvatips"
+  ],
+  "editorial_review": {
+    "version": "2026-10-03-dtf-launch",
+    "supported": true,
+    "method": "owner_approved_real_screens",
+    "reason": "Real dtf.bulkplaintshirt.com screens (live 2026.10.03.2); every claim matches the dtf_* facts in daily_topic_lessons.json; reviewed by Claude Opus 5.5; owner said proceed on 3-Oct-2026."
+  },
+  "posted": false
+}
