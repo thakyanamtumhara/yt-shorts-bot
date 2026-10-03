@@ -96,5 +96,16 @@ class DailyCampaignTests(unittest.TestCase):
         self.assertTrue(all(ord(c) < 128 for c in campaign['cta_text']))
 
 
+
+class TestModeNeverPublishesTests(unittest.TestCase):
+    def test_new_test_mode_skips_the_facebook_reel_and_the_telegram_post(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        block = source[source.index('# ── 10d2. Cross-post to Facebook Reels + Telegram'):source.index('# ── 10e. Generate & Publish SEO Blog Post ──')]
+        guard = block.index('if not TEST_MODE and NEW_TEST_MODE:')
+        self.assertLess(guard, block.index('publish_fb_reel('))
+        self.assertLess(guard, block.index('post_telegram_channel('))
+        self.assertIn('elif not TEST_MODE:', block[guard:block.index('publish_fb_reel(')])
+
+
 if __name__ == '__main__':
     unittest.main()

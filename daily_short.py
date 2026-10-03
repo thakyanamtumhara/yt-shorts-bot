@@ -13673,7 +13673,15 @@ def main():
                                   bot_youtube_id=vid_id)
 
         # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
+        # NEW TEST MODE publishes nothing public (YouTube unlisted, Instagram unpublished): until 3-Oct-2026 a test run
+        # still published this Facebook reel and the Telegram post.
         fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"
+        _launch = campaign_line(fresh_topic, "ig_line")
+        if _launch:
+            fb_caption += f"\n{_launch}"
+    if not TEST_MODE and NEW_TEST_MODE:
+        print("\n🧪 NEW TEST MODE — Facebook reel and Telegram post skipped (nothing public)")
+    elif not TEST_MODE:
         print("\n📘 Facebook Reel cross-post...")
         _fb_vid = publish_fb_reel(output_path, fb_caption, cover_path=thumbnail_path)
         # Hand the reel id to social_watch.py. The 3-phase upload can return a
