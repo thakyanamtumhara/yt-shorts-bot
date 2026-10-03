@@ -3066,5 +3066,18 @@
       "veo_clips": 4.8,
       "gemini_thumbnail": 0.045
     }
+  },
+  {
+    "date": "2026-10-03T09:04:02.061350",
+    "topic": "Canva Free \u0938\u0947 DTF \u0936\u0940\u091f \u092c\u0928\u093e\u0908? \u2014 96 DPI \u092a\u0930 22.8 \u0907\u0902\u091a \u0915\u093e \u092a\u094d\u0930\u093f\u0902\u091f blurry \u0906\u090f\u0917\u093e",
+    "title": "Canva Free \u0915\u093e PNG DTF \u092a\u0930 Blurry \u0915\u094d\u092f\u094b\u0902? \u2014 96 DPI vs 250 DPI \u0915\u093e \u092b\u0930\u094d\u0915",
+    "total_usd": 0.4281,
+    "duration_min": 7.6,
+    "breakdown": {
+      "claude_opus": 0.3186,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0146,
+      "gemini_thumbnail": 0.045
+    }
   }
 ]
