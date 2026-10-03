@@ -84,6 +84,32 @@ class RecheckTests(unittest.TestCase):
             with patch.object(check, 'workflow_state', return_value=(check.result('ok', 'run'), run())):
                 self.assertEqual(check.feed_check(NOW, root)['state'], 'issue')
 
+    def test_feed_with_nothing_queued_is_not_an_alarm_but_a_queued_draft_still_is(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'ig_drafts').mkdir()
+            with patch.object(check, 'workflow_state', return_value=(check.result('ok', 'run'), run())):
+                self.assertEqual(check.feed_check(NOW, root)['state'], 'not_due')
+            late = NOW.replace(hour=23, minute=30)
+            with patch.object(audit, 'github_json', return_value={'workflow_runs': []}):
+                self.assertEqual(check.feed_check(late, root)['state'], 'not_due')
+                (root / 'ig_drafts/2026-09-24.json').write_text(json.dumps({'posted': False, 'image_urls': ['image']}))
+                self.assertEqual(check.feed_check(NOW, root)['state'], 'not_due')
+                self.assertEqual(check.feed_check(late, root)['state'], 'issue')
+
+    def test_a_short_rejected_at_the_ai_review_is_reported_as_rejected(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'review_decisions').mkdir()
+            today = run(id=7, conclusion='success', status='completed')
+            (root / 'review_decisions/7.json').write_text(json.dumps({'run_id': '7', 'decision': 'reject'}))
+            with patch.object(check, 'workflow_state', return_value=(check.result('ok', 'run'), today)):
+                short = check.daily_check(NOW, root=root)
+            self.assertEqual((short['state'], short['rejected']), ('not_due', True))
+            self.assertEqual(check.review_decision(8, root), '')
+            friday = NOW.replace(day=25)
+            self.assertEqual(check.blog_check(friday, root, short=short)['state'], 'not_due')
+
     @patch.object(audit, 'instagram_readback')
     def test_real_photo_feed_needs_owner_but_not_ai_flag_or_reels(self, read):
         read.return_value = {'owner_verified': True, 'permalink': 'https://www.instagram.com/p/abcde/',

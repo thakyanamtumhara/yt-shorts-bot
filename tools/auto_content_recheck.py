@@ -117,11 +117,23 @@ def instagram_check(manifest, feed=False):
                   native_ai_disclosure=read.get('native_ai_disclosure'), permalink=read.get('permalink'))
 
 
-def daily_check(now, observed_now=None):
+def review_decision(run_id, root=ROOT):
+    """The owner-review decision committed for a run (review_decisions/<run>.json), or ''."""
+    try:
+        return str(json.loads((root / 'review_decisions' / f'{int(run_id)}.json').read_text()).get('decision') or '')
+    except (OSError, ValueError, TypeError):
+        return ''
+
+
+def daily_check(now, observed_now=None, root=ROOT):
     state, run = workflow_state('daily_short.yml', now, datetime.min.replace(hour=16, minute=37).time(),
                                 True, inspect_failed=True)
     if run is None:
         return state
+    if state['state'] == 'ok' and review_decision(run['id'], root) == 'reject':
+        # Since 3-Oct-2026 every Short waits for the AI review; a rejected one is held on purpose.
+        return result('not_due', 'Rejected at the AI review, so nothing was published by design (see Telegram)',
+                      run_id=run['id'], rejected=True)
     run = audit.github_json(f'/actions/runs/{run["id"]}')
     audit.validate_run(run, str(run['id']))
     try:
@@ -186,12 +198,17 @@ def feed_receipts(root, now):
 
 
 def feed_check(now, root=ROOT):
-    state, run = workflow_state('ig_carousel.yml', now, datetime.min.replace(hour=13, minute=30).time())
-    if run is None:
-        return state
+    # GitHub starts the 13:00 IST carousel cron 5-7 hours late (2-Oct-2026: 19:29 and 22:05 IST).
+    state, run = workflow_state('ig_carousel.yml', now, datetime.min.replace(hour=23, minute=0).time())
     posted, eligible = feed_receipts(root, now)
+    if run is None:
+        if state['state'] == 'issue' and not eligible:
+            return result('not_due', 'Nothing was queued for the Instagram feed today')
+        return state
     if not posted:
-        return result('issue' if eligible else 'unknown', 'No dated publication receipt today',
+        if not eligible:
+            return result('not_due', 'Nothing was queued for the Instagram feed today', run_id=run['id'])
+        return result('issue', 'A queued feed post was not published today',
                       run_id=run['id'], eligible_unposted_drafts=eligible)
     if len(posted) > 5:
         return result('unknown', 'Too many daily receipts for bounded verification')
@@ -202,11 +219,13 @@ def feed_check(now, root=ROOT):
                   eligible_unposted_drafts=eligible, checks=checks)
 
 
-def blog_check(now, root=ROOT):
+def blog_check(now, root=ROOT, short=None):
     weekdays = {int(day) for day in os.environ.get('BLOG_WEEKDAYS', '0,2,4').split(',')
                 if day.strip().isdigit()}
     if now.weekday() not in weekdays:
         return result('not_due', 'No generated blog scheduled on this weekday')
+    if (short or {}).get('rejected'):
+        return result('not_due', 'No blog: today\'s Short was rejected at the AI review')
     if now.hour * 60 + now.minute < 16 * 60 + 37:
         return result('not_due', 'Today\'s generated blog is not due yet')
     posts = json.loads((root / 'blog_history.json').read_text())
@@ -256,7 +275,7 @@ def main(argv=None):
     folder = Path('auto-content-recheck')
     folder.mkdir(exist_ok=True)
     for name, call in [('short', lambda: daily_check(now, actual_now)), ('feed', lambda: feed_check(now)),
-                       ('blog', lambda: blog_check(now))]:
+                       ('blog', lambda: blog_check(now, short=report['checks'].get('short')))]:
         report['checks'][name] = guarded(call) if now.date().isoformat() >= '2026-09-24' else result('not_due', 'Before monitoring began on 24 September')
     monitor_id = os.environ.get('GITHUB_RUN_ID', '')
     if re.fullmatch(r'[1-9][0-9]{0,19}', monitor_id):
