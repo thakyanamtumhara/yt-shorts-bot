@@ -214,7 +214,8 @@ class TopicConsumptionTest(unittest.TestCase):
                  'get_pin_tail': lambda topic: None, 'add_to_playlist': Mock(), 'flag': Mock(),
                  'CROSS_POST_INSTAGRAM': False, 'os': SimpleNamespace(environ={}),
                  'cross_post_to_instagram': Mock(side_effect=instagram_error, return_value=None),
-                 'publish_fb_reel': Mock(return_value=None), 'post_telegram_channel': Mock()}
+                 'publish_fb_reel': Mock(return_value=None), 'post_telegram_channel': Mock(),
+                 'campaign_line': Mock(return_value='')}
         if mode:
             scope[mode] = True
         with redirect_stdout(StringIO()):
