@@ -40,5 +40,8 @@
     "method": "owner_approved_real_screens",
     "reason": "Real dtf.bulkplaintshirt.com screens (live 2026.10.03.2); every claim matches the dtf_* facts in daily_topic_lessons.json; reviewed by Claude Opus 5.5; owner said proceed on 3-Oct-2026."
   },
-  "posted": false
+  "posted": true,
+  "media_id": "18090073643219998",
+  "posted_at": "2026-10-03T17:55:40.165232+05:30",
+  "error": null
 }
