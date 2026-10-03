@@ -108,9 +108,20 @@ class DailyCampaignTests(unittest.TestCase):
         self.assertEqual(campaign_prompt(None), '')
         self.assertIsNone(brainstorming_context(with_window('2000-01-01', '2000-01-02'), [])['campaign'])
 
+    def test_campaign_text_is_only_for_campaign_lessons(self):
+        from tools.daily_topic_selection import SelectedTopic, campaign_text
+        seed = next(s for s in BANK['seed_lessons'] if s['fact_ids'] == ['dtf_press_settings'])
+        inside, outside = date(2026, 10, 5), date(2026, 10, 20)
+        self.assertIn('Sale91.com', campaign_text(SelectedTopic(seed), 'description_rule', inside))
+        self.assertEqual(campaign_text(SelectedTopic(seed), 'description_rule', outside), '')
+        self.assertEqual(campaign_text('Printing samples', 'description_rule', inside), '')
+
     def test_launch_texts_are_short_and_carry_the_dtf_site(self):
         campaign = BANK['campaign']
         self.assertEqual(campaign['outro']['cta'], 'dtf.bulkplaintshirt.com')
+        rule = campaign['description_rule']
+        self.assertIn('never write that DTF sheets can be ordered on Sale91.com', rule)
+        self.assertNotIn('"', rule)
         self.assertNotIn('MOQ', ' '.join(campaign['outro'].values()))
         self.assertLessEqual(len(campaign['cta_text']), 44)
         for key in ('cta_text', 'link', 'ig_line'):
@@ -139,6 +150,32 @@ class RealScreenLayoutSourceTests(unittest.TestCase):
         self.assertIn('w_start = max(w_start, HOOK_DURATION)', captions)
         fallback = self.source[self.source.index('# Fallback — old segment-level English captions'):]
         self.assertLess(fallback.index('and real_clips:'), fallback.index('TextClip('))
+
+
+class CampaignDescriptionTests(unittest.TestCase):
+    def load(self):
+        import ast
+        path = ROOT / 'daily_short.py'
+        tree = ast.parse(path.read_text())
+        nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'campaign_safe_description']
+        lines = {'on': True}
+        import re
+        state = {'re': re, 'campaign_line': lambda topic, key: 'https://dtf.bulkplaintshirt.com/' if lines['on'] else ''}
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), 'exec'), state)
+        return state['campaign_safe_description'], lines
+
+    def test_launch_lesson_description_never_sends_dtf_buyers_to_sale91(self):
+        clean, lines = self.load()
+        text = 'Why is your Canva DTF sheet blurry?\n\nOrder DTF sheets & plain t-shirts: Sale91.com\n\n#dtfprinting'
+        self.assertEqual(clean('t', text), 'Why is your Canva DTF sheet blurry?\n\n#dtfprinting')
+        lines['on'] = False
+        self.assertEqual(clean('t', text), text)
+
+    def test_the_description_and_captions_use_the_dtf_rules(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        self.assertIn('yt_description = campaign_safe_description(fresh_topic, data["description"])', source)
+        self.assertIn('campaign_text(topic, "description_rule") or "Include Sale91.com link."', source)
+        self.assertIn('(_launch or "📦 Order: Sale91.com")', source)
 
 
 class TestModeNeverPublishesTests(unittest.TestCase):

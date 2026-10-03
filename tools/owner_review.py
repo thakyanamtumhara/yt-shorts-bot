@@ -7,7 +7,9 @@ with the video's sha256 and the titles / description / script that will be publi
 review_decisions/<run_id>.json on the default branch. A decision counts only when it names this run and this video:
     {"run_id": "...", "video_sha256": "...", "decision": "approve" | "reject", "reviewer": "...", "notes": "..."}
 approve -> the run publishes exactly this file; reject, a decision for another file, or no decision before the
-deadline -> nothing is published.
+deadline -> nothing is published. An approval may also correct the published text (never the video):
+"youtube_title", "instagram_title" and/or "youtube_description" (the description body only; the run adds its link
+lines and footer). Each correction passes the same price gate as generated text, else nothing is published.
 """
 import base64
 import hashlib
@@ -16,6 +18,7 @@ import time
 from pathlib import Path
 
 DECISIONS = ('approve', 'reject')
+TEXT_LIMITS = {'youtube_title': 100, 'instagram_title': 150, 'youtube_description': 4000}
 
 
 class OwnerReviewStop(RuntimeError):
@@ -66,6 +69,20 @@ def valid_decision(decision, run_id, sha):
     return (isinstance(decision, dict) and str(decision.get('run_id')) == str(run_id)
             and decision.get('video_sha256') == sha and decision.get('decision') in DECISIONS
             and isinstance(decision.get('reviewer'), str) and bool(decision['reviewer'].strip()))
+
+
+def text_overrides(decision):
+    """The reviewer's corrected texts from an approving decision: only known fields, each a non-empty string within
+    its platform limit. Anything else stops the run, so no half-reviewed text is published."""
+    corrections = {}
+    for key, limit in TEXT_LIMITS.items():
+        if key not in decision:
+            continue
+        value = decision[key]
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit:
+            raise OwnerReviewStop(f'the reviewer\'s {key} is empty or longer than {limit} characters')
+        corrections[key] = value.strip()
+    return corrections
 
 
 def await_owner_review(*, run_id, sha, repo, token, wait_seconds, fetch, poll_seconds=30, sleep=time.sleep,

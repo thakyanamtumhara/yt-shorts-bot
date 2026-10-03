@@ -230,6 +230,15 @@ def cites_campaign(brief, campaign):
     return any(key in campaign['fact_ids'] for key in brief['fact_ids'])
 
 
+def campaign_text(topic, key, today=None):
+    """The active campaign's text `key` when `topic` is one of its lessons, else ''."""
+    campaign = active_campaign(load_bank(), today)
+    if campaign and cites_campaign(getattr(topic, 'brief', None), campaign):
+        value = campaign.get(key)
+        return value.strip() if isinstance(value, str) else ''
+    return ''
+
+
 def campaign_clips(brief, campaign, assets_dir):
     """The ONE real screen recording for a campaign lesson: the clip of the first fact it cites, in its own order, with
     the campaign's "generic_clip_facts" (broad facts like the launch itself) used only when no more specific cited fact

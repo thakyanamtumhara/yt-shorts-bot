@@ -6,7 +6,8 @@ from types import SimpleNamespace
 import unittest
 
 from tools.owner_review import (
-    OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy, read_decision, review_prefix, valid_decision,
+    OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy, read_decision, review_prefix, text_overrides,
+    valid_decision,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,6 +111,30 @@ class OwnerReviewTests(unittest.TestCase):
         self.assertLess(source.index('require_native_visual_review(output_path, review_path)'), gate)
         self.assertLess(gate, source.index('# ── 10. Upload to YouTube ──'))
         self.assertIn('return', source[gate:source.index('# ── 10. Upload to YouTube ──')])
+
+
+
+class TextOverrideTests(unittest.TestCase):
+    def test_only_known_non_empty_fields_within_limits_are_taken(self):
+        decision = {'decision': 'approve', 'youtube_title': '  Canva DTF Sheet Blurry? 96 vs 300 DPI  ',
+                    'youtube_description': 'Body text.', 'notes': 'x', 'video_sha256': SHA}
+        self.assertEqual(text_overrides(decision), {'youtube_title': 'Canva DTF Sheet Blurry? 96 vs 300 DPI',
+                                                    'youtube_description': 'Body text.'})
+        self.assertEqual(text_overrides({'decision': 'approve'}), {})
+
+    def test_bad_corrections_stop_the_run(self):
+        for bad in ({'youtube_title': ''}, {'youtube_title': 'x' * 101}, {'instagram_title': 5},
+                    {'youtube_description': 'y' * 4001}, {'youtube_description': '   '}):
+            with self.assertRaises(OwnerReviewStop):
+                text_overrides(bad)
+
+    def test_the_run_applies_corrections_only_after_an_approval_and_through_the_price_gate(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        gate = source[source.index('# ── 9z. Owner review gate'):source.index('# ── 10. Upload to YouTube ──')]
+        self.assertLess(gate.index('await_owner_review('), gate.index('text_overrides(review_decision)'))
+        self.assertLess(gate.index('text_overrides(review_decision)'), gate.index('unsupported_amounts(_text, _rates)'))
+        self.assertIn('loose_rupee_words(_text)', gate)
+        self.assertIn('yt_title = corrections.get("youtube_title", yt_title)', gate)
 
 
 if __name__ == '__main__':

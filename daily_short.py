@@ -771,6 +771,15 @@ def campaign_description_line(topic):
     return f"\n🆕 DTF sheets ab Sale91 pe: {link}\n" if link else ""
 
 
+def campaign_safe_description(topic, text):
+    """A launch lesson's own description never sends DTF buyers to Sale91.com, which sells plain garments only
+    (owner review of run 337); the DTF link line and the plain T-shirt footer are added at upload."""
+    if not campaign_line(topic, "link"):
+        return text
+    kept = "\n".join(line for line in (text or "").split("\n") if "sale91.com" not in line.lower())
+    return re.sub(r"\n{3,}", "\n\n", kept).strip()
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # THUMBNAIL GENERATION
 # ═══════════════════════════════════════════════════════════════════════
@@ -5153,10 +5162,11 @@ def _own_channel_performance_signal():
 
 def get_script_prompt(topic):
     from tools.spoken_style import style_prompt
-    from tools.daily_topic_selection import evidence_prompt
+    from tools.daily_topic_selection import campaign_text, evidence_prompt
     from tools.script_length import SENTENCE_WORDS, TARGET_WORDS
     words = f"{TARGET_WORDS[0]}-{TARGET_WORDS[1]}"
     lesson_evidence = evidence_prompt(topic)
+    description_link_rule = campaign_text(topic, "description_rule") or "Include Sale91.com link."
     return f"""
 You are writing a YouTube Short voiceover script. The video is from Sale91.com
 (a B2B plain t-shirt manufacturer) but the script must NOT sell anything.
@@ -5527,7 +5537,7 @@ The 5 clips should follow the story arc:
 OUTPUT THIS JSON ONLY (no markdown, no code blocks):
 {{
     "title": "YouTube title in English, max 70 chars, SEO optimized for printing business",
-    "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). Include Sale91.com link.",
+    "description": "Description in English optimized for BOTH YouTube and Instagram. Include 6-8 hashtags that work on both platforms (Instagram hashtags drive Explore reach — use #tshirtbusiness #wholesale #printingbusiness etc). {description_link_rule}",
     "script_voice": "The ROMAN HINGLISH script. 6-7 sentences, {words} words, never more than {TARGET_WORDS[1]}, each sentence up to {SENTENCE_WORDS} words (30-35 seconds spoken). First sentence = a TRUE pattern-interrupt (max 10 words) - a spec, a real rate or a checkable fact, NEVER an invented loss. Final line loops back to the hook. NO website. NO selling. NO spoken CTA. Pure knowledge with storytelling.",
     "script_english": "ON-SCREEN SUBTITLE TEXT in simple English — paraphrase the Hinglish script so a non-Hindi speaker / deaf viewer can follow easily. SAME NUMBER OF SENTENCES AS script_voice (one English sentence per Hinglish sentence — keeps subtitle timing aligned). Each sentence ≤10 words. Plain language, no jargon (say 'thick fabric' not '240 GSM' if context allows; keep technical terms only when essential like DTF/GSM). Punctuation matches script_voice's sentence breaks. NOT a literal translation — capture the meaning concisely.",
     "hook_text": "3-6 words, UPPERCASE, driven by a TRUE fact or real rate (never an invented loss), paired with the spoken first sentence",
@@ -12477,7 +12487,7 @@ def main():
             raise RuntimeError(
                 "UNVERIFIED PRICE in %s — %r is not an exact live website rate cited by today's lesson. "
                 "Only checked rates may be published; do not bypass this gate." % (_label, _unverified + _loose))
-    yt_description = data["description"]
+    yt_description = campaign_safe_description(fresh_topic, data["description"])
     yt_tags = data.get("tags", [])
 
     yt_description = (
@@ -13460,11 +13470,11 @@ def main():
     if ADD_CTA_OVERLAY and real_clips:
         try:
             import numpy as _np
-            from tools.screen_short_layout import cta_strip_image, screen_top
-            strip = cta_strip_image((_campaign.get("cta_text") if campaign_lesson else "") or CTA_TEXT, VIDEO_WIDTH)
-            strip_y = screen_top(VIDEO_HEIGHT, SCREEN_CLIP_SCALE, SCREEN_CLIP_BOTTOM) + 21
+            from tools.screen_short_layout import cta_strip_image, header_box
+            strip_x, strip_y, strip_w, strip_h = header_box(VIDEO_WIDTH, VIDEO_HEIGHT, SCREEN_CLIP_SCALE, SCREEN_CLIP_BOTTOM)
+            strip = cta_strip_image((_campaign.get("cta_text") if campaign_lesson else "") or CTA_TEXT, strip_w, strip_h)
             cta_start = max(0, total_duration - 4.0)
-            layers.append(ImageClip(_np.array(strip)).set_position((0, strip_y)).set_start(cta_start)
+            layers.append(ImageClip(_np.array(strip)).set_position((strip_x, strip_y)).set_start(cta_start)
                           .set_duration(total_duration - cta_start).crossfadein(0.4))
         except Exception as e:
             print(f"   ⚠️ CTA overlay failed: {e}")
@@ -13639,7 +13649,8 @@ def main():
     if owner_review_required() and not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST:
         import boto3
         import requests
-        from tools.owner_review import OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy
+        from tools.owner_review import (OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy,
+                                        text_overrides)
         review_run = os.environ.get("GITHUB_RUN_ID", "")
         video_sha = file_sha256(output_path)
         review_summary = {
@@ -13662,9 +13673,25 @@ def main():
             flag("owner_review", {"decision": "held", "reason": str(stop)})
             print(f"   🛑 Owner review: {stop}")
             return
+        try:
+            corrections = text_overrides(review_decision)
+            for _label, _text in corrections.items():
+                if unsupported_amounts(_text, _rates) or loose_rupee_words(_text):
+                    raise OwnerReviewStop(f"the corrected {_label} quotes an unchecked price")
+        except OwnerReviewStop as stop:
+            flag("owner_review", {"decision": "held", "reason": str(stop)})
+            print(f"   🛑 Owner review: {stop}")
+            return
+        yt_title = corrections.get("youtube_title", yt_title)
+        ig_title = corrections.get("instagram_title", ig_title)
+        if "youtube_description" in corrections:
+            yt_description = (campaign_safe_description(fresh_topic, corrections["youtube_description"]).rstrip()
+                              + f"\n\n📖 More buyer guides: {BLOG_BASE_URL}/p/")
         flag("owner_review", {"decision": "approve", "reviewer": review_decision["reviewer"],
-                              "notes": review_decision.get("notes", ""), "video_sha256": video_sha})
-        print(f"   ✅ Owner review: approved by {review_decision['reviewer']} — publishing this exact file")
+                              "notes": review_decision.get("notes", ""), "video_sha256": video_sha,
+                              "text_corrected": sorted(corrections)})
+        print(f"   ✅ Owner review: approved by {review_decision['reviewer']} — publishing this exact file"
+              + (f" with corrected {', '.join(sorted(corrections))}" if corrections else ""))
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
@@ -13785,10 +13812,8 @@ def main():
         # ── 10d2. Cross-post to Facebook Reels + Telegram (dormant until secrets exist) ──
         # NEW TEST MODE publishes nothing public (YouTube unlisted, Instagram unpublished): until 3-Oct-2026 a test run
         # still published this Facebook reel and the Telegram post.
-        fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n📦 Order: Sale91.com"
         _launch = campaign_line(fresh_topic, "ig_line")
-        if _launch:
-            fb_caption += f"\n{_launch}"
+        fb_caption = f"{ig_title}\n\n{yt_description.split(chr(10))[0]}\n\n" + (_launch or "📦 Order: Sale91.com")
     if not TEST_MODE and NEW_TEST_MODE:
         print("\n🧪 NEW TEST MODE — Facebook reel and Telegram post skipped (nothing public)")
     elif not TEST_MODE:

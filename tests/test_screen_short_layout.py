@@ -2,8 +2,8 @@ import unittest
 
 from PIL import Image, features
 
-from tools.screen_short_layout import (HOOK_BOTTOM, HOOK_TOP, cta_strip_image, hook_band_image, outro_card_image,
-                                       screen_top)
+from tools.screen_short_layout import (HOOK_BOTTOM, HOOK_TOP, cta_strip_image, header_box, hook_band_image,
+                                       outro_card_image, screen_top)
 
 
 def ink_rows(image):
@@ -40,6 +40,15 @@ class ScreenShortLayoutTests(unittest.TestCase):
     def test_devanagari_hook_renders(self):
         image = hook_band_image('सफ़ेद बैकग्राउंड = पूरा RECTANGLE')
         self.assertLessEqual(image.height, HOOK_BOTTOM - HOOK_TOP)
+
+    def test_the_strip_covers_the_whole_site_header(self):
+        x, y, width, height = header_box()
+        self.assertEqual((y, height), (421, 130))
+        self.assertLessEqual(x, (1080 - int(1080 * 0.76)) // 2)
+        self.assertGreaterEqual(x + width, (1080 + int(1080 * 0.76)) // 2)
+        strip = cta_strip_image('Naya: DTF sheets - dtf.bulkplaintshirt.com', width, height)
+        self.assertEqual(strip.size, (width, height))
+        self.assertIn((255, 215, 0, 255), strip.getdata())
 
     def test_cta_strip_and_end_card(self):
         strip = cta_strip_image('Naya: DTF sheets - dtf.bulkplaintshirt.com')

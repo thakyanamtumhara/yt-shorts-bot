@@ -26,9 +26,19 @@ OUTRO_BG = (15, 15, 25)
 HOOK_TOP, HOOK_BOTTOM = 112, 316
 
 
+# The DTF site's sticky header is 171 px tall in the 1080x1920 recordings (assets/dtf_demo).
+SITE_HEADER_PX = 171
+
+
 def screen_top(video_height=1920, scale=0.76, bottom=40):
     """y of the recording's top edge (the site's sticky header starts here)."""
     return video_height - int(video_height * scale) - bottom
+
+
+def header_box(video_width=1080, video_height=1920, scale=0.76, bottom=40):
+    """(x, y, width, height) of the site's header bar inside the composed frame, 1 px wider on each side."""
+    width = int(video_width * scale)
+    return (video_width - width) // 2 - 1, screen_top(video_height, scale, bottom), width + 2, round(SITE_HEADER_PX * scale)
 
 
 def _font(size, text=''):
@@ -98,18 +108,31 @@ def hook_band_image(text, width=1080, max_height=HOOK_BOTTOM - HOOK_TOP, max_wor
 
 
 def cta_strip_image(text, width=1080, height=72):
-    """The launch line as a slim brand strip; it covers only the site's own header bar of the recording."""
-    image = Image.new('RGBA', (width, height), CTA_RED + (235,))
+    """The launch line as a brand strip; on a real-screen Short it covers exactly the site's own header bar.
+    'A - B' becomes two lines (A large, B smaller) when the strip is tall enough."""
+    image = Image.new('RGBA', (width, height), CTA_RED + (255,))
     draw = ImageDraw.Draw(image)
     draw.rectangle((0, 0, width, 2), fill=(255, 255, 255, 128))
-    for size in range(38, 21, -2):
-        font = _font(size, text)
-        box = draw.textbbox((0, 0), text, font=font)
-        if box[2] - box[0] <= width - 60:
-            break
-    else:
+    parts = [p.strip() for p in text.split(' - ', 1)] if ' - ' in text and height >= 110 else [text]
+    starts = (48, 40) if len(parts) == 2 else (38,)
+    fitted = []
+    for part, start in zip(parts, starts):
+        for size in range(start, 21, -2):
+            font = _font(size, part)
+            box = draw.textbbox((0, 0), part, font=font)
+            if box[2] - box[0] <= width - 60:
+                break
+        else:
+            raise ValueError('CTA text does not fit the strip')
+        fitted.append((part, font, box))
+    gap = 8
+    total = sum(b[3] - b[1] for _, _, b in fitted) + gap * (len(fitted) - 1)
+    if total > height - 12:
         raise ValueError('CTA text does not fit the strip')
-    draw.text(((width - (box[2] - box[0])) / 2 - box[0], (height - (box[3] - box[1])) / 2 - box[1]), text, font=font, fill=WHITE)
+    y = (height - total) / 2
+    for index, (part, font, box) in enumerate(fitted):
+        draw.text(((width - (box[2] - box[0])) / 2 - box[0], y - box[1]), part, font=font, fill=YELLOW if index else WHITE)
+        y += box[3] - box[1] + gap
     return image
 
 
