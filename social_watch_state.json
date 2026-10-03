@@ -199,6 +199,10 @@
   "flHbL3oO4cQ": {
    "title": "Sold Out Size? Ab PRE-BOOK Karo 📦 | Wholesale Plain T-Shirts | sale91.com",
    "published": "2026-10-02T11:45:05+00:00"
+  },
+  "Uh39yrimPZU": {
+   "title": "T-Shirt Ke Rate Kyun Badh Rahe Hain? | Cost, Margin Aur Resale Pricing",
+   "published": "2026-10-03T13:30:02+00:00"
   }
  },
  "instagram": {
@@ -685,6 +689,14 @@
   "18104689403140023": {
    "permalink": "https://www.instagram.com/reel/Dd_VcCICAjX/",
    "ts": "2026-10-02T11:05:40+0000"
+  },
+  "18090073643219998": {
+   "permalink": "https://www.instagram.com/p/DeCDfchDoZm/",
+   "ts": "2026-10-03T12:25:35+0000"
+  },
+  "17986641237060023": {
+   "permalink": "https://www.instagram.com/reel/DeB-KGglM35/",
+   "ts": "2026-10-03T11:39:26+0000"
   }
  },
  "facebook": {
@@ -754,7 +766,19 @@
   },
   "1079856794682025": {
    "queued_at": "2026-10-03 11:40",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-03T23:16:13+05:30",
+   "permalink": "https://www.facebook.com/reel/1079856794682025"
   }
  },
  "history": [
@@ -1392,8 +1416,13 @@
    "at": "2026-10-03T15:42:28+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-10-03T23:16:13+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-10-03",
- "last_run_ist": "2026-10-03T15:42:28+05:30"
+ "last_run_ist": "2026-10-03T23:16:13+05:30"
 }
