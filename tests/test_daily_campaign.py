@@ -137,6 +137,8 @@ class RealScreenLayoutSourceTests(unittest.TestCase):
         captions = self.source[self.source.index('for wi, w in enumerate(line):'):]
         captions = captions[:captions.index('k_clips.append(ic)')]
         self.assertIn('w_start = max(w_start, HOOK_DURATION)', captions)
+        fallback = self.source[self.source.index('# Fallback — old segment-level English captions'):]
+        self.assertLess(fallback.index('and real_clips:'), fallback.index('TextClip('))
 
 
 class TestModeNeverPublishesTests(unittest.TestCase):

@@ -13316,8 +13316,11 @@ def main():
             flag("caption_timing", {**(RUN_FLAGS.get("caption_timing") or {}), "highlight_verified": False,
                                     "render_error": type(e).__name__})
 
-    # Fallback — old segment-level English captions (unchanged)
-    if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:
+    # Fallback — old segment-level English captions (unchanged). Never on a real-screen Short: they sit mid-frame,
+    # over the website text (owner 3-Oct-2026).
+    if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered and real_clips:
+        print("   ⚠️ Real-screen Short without karaoke captions: no fallback captions over the website")
+    elif ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:
         for seg in subtitle_segments:
             dur = seg["end"] - seg["start"]
             if dur < 0.1: continue
