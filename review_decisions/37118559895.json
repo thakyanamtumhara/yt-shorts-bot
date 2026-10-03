@@ -1,0 +1,7 @@
+{
+ "run_id": "37118559895",
+ "video_sha256": "74068d33b96c49dff3de09780d579702fc34acde918f5ac275fe18c9981ac41a",
+ "decision": "reject",
+ "reviewer": "Claude Opus 5.5",
+ "notes": "Video, voice, facts, cover and captions pass. Rejected for text and one frame flaw: the YouTube description says 'Order DTF sheets & plain t-shirts: Sale91.com' (sale91.com does not sell DTF sheets) and 'You need 6840 pixels' (minimum is 5700 px, 6840 is best; this sentence also becomes the Facebook caption); the launch strip in the last 4 s leaves a sliver of the site logo visible below it."
+}
