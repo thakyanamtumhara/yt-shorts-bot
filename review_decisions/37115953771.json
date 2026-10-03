@@ -1,0 +1,7 @@
+{
+ "run_id": "37115953771",
+ "video_sha256": "3239344e742959096573a6f5bd5a3b42080f2014d80006dba867e73b7ba4db18",
+ "decision": "reject",
+ "reviewer": "Claude Opus 5.5",
+ "notes": "Audio and script fine. Rejected for visuals: hook text box drawn over the screen in the first 2 s; outro says 'MOQ sirf 10 pieces' on a DTF Short; tips clip loops about 4 times and scrolls into unrelated sections; cover is an AI man, not Option B (buyer question + white box vs clean print)."
+}
