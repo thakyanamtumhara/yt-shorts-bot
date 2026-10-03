@@ -1,8 +1,8 @@
 {
   "format": "daily-topic-facts-v1",
   "reviewed": true,
-  "reviewed_on": "2026-10-01",
-  "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted.",
+  "reviewed_on": "2026-10-03",
+  "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted. During a dated campaign the bank also holds Sale91 DTF service facts from its own live pages and Canva Help.",
   "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
     "combing_short_fibres": {
@@ -137,6 +137,55 @@
       "source_title": "Cotton Incorporated: Textile Fibers (2013)",
       "checked_on": "2026-10-01",
       "limits": "General fibre property from a cotton industry body. Do not claim a specific polyester T-shirt has or lacks a soil-release finish, promise odour-free wear, or rank odour against cotton."
+    },
+    "dtf_sheet_size": {
+      "claim": "Sale91's DTF sheet is 22.8 inches wide and 39 to 390 inches tall. The buyer uploads one ready-made PNG sheet, and it is printed as uploaded: never stretched or cropped. One sheet can carry many designs (a gang sheet).",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Sale91 DTF order form: sheet size and Details & tips",
+      "checked_on": "2026-10-03",
+      "limits": "Sale91's own product rule. Other printers use other widths. Do not quote a price from this fact."
+    },
+    "dtf_min_resolution": {
+      "claim": "Sale91's DTF order form accepts a sheet from 250 DPI: at least 5700 pixels across the 22.8-inch width; 300 DPI (6840 pixels) is best. Changing only the DPI number in an image's settings adds no pixels, so a small file stays blurry.",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Sale91 DTF order form: Details & tips and the low-resolution message",
+      "checked_on": "2026-10-03",
+      "limits": "The pixel numbers are Sale91's own gate for its 22.8-inch sheet. Do not claim a print result was tested."
+    },
+    "dtf_transparent_background": {
+      "claim": "In a DTF sheet, anything that is not transparent gets printed: a white or coloured background prints as a solid rectangle. Glows, shadows and soft fades can print patchy.",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Sale91 DTF order form: Details & tips",
+      "checked_on": "2026-10-03",
+      "limits": "Teach file preparation only; no claim about any one film or ink brand."
+    },
+    "dtf_canva_png_size": {
+      "claim": "Canva counts a design's size at 96 pixels per inch. Its PNG download Size slider goes from 0.5x to 3.125x (a Canva Pro option, like the transparent background), so a 22.8-inch-wide design downloaded at 3.125x is 6840 pixels wide: 300 DPI. Canva Free downloads PNG at 1x, about 96 DPI.",
+      "source_url": "https://www.canva.com/help/resize/",
+      "source_title": "Canva Help: Resize designs and size limits; Choose the right download file type",
+      "checked_on": "2026-10-03",
+      "limits": "Canva's plans and menus can change; say it is Canva's current help. The 22.8-inch arithmetic is ours. Canva Free has no Size slider and no transparent PNG."
+    },
+    "dtf_pieces_whole_sheet": {
+      "claim": "On Sale91's DTF order form, 'pieces' means how many times the whole uploaded sheet is printed, and the price is the sheet's real height times the pieces. Designs for many T-shirts belong together on one sheet, not one sheet per T-shirt.",
+      "source_url": "https://dtf.bulkplaintshirt.com/about",
+      "source_title": "Sale91 DTF: About, contact and pricing",
+      "checked_on": "2026-10-03",
+      "limits": "Do not quote a rupee amount from this fact."
+    },
+    "dtf_press_settings": {
+      "claim": "Sale91's pressing guide for its DTF prints: thin T-shirts (cotton, polyester) 165 degrees C for 5 seconds; hoodies and sweatshirts 180 degrees C for 5 seconds; medium-firm pressure; let it cool, then peel the film slowly (cold peel); press again 5 seconds with a Teflon sheet or baking paper on top.",
+      "source_url": "https://dtf.bulkplaintshirt.com/press",
+      "source_title": "Sale91 DTF pressing guide",
+      "checked_on": "2026-10-03",
+      "limits": "These are the settings for Sale91's prints. Other films and presses differ; the guide says to test on a spare garment first. No wash-life promise."
+    },
+    "dtf_service_launch": {
+      "claim": "Sale91 (Own Knitted Blank Wears) now prints DTF heat-transfer sheets from the buyer's own PNG file: upload the sheet, choose pieces, pay and track the order online at dtf.bulkplaintshirt.com. Sheets are printed by its partner in Surat and sent by courier across India.",
+      "source_url": "https://dtf.bulkplaintshirt.com/about",
+      "source_title": "Sale91 DTF: About, contact and pricing",
+      "checked_on": "2026-10-03",
+      "limits": "No delivery-time or quality promise beyond the page. No price in the spoken script."
     }
   },
   "seed_lessons": [
@@ -304,6 +353,116 @@
       "fact_ids": [
         "polyester_oleophilic"
       ]
+    },
+    {
+      "topic": "Canva से DTF के लिए 300 DPI फाइल कैसे निकालें?",
+      "buyer_question": "My Canva PNG is rejected as low resolution for a DTF sheet. How do I get 300 DPI out of Canva?",
+      "lesson": "Canva counts a design at 96 pixels per inch, so a 22.8-inch design downloads only about 2189 pixels wide at 1x. The Pro Size slider at 3.125x multiplies those pixels to 6840 across the sheet, which is 300 DPI at the full width.",
+      "buyer_decision": "Make the design 22.8 inches wide in Canva and download PNG at Size 3.125x with a transparent background; Canva Free cannot do this.",
+      "intent_key": "dtf_canva_png_3125",
+      "fact_ids": [
+        "dtf_canva_png_size",
+        "dtf_min_resolution"
+      ]
+    },
+    {
+      "topic": "DPI नंबर बदलने से DTF प्रिंट साफ़ क्यों नहीं होता?",
+      "buyer_question": "I changed my image from 72 DPI to 300 DPI. Why is the DTF sheet still refused as low resolution?",
+      "lesson": "Print sharpness comes from how many pixels cover the real sheet width, not from the DPI label stored in the file. A 22.8-inch sheet needs at least 5700 pixels across; relabelling a small image adds no new pixels, so it stays blurry.",
+      "buyer_decision": "Check the pixel width of the PNG before ordering: 5700 or more for a 22.8-inch DTF sheet, 6840 for the best result.",
+      "intent_key": "dtf_dpi_label_not_pixels",
+      "fact_ids": [
+        "dtf_min_resolution"
+      ]
+    },
+    {
+      "topic": "DTF शीट का बैकग्राउंड transparent क्यों होना चाहिए?",
+      "buyer_question": "Why did a white box print around my design on the DTF transfer?",
+      "lesson": "A DTF sheet prints every pixel that is not transparent, so a white or coloured background becomes a solid rectangle of ink on the shirt. Soft glows and shadows are partly transparent and can print patchy at their edges.",
+      "buyer_decision": "Export the sheet as PNG with a transparent background and remove glows or soft shadows before ordering.",
+      "intent_key": "dtf_transparent_background",
+      "fact_ids": [
+        "dtf_transparent_background"
+      ]
+    },
+    {
+      "topic": "Gang sheet क्या होती है? एक DTF शीट पर कई डिज़ाइन",
+      "buyer_question": "Do I need a separate DTF sheet for every design or T-shirt?",
+      "lesson": "A DTF gang sheet is one 22.8-inch-wide PNG that carries many designs side by side. The sheet is printed as uploaded, so the designs for many T-shirts share one sheet and the buyer pays for the sheet height, not per design.",
+      "buyer_decision": "Place all the designs for an order together on one sheet and leave small gaps for cutting.",
+      "intent_key": "dtf_gang_sheet_layout",
+      "fact_ids": [
+        "dtf_sheet_size",
+        "dtf_pieces_whole_sheet"
+      ]
+    },
+    {
+      "topic": "DTF ऑर्डर में \"pieces\" का मतलब T-shirts नहीं है",
+      "buyer_question": "I have 28 designs on my sheet. Should I set pieces to 28?",
+      "lesson": "On Sale91's DTF form, pieces means how many times the whole uploaded sheet is printed. A sheet that already holds 28 designs needs one piece; setting 28 would print the entire sheet 28 times and multiply the cost.",
+      "buyer_decision": "Set pieces to the number of complete sheets you need, not the number of T-shirts or designs on them.",
+      "intent_key": "dtf_pieces_means_sheets",
+      "fact_ids": [
+        "dtf_pieces_whole_sheet",
+        "dtf_sheet_size"
+      ]
+    },
+    {
+      "topic": "DTF प्रिंट कैसे प्रेस करें: 165 या 180 डिग्री?",
+      "buyer_question": "At what temperature and time should I press a DTF print on a T-shirt and on a hoodie?",
+      "lesson": "Sale91's guide uses 165 degrees C for 5 seconds on thin T-shirts and 180 degrees C for 5 seconds on hoodies and sweatshirts, with medium-firm pressure. The film is peeled only after cooling, then pressed again 5 seconds under a Teflon sheet or baking paper.",
+      "buyer_decision": "Use the garment-specific temperature, cold-peel, finish with a second covered press, and test one spare garment first.",
+      "intent_key": "dtf_press_165_180",
+      "fact_ids": [
+        "dtf_press_settings"
+      ]
     }
-  ]
+  ],
+  "campaign": {
+    "id": "dtf_launch_2026_10",
+    "label": "DTF launch",
+    "from": "2026-10-03",
+    "until": "2026-10-14",
+    "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review.",
+    "fact_ids": [
+      "dtf_sheet_size",
+      "dtf_min_resolution",
+      "dtf_transparent_background",
+      "dtf_canva_png_size",
+      "dtf_pieces_whole_sheet",
+      "dtf_press_settings",
+      "dtf_service_launch"
+    ],
+    "clips": {
+      "dtf_sheet_size": [
+        "home",
+        "about"
+      ],
+      "dtf_min_resolution": [
+        "tips",
+        "lowres"
+      ],
+      "dtf_canva_png_size": [
+        "lowres",
+        "tips"
+      ],
+      "dtf_transparent_background": [
+        "tips"
+      ],
+      "dtf_pieces_whole_sheet": [
+        "about",
+        "home"
+      ],
+      "dtf_press_settings": [
+        "press"
+      ],
+      "dtf_service_launch": [
+        "home",
+        "about"
+      ]
+    },
+    "cta_text": "Naya: DTF sheets - dtf.bulkplaintshirt.com",
+    "link": "https://dtf.bulkplaintshirt.com/?utm_source=youtube&utm_medium=shorts_description&utm_campaign=dtf_launch",
+    "ig_line": "Naya: DTF sheets ab Sale91 pe - dtf.bulkplaintshirt.com par PNG upload karke order karo."
+  }
 }

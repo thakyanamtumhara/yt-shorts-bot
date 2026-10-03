@@ -291,6 +291,8 @@ CLIP_FADE_DURATION = 0.3
 # CTA
 ADD_CTA_OVERLAY = True
 CTA_TEXT = "Sale91.com — MOQ sirf 10 pieces"
+# Real screen recordings used by a dated launch campaign's lessons (daily_topic_lessons.json "campaign" -> clips)
+CAMPAIGN_ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "dtf_demo")
 
 # YouTube
 SCHEDULE_PUBLISH = True
@@ -727,7 +729,27 @@ def get_ig_seo_line(topic, title):
 
 def get_ig_cta_line(topic=None):
     from tools.audience_interaction import interaction_copy
-    return interaction_copy(topic)
+    line = interaction_copy(topic)
+    launch = campaign_line(topic, "ig_line")
+    return (line + "\n\n" + launch) if (line and launch) else line
+
+
+def campaign_line(topic, key):
+    """The active launch campaign's text `key` when this topic is one of its lessons, else ''."""
+    try:
+        from tools.daily_topic_selection import active_campaign, cites_campaign, load_bank
+        campaign = active_campaign(load_bank())
+        if campaign and cites_campaign(getattr(topic, "brief", None), campaign):
+            value = campaign.get(key)
+            return value.strip() if isinstance(value, str) else ""
+    except Exception as error:
+        print(f"   ⚠️ Campaign text skipped ({type(error).__name__})")
+    return ""
+
+
+def campaign_description_line(topic):
+    link = campaign_line(topic, "link")
+    return f"\n🆕 DTF sheets ab Sale91 pe: {link}\n" if link else ""
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -5738,7 +5760,7 @@ def upload_to_youtube(youtube, video_path, title, description, tags, topic=""):
     hashtag_line = " ".join(topic_hashtags)
 
     seo_description = f"""{description}
-
+{campaign_description_line(topic)}
 ━━━━━━━━━━━━━━━━━━━━━━━━
 📦 Order Plain T-shirts: https://sale91.com?utm_source=youtube&utm_medium=shorts_description&utm_campaign=daily_short
 ━━━━━━━━━━━━━━━━━━━━━━━━
@@ -7527,7 +7549,7 @@ TOPIC_MIN_SCORE = 25      # Out of 40 — threshold for auto-approval
 
 def search_trending_topics(anthropic_client, topic_history=()):
     from tools.daily_topic_selection import (
-        TopicHold, brainstorming_context, load_bank, response_json, retryable_failure, safe_failure_details,
+        TopicHold, brainstorming_context, campaign_prompt, load_bank, response_json, retryable_failure, safe_failure_details,
     )
     from tools.topic_audience_signals import prompt_signals
     bank = load_bank()
@@ -7551,7 +7573,7 @@ COMPLETED REVIEWED LESSONS — exclude these exact mechanisms and buyer decision
 {json.dumps(context['completed_lessons'], ensure_ascii=False)}
 Do not re-propose one under a renamed intent_key. Compare the full explanation and
 buyer decision. If no different supported lesson remains, return [] for a quality hold.
-
+{campaign_prompt(context.get('campaign'))}
 LIVE WEBSITE RATES: fact ids starting with rate_ are today's exact BulkPlainTshirt.com rates
 (before GST), checked from the live rate list this run. A lesson may put two real products'
 current rates side by side and explain what actually differs between them, using only the
@@ -7749,13 +7771,13 @@ def _hold_failed_visual_topic(topic):
 
 
 def smart_pick_topic(claude_client, topic_bank, topic_history):
-    from tools.daily_topic_selection import load_bank, choose_topic, load_visual_holds
+    from tools.daily_topic_selection import load_bank, choose_with_campaign, load_visual_holds
     _install_live_rates()
     bank = load_bank()
     candidates = search_trending_topics(claude_client, topic_history)
     # Legacy bare titles, including the exhausted incident bank, are not evidence.
     candidates = candidates + bank.get("seed_lessons", [])
-    topic = choose_topic(
+    topic = choose_with_campaign(
         candidates, bank=bank, history=topic_history,
         review=lambda brief: review_topic(claude_client, brief, topic_history),
         viable=lambda title: True,
@@ -12621,7 +12643,26 @@ def main():
     kling_clips = 0  # Track Kling fallback clips across all modes
     veo_clips_count = 0
 
-    if TEST_MODE or SKIP_CLIPS or NEW_TEST_MODE:
+    # A dated launch campaign lesson (daily_topic_lessons.json "campaign") is shown with REAL screen recordings of
+    # the product's own website (assets/dtf_demo), never generated video: the final visual review compares every
+    # segment with the lesson, and generated clips could not honestly show a real order form or pop-up.
+    from tools.daily_topic_selection import active_campaign, campaign_clips, cites_campaign, load_bank as _campaign_bank
+    _campaign = active_campaign(_campaign_bank())
+    campaign_lesson = bool(_campaign and cites_campaign(getattr(fresh_topic, "brief", None), _campaign))
+    real_clips = campaign_clips(getattr(fresh_topic, "brief", None), _campaign, CAMPAIGN_ASSETS_DIR) if campaign_lesson else []
+    if campaign_lesson and not real_clips:
+        print(f"   ❌ {_campaign.get('label')}: no real screen recording for this lesson. Stopping.")
+        sys.exit(2)
+
+    if real_clips:
+        import shutil
+        print(f"   🎥 {_campaign.get('label')}: {len(real_clips)} real website screen recording(s), no Veo")
+        for i, source in enumerate(real_clips):
+            target = f"{WORK_DIR}/dtf_demo_{i}_{os.path.basename(source)}"
+            shutil.copyfile(source, target)
+            downloaded_clips.append(target)
+        flag("clips", {"real_website": len(real_clips), "campaign": _campaign.get("id")})
+    elif TEST_MODE or SKIP_CLIPS or NEW_TEST_MODE:
         # Test/skip-clips mode: create cheap placeholder clips (solid color) instead of Veo
         label = "TEST MODE" if TEST_MODE else ("NEW TEST MODE" if NEW_TEST_MODE else "SKIP CLIPS")
         print(f"   🧪 {label}: Skipping Veo clips, using placeholder video...")
@@ -12882,7 +12923,7 @@ def main():
         print("❌ No clips generated. Stopping.")
         sys.exit(2)
 
-    if not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
+    if not real_clips and not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
         veo_count = got - kling_clips
@@ -13132,7 +13173,8 @@ def main():
             # Trim black frames from Veo clip intros
             v = trim_black_intro(v)
             # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
-            v = apply_ken_burns(v, zoom_percent=3)
+            if "dtf_demo_" not in os.path.basename(fname):
+                v = apply_ken_burns(v, zoom_percent=3)
             video_objects.append(v)
             print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
         except Exception as e:
@@ -13376,7 +13418,7 @@ def main():
             accent_line = accent_line.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
 
             # Clean white text (no stroke needed — bar provides contrast)
-            cta_txt = TextClip(CTA_TEXT, fontsize=36, font=SUBTITLE_FONT, color="white",
+            cta_txt = TextClip(_campaign.get("cta_text") or CTA_TEXT if campaign_lesson else CTA_TEXT, fontsize=36, font=SUBTITLE_FONT, color="white",
                 method='label')
             cta_w, cta_h = cta_txt.size
             cta_txt = cta_txt.set_position(((VIDEO_WIDTH - cta_w) // 2, bar_y + (bar_height - cta_h) // 2))

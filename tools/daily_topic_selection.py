@@ -209,6 +209,70 @@ def record_published_lesson(topic, video_id, path=None, today=None):
     return True
 
 
+def active_campaign(bank, today=None):
+    """The bank's dated launch campaign while today (India time) is inside its from..until window, else None.
+    Only its fact ids that exist in the bank count; a campaign without any is ignored."""
+    campaign = bank.get('campaign') if isinstance(bank, dict) else None
+    if not isinstance(campaign, dict):
+        return None
+    day = (today or datetime.now(IST).date()).isoformat()
+    start, until = campaign.get('from'), campaign.get('until')
+    if not (isinstance(start, str) and isinstance(until, str) and start <= day <= until):
+        return None
+    facts = bank.get('facts') or {}
+    ids = [key for key in campaign.get('fact_ids') or [] if isinstance(key, str) and key in facts]
+    return {**campaign, 'fact_ids': ids} if ids else None
+
+
+def cites_campaign(brief, campaign):
+    if not campaign or not isinstance(brief, dict) or not isinstance(brief.get('fact_ids'), list):
+        return False
+    return any(key in campaign['fact_ids'] for key in brief['fact_ids'])
+
+
+def campaign_clips(brief, campaign, assets_dir, count=5):
+    """Real screen recordings for a campaign lesson: only the clips mapped to the facts it cites (the timeline loops
+    them), because the final visual review compares every segment with the spoken lesson. Only files that exist;
+    [] for any lesson that cites no campaign fact."""
+    if not cites_campaign(brief, campaign):
+        return []
+    mapping = campaign.get('clips') if isinstance(campaign.get('clips'), dict) else {}
+    order = []
+    for key in brief['fact_ids']:
+        for name in mapping.get(key) or []:
+            if isinstance(name, str) and name not in order:
+                order.append(name)
+    paths = [Path(assets_dir) / f'{name}.mp4' for name in order if re.fullmatch(r'[a-z0-9_]{1,40}', name)]
+    return [str(path) for path in paths if path.is_file()][:count]
+
+
+def campaign_prompt(campaign):
+    """The brainstorm section for a dated launch campaign (daily_topic_lessons.json "campaign"), or ''."""
+    if not campaign:
+        return ''
+    return (f"\nLAUNCH CAMPAIGN ({campaign.get('label', 'campaign')}, until {campaign.get('until')}): {campaign.get('why', '')}\n"
+            'In this period every brief must teach one real buyer lesson that cites at least one of these fact ids:\n'
+            f"{json.dumps(campaign['fact_ids'], ensure_ascii=False)}\n"
+            'Real problems buyers hit: a low-resolution sheet, a Canva PNG export, a background that is not\n'
+            'transparent, many designs on one gang sheet, what "pieces" means, and pressing. Teach the reason\n'
+            'and the decision. The spoken script stays a lesson with no sales line and no website name: the end\n'
+            'card and the description carry the launch.\n')
+
+
+def choose_with_campaign(candidates, *, bank, **options):
+    """During an active campaign, first choose only among lessons that cite a campaign fact; when none of them
+    passes the same quality gate, fall back to the ordinary choice. Without a campaign this is choose_topic."""
+    campaign = active_campaign(bank)
+    if campaign:
+        launch = [brief for brief in candidates if cites_campaign(brief, campaign)]
+        if launch:
+            try:
+                return choose_topic(launch, bank=bank, **options)
+            except TopicHold as error:
+                print(f"   {campaign.get('label', 'Campaign')}: no lesson passed ({error}); ordinary topic choice")
+    return choose_topic(candidates, bank=bank, **options)
+
+
 def brainstorming_context(bank, history, lessons=None):
     titles = {normalized(title) for title in history if isinstance(title, str)}
     completed = [brief for brief in bank.get('seed_lessons', [])
@@ -221,9 +285,14 @@ def brainstorming_context(bank, history, lessons=None):
             completed.append({'lesson': '', 'buyer_decision': '', **item})
     used = {key for brief in completed for key in brief.get('fact_ids', [])}
     preferred = [key for key in bank['facts'] if key not in used]
+    campaign = active_campaign(bank)
+    if campaign:
+        # A dated launch campaign (owner request) puts its own unused facts first; the rest keep their order.
+        preferred = ([key for key in preferred if key in campaign['fact_ids']]
+                     + [key for key in preferred if key not in campaign['fact_ids']])
     ordered = {key: bank['facts'][key] for key in preferred}
     ordered.update({key: fact for key, fact in bank['facts'].items() if key in used})
-    return {'facts': ordered, 'preferred_fact_ids': preferred,
+    return {'facts': ordered, 'preferred_fact_ids': preferred, 'campaign': campaign,
             'completed_lessons': [{key: brief[key] for key in (
                 'topic', 'lesson', 'buyer_decision', 'intent_key', 'fact_ids')} for brief in completed]}
 

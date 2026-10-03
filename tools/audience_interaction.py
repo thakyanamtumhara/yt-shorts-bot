@@ -15,6 +15,12 @@ QUESTIONS = {
     'pilling_set_by_materials_and_processing': 'Does your fabric specification say anything about pilling performance?',
     'mercerization_swells_cotton_for_lustre': 'Have you seen mercerized listed as a separate process on a cotton specification?',
     'polyester_oil_affinity_needs_soil_release': 'For polyester tees, has your supplier ever mentioned a soil-release finish?',
+    'dtf_canva_png_3125': 'When you download your DTF design from Canva, which Size do you pick for the PNG?',
+    'dtf_dpi_label_not_pixels': 'How many pixels wide is the PNG you send for a 22.8-inch DTF sheet?',
+    'dtf_transparent_background': 'Does your DTF design file have a transparent background or a white one?',
+    'dtf_gang_sheet_layout': 'How many designs do you usually fit on one DTF gang sheet?',
+    'dtf_pieces_means_sheets': 'When you order DTF, do you count pieces as sheets or as T-shirts?',
+    'dtf_press_165_180': 'Which heat press setting do you use for DTF on hoodies?',
 }
 
 FACT_QUESTIONS = {
