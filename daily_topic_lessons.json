@@ -423,7 +423,7 @@
     "label": "DTF launch",
     "from": "2026-10-03",
     "until": "2026-10-14",
-    "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review.",
+    "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review. Owner 3-Oct-2026: Claude (Opus 5.5) is the final quality gate; nothing is published before its 100% approval of the exact file.",
     "fact_ids": [
       "dtf_sheet_size",
       "dtf_min_resolution",
@@ -463,6 +463,7 @@
     },
     "cta_text": "Naya: DTF sheets - dtf.bulkplaintshirt.com",
     "link": "https://dtf.bulkplaintshirt.com/?utm_source=youtube&utm_medium=shorts_description&utm_campaign=dtf_launch",
-    "ig_line": "Naya: DTF sheets ab Sale91 pe - dtf.bulkplaintshirt.com par PNG upload karke order karo."
+    "ig_line": "Naya: DTF sheets ab Sale91 pe - dtf.bulkplaintshirt.com par PNG upload karke order karo.",
+    "owner_review": true
   }
 }

@@ -2,13 +2,16 @@ name: Daily YouTube Short
 run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_test || inputs.test_thumbnail) && 'Daily YouTube Short (test)' || 'Daily YouTube Short' }}
 
 on:
-  schedule:
-    # Mon-Sat 09:00 UTC = 2:30 PM IST start; video ready ~3:15 PM IST.
-    # YouTube publishAt handles the actual 19:00 IST release; the IG container
-    # is scheduled at the audience's 17:00-21:00 IST evening peak. Sunday is
-    # intentionally skipped — sunday_recap.yml takes over on Sundays
-    # (saves ~$7.58/Sun in Veo costs).
-    - cron: '0 9 * * 1-6'
+  # Schedule PAUSED 3-Oct-2026: during the DTF launch campaign every Short waits for Claude's written review (owner
+  # request: "verify ... give it 100% thumbs up, then only you move forward"), so runs are started by hand while the
+  # reviewer is present. Restore after the campaign (14-Oct-2026) by uncommenting:
+  # schedule:
+  #   # Mon-Sat 09:00 UTC = 2:30 PM IST start; video ready ~3:15 PM IST.
+  #   # YouTube publishAt handles the actual 19:00 IST release; the IG container
+  #   # is scheduled at the audience's 17:00-21:00 IST evening peak. Sunday is
+  #   # intentionally skipped — sunday_recap.yml takes over on Sundays
+  #   # (saves ~$7.58/Sun in Veo costs).
+  #   - cron: '0 9 * * 1-6'
   workflow_dispatch:
     inputs:
       test_mode:
@@ -31,6 +34,11 @@ on:
         required: false
         type: boolean
         default: false
+      owner_review:
+        description: 'Hold the rendered Short for a written review decision before publishing (always on during a campaign with owner_review)'
+        required: false
+        type: boolean
+        default: true
       enable_subtitles:
         description: 'Enable karaoke subtitles (ADD_SUBTITLES=1 — off on cron runs until visually verified)'
         required: false
@@ -73,7 +81,7 @@ jobs:
       issues: write
       actions: write
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
 
     steps:
       # GitHub has started this cron 3-11 hours late since 27-Aug-2026, so the day's Short is
@@ -188,6 +196,10 @@ jobs:
           SKIP_CLIPS: ${{ github.event.inputs.skip_clips }}
           SINGLE_VEO_TEST: ${{ github.event.inputs.single_veo_test }}
           NEW_TEST_MODE: ${{ github.event.inputs.new_test_mode }}
+          # Owner review gate (tools/owner_review.py): the rendered file waits for review_decisions/<run_id>.json
+          OWNER_REVIEW: ${{ github.event.inputs.owner_review }}
+          GH_TOKEN_REVIEW: ${{ github.token }}
+          REVIEW_WAIT_MINUTES: '100'
           # Karaoke captions LIVE (baseline fix visually verified 2026-07-06; Ketu approved).
           # Kill switch: set to "0".
           ADD_SUBTITLES: "1"

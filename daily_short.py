@@ -224,6 +224,12 @@ KARAOKE_HIGHLIGHT_COLOR = (255, 215, 0, 255)    # #FFD700 yellow — CVD-safe, n
 KARAOKE_STROKE_COLOR = (0, 0, 0, 255)
 KARAOKE_STROKE_W = 4
 KARAOKE_Y_PERCENT = 0.55      # line vertical center — inside IG Reels safe band (~25-70%)
+# Real screen recordings (a launch campaign's lessons): the recording is scaled down and sits on a dark backdrop
+# near the bottom; the karaoke line gets the band above it instead of covering the page's own text.
+SCREEN_CLIP_SCALE = 0.76      # 1080x1920 -> 821x1459
+SCREEN_CLIP_BOTTOM = 40       # px below the recording
+SCREEN_BACKDROP = (27, 16, 48)
+SCREEN_CAPTION_Y = 0.14       # caption centre in the band above the recording (0..421 px)
 KARAOKE_MAX_LINE_W = VIDEO_WIDTH - 160
 KARAOKE_FONT_CANDIDATES = [
     "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",        # CI: fonts-noto-core
@@ -726,6 +732,19 @@ def get_ig_seo_line(topic, title):
     kw = IG_SEO_KEYWORDS.get(series, IG_DEFAULT_SEO)
     line = f"{title} | {kw}"
     return line[:150]
+
+def owner_review_required():
+    """OWNER_REVIEW=1 on the run, or the active launch campaign asks for it (daily_topic_lessons.json campaign.owner_review)."""
+    if os.environ.get("OWNER_REVIEW", "").strip().lower() in ("1", "true", "yes"):
+        return True
+    try:
+        from tools.daily_topic_selection import active_campaign, load_bank
+        campaign = active_campaign(load_bank())
+        return bool(campaign and campaign.get("owner_review"))
+    except Exception as error:
+        print(f"   ⚠️ Owner-review setting unreadable ({type(error).__name__}); review required")
+        return True
+
 
 def get_ig_cta_line(topic=None):
     from tools.audience_interaction import interaction_copy
@@ -13172,8 +13191,17 @@ def main():
             v = v.without_audio()
             # Trim black frames from Veo clip intros
             v = trim_black_intro(v)
-            # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
-            if "dtf_demo_" not in os.path.basename(fname):
+            if "dtf_demo_" in os.path.basename(fname):
+                # A real screen recording: no zoom (it would crop the page text); it sits lower on a dark backdrop so
+                # the spoken captions get their own band above it (owner 3-Oct-2026: the captions written over the
+                # website text did not look good).
+                inner = v.resize(SCREEN_CLIP_SCALE)
+                iw, ih = inner.size
+                backdrop = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=SCREEN_BACKDROP).set_duration(v.duration)
+                v = CompositeVideoClip([backdrop, inner.set_position(((VIDEO_WIDTH - iw) // 2, VIDEO_HEIGHT - ih - SCREEN_CLIP_BOTTOM))],
+                                       size=(VIDEO_WIDTH, VIDEO_HEIGHT)).set_duration(v.duration)
+            else:
+                # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
                 v = apply_ken_burns(v, zoom_percent=3)
             video_objects.append(v)
             print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
@@ -13261,7 +13289,7 @@ def main():
                     ih, iw = arr.shape[0], arr.shape[1]
                     ic = (ImageClip(arr)
                           .set_position(((VIDEO_WIDTH - iw) // 2,
-                                         int(VIDEO_HEIGHT * KARAOKE_Y_PERCENT) - ih // 2))
+                                         int(VIDEO_HEIGHT * (SCREEN_CAPTION_Y if real_clips else KARAOKE_Y_PERCENT)) - ih // 2))
                           .set_start(w_start)
                           .set_end(min(w_end, total_duration)))
                     k_clips.append(ic)
@@ -13555,6 +13583,39 @@ def main():
         except VisualReviewError:
             _hold_failed_visual_topic(fresh_topic)
             raise
+
+    # ── 9z. Owner review gate (owner 3-Oct-2026: "you become the quality gate ... give it 100% thumbs up, then only
+    # you move forward"). The exact rendered file waits for a reviewer's decision (tools/owner_review.py); nothing is
+    # uploaded or posted anywhere unless that decision approves this file.
+    if owner_review_required() and not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST:
+        import boto3
+        import requests
+        from tools.owner_review import OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy
+        review_run = os.environ.get("GITHUB_RUN_ID", "")
+        video_sha = file_sha256(output_path)
+        review_summary = {
+            "format": "owner-review-v1", "run_id": review_run, "video_sha256": video_sha, "topic": str(fresh_topic),
+            "lesson": {k: v for k, v in (getattr(fresh_topic, "brief", None) or {}).items() if k != "evidence"},
+            "titles": {"youtube": yt_title, "instagram": ig_title}, "youtube_description": yt_description,
+            "youtube_tags": yt_tags, "script": {"voice": script_voice, "english": script_english},
+            "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review")},
+        }
+        try:
+            review_folder = publish_review_copy(boto3.client("s3"), BLOG_S3_BUCKET, review_run, output_path,
+                                                thumbnail_path, review_summary)
+            print(f"   ⏸️ OWNER REVIEW: {BLOG_BASE_URL}/{review_folder}/video.mp4 (sha256 {video_sha[:16]}...)")
+            print(f"      waiting for review_decisions/{review_run}.json on main")
+            review_decision = await_owner_review(
+                run_id=review_run, sha=video_sha, repo=os.environ.get("GITHUB_REPOSITORY", ""),
+                token=os.environ.get("GH_TOKEN_REVIEW", ""),
+                wait_seconds=int(os.environ.get("REVIEW_WAIT_MINUTES", "100") or 100) * 60, fetch=requests.get)
+        except OwnerReviewStop as stop:
+            flag("owner_review", {"decision": "held", "reason": str(stop)})
+            print(f"   🛑 Owner review: {stop}")
+            return
+        flag("owner_review", {"decision": "approve", "reviewer": review_decision["reviewer"],
+                              "notes": review_decision.get("notes", ""), "video_sha256": video_sha})
+        print(f"   ✅ Owner review: approved by {review_decision['reviewer']} — publishing this exact file")
 
     # ── 10. Upload to YouTube ──
     upload_failed = False
