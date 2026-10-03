@@ -738,7 +738,19 @@
   },
   "1087830337197021": {
    "queued_at": "2026-10-03 09:03",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-03T15:42:28+05:30",
+   "permalink": "https://www.facebook.com/reel/1087830337197021"
   }
  },
  "history": [
@@ -1371,8 +1383,13 @@
    "at": "2026-10-03T00:27:58+05:30",
    "alerts": 0,
    "new": 2
+  },
+  {
+   "at": "2026-10-03T15:42:28+05:30",
+   "alerts": 0,
+   "new": 0
   }
  ],
  "last_green_date": "2026-10-03",
- "last_run_ist": "2026-10-03T00:27:58+05:30"
+ "last_run_ist": "2026-10-03T15:42:28+05:30"
 }
