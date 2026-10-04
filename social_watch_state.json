@@ -203,6 +203,10 @@
   "Uh39yrimPZU": {
    "title": "T-Shirt Ke Rate Kyun Badh Rahe Hain? | Cost, Margin Aur Resale Pricing",
    "published": "2026-10-03T13:30:02+00:00"
+  },
+  "iK2mrgYEj9s": {
+   "title": "Maal Kam Ho Toh Negotiation Kyun Mushkil? | T-Shirt Raw Material",
+   "published": "2026-10-04T12:30:25+00:00"
   }
  },
  "instagram": {
@@ -697,6 +701,10 @@
   "17986641237060023": {
    "permalink": "https://www.instagram.com/reel/DeB-KGglM35/",
    "ts": "2026-10-03T11:39:26+0000"
+  },
+  "18152298136523419": {
+   "permalink": "https://www.instagram.com/reel/DeE8st1CGLo/",
+   "ts": "2026-10-04T15:24:43+0000"
   }
  },
  "facebook": {
@@ -1426,8 +1434,13 @@
    "at": "2026-10-04T16:23:47+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-10-04T23:28:12+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-10-04",
- "last_run_ist": "2026-10-04T16:23:47+05:30"
+ "last_run_ist": "2026-10-04T23:28:12+05:30"
 }
