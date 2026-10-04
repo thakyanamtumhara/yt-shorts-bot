@@ -300,6 +300,15 @@
   "nudged": true
  },
  "rates0015-20260917-short01-ig": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DeE8st1CGLo/"
+ },
+ "rates0015-20260917-short01-yt": {
+  "nudged": true
+ },
+ "prebook-20260928-fb-reel": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1028101550286111/"
  }
 }
