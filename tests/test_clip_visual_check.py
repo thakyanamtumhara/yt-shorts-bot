@@ -84,18 +84,27 @@ class RepairClipsTest(unittest.TestCase):
     def test_a_wrongly_drawn_construction_goes_straight_to_safe_scenes(self):
         # 1-Oct-2026: asking Veo again for the coverseam close-up mostly draws the cords again.
         kept, _, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c2': bad(), 'safe-1': bad('Rib knit swatch.')})
-        self.assertEqual(kept[1], 'safe2-1')
-        self.assertEqual([kind for _, kind, _ in calls], ['safe', 'safe2'])
+        self.assertEqual(kept[1], 'still-1')
+        self.assertEqual([kind for _, kind, _ in calls], ['safe', 'still'])
         self.assertIn('SCENE: ' + check.SAFE_SCENES[1], calls[0][2])
-        self.assertIn('SCENE: ' + check.SAFE_SCENES[3], calls[1][2])
+        self.assertIn('SCENE: ' + check.STILL_SCENES[1], calls[1][2])
+        self.assertIn('No people, no hands.', calls[1][2])
         mixed = {**bad(), 'problems': bad()['problems'] + glitch()['problems']}
-        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], mixed, PROMPTS, 0)], ['safe', 'safe2'])
+        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], mixed, PROMPTS, 0)], ['safe', 'still'])
         unsure = {**bad(), 'verdict': 'uncertain', 'problems': []}
-        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], unsure, PROMPTS, 0)], ['safe', 'safe2'])
+        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], unsure, PROMPTS, 0)], ['safe', 'still'])
+
+    def test_odd_hands_are_replaced_by_scenes_without_people(self):
+        hands = {**bad(), 'problems': [{'kind': 'ai_artifact', 'detail': 'six fingers'}, *glitch()['problems']]}
+        plan = check.attempt_plan(PROMPTS[0], hands, PROMPTS, 2)
+        self.assertEqual([kind for kind, _ in plan], ['still', 'still2'])
+        self.assertIn('SCENE: ' + check.STILL_SCENES[2], plan[0][1])
+        self.assertIn('SCENE: ' + check.STILL_SCENES[0], plan[1][1])
+        self.assertTrue(all('No people, no hands.' in prompt for _, prompt in plan))
 
     def test_a_clip_with_no_truthful_version_is_dropped_but_the_short_goes_on(self):
         kept, _, report, _ = run(['c1', 'c2', 'c3', 'c4', 'c5'],
-                                 {'c4': bad(), 'safe-3': bad(), 'safe2-3': bad()})
+                                 {'c4': bad(), 'safe-3': bad(), 'still-3': bad()})
         self.assertEqual(kept, ['c1', 'c2', 'c3', 'c5'])
         self.assertEqual(report[3]['result'], 'dropped')
 
@@ -107,8 +116,8 @@ class RepairClipsTest(unittest.TestCase):
         self.assertEqual(report[2]['attempts'], [{'kind': 'repair', 'skipped': 'budget'}])
 
     def test_too_few_truthful_clips_stops_the_short_with_the_report(self):
-        verdicts = {name: bad() for name in ('c1', 'c2', 'c3', 'safe-0', 'safe2-0', 'safe-1', 'safe2-1',
-                                             'safe-2', 'safe2-2')}
+        verdicts = {name: bad() for name in ('c1', 'c2', 'c3', 'safe-0', 'still-0', 'safe-1', 'still-1',
+                                             'safe-2', 'still-2')}
         with self.assertRaises(check.ClipRepairError) as stop:
             run(['c1', 'c2', 'c3', 'c4', 'c5'], verdicts, budget=10)
         self.assertIn('only 2 of 5', str(stop.exception))

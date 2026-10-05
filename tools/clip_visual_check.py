@@ -4,9 +4,9 @@
 knit for single jersey, two braided cords for a coverseam hem, a hand-pinched swirl for wash skew). The final visual
 review (prepublication_visual.py) rightly refused the finished Short, so the whole day's video and its spend were lost
 for one 8-second clip. Here the same model looks at each clip as soon as it exists, with the narration that will play
-over it. A clip with a render glitch (text, odd hands, blank) is generated again with what to avoid; a clip that drew
-the wrong construction or a staged result is replaced by a safe whole-garment scene in the same style; a clip with no
-passing version is dropped. The final visual review stays the authority; this check only stops a known-bad clip
+over it. A clip with text or a blank render is generated again with what to avoid; a clip with odd hands becomes a
+scene without people; a clip that drew the wrong construction or a staged result is replaced by a safe whole-garment
+scene in the same style; a clip with no passing version is dropped. The final visual review stays the authority; this check only stops a known-bad clip
 reaching it.
 """
 
@@ -30,7 +30,7 @@ else:
 
 
 PROBLEM_KINDS = ('wrong_construction', 'staged_result', 'visible_text', 'ai_artifact', 'unrelated', 'blank')
-SAMPLING_FPS = 4
+SAMPLING_FPS = 2  # as the final visual review samples the finished Short
 MAX_CLIP_BYTES = 8_000_000
 MIN_OVERLAP_SECONDS = 0.4
 CLIP_SCHEMA = {'type': 'object', 'properties': {
@@ -43,18 +43,21 @@ CLIP_SCHEMA = {'type': 'object', 'properties': {
     'avoid': {'type': 'string'}},
     'required': ['verdict', 'observed_visual', 'shown_material', 'problems', 'avoid']}
 
-# Whole-garment scenes at arm's length: what AI video draws truthfully. Used when a lesson's own scene failed twice.
+# Whole-garment scenes at arm's length: what AI video draws truthfully. Used in place of a scene AI video drew wrong.
 SAFE_SCENES = (
     "Medium shot: an Indian man's hands lift one neatly folded plain cotton T-shirt from a stack on a wooden table and "
     "unfold it to show the whole garment, then lay it flat.",
-    'Slow dolly along wooden shelves stacked with neatly folded plain T-shirts in solid colours in a small Indian '
-    'garment workshop.',
     "Medium shot: an Indian man's hands smooth a plain cotton T-shirt flat on a cutting table with both palms, the "
     'whole T-shirt in frame.',
     "Medium shot: an Indian man's hands place two folded plain T-shirts side by side on a wooden table and rest a palm "
     'on each.',
-    "Medium shot: an Indian man's hands fold a plain cotton T-shirt into a neat square and add it to a stack of folded "
-    'T-shirts.',
+)
+# The same without people, for a clip refused for odd hands (AI video's most common artefact).
+STILL_SCENES = (
+    'Slow dolly along wooden shelves stacked with neatly folded plain T-shirts in solid colours in a small Indian '
+    'garment workshop.',
+    'Slow push-in on one neatly folded plain cotton T-shirt resting on a wooden table in soft window light.',
+    'Slow pan across plain T-shirts in solid colours hanging on a garment rack in a small Indian workshop.',
 )
 SAFE_RULES = ('No faces. No text, letters, numbers, labels, tags, logos or screens anywhere. No close-up of stitches, '
               'knit loops, yarn or fibres. Plain fabric, nothing torn, burnt, twisted or pinched.')
@@ -117,17 +120,19 @@ def style_lock(prompts):
 
 
 # Problems a fresh render of the same scene usually fixes; anything else means AI video cannot draw that scene truthfully.
-GLITCHES = {'visible_text', 'ai_artifact', 'blank'}
+GLITCHES = {'visible_text', 'blank'}
 
 
 def attempt_plan(prompt, review, prompts, index):
-    """What to generate after a failed check: the same scene again (with what to avoid) when the failure was a render
-    glitch, else straight to safe whole-garment scenes (Veo drew the wrong construction or a staged result, and asking
-    again for the same close-up mostly repeats it)."""
+    """What to generate after a failed check. Odd hands: scenes without people. Text or a blank render: the same scene
+    again with what to avoid, then a safe scene. Anything else (wrong construction, staged result, unrelated, unsure):
+    straight to safe whole-garment scenes, because asking again for the same close-up mostly repeats it."""
     kinds = {problem.get('kind') for problem in (review or {}).get('problems') or []}
+    if 'ai_artifact' in kinds:
+        return [('still', safe_prompt(prompts, index, people=False)), ('still2', safe_prompt(prompts, index + 1, people=False))]
     if kinds and kinds <= GLITCHES:
         return [('repair', repair_prompt(prompt, review)), ('safe', safe_prompt(prompts, index))]
-    return [('safe', safe_prompt(prompts, index)), ('safe2', safe_prompt(prompts, index + 2))]
+    return [('safe', safe_prompt(prompts, index)), ('still', safe_prompt(prompts, index, people=False))]
 
 
 def repair_prompt(prompt, review):
@@ -142,10 +147,10 @@ def repair_prompt(prompt, review):
     return ' '.join(parts)
 
 
-def safe_prompt(prompts, index):
-    lock = style_lock(prompts)
-    scene = SAFE_SCENES[index % len(SAFE_SCENES)]
-    return ' '.join(part for part in (lock, 'SCENE: ' + scene, SAFE_RULES) if part)
+def safe_prompt(prompts, index, people=True):
+    scenes = SAFE_SCENES if people else STILL_SCENES
+    rules = SAFE_RULES if people else 'No people, no hands. ' + SAFE_RULES
+    return ' '.join(part for part in (style_lock(prompts), 'SCENE: ' + scenes[index % len(scenes)], rules) if part)
 
 
 def review_prompt(context, narration):
