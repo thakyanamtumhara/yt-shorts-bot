@@ -746,6 +746,29 @@ def owner_review_required():
         return True
 
 
+def dispatch_cloud_review(run_id, post=None):
+    """Cloud first (owner 5-Oct-2026): the held Short starts its own Claude Opus 5.5 review (ai_final_review.yml).
+    A failed dispatch only logs; the run keeps waiting for a decision, which the Mac backup can still write."""
+    import requests
+    repo, token = os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GH_TOKEN_REVIEW", "")
+    if not (repo and token and str(run_id).isdigit()):
+        print("   ⚠️ Cloud review not started (no repository, token or run id); waiting for a decision anyway")
+        return False
+    try:
+        response = (post or requests.post)(
+            f"https://api.github.com/repos/{repo}/actions/workflows/ai_final_review.yml/dispatches",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                     "X-GitHub-Api-Version": "2022-11-28"},
+            json={"ref": "main", "inputs": {"run_id": str(run_id)}}, timeout=20)
+    except Exception as error:
+        print(f"   ⚠️ Cloud review not started ({type(error).__name__}); waiting for a decision anyway")
+        return False
+    if response.status_code != 204:
+        print(f"   ⚠️ Cloud review not started (HTTP {response.status_code}); waiting for a decision anyway")
+        return False
+    print("   ☁️ Cloud review started: ai_final_review.yml (Claude Opus 5.5)")
+    return True
+
 def get_ig_cta_line(topic=None):
     from tools.audience_interaction import interaction_copy
     line = interaction_copy(topic)
@@ -13665,6 +13688,7 @@ def main():
                                                 thumbnail_path, review_summary)
             print(f"   ⏸️ OWNER REVIEW: {BLOG_BASE_URL}/{review_folder}/video.mp4 (sha256 {video_sha[:16]}...)")
             print(f"      waiting for review_decisions/{review_run}.json on main")
+            dispatch_cloud_review(review_run)
             review_decision = await_owner_review(
                 run_id=review_run, sha=video_sha, repo=os.environ.get("GITHUB_REPOSITORY", ""),
                 token=os.environ.get("GH_TOKEN_REVIEW", ""),

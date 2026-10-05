@@ -137,5 +137,42 @@ class TextOverrideTests(unittest.TestCase):
         self.assertIn('yt_title = corrections.get("youtube_title", yt_title)', gate)
 
 
+class CloudReviewDispatchTests(unittest.TestCase):
+    def dispatcher(self):
+        import ast, os
+        source = (ROOT / 'daily_short.py').read_text()
+        node = next(n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef) and n.name == 'dispatch_cloud_review')
+        scope = {'os': os}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), 'daily_short.py', 'exec'), scope)
+        return scope['dispatch_cloud_review']
+
+    def test_held_short_dispatches_its_own_cloud_review(self):
+        from unittest.mock import patch
+        calls = []
+        post = lambda url, **kwargs: calls.append((url, kwargs)) or SimpleNamespace(status_code=204)
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': 'owner/repo', 'GH_TOKEN_REVIEW': 'token'}):
+            self.assertTrue(self.dispatcher()('123', post=post))
+        url, kwargs = calls[0]
+        self.assertEqual(url, 'https://api.github.com/repos/owner/repo/actions/workflows/ai_final_review.yml/dispatches')
+        self.assertEqual(kwargs['json'], {'ref': 'main', 'inputs': {'run_id': '123'}})
+
+    def test_a_failed_dispatch_never_stops_the_wait(self):
+        from unittest.mock import patch
+        def broken(url, **kwargs):
+            raise OSError('network')
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': 'owner/repo', 'GH_TOKEN_REVIEW': 'token'}):
+            self.assertFalse(self.dispatcher()('123', post=lambda url, **kwargs: SimpleNamespace(status_code=403)))
+            self.assertFalse(self.dispatcher()('123', post=broken))
+            self.assertFalse(self.dispatcher()('12a', post=broken))
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': '', 'GH_TOKEN_REVIEW': ''}):
+            self.assertFalse(self.dispatcher()('123', post=broken))
+
+    def test_dispatch_happens_after_the_copy_is_held_and_before_the_wait(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        held = source.index('review_folder = publish_review_copy(')
+        self.assertLess(held, source.index('dispatch_cloud_review(review_run)'))
+        self.assertLess(source.index('dispatch_cloud_review(review_run)'), source.index('review_decision = await_owner_review('))
+
+
 if __name__ == '__main__':
     unittest.main()

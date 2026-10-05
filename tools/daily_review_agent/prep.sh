@@ -10,7 +10,8 @@ aws s3 cp --only-show-errors "s3://bulkplaintshirt.com/p/review/$RUN/video.mp4" 
 aws s3 cp --only-show-errors "s3://bulkplaintshirt.com/p/review/$RUN/cover.png" cover.png || true
 aws s3 cp --only-show-errors "s3://bulkplaintshirt.com/p/review/$RUN/review.json" review.json
 {
-  echo "sha256 of video.mp4:      $(shasum -a 256 video.mp4 | cut -d' ' -f1)"
+  if command -v sha256sum >/dev/null; then SHA=$(sha256sum video.mp4); else SHA=$(shasum -a 256 video.mp4); fi
+  echo "sha256 of video.mp4:      ${SHA%% *}"
   echo "sha256 in review.json:    $(python3 -c "import json;print(json.load(open('review.json'))['video_sha256'])")"
   ffprobe -v error -show_entries stream=codec_type,width,height,r_frame_rate:format=duration -of compact video.mp4
   ffmpeg -hide_banner -i video.mp4 -af loudnorm=print_format=summary -f null - 2>&1 | grep -E "Input Integrated|Input True Peak" || true
@@ -21,12 +22,17 @@ for t in 1.3 $(python3 -c "d=$DUR;print(' '.join(f'{x:.1f}' for x in (d*0.25,d*0
   ffmpeg -v error -y -ss "$t" -i video.mp4 -frames:v 1 -vf scale=540:960 "frames/t_${t}s.png"
 done
 ffmpeg -v error -y -i video.mp4 -ac 1 -ar 16000 audio16k.wav
+MODEL="$HOME/.whisper-models/ggml-large-v3-turbo.bin"
+if ! command -v whisper-cli >/dev/null || [ ! -f "$MODEL" ]; then
+  python3 "$HERE/transcribe.py" audio16k.wav "$DUR" > transcript.txt
+  exit 0
+fi
 : > transcript.txt
 start=0
 while python3 -c "import sys; sys.exit(0 if $start < $DUR else 1)"; do
   ffmpeg -v error -y -ss "$start" -t 12 -i audio16k.wav chunk.wav
   printf "[%ss-%ss] " "$start" "$((start + 12))" >> transcript.txt
-  whisper-cli -m "$HOME/.whisper-models/ggml-large-v3-turbo.bin" -l hi -mc 0 -f chunk.wav -nt -np 2>/dev/null | tr -s " \n" " " >> transcript.txt
+  whisper-cli -m "$MODEL" -l hi -mc 0 -f chunk.wav -nt -np 2>/dev/null | tr -s " \n" " " >> transcript.txt
   echo >> transcript.txt
   start=$((start + 10))
 done

@@ -1,0 +1,185 @@
+name: AI Final Review
+run-name: "AI final review · run ${{ inputs.run_id }}${{ inputs.dry_run && ' (dry run)' || '' }}"
+
+# Cloud reviewer for the owner review gate (Ketu 5-Oct-2026: cloud first, the Mac only as a backup).
+# daily_short.py dispatches this as soon as it holds the rendered Short at p/review/<run_id>/. Claude Opus 5.5
+# follows tools/daily_review_agent/REVIEW.md (the same checklist as the Mac reviewer), pushes
+# review_decisions/<run_id>.json, and Ketu gets the result on Telegram. No decision = nothing is published.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'daily_short.yml run id whose held Short to review'
+        required: true
+      dry_run:
+        description: 'Review only: print the decision; write, push and notify nothing'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ai-final-review-${{ inputs.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RUN: ${{ inputs.run_id }}
+      DRY: ${{ inputs.dry_run && '1' || '0' }}
+      GH_TOKEN: ${{ github.token }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: 'ap-south-1'
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+    steps:
+      - name: Check the run id
+        run: |
+          case "$RUN" in ''|*[!0-9]*) echo "::error::run_id must be digits"; exit 1;; esac
+          echo "DIR=$RUNNER_TEMP/review/$RUN" >> "$GITHUB_ENV"
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install review tools
+        timeout-minutes: 12
+        run: |
+          sudo killall -9 apt-get apt unattended-upgr 2>/dev/null || true
+          sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock
+          export DEBIAN_FRONTEND=noninteractive
+          APT_NET="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo -E apt-get $APT_NET update -qq
+          sudo -E apt-get $APT_NET install -y -qq ffmpeg
+          pip install -q pillow faster-whisper
+          npm install -g --silent @anthropic-ai/claude-code
+          claude --version
+
+      - name: Cache the Whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-large-v3-turbo-ct2-v1
+
+      - name: Wait for the held review copy
+        run: |
+          for i in $(seq 1 20); do
+            aws s3 ls "s3://bulkplaintshirt.com/p/review/$RUN/review.json" >/dev/null 2>&1 && exit 0
+            sleep 30
+          done
+          echo "::error::No held review copy for run $RUN"
+          exit 1
+
+      - name: Prepare the review folder
+        run: bash tools/daily_review_agent/prep.sh "$RUN" "$DIR"
+
+      - name: Claude Opus 5.5 review
+        id: review
+        timeout-minutes: 50
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISABLE_AUTOUPDATER: '1'
+        run: |
+          git config user.name "Sale91 AI reviewer"
+          git config user.email "bot@sale91.com"
+          if [ "$DRY" = 1 ]; then
+            MODE="DRY RUN: do NOT write, commit or push any file. Only finish with the DECISION line."
+          else
+            MODE="Write, commit and push the decision file as described below."
+          fi
+          PROMPT=$(python3 tools/daily_review_agent/prompt.py "$RUN" "$DIR" "$MODE" "$GITHUB_WORKSPACE" "Claude Opus 5.5 (cloud reviewer)")
+          set +e
+          timeout 2700 claude -p "$PROMPT" --model claude-opus-5-5 --dangerously-skip-permissions \
+            --add-dir "$DIR" --output-format json > "$DIR/reviewer.json" 2> "$DIR/reviewer.err"
+          status=$?
+          set -e
+          python3 - "$DIR" "$status" <<'PY'
+          import json, os, sys
+          folder, status = sys.argv[1], sys.argv[2]
+          try:
+              data = json.load(open(f'{folder}/reviewer.json'))
+          except Exception:
+              data = {}
+          text = str(data.get('result') or '')
+          line = next((l.strip() for l in reversed(text.splitlines()) if l.strip().startswith('DECISION:')), '')
+          cost = data.get('total_cost_usd')
+          open(f'{folder}/reviewer.txt', 'w').write(text)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'line={line}\n')
+              out.write(f"cost={'' if cost is None else f'{cost:.2f}'}\n")
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f"### AI final review · run {os.environ['RUN']}\n\n- exit status: {status}\n"
+                            f"- {line or 'no DECISION line'}\n- API cost: {cost if cost is not None else 'unknown'} USD\n")
+          print(line or 'no DECISION line', '| cost USD:', cost, '| exit:', status)
+          PY
+          cat "$DIR/reviewer.txt" | tail -40
+
+      - name: Keep the review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-final-review-${{ inputs.run_id }}
+          path: |
+            ${{ env.DIR }}/reviewer.json
+            ${{ env.DIR }}/reviewer.txt
+            ${{ env.DIR }}/reviewer.err
+            ${{ env.DIR }}/probe.txt
+            ${{ env.DIR }}/transcript.txt
+            ${{ env.DIR }}/sheet.png
+          retention-days: 21
+          if-no-files-found: ignore
+
+      - name: Check the decision and tell Ketu
+        if: ${{ !inputs.dry_run }}
+        env:
+          LINE: ${{ steps.review.outputs.line }}
+          COST: ${{ steps.review.outputs.cost }}
+        run: |
+          tg() {
+            [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || { echo "no Telegram secret"; return 0; }
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" --data-urlencode "text=$1" -o /tmp/tg.json
+            python3 -c 'import json; r=json.load(open("/tmp/tg.json")); print("Telegram delivered:", r.get("ok"))'
+          }
+          RUN_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$RUN"
+          TITLE=$(python3 -c "import json;print(json.load(open('$DIR/review.json'))['titles']['youtube'])" 2>/dev/null)
+          git fetch -q origin main
+          DEC=$(git show "origin/main:review_decisions/$RUN.json" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('decision',''))" 2>/dev/null)
+          if [ -z "$DEC" ]; then
+            tg "Daily Short: the cloud AI review gave no decision for run $RUN, so it is held and nothing is posted yet. The Mac backup reviews it at 15:15 IST if the Mac is on. $LINE $RUN_URL"
+            echo "::error::No review decision reached main"
+            exit 1
+          fi
+          if [ "$DEC" != approve ]; then
+            tg "Daily Short rejected by the cloud AI review
+          $TITLE
+          Nothing was posted. ${LINE#DECISION: }"
+            exit 0
+          fi
+          for i in $(seq 1 120); do
+            [ "$(gh run view "$RUN" --json status -q .status)" = completed ] && break
+            sleep 30
+          done
+          LOGTXT=$(gh run view "$RUN" --log 2>/dev/null || true)
+          YT=$(grep -o "UPLOADED! https://youtube.com/shorts/[A-Za-z0-9_-]*" <<<"$LOGTXT" | head -1 | cut -d' ' -f2)
+          WHEN=$(grep -o "Scheduled: [^│]*IST" <<<"$LOGTXT" | head -1)
+          IG=$(grep -c "Instagram Reel published" <<<"$LOGTXT" || true)
+          FB=$(grep -c "FB Reel: PUBLISHED" <<<"$LOGTXT" || true)
+          TG=$(grep -c "Telegram: posted" <<<"$LOGTXT" || true)
+          tg "Daily Short approved by the cloud AI review
+          $TITLE
+          YouTube: ${YT:-not uploaded} ${WHEN}
+          Instagram: $([ "${IG:-0}" -gt 0 ] && echo posted || echo NOT posted) · Facebook: $([ "${FB:-0}" -gt 0 ] && echo posted || echo NOT posted) · Telegram: $([ "${TG:-0}" -gt 0 ] && echo posted || echo NOT posted)
+          ${LINE#DECISION: }
+          Review cost: ${COST:-?} USD"

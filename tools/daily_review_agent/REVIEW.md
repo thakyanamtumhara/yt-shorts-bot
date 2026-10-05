@@ -11,7 +11,7 @@ Review folder: {{DIR}}
   sheet.png      one frame per second, time printed on each frame
   frames/        bigger frames: 1.3 s (hook), 25 / 50 / 75 %, 3.5 s before the end (launch strip), 1 s before the end
   transcript.txt speech recognition of the audio in overlapping 12 s chunks (ASR, not proof of pronunciation)
-Repository: /Users/ankit/Projects/yt-shorts-bot (facts: daily_topic_lessons.json "facts"; campaign: "campaign").
+Repository: {{REPO}} (facts: daily_topic_lessons.json "facts"; campaign: "campaign").
 
 Do this, in order:
 1. Read probe.txt. The two sha256 values must be equal. Loudness must be between -17 and -13 LUFS, true peak below -1 dBTP.
@@ -53,7 +53,7 @@ Do this, in order:
 
 Write the decision as review_decisions/{{RUN}}.json in the repository:
 {"run_id": "{{RUN}}", "video_sha256": "<the sha256 from probe.txt>", "decision": "approve" or "reject",
- "reviewer": "Claude Opus 5.5 (daily reviewer)", "notes": "<what you checked and found, one paragraph>"}
+ "reviewer": "{{REVIEWER}}", "notes": "<what you checked and found, one paragraph>"}
 plus any text corrections. Then: git pull --rebase origin main, git add that one file, git commit -m "Owner review:
 <approve|reject> run {{RUN}}" with the line "Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" at
 the end of the message, git push origin main.

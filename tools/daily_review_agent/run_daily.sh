@@ -1,7 +1,9 @@
 #!/bin/bash
-# The day's Short with the AI review gate (Ketu 3-Oct-2026: the AI reviews every video before it is published).
-# launchd (com.ketu.dailyshortreview) starts this Mon-Sat 14:30 IST. It starts daily_short.yml with the owner review
-# gate on, prepares the held file, has Claude Opus 5.5 review it (REVIEW.md) and tells Ketu the result on Telegram.
+# Mac BACKUP for the day's Short (Ketu 5-Oct-2026: cloud first, the laptop only when the cloud has a problem).
+# The cloud does the normal day: a Cloudflare cron starts daily_short.yml at 14:30 IST and the run itself dispatches
+# ai_final_review.yml, where Claude Opus 5.5 reviews the held file. launchd (com.ketu.dailyshortreview) starts this
+# Mon-Sat 15:15 IST: it starts the run only if none exists today, and reviews here (REVIEW.md) only if no cloud
+# decision appears within CLOUD_GRACE_MIN minutes of the file being held.
 # DRY=1 <run_id>: only prepare and review an already held run, print the decision, write nothing.
 set -u
 export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin
@@ -62,6 +64,15 @@ else
     sleep 30
   done
   held "$RUN" || { notify "Daily Short" "Today's Short took over 60 min to render; not reviewed. Run: https://github.com/$GHREPO/actions/runs/$RUN"; exit 1; }
+  for i in $(seq 1 $((${CLOUD_GRACE_MIN:-25} * 2))); do
+    if gh api "repos/$GHREPO/contents/review_decisions/$RUN.json?ref=main" --silent 2>/dev/null; then
+      echo "cloud reviewer decided run $RUN; nothing to do here"
+      touch "$STATE/$TODAY.done"
+      exit 0
+    fi
+    sleep 30
+  done
+  echo "no cloud decision for run $RUN after ${CLOUD_GRACE_MIN:-25} min; reviewing on the Mac"
 fi
 
 DIR=$STATE/runs/$RUN
@@ -73,12 +84,7 @@ if [ "$DRY" = 1 ]; then
 else
   MODE="Write, commit and push the decision file as described below."
 fi
-PROMPT=$(python3 - "$HERE/REVIEW.md" "$RUN" "$DIR" "$MODE" <<'PY'
-import sys
-text = open(sys.argv[1]).read()
-print(text.replace('{{RUN}}', sys.argv[2]).replace('{{DIR}}', sys.argv[3]).replace('{{MODE}}', sys.argv[4]))
-PY
-)
+PROMPT=$(python3 "$HERE/prompt.py" "$RUN" "$DIR" "$MODE" "$REPO" "Claude Opus 5.5 (Mac backup reviewer)")
 cd "$REPO" && git pull -q --rebase origin main 2>/dev/null
 perl -e 'alarm shift; exec @ARGV' 2700 claude -p "$PROMPT" --model claude-opus-5-5 --dangerously-skip-permissions \
   --add-dir "$DIR" > "$DIR/reviewer.txt" 2>&1
