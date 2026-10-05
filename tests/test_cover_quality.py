@@ -26,8 +26,8 @@ class CoverQualityTest(unittest.TestCase):
     def test_published_broken_money_hooks_are_replaced_as_whole_phrases(self):
         for old in ('₹7 DYE | 500 Pc BLEED', '₹3 FUSING | COLLAR FLAT 2', '₹2 LESS | 500 Pc बिना'):
             hi, latin, reason = choose_cover(old, old, '500 pieces', 'MOQ bulk order')
-            self.assertEqual(hi, 'BULK खरीदने से पहले | सैंपल जाँचो')
-            self.assertEqual(latin, 'BEFORE BULK | CHECK A SAMPLE')
+            self.assertEqual(hi, 'BULK से पहले | क्या जाँचें?')
+            self.assertEqual(latin, 'BEFORE BULK | KYA CHECK KAREIN?')
             self.assertTrue(reason.startswith('neutral-fallback:'))
 
     def test_plural_returns_and_unrelated_number_context_are_rejected(self):
@@ -40,8 +40,16 @@ class CoverQualityTest(unittest.TestCase):
         self.assertNotIn('GSM', latin)
 
     def test_complete_new_buyer_question_is_preserved(self):
-        pair = ('DTF PRINT | नमी का असर', 'DTF PRINT | NAMI KA ASAR')
+        pair = ('DTF PRINT | नमी से क्या बदलता है?', 'DTF PRINT | NAMI SE KYA BADALTA HAI?')
         self.assertEqual(choose_cover(*pair, 'DTF humidity', 'DTF humidity'), (*pair, 'validated'))
+
+    def test_statement_covers_fail_the_owner_question_rule(self):
+        for text in ('सफेद डब्बा | PNG गलती समझो', 'SAFED DABBA | PNG GALTI SAMJHO', 'BIOWASH | फर्क समझो'):
+            with self.assertRaisesRegex(ValueError, 'question'):
+                validate_cover_text(text, '')
+        hi, latin, reason = choose_cover('सफेद डब्बा | PNG गलती समझो', 'SAFED DABBA | PNG GALTI SAMJHO', '', 'DTF print')
+        self.assertEqual((hi, latin), ('DTF PRINT | क्या जाँचें?', 'DTF PRINT | KYA CHECK KAREIN?'))
+        self.assertIn('question', reason)
 
     def test_long_or_incomplete_wording_is_rewritten_never_cut(self):
         for text in ('MY T SHIRT PRINT HAS | A VERY BIG PROBLEM TODAY', 'DTF PRINT | बिना', 'DTF | 50 PIECES AND'):

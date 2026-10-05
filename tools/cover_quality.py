@@ -11,24 +11,24 @@ def neutral_cover(topic):
     if any(w in value for w in ('pique', 'पिके', 'पीके')):
         return 'POLO की बनावट | फाइबर या बुनाई?', 'POLO TEXTURE | FIBRE OR KNIT?'
     if 'dtf' in value or 'डीटीएफ' in value:
-        return ('DTF PRINT | नमी का असर', 'DTF PRINT | NAMI KA ASAR') if any(w in value for w in ('humid', 'rain', 'monsoon', 'नमी', 'बारिश')) else ('DTF PRINT | क्या जाँचें?', 'DTF PRINT | KYA CHECK KAREIN?')
+        return ('DTF PRINT | नमी से क्या बदलता है?', 'DTF PRINT | NAMI SE KYA BADALTA HAI?') if any(w in value for w in ('humid', 'rain', 'monsoon', 'नमी', 'बारिश')) else ('DTF PRINT | क्या जाँचें?', 'DTF PRINT | KYA CHECK KAREIN?')
     if any(w in value for w in ('oversized', 'regular fit', 'साइज़', 'size', 'boxy')):
-        return 'टी-शर्ट फिट | साइज़ से आगे', 'T-SHIRT FIT | SIZE SE AAGE'
+        return 'टी-शर्ट फिट | कैसे चुनें?', 'T-SHIRT FIT | KAISE CHUNEIN?'
     if any(w in value for w in ('collar', 'fusing', 'कॉलर')):
         return 'POLO COLLAR | क्या जाँचें?', 'POLO COLLAR | KYA CHECK KAREIN?'
     if any(w in value for w in ('rub', 'dye', 'bleed', 'colourfast')):
-        return 'COLOUR BLEED | रगड़कर जाँचो', 'COLOUR BLEED | RUB CHECK'
+        return 'COLOUR BLEED | क्यों होता है?', 'COLOUR BLEED | KYUN HOTA HAI?'
     if any(w in value for w in ('sublimation', 'yarn', 'polyester')):
-        return 'POLYESTER | कपड़ा समझो', 'POLYESTER FABRIC | WHAT TO CHECK'
+        return 'POLYESTER | क्या अलग है?', 'POLYESTER | KYA ALAG HAI?'
     if any(w in value for w in ('moq', 'minimum', 'bulk order')):
-        return 'BULK खरीदने से पहले | सैंपल जाँचो', 'BEFORE BULK | CHECK A SAMPLE'
+        return 'BULK से पहले | क्या जाँचें?', 'BEFORE BULK | KYA CHECK KAREIN?'
     if any(w in value for w in ('biowash', 'bio-wash')):
-        return 'BIOWASH | फर्क समझो', 'BIOWASH | FARAK SAMJHO'
+        return 'BIOWASH | असल में क्या है?', 'BIOWASH | ASAL MEIN KYA HAI?'
     if any(w in value for w in ('gsm', 'cotton', 'fabric')):
-        return 'टी-शर्ट का कपड़ा | क्या जाँचें?', 'T-SHIRT FABRIC | WHAT TO CHECK'
+        return 'टी-शर्ट का कपड़ा | क्या जाँचें?', 'T-SHIRT FABRIC | KYA CHECK KAREIN?'
     if any(w in value for w in ('print', 'प्रिंट')):
-        return 'प्रिंट से पहले | सैंपल जाँचो', 'BEFORE PRINTING | CHECK A SAMPLE'
-    return 'टी-शर्ट खरीदने से पहले | यह जानो', 'BEFORE BUYING T-SHIRTS | KNOW THIS'
+        return 'प्रिंट से पहले | क्या जाँचें?', 'BEFORE PRINTING | KYA CHECK KAREIN?'
+    return 'टी-शर्ट खरीदने से पहले | क्या जाँचें?', 'BEFORE BUYING T-SHIRTS | KYA CHECK KAREIN?'
 
 
 def validate_cover_text(text, script, rates=()):
@@ -60,6 +60,8 @@ def validate_cover_text(text, script, rates=()):
         claim = re.match(r'\d+(?:\.\d+)?\s*(?:GSM|DPI|px)\b|\d+(?:\.\d+)?x\b', normalized[match.start():], re.I)
         if not claim or not re.search(r'(?<!\d)' + re.escape(claim.group()).replace(r'\ ', r'\s*') + r'(?!\w)', normalized_script, re.I):
             raise ValueError('Only an exact script-grounded GSM, DPI, px or export-size value is allowed; omit prices, counts and outcomes')
+    if not lines[-1].endswith('?'):
+        raise ValueError('Cover must be the buyer\'s complete question ending with ? (owner Option B)')
     for line in lines:
         if re.search(r'(?:^|\s)(?:बिना|में|का|की|के|से|और|या|vs|with|without|of|the|and|or)\s*[?!।.]*$', line, re.I):
             raise ValueError('Cover ends on an unfinished phrase')

@@ -1313,15 +1313,16 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "comparison labels when the lesson supports them. Choose concise everyday words; "
         "do not force a comparison, GSM, or light/heavy wording onto an unrelated lesson.\n\n"
         "COVER QUALITY RULES:\n"
-        "Two complete short lines separated by |, 3–8 words TOTAL. Name the buyer's actual question "
-        "or useful distinction in plain language. Rotate the focus, not a fixed loss/price template.\n"
+        "Two complete short lines separated by |, 3–8 words TOTAL. The second line is the buyer's "
+        "complete question and ends with ? (owner's Option B: a buyer question, never a statement or "
+        "an instruction like 'समझो'/'जाँचो'). Rotate the focus, not a fixed loss/price template.\n"
         "The SCRIPT is the only factual basis. Never invent currency, savings, returns, failures, "
         "batch quantities or test results. No monetary-loss or batch-return hook. Use a number only "
         "when it appears in the actual script and carries the same meaning; normally omit numbers.\n"
         "Each line must remain meaningful. Never end on a connector such as बिना, में, का, with or vs. "
         "If wording is too long, rewrite the whole phrase; do not delete its last words.\n"
-        "Examples: 'DTF PRINT | नमी का असर', 'टी-शर्ट फिट | साइज़ से आगे', "
-        "'POLO COLLAR | क्या जाँचें?', 'प्रिंट से पहले | सैंपल जाँचो'.\n"
+        "Examples: 'POLO COLLAR | क्या जाँचें?', 'POLO TEXTURE | फाइबर या बुनाई?', "
+        "'CANVA PRINT | BLURRY क्यों?', 'टी-शर्ट फिट | कैसे चुनें?'.\n"
         "Historical high views, shares or saves do not prove the COVER caused performance. "
         "Ignore older research suggestions that demand money-loss hooks or unsupported numbers.\n\n"
         "ALSO give a LATIN-SAFE version: SAME hook, Hindi word transliterated to Latin (used when Devanagari "
@@ -1365,7 +1366,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     try:
         # Power-words whose repetition across consecutive covers makes the grid
         # read as a filled template (राज़ two days running, 2026-07-16 report).
-        _POWER_WORDS = ["राज़", "सच", "गलती", "फर्क", "क्यों", "ज़्यादा", "खेल",
+        _POWER_WORDS = ["राज़", "सच", "गलती", "फर्क", "ज़्यादा", "खेल",
                         "जाल", "RETURN", "SECRET", "TRUTH", "MISTAKE"]
         _recent_blob = " ".join(recent_covers[-3:])
 
@@ -1376,7 +1377,7 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         brief_text = ""
         for attempt in (1, 2):
             print(f"   🎨 Generating thumbnail brief via Claude Opus..."
-                  f"{' (retry: repeated power-word)' if attempt == 2 else ''}")
+                  f"{' (retry)' if attempt == 2 else ''}")
             resp = claude_client.messages.create(
                 model="claude-opus-4-6",
                 max_tokens=800,
@@ -1399,6 +1400,19 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
                 elif ls.startswith("Face In Design:"):
                     thumb_face = ls.split(":", 1)[1].strip().lower().startswith("y")
 
+            from tools.cover_quality import validate_cover_text
+            try:
+                validate_cover_text(thumb_text, script_text, _rate_amounts(topic))
+                _cover_issue = None
+            except ValueError as _issue:
+                _cover_issue = str(_issue)
+            if _cover_issue and attempt == 1:
+                print(f"   🔁 Cover wording rejected ({_cover_issue}) — regenerating")
+                message_content = message_content + [{
+                    "type": "text",
+                    "text": (f"REJECTED: \"{thumb_text}\" — {_cover_issue}. Write the cover again as two short "
+                             f"lines whose second line is the buyer's complete question ending with ?")}]
+                continue
             _repeated = next((pw for pw in _POWER_WORDS
                               if pw.lower() in thumb_text.lower()
                               and pw.lower() in _recent_blob.lower()), None)
