@@ -10,7 +10,8 @@ ims = [Image.open(f).convert('RGB') for f in files]
 fw, fh = ims[0].size
 rows = (len(ims) + cols - 1) // cols
 sheet = Image.new('RGB', (cols * (fw + 6), rows * (fh + 6)), 'white')
-font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Bold.ttf', 18)
+fonts = ['/System/Library/Fonts/Supplemental/Arial Bold.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf']
+font = next((ImageFont.truetype(f, 18) for f in fonts if os.path.exists(f)), None) or ImageFont.load_default(18)
 for i, im in enumerate(ims):
     d = ImageDraw.Draw(im)
     t = i * step
