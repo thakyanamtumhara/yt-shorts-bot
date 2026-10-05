@@ -1,4 +1,12 @@
 QUESTIONS = {
+    'barre_bands_from_yarn_inconsistency': 'Have you ever seen faint repeating bands across a plain-colour T-shirt fabric?',
+    'screen_print_one_screen_per_colour': 'How many colours does your next screen-print design have?',
+    'phantom_colour_loss_from_surface_fuzz': 'For dark colours, has your supplier told you whether surface fibre is removed at the mill?',
+    'enzyme_wash_reduces_finished_fabric_weight': 'Does the GSM on your order refer to the fabric before or after biowash?',
+    'garment_dyeing_components_take_dye_differently': 'For garment-dyed tees, do you specify the sewing thread and the labels?',
+    'sunlight_fading_needs_lightfastness_rating': 'Will your T-shirts hang in sunlight or be worn outdoors all day?',
+    'laundering_growth_shrinkage_and_test_conditions': 'When a supplier quotes shrinkage, do you know the wash and drying conditions behind it?',
+    'print_brightness_depends_on_yarn_surface': 'Do you approve print colour on the same blank you will buy in bulk?',
     'knit_stretch_not_fibre_identity': 'When buying a stretchy tee, is your doubt about the fibre or the fit?',
     'french_terry_unbrushed_vs_napped': 'For your next garment, are you choosing a looped or brushed inside surface?',
     'english_cotton_count_direction': 'When comparing yarn numbers, is the count system stated on your specification?',

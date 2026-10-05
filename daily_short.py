@@ -1331,6 +1331,10 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         "If wording is too long, rewrite the whole phrase; do not delete its last words.\n"
         "Examples: 'POLO COLLAR | क्या जाँचें?', 'POLO TEXTURE | फाइबर या बुनाई?', "
         "'CANVA PRINT | BLURRY क्यों?', 'टी-शर्ट फिट | कैसे चुनें?'.\n"
+        "The question must be complete on its own: a buyer who sees only the cover knows what happens to what. "
+        "Refused by the final review (5-Oct-2026): 'PILLING | इलाज क्यों नहीं?' (cure of what?) and "
+        "'POLYESTER SMELL | पसीना क्यों रुकता?' (the lesson is oils, not sweat). Better: "
+        "'PILLING | धुलाई के बाद गोलियाँ क्यों?'. Use the lesson's own cause words, never a different one.\n"
         "Historical high views, shares or saves do not prove the COVER caused performance. "
         "Ignore older research suggestions that demand money-loss hooks or unsupported numbers.\n\n"
         "ALSO give a LATIN-SAFE version: SAME hook, Hindi word transliterated to Latin (used when Devanagari "
@@ -13647,7 +13651,9 @@ def main():
                 first_word = hook_words[0] if hook_words else ""
                 rest_words = " ".join(hook_words[1:]) if len(hook_words) > 1 else ""
 
-                hook_y = int(VIDEO_HEIGHT * 0.18)
+                # Below the Sale91.com watermark badge (top-left at 17%): the AI final review refused a Short whose hook
+                # box covered it (5-Oct-2026); nothing may overlap the watermark.
+                hook_y = int(VIDEO_HEIGHT * WATERMARK_Y_PERCENT) + 85
 
                 # Semi-transparent dark panel behind text (taller for bigger text)
                 # Build text clips first to measure total height

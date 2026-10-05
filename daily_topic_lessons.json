@@ -1,7 +1,7 @@
 {
   "format": "daily-topic-facts-v1",
   "reviewed": true,
-  "reviewed_on": "2026-10-03",
+  "reviewed_on": "2026-10-05",
   "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted. During a dated campaign the bank also holds Sale91 DTF service facts from its own live pages and Canva Help.",
   "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
@@ -137,6 +137,69 @@
       "source_title": "Cotton Incorporated: Textile Fibers (2013)",
       "checked_on": "2026-10-01",
       "limits": "General fibre property from a cotton industry body. Do not claim a specific polyester T-shirt has or lacks a soil-release finish, promise odour-free wear, or rank odour against cotton."
+    },
+    "barre_yarn_inconsistency_bands": {
+      "claim": "Barré is an unintentional, repetitive visual pattern of continuous bars and stripes; in circular-knit fabric it usually runs parallel to the courses. It can be caused by physical, optical or dye differences in the yarns, geometric differences in the fabric structure, or any combination, and its causes can generally be summed up as inconsistency, for example mixing yarns of different counts, spinning systems, blend levels, suppliers or twist. Preventing it means maintaining consistency through all phases of production, and sample dyeings can check for barré before full-scale production; a visual analysis starts by laying a full-width fabric sample on a table and viewing both sides from various angles. A lot with barré may be salvaged by careful dye selection, because colour differences can be masked by shades with very low light reflectance (navy blue, black) or high light reflectance (light yellow, orange, finished white).",
+      "source_url": "https://www.cottoninc.com/wp-content/uploads/2017/12/TRI-1002-Barre.pdf",
+      "source_title": "Cotton Incorporated: Barré (Technical Bulletin TRI 1002, 1992)",
+      "checked_on": "2026-10-05",
+      "limits": "Describes the defect and the mill causes listed in the bulletin. Do not diagnose the cause of bands on a specific garment from a photo, AI image or touch, claim a supplied product has or lacks barré, or promise that dark or light shades never show it; masking covers colour differences only and is a mill salvage option, not a guarantee. No numbers, ranking or price."
+    },
+    "screen_print_screen_per_colour": {
+      "claim": "Flatbed screen printing can be considered an automated version of the older hand-operated silkscreen process used on T-shirts and sweatshirts. For each colour in the print design a separate screen must be made, so a four-colour design needs four separate screens; the design is first separated into its individual colours, only one colour per screen is possible, and in flatbed printing the fabric is moved to the next colour and the process repeated. Because a screen must be prepared for each colour, flatbed and rotary screen printing require fairly high development time and costs, whereas digital inkjet printing eliminates the need for screens. Out of registration, where the pattern is out of fit, is one of the common screen-printing defects, and printing defects cannot be repaired.",
+      "source_url": "https://cottonworks.com/learning-hub/printing/cotton-printing-types-and-techniques/",
+      "source_title": "CottonWorks: Cotton Printing Types & Techniques",
+      "checked_on": "2026-10-05",
+      "limits": "Written about fabric-printing machines; the T-shirt link is the source's own comparison with hand silkscreen, and the development time and cost statement is made for flatbed and rotary screen printing. 'Digital' here means inkjet printing, not DTF film. Give no setup charge, screen fee, minimum quantity, colour limit or price; do not say screen printing is cheaper or dearer than DTF or DTG for any order, or judge a specific printer's quality."
+    },
+    "phantom_colour_loss_surface_fuzz": {
+      "claim": "In home laundering, colour loss on knit fabric can come from gradual removal of the dye from the cellulose or from fuzzing: fabric-to-fabric and fabric-to-metal abrasion raises surface fibres, and this fuzz scatters incident light, giving a faded, washed-out look in which the fabric appears lighter in colour. This illusory 'phantom colour loss' can be reduced or nearly eliminated if the fuzz is removed through an enzyme wash at the mill level. In one study, black-dyed knit interlock laundered 20 times regained almost all of its lost colour strength after a cellulase enzyme treatment, indicating the base colour was still there but obscured by light refraction from surface fibres. In a top-loading washer, a higher water level for the load (liquor ratio) appeared to reduce fabric-to-fabric abrasion and fuzzing.",
+      "source_url": "https://www.cottoninc.com/wp-content/uploads/2017/12/TRI-3017-Producing-Colorfast-Cotton-Knits.pdf",
+      "source_title": "Cotton Incorporated: Producing Colorfast Cotton Knits (Technical Bulletin TRI 3017, 2004)",
+      "checked_on": "2026-10-05",
+      "limits": "Study results belong to the cited test fabrics and machines; never quote their percentages or wash counts as product specifications, and do not turn the single top-loader water-level observation into a universal washing rule. Real dye removal is the other cause, so do not present every faded look as phantom colour loss. Do not claim a specific faded T-shirt has lost no dye, diagnose fading from a photo, say visible fuzz proves a garment was or was not enzyme treated, or promise a T-shirt will not look faded. No home enzyme or chemical advice."
+    },
+    "cellulase_weight_strength_loss": {
+      "claim": "Cellulase enzymes remove surface fibres from cotton fabrics, and enzymes can adversely affect fabric weight and strength: weight loss and strength loss are listed among the disadvantages of cellulase treatment on knits. With an acid cellulase, which is rather aggressive and must be carefully controlled, the bulletin states that because the enzyme digests the cellulose there will always be a reduction in fabric strength and fabric weight. This can be controlled by regulating enzyme type, concentration, pH, time and temperature.",
+      "source_url": "https://www.cottoninc.com/wp-content/uploads/2017/12/TRI-3017-Producing-Colorfast-Cotton-Knits.pdf",
+      "source_title": "Cotton Incorporated: Producing Colorfast Cotton Knits (Technical Bulletin TRI 3017, 2004)",
+      "checked_on": "2026-10-05",
+      "limits": "Describes the effect, not its size: give no percentage or GSM figure. The facts give a weight loss, not an area change, so do not claim a finished fabric's GSM always falls, or that a specific T-shirt's GSM or strength fell by any amount; do not rank treated against untreated fabric or say a light fabric proves enzyme treatment. 'Always' is stated for acid cellulase only. Do not connect visible fuzz with the presence or absence of a biowash. No home enzyme advice."
+    },
+    "garment_dyeing_component_shades": {
+      "claim": "Garment dyeing, used for items including T-shirts, dyes garments after the fabric has been cut and sewn; it can significantly reduce lead times and excess inventory and allows short-lot dyeing, where basic shades are supplemented with fashion shades. Because the whole garment is dyed, 100% cotton or corespun cotton/polyester threads are recommended so the thread dyes to nearly the same shade as the garment, labels may be added after dyeing or dye-resistant labels used, and in a blended fabric the synthetic fibre is left undyed, giving a tonal appearance. When different fabrics are combined in one garment, some shade differences will occur between the components, though they should be minimal. Knitted fabrics are pre-relaxed to minimise torque, seam puckering and shrinkage during garment dyeing and drying.",
+      "source_url": "https://www.cottoninc.com/wp-content/uploads/2017/12/TRI-3003-Garment-Dyeing-of-Cotton-Apparel.pdf",
+      "source_title": "Cotton Incorporated: Garment Dyeing of Cotton Apparel (Technical Bulletin TRI 3003, 2001)",
+      "checked_on": "2026-10-05",
+      "limits": "Describes the method and component choices. Do not claim a specific product is garment dyed, promise an exact shade match between body, rib, thread and labels (labels are about legibility, not shade), quote the bulletin's test ratings, shrinkage or cost figures, or give home dyeing instructions."
+    },
+    "lightfastness_sunlight_colour_loss": {
+      "claim": "Sunlight is a major cause of colour loss. Light-fastness tests are designed to determine how much a colour will fade when the sample is exposed to a standard light source, and colourfastness ratings typically use a numbered scale where better performance gets a higher number. The potential for damage depends on the colorant used, product end use, geographical area of use, season, light incidence, humidity and other variables, and, as with most test methods, the relationship between any light-fastness test and actual consumer exposure must be determined and agreed upon by manufacturer and customer.",
+      "source_url": "https://cottonworks.com/learning-hub/quality-assurance/quality-testing/",
+      "source_title": "CottonWorks: Quality Testing",
+      "checked_on": "2026-10-05",
+      "limits": "Describes the property and the test principle. Do not claim a specific colour, dye or T-shirt will or will not fade in sunlight, give hours, days or a rating, rank colours or dyes, or say a wash test covers sunlight."
+    },
+    "dimensional_change_growth_shrinkage": {
+      "claim": "Dimensional change means any change in the dimensions of a fabric or garment, positive or negative: a positive change is growth and a negative change is shrinkage. In garments, shrinkage characteristics relate not only to dimensional changes but also to changes such as seam puckering and skew, changed relationships between the body cloth and trim components, and changes in fit. Knit fabrics are typically more open and loose in structure than wovens and are thus subject to more instability and dimensional change. Dimensional stability to laundering is one of the most important aspects of an apparel item: a shirt that shrinks or grows may no longer fit properly.",
+      "source_url": "https://cottonworks.com/learning-hub/quality-assurance/shrinking-and-skewing/",
+      "source_title": "CottonWorks: Shrinkage & Skewing",
+      "checked_on": "2026-10-05",
+      "limits": "Definitions only. Give no percentage, do not claim a specific T-shirt will grow or shrink in a given direction or amount, and do not promise zero dimensional change or a universal care instruction."
+    },
+    "garment_dimensional_change_home_laundering_test": {
+      "claim": "AATCC TM150 determines the dimensional (length and width) changes of garments subjected to home laundering procedures. Four washing temperatures, three agitation cycles and four drying procedures provide standard parameters representing common home care options. The method may not be applicable to garments made of certain stretch fabrics.",
+      "source_url": "https://members.aatcc.org/store/tm150/556/",
+      "source_title": "AATCC TM150-2025: public summary for Dimensional Changes of Garments after Home Laundering",
+      "checked_on": "2026-10-05",
+      "limits": "Public scope summary only, not the full procedure. Do not invent benchmark distances, wash settings, tolerances or pass/fail percentages, claim any product was tested to it, present a home wash as this standard test, or assume a supplier's quoted figure came from this method."
+    },
+    "print_colour_yarn_hairiness_lustre": {
+      "claim": "Because print colour is applied from one side of the fabric, the evenness, brightness and depth of the colour are very sensitive to the hairiness, twist and lustre of the yarns: the higher the yarn lustre, the brighter the printed colour. Highly twisted yarns may not allow print paste to penetrate deeply into the yarn bundle, which yields poor print colourfastness, and fine to medium yarns are generally easier to print than large, bulky or novelty yarns. Any fabric with surface texture presents more printing challenges than a comparable flat-surface fabric.",
+      "source_url": "https://cottonworks.com/learning-hub/printing/cotton-textile-printing-basics/",
+      "source_title": "CottonWorks: Cotton Textile Printing Basics",
+      "checked_on": "2026-10-05",
+      "limits": "General fabric-printing principle. Do not claim a specific blank prints brighter or duller, identify yarn hairiness, twist or lustre by eye, touch or AI close-up, rank brands, promise colourfastness, or apply it to DTF transfers."
     },
     "dtf_sheet_size": {
       "claim": "Sale91's DTF sheet is 22.8 inches wide and any height from 1 to 390 inches (since 5 Oct 2026; it was 39 inches minimum before). The buyer uploads one ready-made PNG sheet, and it is printed as uploaded: never stretched or cropped. One sheet can carry many designs (a gang sheet).",
@@ -352,6 +415,89 @@
       "intent_key": "polyester_oil_affinity_needs_soil_release",
       "fact_ids": [
         "polyester_oleophilic"
+      ]
+    },
+    {
+      "topic": "प्लेन टी-शर्ट पर हल्की आड़ी धारियाँ (Barré) क्यों दिखती हैं?",
+      "buyer_question": "Why does a plain dyed T-shirt sometimes show faint repeating bands across the fabric?",
+      "lesson": "Barré is an unintentional, repeating pattern of bars or stripes that, in circular-knit fabric, usually runs along the knitted courses. Its causes generally come down to inconsistency: physical, optical or dye differences between yarns, for example yarns of different counts, spinning systems, blends, suppliers or twist mixed into one fabric, or geometric differences in the fabric structure. A lot that already shows barré may be salvaged by careful dye selection, because very dark shades (navy, black) or high-reflectance shades (light yellow, orange, finished white) can mask colour differences.",
+      "buyer_decision": "For a plain-colour bulk order, ask the mill to keep the yarn consistent for the whole lot, and before cutting or printing, lay a full-width piece of the dyed fabric on a table and view both sides from different angles for repeating bands.",
+      "intent_key": "barre_bands_from_yarn_inconsistency",
+      "fact_ids": [
+        "barre_yarn_inconsistency_bands"
+      ]
+    },
+    {
+      "topic": "स्क्रीन प्रिंट में हर रंग के लिए अलग स्क्रीन क्यों लगती है?",
+      "buyer_question": "Why does every extra colour in a screen-print design mean extra work before printing starts?",
+      "lesson": "In screen printing the design is first separated into its individual colours, and each colour needs its own screen because only one colour per screen is possible, so a four-colour design needs four screens printed one after another. On flatbed and rotary screen machines, preparing a screen for every colour means fairly high development time and cost, while digital inkjet printing needs no screens; every colour must also land in register, and a misregistered print, where the pattern is out of fit, cannot be repaired.",
+      "buyer_decision": "Count the colours in your artwork before asking for a screen-print quote and approve a printed sample for registration, since each extra colour needs another screen and a misregistered print cannot be fixed; for designs with many colours, compare digital inkjet printing, which needs no screens.",
+      "intent_key": "screen_print_one_screen_per_colour",
+      "fact_ids": [
+        "screen_print_screen_per_colour"
+      ]
+    },
+    {
+      "topic": "धुलाई के बाद डार्क टी-शर्ट फीकी क्यों दिखने लगती है?",
+      "buyer_question": "Why can a dark T-shirt look faded after washing even when its dye may still be there?",
+      "lesson": "A dark knit T-shirt can lose colour in washing in two ways: dye is gradually removed from the fibre, or surface fuzz makes it look lighter. Washing rubs knit fabric against itself and the drum and raises surface fibres; this fuzz scatters light, so the fabric can look washed out even where the dye is still present, an effect called phantom colour loss. In a Cotton Incorporated study, removing the fuzz from washed black knit fabric with an enzyme treatment brought back almost all of its lost colour strength.",
+      "buyer_decision": "For dark colours, ask the mill whether surface fibre is removed with an enzyme wash at the mill, since removing the fuzz there can reduce or nearly eliminate this apparent fading.",
+      "intent_key": "phantom_colour_loss_from_surface_fuzz",
+      "fact_ids": [
+        "phantom_colour_loss_surface_fuzz"
+      ]
+    },
+    {
+      "topic": "बायोवॉश से कपड़े का वज़न कम क्यों हो सकता है?",
+      "buyer_question": "Can a biowash (cellulase enzyme) treatment change the fabric weight a buyer specified?",
+      "lesson": "A biowash, or cellulase biopolishing, removes protruding surface fibres, and because the enzyme digests cotton cellulose it can reduce fabric weight and strength; with an acid cellulase some reduction always happens, and the mill controls how much through the enzyme type, concentration, pH, time and temperature. GSM is the mass of a defined area of fabric, so the GSM that matters to a buyer is the one measured on the finished fabric.",
+      "buyer_decision": "Specify GSM as the finished weight after biowash and check it on the finished fabric, rather than accepting a pre-biowash GSM figure.",
+      "intent_key": "enzyme_wash_reduces_finished_fabric_weight",
+      "fact_ids": [
+        "cellulase_weight_strength_loss",
+        "biopolish_surface",
+        "fabric_mass_per_area"
+      ]
+    },
+    {
+      "topic": "गारमेंट डाई टी-शर्ट में धागे और रिब का शेड बॉडी से थोड़ा अलग क्यों आ सकता है?",
+      "buyer_question": "What changes when a T-shirt is dyed after it is sewn instead of being sewn from already-dyed fabric?",
+      "lesson": "In garment dyeing the T-shirt is cut and sewn first and dyed afterwards, which allows short lots of fashion shades and shorter lead times. Every part goes into the dye bath together, so parts that take dye differently can end up a different shade: cotton or corespun threads are recommended so the stitching dyes nearly the garment's shade, a blended fabric's synthetic fibre stays undyed, and some shade difference between different fabric components will occur.",
+      "buyer_decision": "For garment-dyed T-shirts, specify cotton or corespun sewing thread and dye-resistant or post-dye labels, and approve the body-to-rib shade on a dyed sample, expecting small differences between components.",
+      "intent_key": "garment_dyeing_components_take_dye_differently",
+      "fact_ids": [
+        "garment_dyeing_component_shades"
+      ]
+    },
+    {
+      "topic": "तेज़ धूप में टी-शर्ट का रंग क्यों उड़ सकता है?",
+      "buyer_question": "Why can a T-shirt displayed or worn in strong sun lose colour, and how is that tested?",
+      "lesson": "Sunlight is a major cause of colour loss, and light fastness has its own test: it measures how much a colour fades when a sample is exposed to a standard light source, usually rated on a scale where a higher number means better performance. The potential for damage depends on the colorant, the end use, where and in which season it is used, light incidence and humidity, so, as with most test methods, how a lab rating relates to real use must be agreed between manufacturer and customer.",
+      "buyer_decision": "For T-shirts that will hang in a sunny shop front or be worn outdoors all day, such as staff uniforms, ask the supplier for a light-fastness rating and agree the level you need before ordering.",
+      "intent_key": "sunlight_fading_needs_lightfastness_rating",
+      "fact_ids": [
+        "lightfastness_sunlight_colour_loss"
+      ]
+    },
+    {
+      "topic": "धुलाई में टी-शर्ट सिर्फ सिकुड़ती नहीं, बढ़ भी सकती है?",
+      "buyer_question": "Is shrinkage only a T-shirt getting smaller, and what does a garment shrinkage test measure?",
+      "lesson": "Washing can change a garment's dimensions in either direction: a negative change is shrinkage and a positive change is growth. In a garment it also shows up as seam puckering, skew, a changed relationship between the body fabric and trims, and a different fit, and knits, typically more open than wovens, are more prone to it. A standard garment test measures length and width changes after home laundering at a chosen washing temperature, agitation cycle and drying procedure.",
+      "buyer_decision": "When a supplier quotes shrinkage, ask for the length and width figures and the washing and drying conditions they were measured under, and on your own washed sample check seams, the neck rib against the body and the fit, not only the size.",
+      "intent_key": "laundering_growth_shrinkage_and_test_conditions",
+      "fact_ids": [
+        "dimensional_change_growth_shrinkage",
+        "garment_dimensional_change_home_laundering_test"
+      ]
+    },
+    {
+      "topic": "एक ही प्रिंट का रंग अलग-अलग टी-शर्ट पर कम-ज़्यादा ब्राइट क्यों आता है?",
+      "buyer_question": "Why can the same design print brighter or more evenly on one blank than on another?",
+      "lesson": "Print colour is applied from one side of the fabric, so how even, bright and deep it looks depends heavily on the yarn: its hairiness, twist and lustre all change the result, and higher yarn lustre gives a brighter printed colour. Highly twisted yarns may not let print paste penetrate deeply into the yarn bundle, which yields poor print colourfastness, and textured surfaces are harder to print than flat ones.",
+      "buyer_decision": "Approve print colour on a sample printed on the exact blank you will buy in bulk, not on a different T-shirt, because the yarn itself changes how the same design looks.",
+      "intent_key": "print_brightness_depends_on_yarn_surface",
+      "fact_ids": [
+        "print_colour_yarn_hairiness_lustre"
       ]
     },
     {
