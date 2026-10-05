@@ -54,6 +54,28 @@ PROFILES = (
 )
 
 
+def rate_pair_profile(brief, script):
+    """A price lesson comparing two of our products (exactly two cited live rate_ facts, each with a rate the script
+    says): one card per product with its name and that spoken rate. Ketu's Option B is a buyer question plus a simple
+    comparison; the AI final review refused a price lesson's single-picture cover on 5-Oct-2026."""
+    evidence = brief.get('evidence') or {}
+    rates = [(key, evidence[key]) for key in brief.get('fact_ids') or ()
+             if key.startswith('rate_') and isinstance(evidence.get(key), dict)]
+    if len(rates) != 2:
+        return None
+    names, labels = [], []
+    for key, fact in rates:
+        match = re.search(r'checked on [^:]+: (.+?) \(', str(fact.get('claim') or ''))
+        spoken = [amount for amount in fact.get('amounts') or ()
+                  if re.search(rf'(?:₹|\brs\.?)\s*{amount}(?!\d)', script or '', re.I)]
+        if not match or not spoken:
+            return None
+        names.append(re.sub(r'-\d+$', '', re.sub(r' in .*$', '', match.group(1)).strip()))
+        labels.append(f'₹{spoken[0]}')
+    return {'key': 'rate_pair', 'facts': {key for key, _ in rates}, 'labels': tuple(labels), 'latin': tuple(labels),
+            'icons': tuple('text:' + name for name in names)}
+
+
 def supported_comparison(topic, script):
     brief = getattr(topic, 'brief', None)
     if not isinstance(brief, dict):
@@ -65,7 +87,7 @@ def supported_comparison(topic, script):
     for profile in PROFILES:
         if profile['facts'].issubset(ids) and all(re.search(pattern, script or '', re.I) for pattern in profile['terms']):
             return profile
-    return None
+    return rate_pair_profile(brief, script)
 
 
 def _font(size):
@@ -88,6 +110,28 @@ def _text(draw, text, area, maximum, minimum, color, boxes):
             y = top + (bottom-top-height)/2 - box[1]
             draw.text((x,y), text, font=font, fill=color)
             boxes.append({'text':text,'bounds':[round(x+box[0]),round(y+box[1]),round(x+box[2]),round(y+box[3])],'font_size':size})
+            return
+    raise ValueError('Rewrite the complete cover phrase; it does not fit readably')
+
+
+def _text_lines(draw, text, area, maximum, minimum, color, boxes):
+    """Like _text, but a name too long for one line goes on two (split at the space nearest the middle)."""
+    try:
+        return _text(draw, text, area, maximum, minimum, color, boxes)
+    except ValueError:
+        words = text.split()
+        if len(words) < 2:
+            raise
+    middle = min(range(1, len(words)), key=lambda i: abs(len(' '.join(words[:i])) - len(' '.join(words[i:]))))
+    parts = (' '.join(words[:middle]), ' '.join(words[middle:]))
+    left, top, right, bottom = area
+    half = (bottom - top) / 2
+    for size in range(maximum, minimum - 1, -2):
+        font = _font(size)
+        boxes_needed = [draw.textbbox((0, 0), part, font=font) for part in parts]
+        if all(box[2] - box[0] <= right - left and box[3] - box[1] <= half for box in boxes_needed):
+            for index, part in enumerate(parts):
+                _text(draw, part, (left, top + index * half, right, top + (index + 1) * half), size, size, color, boxes)
             return
     raise ValueError('Rewrite the complete cover phrase; it does not fit readably')
 
@@ -257,7 +301,10 @@ def render_buyer_cover(scene, lines, output_path, *, topic='', script=''):
         if profile:
             for i,(card,label,name) in enumerate(zip(cards,labels,profile['icons'])):
                 draw.rounded_rectangle(card,radius=15 if landscape else 24,fill='#8fc4d3' if i==0 else '#edc46c')
-                _icon(draw,name,(card[0]+icon_pad,icon_top,card[2]-icon_pad,icon_bottom),'#183f51')
+                if name.startswith('text:'):
+                    _text_lines(draw,name[5:],(card[0]+icon_pad,icon_top,card[2]-icon_pad,icon_bottom),label_max,label_min,'#183f51',boxes)
+                else:
+                    _icon(draw,name,(card[0]+icon_pad,icon_top,card[2]-icon_pad,icon_bottom),'#183f51')
                 _text(draw,label,(card[0]+12,label_top,card[2]-12,label_bottom),label_max,label_min,'#173b4c',boxes)
             _text(draw,'ILLUSTRATION',(368,660,912,698) if landscape else (90,1625,990,1685),22 if landscape else 29,18,'#617b82',boxes)
         else:

@@ -113,6 +113,21 @@ class OwnerReviewTests(unittest.TestCase):
         self.assertIn('return', source[gate:source.index('# ── 10. Upload to YouTube ──')])
 
 
+    def test_only_a_cover_rejection_gets_one_new_cover_and_a_second_review_of_the_new_file(self):
+        # 5-Oct-2026: covers were the most common reason a finished Short was lost.
+        source = (ROOT / 'daily_short.py').read_text()
+        gate = source[source.index('# ── 9z. Owner review gate'):source.index('# ── 10. Upload to YouTube ──')]
+        self.assertIn('for review_round in (1, 2):', gate)
+        self.assertIn('if review_round == 1 and decision.get("redo") == "cover":', gate)
+        start = gate.index('decision.get("redo") == "cover"')
+        redo = gate[start:gate.index('flag("owner_review", {"decision": "held", "reason": str(stop)})', start)]
+        self.assertIn('cover_feedback=notes', redo)
+        self.assertIn('shutil.copyfile(cover_body_path, new_output)', redo)
+        self.assertIn('require_native_visual_review(new_output, review_path)', redo)
+        self.assertIn('continue', redo)
+        self.assertLess(gate.index('video_sha = file_sha256(output_path)'), gate.index('await_owner_review('))
+        self.assertIn('"cover_redo": cover_redo', gate)
+
 
 class TextOverrideTests(unittest.TestCase):
     def test_only_known_non_empty_fields_within_limits_are_taken(self):

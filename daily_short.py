@@ -7786,7 +7786,10 @@ cited rate_ fact states that exact amount (today's website rate, before GST); th
 for a price gap must come from the cited product details, not guesswork. Universal
 settings, stock, discounts, customer incidents and simulated test results are unsupported.
 Ear rub, fuzz and stretch recovery do not certify yarn/finishing. A brief that breaks any cited
-fact's limits (for example a promise the limits forbid) is not supported.
+fact's limits (for example a promise the limits forbid) is not supported. A rate_ fact names one
+of our own products: a brief that pins another fact's drawback (odour, pilling, skew, shrinkage)
+on that product, or ranks products by a property a cited fact's limits forbid ranking (for
+example odour against cotton), is not supported.
 
 Return JSON only:
 {{"score": 0, "scores": {{"buyer_interest": 0, "freshness": 0,
@@ -12318,9 +12321,10 @@ def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, 
     if refused is None:
         print(f"   🔎 Checking {len(clips)} clips against the lesson before cutting the Short...")
     try:
+        # The final review's repair round makes at most 2 new clips (cost: a day's run stays near the $10 limit).
         kept, kept_prompts, report = repair_clips(clips, prompts, review=review, regenerate=regenerate,
-                                                  budget=CLIP_REPAIR_BUDGET, minimum=min(CLIP_MINIMUM, len(clips)),
-                                                  refused=refused)
+                                                  budget=CLIP_REPAIR_BUDGET if refused is None else 2,
+                                                  minimum=min(CLIP_MINIMUM, len(clips)), refused=refused)
     except ClipRepairError as error:
         flag(name, {"state": "stopped", "reason": str(error), "regenerated": len(regenerated),
                     "clips": error.report})
@@ -13851,6 +13855,10 @@ def main():
         if not thumbnail_path:
             raise RuntimeError("No complete cover available; stop before publishing")
         from tools.cover_quality import prepend_cover
+        import shutil
+        # The Short without its 0.5 s cover: a cover-only rejection by the AI final review gets a new cover on it.
+        cover_body_path = f"{WORK_DIR}/body_{os.path.basename(output_path)}"
+        shutil.copyfile(output_path, cover_body_path)
         COVER_META["opening_cover"] = prepend_cover(output_path, thumbnail_path)
 
         from tools.short_review_archive import save_review_archive
@@ -13897,42 +13905,81 @@ def main():
         from tools.owner_review import (OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy,
                                         text_overrides)
         review_run = os.environ.get("GITHUB_RUN_ID", "")
-        video_sha = file_sha256(output_path)
-        review_summary = {
-            "format": "owner-review-v1", "run_id": review_run, "video_sha256": video_sha, "topic": str(fresh_topic),
-            "lesson": {k: v for k, v in (getattr(fresh_topic, "brief", None) or {}).items() if k != "evidence"},
-            # rate_ facts are today's live website rates, not in daily_topic_lessons.json: the reviewer reads them here.
-            "live_rate_facts": {k: {f: v.get(f) for f in ("claim", "limits", "checked_on", "source_url")}
-                                for k, v in _cited_rate_facts(getattr(fresh_topic, "brief", None)).items()},
-            "titles": {"youtube": yt_title, "instagram": ig_title}, "youtube_description": yt_description,
-            "youtube_tags": yt_tags, "script": {"voice": script_voice, "english": script_english},
-            "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review"),
-                                "clip_check": RUN_FLAGS.get("clip_check"), "render_repair": RUN_FLAGS.get("render_repair")},
-        }
-        try:
-            review_folder = publish_review_copy(boto3.client("s3"), BLOG_S3_BUCKET, review_run, output_path,
-                                                thumbnail_path, review_summary)
-            print(f"   ⏸️ OWNER REVIEW: {BLOG_BASE_URL}/{review_folder}/video.mp4 (sha256 {video_sha[:16]}...)")
-            if HOLD_ONLY:
-                # A full real run that never publishes: the held copy is reviewed by hand or by a dry-run
-                # ai_final_review.yml, and nothing is uploaded or posted.
-                flag("owner_review", {"decision": "held", "reason": "hold_only run", "video_sha256": video_sha})
-                print("   🧪 HOLD ONLY: nothing is published from this run")
+        # A rejection of ONLY the cover ("redo": "cover"; 5-Oct-2026: covers were the most common reason a finished
+        # Short was lost) gets one new cover, made with the reviewer's notes, and one more review of the new file.
+        cover_redo = None
+        for review_round in (1, 2):
+            video_sha = file_sha256(output_path)
+            review_summary = {
+                "format": "owner-review-v1", "run_id": review_run, "video_sha256": video_sha, "topic": str(fresh_topic),
+                "lesson": {k: v for k, v in (getattr(fresh_topic, "brief", None) or {}).items() if k != "evidence"},
+                # rate_ facts are today's live website rates, not in daily_topic_lessons.json: the reviewer reads them here.
+                "live_rate_facts": {k: {f: v.get(f) for f in ("claim", "limits", "checked_on", "source_url")}
+                                    for k, v in _cited_rate_facts(getattr(fresh_topic, "brief", None)).items()},
+                "titles": {"youtube": yt_title, "instagram": ig_title}, "youtube_description": yt_description,
+                "youtube_tags": yt_tags, "script": {"voice": script_voice, "english": script_english},
+                "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review"),
+                                    "clip_check": RUN_FLAGS.get("clip_check"), "render_repair": RUN_FLAGS.get("render_repair")},
+                "cover_redo": cover_redo,
+            }
+            try:
+                review_folder = publish_review_copy(boto3.client("s3"), BLOG_S3_BUCKET, review_run, output_path,
+                                                    thumbnail_path, review_summary)
+                print(f"   ⏸️ OWNER REVIEW: {BLOG_BASE_URL}/{review_folder}/video.mp4 (sha256 {video_sha[:16]}...)")
+                if HOLD_ONLY:
+                    # A full real run that never publishes: the held copy is reviewed by hand or by a dry-run
+                    # ai_final_review.yml, and nothing is uploaded or posted.
+                    flag("owner_review", {"decision": "held", "reason": "hold_only run", "video_sha256": video_sha})
+                    print("   🧪 HOLD ONLY: nothing is published from this run")
+                    return
+                print(f"      waiting for review_decisions/{review_run}.json on main")
+                dispatch_cloud_review(review_run)
+                review_decision = await_owner_review(
+                    run_id=review_run, sha=video_sha, repo=os.environ.get("GITHUB_REPOSITORY", ""),
+                    token=os.environ.get("GH_TOKEN_REVIEW", ""),
+                    wait_seconds=int(os.environ.get("REVIEW_WAIT_MINUTES", "100") or 100) * 60, fetch=requests.get)
+            except OwnerReviewStop as stop:
+                decision = getattr(stop, "decision", None) or {}
+                if review_round == 1 and decision.get("redo") == "cover":
+                    print("   🖼️ Owner review rejected only the cover: making a new one with the reviewer's notes")
+                    try:
+                        notes = str(decision.get("notes") or "")[:1500]
+                        new_thumbnail = generate_ai_thumbnail(
+                            hook_text_from_claude, fresh_topic, script_voice, veo_clip_path=first_clip,
+                            claude_client=claude, genai_client=veo_client, cost_tracker=cost,
+                            real_scene=bool(real_clips), cover_feedback=notes)
+                        if not new_thumbnail:
+                            raise RuntimeError("no new cover")
+                        new_output = f"{WORK_DIR}/SHORT_{random.randint(1000, 9999)}.mp4"
+                        shutil.copyfile(cover_body_path, new_output)
+                        COVER_META["opening_cover"] = prepend_cover(new_output, new_thumbnail)
+                        review_path = save_review_archive(
+                            video_path=new_output, thumbnail_path=new_thumbnail,
+                            topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
+                            script_voice=script_voice, tts_input=tts_input, script_english=script_english,
+                            youtube_id=None, instagram_id=None, test_mode=TEST_MODE,
+                            run_flags=RUN_FLAGS, normalized_voice_path=audio_path,
+                        )
+                        flag('native_audio_review', require_native_audio_review(new_output, review_path))
+                        flag('native_visual_review', require_native_visual_review(new_output, review_path))
+                    except Exception as error:
+                        print(f"   ⚠️ New cover not usable ({type(error).__name__}: {str(error)[:160]})")
+                    else:
+                        try:
+                            os.remove(output_path)
+                        except OSError:
+                            pass
+                        output_path, thumbnail_path, cover_redo = new_output, new_thumbnail, notes
+                        flag("owner_review_cover_redo", {"notes": notes[:600]})
+                        continue
+                flag("owner_review", {"decision": "held", "reason": str(stop)})
+                print(f"   🛑 Owner review: {stop}")
+                if decision.get("hold_lesson") is True:
+                    from tools.daily_topic_selection import record_review_hold
+                    if record_review_hold(getattr(fresh_topic, "brief", None), decision.get("notes")):
+                        print("   ⏸️ Lesson held for 21 days: the AI review found its own footage wrong")
                 return
-            print(f"      waiting for review_decisions/{review_run}.json on main")
-            dispatch_cloud_review(review_run)
-            review_decision = await_owner_review(
-                run_id=review_run, sha=video_sha, repo=os.environ.get("GITHUB_REPOSITORY", ""),
-                token=os.environ.get("GH_TOKEN_REVIEW", ""),
-                wait_seconds=int(os.environ.get("REVIEW_WAIT_MINUTES", "100") or 100) * 60, fetch=requests.get)
-        except OwnerReviewStop as stop:
-            flag("owner_review", {"decision": "held", "reason": str(stop)})
-            print(f"   🛑 Owner review: {stop}")
-            if (getattr(stop, "decision", None) or {}).get("hold_lesson") is True:
-                from tools.daily_topic_selection import record_review_hold
-                if record_review_hold(getattr(fresh_topic, "brief", None), stop.decision.get("notes")):
-                    print("   ⏸️ Lesson held for 21 days: the AI review found its own footage wrong")
-            return
+            break
         try:
             corrections = text_overrides(review_decision)
             for _label, _text in corrections.items():

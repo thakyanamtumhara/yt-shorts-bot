@@ -128,3 +128,45 @@ class DailyCoverLayoutTest(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+
+
+def rate_fact(name, amounts):
+    return {'claim': f'BulkPlainTshirt.com live rate list checked on 05-Oct-2026: {name} (details). 10 or more pieces: '
+                     f'₹{amounts[0]} per piece. Rates exclude 5% GST and delivery.',
+            'source_url': 'https://www.bulkplaintshirt.com/', 'source_title': 'BulkPlainTshirt.com live rate list',
+            'checked_on': '05-Oct-2026', 'limits': 'Website rate on the checked date only.', 'amounts': list(amounts)}
+
+
+def rate_topic(facts):
+    return SelectedTopic({'topic': 'Price', 'fact_ids': list(facts), 'evidence': facts})
+
+
+class RatePairCoverTest(unittest.TestCase):
+    # 5-Oct-2026: the AI final review refused a ₹107 vs ₹150 lesson's single-picture cover (Option B wants the
+    # comparison), so a two-product price lesson gets one card per product with the rate the script says.
+    FACTS = {'rate_non_bio_rneck': rate_fact('Non Bio Rneck', (107, 112, 131)),
+             'rate_hoodie_320gsm_2': rate_fact('Hoodie 320gsm-2 in White, Navy', (337, 347, 414))}
+
+    def test_two_spoken_rates_make_a_product_comparison(self):
+        profile = supported_comparison(rate_topic(self.FACTS), 'Non Bio Rneck ₹107 hai, hoodie Rs 337 hai.')
+        self.assertEqual(profile['key'], 'rate_pair')
+        self.assertEqual(profile['labels'], ('₹107', '₹337'))
+        self.assertEqual(profile['icons'], ('text:Non Bio Rneck', 'text:Hoodie 320gsm'))
+
+    def test_no_comparison_unless_both_rates_are_spoken_or_with_one_rate(self):
+        self.assertIsNone(supported_comparison(rate_topic(self.FACTS), 'Non Bio Rneck ₹107 hai, hoodie mehenga.'))
+        self.assertIsNone(supported_comparison(rate_topic(self.FACTS), 'Non Bio Rneck ₹1070 hai, hoodie ₹3370.'))
+        one = {'rate_non_bio_rneck': self.FACTS['rate_non_bio_rneck']}
+        self.assertIsNone(supported_comparison(rate_topic(one), 'Non Bio Rneck ₹107 hai.'))
+
+    @unittest.skipUnless(features.check('raqm'), 'Hindi shaping required')
+    def test_the_comparison_cover_renders_names_and_rates_in_both_sizes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            meta = render_buyer_cover(None, ['HOODIE PRICE', 'फ़र्क कहाँ है?'], Path(tmp) / 'c.png',
+                                      topic=rate_topic(self.FACTS), script='Non Bio Rneck ₹107, hoodie ₹337.')
+            for size in ('portrait', 'youtube'):
+                texts = [box['text'] for box in meta['outputs'][size]['text']]
+                for expected in ('Non Bio Rneck', '₹107', '₹337'):
+                    self.assertIn(expected, texts)
+                self.assertTrue({'Hoodie 320gsm'} <= set(texts) or {'Hoodie', '320gsm'} <= set(texts))
+            self.assertEqual(meta['comparison_key'], 'rate_pair')

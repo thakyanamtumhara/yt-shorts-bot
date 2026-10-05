@@ -89,7 +89,7 @@ class ReviewArchiveTests(unittest.TestCase):
         tree = ast.parse((root / 'daily_short.py').read_text())
         calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
                  and isinstance(node.func, ast.Name) and node.func.id == 'save_review_archive']
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)  # before review, after a cover redo, after upload
         for call in calls:
             voice = next(keyword.value for keyword in call.keywords if keyword.arg == 'normalized_voice_path')
             self.assertIsInstance(voice, ast.Name)

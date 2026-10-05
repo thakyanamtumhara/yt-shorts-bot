@@ -51,15 +51,21 @@ Do this, in order:
    - Only a title or the description body is wrong and the video is perfect: approve WITH the corrected text in
      "youtube_title", "instagram_title" and/or "youtube_description" (the body only: keep its hashtags, leave out the
      "📖 More buyer guides" line, the run adds it again).
-   - Anything wrong in the picture, sound, cover or facts: reject, and name each problem precisely (time, what, why).
-     If a re-render of the SAME lesson would repeat the problem (its own footage or screen recording is wrong),
-     also write "hold_lesson": true so the next runs pick another lesson for 21 days. Not for cover or text.
+   - Only the cover is wrong (picture, sound and spoken facts pass; title or description faults may be listed
+     too): reject with "redo": "cover" and write in "notes" exactly what the new cover must fix. The run makes one
+     new cover from your notes and sends the Short back for one more review (review.json then shows cover_redo:
+     your notes). On that second review check everything again; give text corrections with the approval, and if
+     the cover is still wrong, reject without redo.
+   - Anything else wrong in the picture, sound or facts: reject, and name each problem precisely (time, what, why).
+     If a re-render of the SAME lesson would repeat the problem (its own footage or screen recording is wrong, or
+     review.json lesson itself breaks a cited fact's limits), also write "hold_lesson": true so the next runs pick
+     another lesson for 21 days. Not for the cover or titles/description alone.
 8. {{MODE}}
 
 Write the decision as review_decisions/{{RUN}}.json in the repository:
 {"run_id": "{{RUN}}", "video_sha256": "<the sha256 from probe.txt>", "decision": "approve" or "reject",
  "reviewer": "{{REVIEWER}}", "notes": "<what you checked and found, one paragraph>"}
-plus any text corrections. Then: git pull --rebase origin main, git add that one file, git commit -m "Owner review:
+plus any text corrections, "redo": "cover" or "hold_lesson": true as described above. Then: git pull --rebase origin main, git add that one file, git commit -m "Owner review:
 <approve|reject> run {{RUN}}" with the line "Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>" at
 the end of the message, git push origin main.
 

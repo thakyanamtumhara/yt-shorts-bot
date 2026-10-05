@@ -480,6 +480,9 @@ def evidence_prompt(topic):
             + '\nTeach the mechanism or distinction, then its buyer consequence. '
             'Use only the supplied facts; historical titles and AI imagery are not proof. '
             'Do not replace the explanation with a list of things to check. '
+            "Obey every cited fact's limits word for word. A rate_ fact names one of our own products: never say "
+            'or imply that product has a drawback another fact describes (odour, pilling, skew, shrinkage), and '
+            "never rank products by a property a cited fact's limits forbid ranking. "
             'A rupee amount may appear only exactly as written in a cited rate_ fact (the current '
             'website rate, before GST) or as the difference between two such amounts, always in digits '
             'with the ₹ sign. Never round it or add any other price, discount, threshold, guarantee '

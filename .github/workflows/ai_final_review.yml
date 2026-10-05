@@ -156,13 +156,21 @@ jobs:
           TITLE=$(python3 -c "import json;print(json.load(open('$DIR/review.json'))['titles']['youtube'])" 2>/dev/null)
           git fetch -q origin main
           DEC=$(git show "origin/main:review_decisions/$RUN.json" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('decision',''))" 2>/dev/null)
+          REDO=$(git show "origin/main:review_decisions/$RUN.json" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('redo',''))" 2>/dev/null)
+          ROUND=$(python3 -c "import json;print('second look' if json.load(open('$DIR/review.json')).get('cover_redo') else '')" 2>/dev/null)
           if [ -z "$DEC" ]; then
             tg "Daily Short: the cloud AI review gave no decision for run $RUN, so it is held and nothing is posted yet. The Mac backup reviews it at 15:15 IST if the Mac is on. $LINE $RUN_URL"
             echo "::error::No review decision reached main"
             exit 1
           fi
+          if [ "$DEC" != approve ] && [ "$REDO" = cover ]; then
+            tg "Daily Short: the cloud AI review asked for a new cover only
+          $TITLE
+          The run is making a new cover and will send it back for one more review. ${LINE#DECISION: }"
+            exit 0
+          fi
           if [ "$DEC" != approve ]; then
-            tg "Daily Short rejected by the cloud AI review
+            tg "Daily Short rejected by the cloud AI review${ROUND:+ ($ROUND)}
           $TITLE
           Nothing was posted. ${LINE#DECISION: }"
             exit 0
