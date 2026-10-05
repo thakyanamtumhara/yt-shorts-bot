@@ -3,9 +3,10 @@ run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_tes
 
 on:
   # GitHub schedule OFF since 3-Oct-2026: every Short waits for Claude's written review (owner: "verify ... give it
-  # 100% thumbs up, then only you move forward"). The day's run is started Mon-Sat 14:30 IST on Ketu's Mac by launchd
-  # com.ketu.dailyshortreview (tools/daily_review_agent/run_daily.sh), which also runs the Claude Opus 5.5 review.
-  # Only if that Mac job is retired, restore the GitHub schedule by uncommenting:
+  # 100% thumbs up, then only you move forward"). Cloud first since 5-Oct-2026: the Cloudflare Worker
+  # cloudflare/daily-short-trigger starts this Mon-Sat 14:30 IST (re-check 14:50) with owner_review on, and the held
+  # Short dispatches ai_final_review.yml (Claude Opus 5.5). Ketu's Mac (launchd com.ketu.dailyshortreview, 15:15 IST)
+  # is only the backup. Do not restore this GitHub schedule (it starts 3-11 h late and carries no owner_review input):
   # schedule:
   #   # Mon-Sat 09:00 UTC = 2:30 PM IST start; video ready ~3:15 PM IST.
   #   # YouTube publishAt handles the actual 19:00 IST release; the IG container

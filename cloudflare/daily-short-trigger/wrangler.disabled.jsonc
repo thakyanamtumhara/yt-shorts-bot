@@ -1,0 +1,20 @@
+{
+  "name": "daily-short-trigger",
+  "account_id": "7496d7d235ea08571b8a048299c1a282",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-05",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {
+    "ENABLED": "false",
+    "DRY_RUN": "true"
+  },
+  "triggers": {
+    "crons": []
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
