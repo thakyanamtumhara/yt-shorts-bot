@@ -139,10 +139,10 @@
       "limits": "General fibre property from a cotton industry body. Do not claim a specific polyester T-shirt has or lacks a soil-release finish, promise odour-free wear, or rank odour against cotton."
     },
     "dtf_sheet_size": {
-      "claim": "Sale91's DTF sheet is 22.8 inches wide and 39 to 390 inches tall. The buyer uploads one ready-made PNG sheet, and it is printed as uploaded: never stretched or cropped. One sheet can carry many designs (a gang sheet).",
+      "claim": "Sale91's DTF sheet is 22.8 inches wide and any height from 1 to 390 inches (since 5 Oct 2026; it was 39 inches minimum before). The buyer uploads one ready-made PNG sheet, and it is printed as uploaded: never stretched or cropped. One sheet can carry many designs (a gang sheet).",
       "source_url": "https://dtf.bulkplaintshirt.com/",
       "source_title": "Sale91 DTF order form: sheet size and Details & tips",
-      "checked_on": "2026-10-03",
+      "checked_on": "2026-10-05",
       "limits": "Sale91's own product rule. Other printers use other widths. Do not quote a price from this fact."
     },
     "dtf_min_resolution": {
