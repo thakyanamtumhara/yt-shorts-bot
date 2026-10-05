@@ -35,7 +35,8 @@ Do this, in order:
    cut-off ending; the last line is a complete thought. ASR spelling noise (Hindi script for English words, "हिंच" for
    inch) is fine; missing or different words are not.
 5. Facts: open daily_topic_lessons.json and read facts[<id>].claim and .limits for every id in review.json
-   lesson.fact_ids. Written text (titles, description) must also follow the wording the limits ask for (for example
+   lesson.fact_ids. An id starting with rate_ is today's live website rate and is not in that file: read its claim
+   and limits in review.json live_rate_facts (the run read them from the live rate list that day). Written text (titles, description) must also follow the wording the limits ask for (for example
    "say it is Canva's current help"); the spoken script is short, so there a true claim checked today is enough.
    Every number and claim in the script, both titles, the description and the tags must match those facts exactly
    (DTF: minimum 5700 px = 250 DPI, 6840 px = 300 DPI is best, width 22.8 in, height 39-390 in, Canva

@@ -13826,6 +13826,9 @@ def main():
         review_summary = {
             "format": "owner-review-v1", "run_id": review_run, "video_sha256": video_sha, "topic": str(fresh_topic),
             "lesson": {k: v for k, v in (getattr(fresh_topic, "brief", None) or {}).items() if k != "evidence"},
+            # rate_ facts are today's live website rates, not in daily_topic_lessons.json: the reviewer reads them here.
+            "live_rate_facts": {k: {f: v.get(f) for f in ("claim", "limits", "checked_on", "source_url")}
+                                for k, v in _cited_rate_facts(getattr(fresh_topic, "brief", None)).items()},
             "titles": {"youtube": yt_title, "instagram": ig_title}, "youtube_description": yt_description,
             "youtube_tags": yt_tags, "script": {"voice": script_voice, "english": script_english},
             "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review")},

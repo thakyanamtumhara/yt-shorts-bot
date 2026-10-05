@@ -4,8 +4,10 @@
 knit for single jersey, two braided cords for a coverseam hem, a hand-pinched swirl for wash skew). The final visual
 review (prepublication_visual.py) rightly refused the finished Short, so the whole day's video and its spend were lost
 for one 8-second clip. Here the same model looks at each clip as soon as it exists, with the narration that will play
-over it; a failing clip is generated again with what to avoid, then as a safe whole-garment scene, and only dropped
-when neither passes. The final visual review stays the authority; this check only stops a known-bad clip reaching it.
+over it. A clip with a render glitch (text, odd hands, blank) is generated again with what to avoid; a clip that drew
+the wrong construction or a staged result is replaced by a safe whole-garment scene in the same style; a clip with no
+passing version is dropped. The final visual review stays the authority; this check only stops a known-bad clip
+reaching it.
 """
 
 import base64
@@ -114,6 +116,20 @@ def style_lock(prompts):
     return ''
 
 
+# Problems a fresh render of the same scene usually fixes; anything else means AI video cannot draw that scene truthfully.
+GLITCHES = {'visible_text', 'ai_artifact', 'blank'}
+
+
+def attempt_plan(prompt, review, prompts, index):
+    """What to generate after a failed check: the same scene again (with what to avoid) when the failure was a render
+    glitch, else straight to safe whole-garment scenes (Veo drew the wrong construction or a staged result, and asking
+    again for the same close-up mostly repeats it)."""
+    kinds = {problem.get('kind') for problem in (review or {}).get('problems') or []}
+    if kinds and kinds <= GLITCHES:
+        return [('repair', repair_prompt(prompt, review)), ('safe', safe_prompt(prompts, index))]
+    return [('safe', safe_prompt(prompts, index)), ('safe2', safe_prompt(prompts, index + 2))]
+
+
 def repair_prompt(prompt, review):
     avoid = ' '.join(str((review or {}).get('avoid') or '').split())[:400]
     seen = ' '.join(str((review or {}).get('observed_visual') or '').split())[:300]
@@ -144,9 +160,11 @@ def review_prompt(context, narration):
         'describe (for example cable-knit or rib fabric standing in for single jersey, braided cords or decorative trims '
         'standing in for a coverseam hem).\n'
         '- staged_result: a staged demonstration that implies an untested result (fabric pinched or twisted by hand to '
-        'fake skew, a torn, burnt or stretched-out garment shown as proof, a measurement or test outcome). Generated '
-        'illustrations are never proof of a product result.\n'
-        '- visible_text: readable or garbled letters, numbers, labels, tags, logos, price tags, signs or screens.\n'
+        'fake skew, a torn, burnt or stretched-out garment shown as proof, a reading or test outcome shown as proof). '
+        'Showing how something is checked (weighing, measuring with a tape) is fine when no result is presented. '
+        'Generated illustrations are never proof of a product result.\n'
+        '- visible_text: readable or garbled letters, numbers, logos or brand names on anything (labels, tags, price '
+        'tags, signs, screens, displays). A plain label or tag with no visible writing is fine.\n'
         '- ai_artifact: deformed, extra or merging fingers, melting or morphing hands or objects, faces, bodies that '
         'bend wrongly.\n'
         '- unrelated: nothing to do with T-shirts, fabric, garment making or the narration.\n'
@@ -236,8 +254,8 @@ def _brief(review):
 
 
 def repair_clips(clips, prompts, *, review, regenerate, budget=4, minimum=3, log=print):
-    """Check every clip; re-make a failing one with what to avoid, then as a safe whole-garment scene; drop it when
-    neither passes. review(index, path) -> review_clip() result; regenerate(prompt, index, attempt) -> new path or
+    """Check every clip; re-make a failing one (attempt_plan: the same scene again for a render glitch, else a safe
+    whole-garment scene in the same style); drop it when no version passes. review(index, path) -> review_clip() result; regenerate(prompt, index, attempt) -> new path or
     None. At most `budget` new clips per Short. Returns (clips, prompts, report); ClipRepairError when fewer than
     `minimum` clips are left (this lesson cannot be shown truthfully today)."""
     if len(clips) != len(prompts):
@@ -255,7 +273,7 @@ def repair_clips(clips, prompts, *, review, regenerate, budget=4, minimum=3, log
             continue
         log(f"   🔎 Clip {index + 1}: {first['state']} - {str(first.get('observed_visual'))[:140]}")
         entry['result'] = 'dropped'
-        for kind, new_prompt in (('repair', repair_prompt(prompt, first)), ('safe', safe_prompt(prompts, index))):
+        for kind, new_prompt in attempt_plan(prompt, first, prompts, index):
             if budget <= 0:
                 entry['attempts'].append({'kind': kind, 'skipped': 'budget'})
                 break

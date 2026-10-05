@@ -23,6 +23,12 @@ def bad(seen='Two braided cords stretched on dark fabric.'):
             'problems': [{'kind': 'wrong_construction', 'detail': 'cords instead of a coverseam'}]}
 
 
+def glitch():
+    return {'state': 'fail', 'usable': False, 'verdict': 'fail', 'observed_visual': 'A price tag with garbled digits.',
+            'shown_material': 'plain jersey', 'avoid': 'no tags or price tags',
+            'problems': [{'kind': 'visible_text', 'detail': 'garbled digits on a tag'}]}
+
+
 def unavailable():
     return {'state': 'review_error', 'usable': None, 'error': 'HTTP 503'}
 
@@ -52,21 +58,21 @@ class RepairClipsTest(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual({entry['result'] for entry in report}, {'kept'})
 
-    def test_one_wrong_clip_is_remade_with_what_to_avoid_and_keeps_its_place(self):
-        kept, prompts, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c3': bad()})
+    def test_a_render_glitch_is_rendered_again_with_what_to_avoid_and_keeps_its_place(self):
+        kept, prompts, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c3': glitch()})
         self.assertEqual(kept, ['c1', 'c2', 'repair-2', 'c4', 'c5'])
         self.assertEqual(len(calls), 1)
         index, kind, prompt = calls[0]
         self.assertEqual((index, kind), (2, 'repair'))
         self.assertTrue(prompt.startswith(PROMPTS[2]))
-        self.assertIn('braided cords', prompt)
-        self.assertIn('Avoid: no cords or trims', prompt)
+        self.assertIn('garbled digits', prompt)
+        self.assertIn('Avoid: no tags or price tags', prompt)
         self.assertIn("arm's length", prompt)
         self.assertEqual(prompts[2], prompt)
         self.assertEqual(report[2]['result'], 'replaced')
 
-    def test_a_clip_that_fails_again_becomes_a_safe_whole_garment_scene_in_the_same_style(self):
-        kept, _, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c2': bad(), 'repair-1': bad('Rib knit swatch.')})
+    def test_a_glitch_that_returns_becomes_a_safe_whole_garment_scene_in_the_same_style(self):
+        kept, _, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c2': glitch(), 'repair-1': glitch()})
         self.assertEqual(kept[1], 'safe-1')
         self.assertEqual([kind for _, kind, _ in calls], ['repair', 'safe'])
         safe = calls[1][2]
@@ -75,22 +81,34 @@ class RepairClipsTest(unittest.TestCase):
         self.assertIn('No close-up of stitches', safe)
         self.assertEqual([a['kind'] for a in report[1]['attempts']], ['repair', 'safe'])
 
+    def test_a_wrongly_drawn_construction_goes_straight_to_safe_scenes(self):
+        # 1-Oct-2026: asking Veo again for the coverseam close-up mostly draws the cords again.
+        kept, _, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], {'c2': bad(), 'safe-1': bad('Rib knit swatch.')})
+        self.assertEqual(kept[1], 'safe2-1')
+        self.assertEqual([kind for _, kind, _ in calls], ['safe', 'safe2'])
+        self.assertIn('SCENE: ' + check.SAFE_SCENES[1], calls[0][2])
+        self.assertIn('SCENE: ' + check.SAFE_SCENES[3], calls[1][2])
+        mixed = {**bad(), 'problems': bad()['problems'] + glitch()['problems']}
+        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], mixed, PROMPTS, 0)], ['safe', 'safe2'])
+        unsure = {**bad(), 'verdict': 'uncertain', 'problems': []}
+        self.assertEqual([kind for kind, _ in check.attempt_plan(PROMPTS[0], unsure, PROMPTS, 0)], ['safe', 'safe2'])
+
     def test_a_clip_with_no_truthful_version_is_dropped_but_the_short_goes_on(self):
         kept, _, report, _ = run(['c1', 'c2', 'c3', 'c4', 'c5'],
-                                 {'c4': bad(), 'repair-3': bad(), 'safe-3': bad()})
+                                 {'c4': bad(), 'safe-3': bad(), 'safe2-3': bad()})
         self.assertEqual(kept, ['c1', 'c2', 'c3', 'c5'])
         self.assertEqual(report[3]['result'], 'dropped')
 
     def test_the_budget_caps_new_clips_per_short(self):
-        verdicts = {name: bad() for name in ('c1', 'c2', 'c3')}
+        verdicts = {name: glitch() for name in ('c1', 'c2', 'c3')}
         kept, _, report, calls = run(['c1', 'c2', 'c3', 'c4', 'c5'], verdicts, budget=2, minimum=2)
         self.assertEqual(len(calls), 2)
         self.assertEqual(kept, ['repair-0', 'repair-1', 'c4', 'c5'])
         self.assertEqual(report[2]['attempts'], [{'kind': 'repair', 'skipped': 'budget'}])
 
     def test_too_few_truthful_clips_stops_the_short_with_the_report(self):
-        verdicts = {name: bad() for name in ('c1', 'c2', 'c3', 'repair-0', 'safe-0', 'repair-1', 'safe-1',
-                                             'repair-2', 'safe-2')}
+        verdicts = {name: bad() for name in ('c1', 'c2', 'c3', 'safe-0', 'safe2-0', 'safe-1', 'safe2-1',
+                                             'safe-2', 'safe2-2')}
         with self.assertRaises(check.ClipRepairError) as stop:
             run(['c1', 'c2', 'c3', 'c4', 'c5'], verdicts, budget=10)
         self.assertIn('only 2 of 5', str(stop.exception))
