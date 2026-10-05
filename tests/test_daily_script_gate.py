@@ -121,7 +121,7 @@ class DailyAcceptanceFlowTest(unittest.TestCase):
         payloads=payloads or [candidate]*len(reviews)
         responses=[SimpleNamespace(content=[SimpleNamespace(text=json.dumps(p))],usage=SimpleNamespace(input_tokens=1,output_tokens=1)) for p in payloads]
         paid=Mock();flags=Mock();review=Mock(side_effect=reviews);self.writer=Mock(side_effect=responses)
-        scope={'json':json,'re':__import__('re'),'time':SimpleNamespace(sleep=Mock()),'print':Mock(),'SCRIPT_MAX_ATTEMPTS':len(payloads),'VEO_CLIPS_PER_VIDEO':5,'fresh_topic':'Fit before the size letter','get_script_prompt':lambda topic:'Write useful buyer advice.','claude':SimpleNamespace(messages=SimpleNamespace(create=self.writer)),'cost':SimpleNamespace(track_claude_call=Mock()),'review_script':review,'script_voice_feedback':voice_feedback or (lambda script:None),'flag':flags,'paid_stage':paid}
+        scope={'json':json,'re':__import__('re'),'time':SimpleNamespace(sleep=Mock()),'print':Mock(),'SCRIPT_MAX_ATTEMPTS':len(payloads),'VEO_CLIPS_PER_VIDEO':5,'fresh_topic':'Fit before the size letter','get_script_prompt':lambda topic:'Write useful buyer advice.','claude':SimpleNamespace(messages=SimpleNamespace(create=self.writer)),'cost':SimpleNamespace(track_claude_call=Mock()),'review_script':review,'audit_script_limits':lambda *args:'','script_voice_feedback':voice_feedback or (lambda script:None),'flag':flags,'paid_stage':paid}
         try:
             exec(compile(block+'\npaid_stage(data)\n','actual-main-script-acceptance','exec'),scope)
             return paid,flags,review,None
@@ -235,3 +235,41 @@ class PriceGateTest(unittest.TestCase):
         client = client_for(valid_review())
         self.assertEqual(review(client, 'Ye ₹107 wali hai.', 'This costs ₹107.', 'plain topic')[2], 'price')
         client.messages.create.assert_not_called()
+
+
+class FactLimitAuditTest(unittest.TestCase):
+    # 5-Oct-2026: the AI final review refused a finished pilling Short for asking buyers for a written "wash count"
+    # (the fact's limits forbid a number of washes) after the broad script review had approved it.
+    TOPIC = SimpleNamespace(brief={'evidence': {'pilling_causes': {
+        'claim': 'Once goods show a tendency to pill there is normally no solution.',
+        'limits': 'No guarantee of zero pilling or a number of washes.'}}})
+
+    def audit(self, client, topic=None):
+        return load_function('audit_script_limits')(client, 'Supplier se wash count likha mein le lo.',
+                                                     'Get the wash count in writing.', topic or self.TOPIC)
+
+    def test_a_breach_becomes_rewrite_feedback_with_quote_rule_and_fix(self):
+        client = client_for({'breaches': [{'quote': 'wash count likha mein le lo', 'rule': 'no number of washes',
+                                           'fix': 'agree a pilling performance level'}]})
+        text = self.audit(client)
+        self.assertIn('wash count likha mein le lo', text)
+        self.assertIn('no number of washes', text)
+        prompt = client.messages.create.call_args.kwargs['messages'][0]['content']
+        self.assertIn('No guarantee of zero pilling or a number of washes.', prompt)
+        self.assertIn('wrong or unnatural', prompt)
+
+    def test_clean_scripts_errors_and_lessons_without_facts_pass_through(self):
+        self.assertEqual(self.audit(client_for({'breaches': []})), '')
+        self.assertEqual(self.audit(client_for(raw='not json')), '')
+        self.assertEqual(self.audit(client_for(error=RuntimeError('overloaded'))), '')
+        unused = client_for({'breaches': [{'quote': 'x'}]})
+        self.assertEqual(self.audit(unused, SimpleNamespace(brief={'evidence': {}})), '')
+        unused.messages.create.assert_not_called()
+
+    def test_the_audit_runs_only_on_an_approved_script_and_sends_it_back_for_a_rewrite(self):
+        loop = SOURCE[SOURCE.index('# ── 3. Generate Script (with quality gate) ──'):SOURCE.index('# ── 3b. Load Background Music ──')]
+        self.assertLess(loop.index('review_script(claude'), loop.index('audit_script_limits(claude'))
+        audit = loop[loop.index('audit_script_limits(claude'):loop.index('print(f"   ✅ Script APPROVED')]
+        self.assertIn('if approved is True', audit)
+        self.assertIn('previous_feedback =', audit)
+        self.assertIn('continue', audit)
