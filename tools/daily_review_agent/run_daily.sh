@@ -6,6 +6,8 @@
 set -u
 export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin
 export TZ=Asia/Kolkata
+# The active gh account can be switched by other sessions; ankitgupta780 cannot start runs or notify.
+GH_TOKEN=$(gh auth token --user thakyanamtumhara 2>/dev/null) && export GH_TOKEN
 REPO=/Users/ankit/Projects/yt-shorts-bot
 GHREPO=thakyanamtumhara/yt-shorts-bot
 HERE=$REPO/tools/daily_review_agent
