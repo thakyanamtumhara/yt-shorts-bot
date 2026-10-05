@@ -237,3 +237,94 @@ class ReviewClipTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def refused_report(**change):
+    """Shaped like the final visual review that refused run 37331192602 (5-Oct-2026): a cover word the fact forbids
+    and a dye-bath clip still on screen while the words had moved on to printing."""
+    segments = [{'segment_index': 0, 'start_seconds': 0.0, 'end_seconds': 0.5}] + [
+        {'segment_index': i, 'start_seconds': 0.5 + 4 * (i - 1), 'end_seconds': min(0.5 + 4 * i, 33.5)} for i in range(1, 10)]
+    checks = [{'segment_index': i, 'observed_visual': 'Hands smoothing a printed tee.', 'visible_text': '',
+               'matches_lesson': True, 'caption_semantics_match': True, 'uncertain': False} for i in range(10)]
+    checks[0].update(matches_lesson=False, observed_visual='Cover card with title text.')
+    checks[3].update(matches_lesson=False, observed_visual='Dye vat with fabric lifted out by tongs.')
+    value = {'verdict': 'fail', 'technical_visuals_match_facts': False, 'no_misleading_product_or_test_proof': True,
+             'cover_matches_lesson': False, 'captions_readable_in_context': True, 'captions_match_spoken_meaning': True,
+             'caption_timing_acceptable_at_sampled_resolution': True, 'visual_ending_complete': True,
+             'uncertain': False, 'summary': 'Cover claims soft print; dyeing shown for discharge printing.',
+             'segment_checks': checks,
+             'issues': [{'start_seconds': 0.0, 'end_seconds': 0.5, 'kind': 'cover', 'observed': 'Cover says SOFT.',
+                         'expected': 'No soft claim.', 'reason': 'The fact limits forbid calling the print soft.'},
+                        {'start_seconds': 8.5, 'end_seconds': 12.5, 'kind': 'technical_mismatch',
+                         'observed': 'Immersion dye vat.', 'expected': 'Discharge printing.',
+                         'reason': 'Dyeing does not show discharge printing.'}]}
+    report = {'state': 'fail', 'caption_timing': {'verified': True}, 'media': {'segments_requested': segments},
+              'assessment': value}
+    for key, item in change.items():
+        (value if key in value else report)[key] = item
+    return report
+
+
+# 4 clips over a 31.0 s body with 0.3 s cross-fades: 7.975 s each, starting 0, 7.675, 15.35, 23.025.
+PLAN = check.plan_visual_segments([8.0] * 4, 31.0, 0.3)
+
+
+class RenderRepairPlanTest(unittest.TestCase):
+    def test_the_refused_clip_is_found_by_its_time_and_the_cover_is_redone(self):
+        plan = check.render_repair_plan(refused_report(), PLAN, 31.0)
+        self.assertEqual(list(plan['clips']), [1])
+        self.assertIn('vat', plan['clips'][1])
+        self.assertIn('soft', plan['cover'])
+
+    def test_only_the_cover(self):
+        report = refused_report()
+        report['assessment']['issues'] = report['assessment']['issues'][:1]
+        report['assessment']['segment_checks'][3]['matches_lesson'] = True
+        plan = check.render_repair_plan(report, PLAN, 31.0)
+        self.assertEqual(plan['clips'], {})
+        self.assertTrue(plan['cover'])
+
+    def test_caption_timing_ending_and_unfinished_reviews_are_not_repaired(self):
+        for report in (refused_report(captions_match_spoken_meaning=False), refused_report(visual_ending_complete=False),
+                       refused_report(state='review_error'), refused_report(state='caption_timing_unverified'),
+                       refused_report(caption_timing={'verified': False})):
+            self.assertIsNone(check.render_repair_plan(report, PLAN, 31.0))
+        report = refused_report()
+        report['assessment']['segment_checks'][5]['caption_semantics_match'] = False
+        self.assertIsNone(check.render_repair_plan(report, PLAN, 31.0))
+        report = refused_report()
+        report['assessment']['issues'].append({'start_seconds': 20, 'end_seconds': 22, 'kind': 'caption', 'observed': 'x',
+                                               'expected': 'y', 'reason': 'z'})
+        self.assertIsNone(check.render_repair_plan(report, PLAN, 31.0))
+
+    def test_a_fault_on_the_end_card_or_in_most_clips_is_not_a_clip_repair(self):
+        report = refused_report()
+        report['assessment']['issues'][1].update(start_seconds=31.6, end_seconds=33.5)
+        report['assessment']['segment_checks'][3]['matches_lesson'] = True
+        self.assertIsNone(check.render_repair_plan(report, PLAN, 31.0))
+        report = refused_report()
+        report['assessment']['issues'][1].update(start_seconds=1.0, end_seconds=30.0)
+        self.assertIsNone(check.render_repair_plan(report, PLAN, 31.0))
+
+    def test_a_pass_is_never_repaired(self):
+        self.assertIsNone(check.render_repair_plan(refused_report(state='pass'), PLAN, 31.0))
+        self.assertIsNone(check.render_repair_plan(None, PLAN, 31.0))
+
+
+class RefusedRepairTest(unittest.TestCase):
+    def test_only_the_refused_clip_is_made_again_and_the_others_are_not_rechecked(self):
+        review = Mock(return_value=ok())
+        made = []
+
+        def regenerate(prompt, index, kind):
+            made.append((index, kind))
+            return f'{kind}-{index}'
+
+        kept, prompts, report = check.repair_clips(['c1', 'c2', 'c3', 'c4'], PROMPTS[:4], review=review,
+                                                   regenerate=regenerate, refused={1: bad('Dye vat.')},
+                                                   log=lambda *_: None)
+        self.assertEqual(kept, ['c1', 'safe-1', 'c3', 'c4'])
+        self.assertEqual(made, [(1, 'safe')])
+        self.assertEqual([call.args for call in review.call_args_list], [(1, 'safe-1')])
+        self.assertIn('SCENE: ' + check.SAFE_SCENES[1], prompts[1])
+        self.assertEqual([entry['result'] for entry in report], ['kept', 'replaced', 'kept', 'kept'])

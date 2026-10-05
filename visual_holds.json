@@ -17,14 +17,5 @@
    "garment_skew_after_laundering"
   ],
   "reason": "The video uses a heavy rib-knit fabric to illustrate single jersey loop deformation and demonstrates garment skew using an artificially hand-pinched swirl."
- },
- {
-  "date": "2026-10-05",
-  "topic": "Discharge Print क्या है — Dark T-Shirt पर Soft Print कैसे बनता है?",
-  "intent_key": "discharge_printing_mechanism_and_cost",
-  "fact_ids": [
-   "discharge_printing"
-  ],
-  "reason": "Cover violates negative factual constraints by claiming soft print, and chemical printing destruction is illustrated with immersion dyeing footage."
  }
 ]

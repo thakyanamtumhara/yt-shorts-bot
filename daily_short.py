@@ -1254,7 +1254,7 @@ def refresh_thumbnail_research(claude_client):
 
 def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, research_patterns,
                              source_insights=None, audience_qs=None, cost_tracker=None,
-                             frame_image=None, ig_summary=None):
+                             frame_image=None, ig_summary=None, cover_feedback=None):
     """Generate a detailed thumbnail brief using Claude Opus (with vision if frame provided).
     Claude sees the reference image and generates a full descriptive brief that Gemini can execute.
     Returns a dict with 'brief_text' (full brief for Gemini) and structured fields for logging."""
@@ -1352,6 +1352,17 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         f"HOOK: {hook_text}\n"
         f"SCRIPT:\n{script_text[:1500]}\n"
     )
+    # The lesson's fact limits bind the cover too (5-Oct-2026: "INK बिना SOFT कैसे?" on a discharge-print lesson whose
+    # fact says never call the print soft; the final visual review refused the whole Short for it).
+    _evidence = (getattr(topic, "brief", None) or {}).get("evidence") if isinstance(getattr(topic, "brief", None), dict) else None
+    _limits = [f"- {key}: {fact['limits']}" for key, fact in (_evidence or {}).items()
+               if isinstance(fact, dict) and isinstance(fact.get("limits"), str) and fact["limits"].strip()]
+    if _limits:
+        prompt_text += ("\nFACT LIMITS (the cover must not say or imply anything these forbid; a limit that forbids "
+                        "a word forbids it on the cover too):\n" + "\n".join(_limits)[:2500] + "\n")
+    if cover_feedback:
+        prompt_text += (f"\nTHE FINAL REVIEW REFUSED THE PREVIOUS COVER: {cover_feedback}\n"
+                        "Write a different cover that fixes exactly this.\n")
 
     # Build message content — with or without frame image
     message_content = []
@@ -1458,7 +1469,8 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
 
 
 def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
-                          claude_client=None, genai_client=None, cost_tracker=None, real_scene=False):
+                          claude_client=None, genai_client=None, cost_tracker=None, real_scene=False,
+                          cover_feedback=None):
     """High-CTR cover: Claude writes SHORT punchy text (with vision on the Veo
     frame) -> Gemini paints a TEXT-FREE hero scene -> our PIL renderer
     composites big, crisp, keyword-highlighted text. The image model never
@@ -1485,6 +1497,7 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
             claude_client, script_text, hook_text, topic, research,
             source_insights=source_insights, audience_qs=audience_qs,
             cost_tracker=cost_tracker, frame_image=frame_image, ig_summary=_ig_brief,
+            cover_feedback=cover_feedback,
         )
         if not brief:
             print("   ⚠️ Cover: brief failed → basic fallback")
@@ -12265,7 +12278,7 @@ def veo_clip_once(veo_client, prompt_text, clip_path):
 
 
 def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, tts_input, voice_alignment,
-                          voice_timing_preserved, voice_time_scale, audio_seconds, cost):
+                          voice_timing_preserved, voice_time_scale, audio_seconds, cost, refused=None):
     """Review each generated clip with the narration spoken over it and re-make a failing one (tools/clip_visual_check).
     Returns the clips to cut the Short from and their prompts. Stops the run, and holds the lesson for 21 days, when
     the check leaves fewer than CLIP_MINIMUM clips: AI video cannot draw this lesson truthfully today."""
@@ -12301,25 +12314,60 @@ def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, 
         cost.track_veo(1)
         return path
 
-    print(f"   🔎 Checking {len(clips)} clips against the lesson before cutting the Short...")
+    name = "clip_check" if refused is None else "render_repair_clips"
+    if refused is None:
+        print(f"   🔎 Checking {len(clips)} clips against the lesson before cutting the Short...")
     try:
         kept, kept_prompts, report = repair_clips(clips, prompts, review=review, regenerate=regenerate,
-                                                  budget=CLIP_REPAIR_BUDGET, minimum=min(CLIP_MINIMUM, len(clips)))
+                                                  budget=CLIP_REPAIR_BUDGET, minimum=min(CLIP_MINIMUM, len(clips)),
+                                                  refused=refused)
     except ClipRepairError as error:
-        flag("clip_check", {"state": "stopped", "reason": str(error), "regenerated": len(regenerated),
-                            "clips": error.report})
+        flag(name, {"state": "stopped", "reason": str(error), "regenerated": len(regenerated),
+                    "clips": error.report})
         from tools.daily_topic_selection import record_review_hold
         if record_review_hold(brief, str(error), source="clip check"):
             print("   ⏸️ Lesson held for 21 days: AI video could not show it truthfully")
         print(f"   ❌ Clip check: {error}. Stopping before the Short is cut.")
         sys.exit(2)
     results = [entry["result"] for entry in report]
-    flag("clip_check", {"state": "done", "regenerated": len(regenerated),
+    flag(name, {"state": "done", "regenerated": len(regenerated),
                         **{name: results.count(name) for name in ("kept", "replaced", "dropped", "unchecked")},
                         "clips": report})
     print(f"   ✅ Clip check: {results.count('kept')} ok, {results.count('replaced')} re-made, "
           f"{results.count('dropped')} dropped, {results.count('unchecked')} unchecked ({len(regenerated)} new Veo clips)")
     return kept, kept_prompts
+
+
+def repair_refused_short(visual_plan, body_seconds, clips, prompts, *, veo_client, topic, script_english, tts_input,
+                         voice_alignment, voice_timing_preserved, voice_time_scale, audio_seconds, cost):
+    """The final visual review refused the Short. When the fault is a clip (found by its time on the timeline) or the
+    cover, make those clips again (or mark the cover for a new one) for ONE more render and review. None = not a fault
+    a new clip or cover fixes (captions, timing, the ending, a review that did not finish)."""
+    import shutil
+    from tools.clip_visual_check import render_repair_plan
+    report_path = f"{WORK_DIR}/visual-assessment.json"
+    try:
+        with open(report_path, encoding="utf-8") as f:
+            report = json.load(f)
+        shutil.copyfile(report_path, f"{WORK_DIR}/visual-assessment-round1.json")
+    except (OSError, ValueError):
+        return None
+    plan = render_repair_plan(report, visual_plan, body_seconds)
+    if not plan:
+        print("   🛑 Final visual review: not a fault a new clip or cover can fix")
+        return None
+    refused = {index: {"state": "fail", "usable": False, "verdict": "fail", "observed_visual": text,
+                       "problems": [{"kind": "wrong_construction", "detail": text}], "avoid": ""}
+               for index, text in plan["clips"].items()}
+    print(f"   🛠️ Final visual review refused {'clip ' + ', '.join(str(i + 1) for i in refused) if refused else ''}"
+          f"{' and ' if refused and plan['cover'] else ''}{'the cover' if plan['cover'] else ''}: repairing once")
+    flag("render_repair", {"clips": [i + 1 for i in refused], "cover": plan["cover"]})
+    if refused:
+        clips, prompts = check_generated_clips(
+            clips, prompts, veo_client=veo_client, topic=topic, script_english=script_english, tts_input=tts_input,
+            voice_alignment=voice_alignment, voice_timing_preserved=voice_timing_preserved,
+            voice_time_scale=voice_time_scale, audio_seconds=audio_seconds, cost=cost, refused=refused)
+    return {"clips": clips, "prompts": prompts, "cover": plan["cover"], "replaced": set(refused)}
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -12830,6 +12878,7 @@ def main():
 
     # ── 5. Generate Video Clips (Veo 3.1, Kling fallback) ──
     downloaded_clips = []
+    clip_prompts = []  # the prompt each Veo/Kling clip was made from (the clip check re-makes from it)
     kling_clips = 0  # Track Kling fallback clips across all modes
     veo_clips_count = 0
 
@@ -12978,7 +13027,6 @@ def main():
         if KLING_ENABLED:
             print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
 
-        clip_prompts = []  # the prompt each downloaded clip was made from (the clip check re-makes from it)
         use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
         consecutive_failures = 0  # Early termination: stop if Veo is persistently broken
         hero_generated = False  # True only if clip #1 really rendered on the full-quality model
@@ -13285,533 +13333,560 @@ def main():
             flag("caption_timing", {"mode": "estimated_plain", "highlight_verified": False,
                                     "reason": "whisper_unavailable", "error": type(_e).__name__})
 
-    # ── 7. Video Assembly ──
-    print("   ✂️ Building video...")
-    audio_clip = AudioFileClip(audio_path)
-    total_duration = audio_clip.duration + 0.8  # Extra buffer so ending doesn't feel cut
+    # ── 7-9b. Cut, render, cover and the machine reviews. A Short the final visual review refuses only for a wrong
+    # clip or its cover is repaired ONCE (that clip or the cover made again, tools/clip_visual_check.py) and reviewed
+    # again, instead of losing the whole day (5-Oct-2026: a dye-bath clip under a printing sentence + a cover word
+    # the fact forbids refused an otherwise good Short).
+    cover_feedback, reuse_thumbnail = None, None
+    for render_round in (1, 2):
+        # ── 7. Video Assembly ──
+        print("   ✂️ Building video...")
+        audio_clip = AudioFileClip(audio_path)
+        total_duration = audio_clip.duration + 0.8  # Extra buffer so ending doesn't feel cut
 
-    def smart_crop(clip, tw=1080, th=1920):
-        w, h = clip.size
-        if (w / h) > (tw / th):
-            clip = clip.resize(height=th)
-            w2, _ = clip.size
-            x1 = max(0, int(w2 / 2 - tw / 2))
-            return clip.crop(x1=x1, y1=0, width=tw, height=th)
-        else:
-            clip = clip.resize(width=tw)
-            _, h2 = clip.size
-            y1 = max(0, int(h2 / 2 - th / 2))
-            return clip.crop(x1=0, y1=y1, width=tw, height=th)
-
-    def apply_ken_burns(clip, zoom_percent=5):
-        """Apply slow Ken Burns zoom-in effect. Makes static clips feel alive."""
-        try:
+        def smart_crop(clip, tw=1080, th=1920):
             w, h = clip.size
-            # Over-size the clip slightly so we can zoom in without black borders
-            scale_start = 1.0
-            scale_end = 1.0 + (zoom_percent / 100.0)
-            dur = clip.duration
-
-            def zoom_frame(get_frame, t):
-                progress = t / max(dur, 0.1)
-                scale = scale_start + (scale_end - scale_start) * progress
-                frame = get_frame(t)
-                from PIL import Image
-                import numpy as np
-                img = Image.fromarray(frame)
-                new_w, new_h = int(w * scale), int(h * scale)
-                img = img.resize((new_w, new_h), Image.LANCZOS)
-                # Center crop back to original size
-                left = (new_w - w) // 2
-                top = (new_h - h) // 2
-                img = img.crop((left, top, left + w, top + h))
-                return np.array(img)
-
-            return clip.fl(zoom_frame, keep_duration=True)
-        except Exception:
-            return clip  # Fallback: return original if zoom fails
-
-    def trim_black_intro(clip, threshold=15, max_trim=3.0):
-        """Detect and skip black frames at the start of a clip.
-        threshold: average pixel brightness below which a frame is 'black'.
-        max_trim: maximum seconds to trim from the start."""
-        try:
-            import numpy as np
-            step = 0.25  # Check every 0.25 seconds
-            trim_to = 0.0
-            for t in [i * step for i in range(int(max_trim / step) + 1)]:
-                if t >= clip.duration:
-                    break
-                frame = clip.get_frame(t)
-                avg_brightness = np.mean(frame)
-                if avg_brightness > threshold:
-                    trim_to = t
-                    break
-            if trim_to > 0:
-                print(f"      Trimmed {trim_to:.1f}s black intro")
-                return clip.subclip(trim_to)
-            return clip
-        except Exception:
-            return clip
-
-    video_objects = []
-    placeholder_colors = [(30,60,90), (50,80,40), (80,40,60), (60,30,70), (40,70,50)]
-    for clip_idx, fname in enumerate(downloaded_clips):
-        try:
-            fixed_fname = fname.replace(".mp4", "_fixed.mp4")
-            import subprocess
-            result = subprocess.run(
-                ["ffmpeg", "-y", "-i", fname, "-c:v", "libx264", "-preset", "fast",
-                 "-crf", "18", "-an", "-movflags", "+faststart", fixed_fname],
-                capture_output=True, text=True, timeout=120
-            )
-            if result.returncode != 0:
-                print(f"   ffmpeg error: {result.stderr[:200]}")
-                fixed_fname = fname
-            v = VideoFileClip(fixed_fname)
-            v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
-            v = v.without_audio()
-            # Trim black frames from Veo clip intros
-            v = trim_black_intro(v)
-            if "dtf_demo_" in os.path.basename(fname):
-                # A real screen recording: no zoom (it would crop the page text); it sits lower on a dark backdrop so
-                # the spoken captions get their own band above it (owner 3-Oct-2026: the captions written over the
-                # website text did not look good).
-                inner = v.resize(SCREEN_CLIP_SCALE)
-                iw, ih = inner.size
-                backdrop = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=SCREEN_BACKDROP).set_duration(v.duration)
-                v = CompositeVideoClip([backdrop, inner.set_position(((VIDEO_WIDTH - iw) // 2, VIDEO_HEIGHT - ih - SCREEN_CLIP_BOTTOM))],
-                                       size=(VIDEO_WIDTH, VIDEO_HEIGHT)).set_duration(v.duration)
+            if (w / h) > (tw / th):
+                clip = clip.resize(height=th)
+                w2, _ = clip.size
+                x1 = max(0, int(w2 / 2 - tw / 2))
+                return clip.crop(x1=x1, y1=0, width=tw, height=th)
             else:
-                # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
-                v = apply_ken_burns(v, zoom_percent=3)
-            video_objects.append(v)
-            print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
-        except Exception as e:
-            if "dtf_demo_" in os.path.basename(fname):
-                raise RuntimeError(f"Real screen recording unusable ({fname}): {e}") from e
-            print(f"   ⚠️ Corrupted clip {fname}: {e} — substituting placeholder")
-            color = placeholder_colors[clip_idx % len(placeholder_colors)]
-            placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
-            video_objects.append(placeholder)
+                clip = clip.resize(width=tw)
+                _, h2 = clip.size
+                y1 = max(0, int(h2 / 2 - th / 2))
+                return clip.crop(x1=0, y1=y1, width=tw, height=th)
 
-    if not video_objects:
-        print("❌ No usable clips")
-        return
-
-    from tools.daily_visual_timeline import assemble_visual_timeline, fit_screen_recording
-    if real_clips:
-        # One complete topic recording, played once and timed to the narration (owner review of run 336 rejected a
-        # recording that looped and scrolled into unrelated sections).
-        base_video = fit_screen_recording(video_objects[0], total_duration)
-    else:
-        base_video = assemble_visual_timeline(video_objects, total_duration, CLIP_FADE_DURATION)
-
-    print(f"   🎬 Ken Burns zoom applied to all clips")
-
-    # ── 8. Overlays ──
-    layers = [base_video]
-
-    # Subtitles — karaoke word-by-word highlight (actual spoken Roman-Hinglish words)
-    def _karaoke_font(size):
-        from PIL import ImageFont
-        for p in KARAOKE_FONT_CANDIDATES:
-            if os.path.exists(p):
-                return ImageFont.truetype(p, size)
-        return ImageFont.load_default()
-
-    def _karaoke_line_img(word_texts, hi_idx):
-        """One caption line as RGBA array; word hi_idx yellow, rest white, black stroke."""
-        from PIL import Image as _KImg, ImageDraw as _KDraw
-        import numpy as _knp
-        fsize = KARAOKE_FONTSIZE
-        while True:
-            font = _karaoke_font(fsize)
-            gap = int(fsize * 0.35)
-            dd = _KDraw.Draw(_KImg.new("RGBA", (8, 8)))
-            boxes = [dd.textbbox((0, 0), wt, font=font, stroke_width=KARAOKE_STROKE_W) for wt in word_texts]
-            widths = [b[2] - b[0] for b in boxes]
-            total_w = sum(widths) + gap * (len(word_texts) - 1)
-            if total_w <= KARAOKE_MAX_LINE_W or fsize <= 40:
-                break
-            fsize -= 6
-        # Draw all words from the SAME origin y — PIL's default anchor is the
-        # ascender line, so a shared origin = shared baseline. Shifting each
-        # word by its own bbox top (-b[1]) misaligns short lowercase words.
-        line_h = max(b[3] for b in boxes)
-        pad = KARAOKE_STROKE_W + 6
-        img = _KImg.new("RGBA", (total_w + pad * 2, line_h + pad * 2), (0, 0, 0, 0))
-        d = _KDraw.Draw(img)
-        x = pad
-        for i, (wt, b, w_px) in enumerate(zip(word_texts, boxes, widths)):
-            color = KARAOKE_HIGHLIGHT_COLOR if i == hi_idx else KARAOKE_BASE_COLOR
-            d.text((x - b[0], pad), wt, font=font, fill=color,
-                   stroke_width=KARAOKE_STROKE_W, stroke_fill=KARAOKE_STROKE_COLOR)
-            x += w_px + gap
-        return _knp.array(img)
-
-    karaoke_rendered = False
-    if ADD_SUBTITLES and KARAOKE_CAPTIONS and karaoke_words:
-        try:
-            k_lines, cur_line = [], []
-            for kw in karaoke_words:
-                cur_line.append(kw)
-                if len(cur_line) >= WORDS_PER_SUBTITLE or kw["text"].rstrip().endswith((".", "!", "?")):
-                    k_lines.append(cur_line); cur_line = []
-            if cur_line:
-                k_lines.append(cur_line)
-            n_word_clips = 0
-            # Build clips locally — layers only gets them if ALL succeed, else a
-            # partial karaoke set would composite together with the fallback subs
-            k_clips = []
-            for li, line in enumerate(k_lines):
-                line_start = line[0]["start"]
-                line_end = line[-1]["end"] + 0.15
-                if li + 1 < len(k_lines):
-                    line_end = min(line_end, k_lines[li + 1][0]["start"])
-                texts = [(w["text"].strip().strip('.,!?…"') or w["text"].strip()) for w in line]
-                for wi, w in enumerate(line):
-                    w_start = max(line_start, w["start"])
-                    w_end = line[wi + 1]["start"] if wi + 1 < len(line) else line_end
-                    w_end = max(w_end, w_start + 0.04)
-                    if real_clips and ADD_HOOK_TEXT:
-                        if w_end <= HOOK_DURATION:
-                            continue
-                        w_start = max(w_start, HOOK_DURATION)
-                    arr = _karaoke_line_img(texts, wi)
-                    ih, iw = arr.shape[0], arr.shape[1]
-                    ic = (ImageClip(arr)
-                          .set_position(((VIDEO_WIDTH - iw) // 2,
-                                         int(VIDEO_HEIGHT * (SCREEN_CAPTION_Y if real_clips else KARAOKE_Y_PERCENT)) - ih // 2))
-                          .set_start(w_start)
-                          .set_end(min(w_end, total_duration)))
-                    k_clips.append(ic)
-                    n_word_clips += 1
-            layers.extend(k_clips)
-            karaoke_rendered = True
-            print(f"   ✅ Karaoke captions: {len(k_lines)} lines / {n_word_clips} word-states")
-        except Exception as e:
-            print(f"   ⚠️ Karaoke captions failed: {e} — falling back to segment subtitles")
-            flag("karaoke", False)
-            flag("caption_timing", {**(RUN_FLAGS.get("caption_timing") or {}), "highlight_verified": False,
-                                    "render_error": type(e).__name__})
-
-    # Fallback — old segment-level English captions (unchanged). Never on a real-screen Short: they sit mid-frame,
-    # over the website text (owner 3-Oct-2026).
-    if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered and real_clips:
-        print("   ⚠️ Real-screen Short without karaoke captions: no fallback captions over the website")
-    elif ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:
-        for seg in subtitle_segments:
-            dur = seg["end"] - seg["start"]
-            if dur < 0.1: continue
+        def apply_ken_burns(clip, zoom_percent=5):
+            """Apply slow Ken Burns zoom-in effect. Makes static clips feel alive."""
             try:
-                seg_text = seg["text"]
-                seg_words = seg_text.split()
-                has_keyword = any(w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS for w in seg_words)
+                w, h = clip.size
+                # Over-size the clip slightly so we can zoom in without black borders
+                scale_start = 1.0
+                scale_end = 1.0 + (zoom_percent / 100.0)
+                dur = clip.duration
 
-                if has_keyword:
-                    # Keyword detected — render entire subtitle in yellow (single layer, no overlap)
-                    txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
-                        color=SUBTITLE_HIGHLIGHT_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
-                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
-                    txt_w, txt_h = txt.size
-                    bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
-                    bg_h = txt_h + SUBTITLE_BG_PADDING * 2
-                    bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
-                    sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
-                    bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
-                    txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
-                    layers.extend([bg, txt])
+                def zoom_frame(get_frame, t):
+                    progress = t / max(dur, 0.1)
+                    scale = scale_start + (scale_end - scale_start) * progress
+                    frame = get_frame(t)
+                    from PIL import Image
+                    import numpy as np
+                    img = Image.fromarray(frame)
+                    new_w, new_h = int(w * scale), int(h * scale)
+                    img = img.resize((new_w, new_h), Image.LANCZOS)
+                    # Center crop back to original size
+                    left = (new_w - w) // 2
+                    top = (new_h - h) // 2
+                    img = img.crop((left, top, left + w, top + h))
+                    return np.array(img)
+
+                return clip.fl(zoom_frame, keep_duration=True)
+            except Exception:
+                return clip  # Fallback: return original if zoom fails
+
+        def trim_black_intro(clip, threshold=15, max_trim=3.0):
+            """Detect and skip black frames at the start of a clip.
+            threshold: average pixel brightness below which a frame is 'black'.
+            max_trim: maximum seconds to trim from the start."""
+            try:
+                import numpy as np
+                step = 0.25  # Check every 0.25 seconds
+                trim_to = 0.0
+                for t in [i * step for i in range(int(max_trim / step) + 1)]:
+                    if t >= clip.duration:
+                        break
+                    frame = clip.get_frame(t)
+                    avg_brightness = np.mean(frame)
+                    if avg_brightness > threshold:
+                        trim_to = t
+                        break
+                if trim_to > 0:
+                    print(f"      Trimmed {trim_to:.1f}s black intro")
+                    return clip.subclip(trim_to)
+                return clip
+            except Exception:
+                return clip
+
+        video_objects = []
+        placeholder_colors = [(30,60,90), (50,80,40), (80,40,60), (60,30,70), (40,70,50)]
+        for clip_idx, fname in enumerate(downloaded_clips):
+            try:
+                fixed_fname = fname.replace(".mp4", "_fixed.mp4")
+                import subprocess
+                result = subprocess.run(
+                    ["ffmpeg", "-y", "-i", fname, "-c:v", "libx264", "-preset", "fast",
+                     "-crf", "18", "-an", "-movflags", "+faststart", fixed_fname],
+                    capture_output=True, text=True, timeout=120
+                )
+                if result.returncode != 0:
+                    print(f"   ffmpeg error: {result.stderr[:200]}")
+                    fixed_fname = fname
+                v = VideoFileClip(fixed_fname)
+                v = smart_crop(v, VIDEO_WIDTH, VIDEO_HEIGHT)
+                v = v.without_audio()
+                # Trim black frames from Veo clip intros
+                v = trim_black_intro(v)
+                if "dtf_demo_" in os.path.basename(fname):
+                    # A real screen recording: no zoom (it would crop the page text); it sits lower on a dark backdrop so
+                    # the spoken captions get their own band above it (owner 3-Oct-2026: the captions written over the
+                    # website text did not look good).
+                    inner = v.resize(SCREEN_CLIP_SCALE)
+                    iw, ih = inner.size
+                    backdrop = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=SCREEN_BACKDROP).set_duration(v.duration)
+                    v = CompositeVideoClip([backdrop, inner.set_position(((VIDEO_WIDTH - iw) // 2, VIDEO_HEIGHT - ih - SCREEN_CLIP_BOTTOM))],
+                                           size=(VIDEO_WIDTH, VIDEO_HEIGHT)).set_duration(v.duration)
                 else:
-                    # No keywords — standard white subtitle
-                    txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
-                        color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
-                        method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
-                    txt_w, txt_h = txt.size
-                    bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
-                    bg_h = txt_h + SUBTITLE_BG_PADDING * 2
-                    bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
-                    sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
-                    bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
-                    txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
-                    layers.extend([bg, txt])
+                    # Apply Ken Burns slow zoom effect (makes clips feel cinematic)
+                    v = apply_ken_burns(v, zoom_percent=3)
+                video_objects.append(v)
+                print(f"   Loaded clip: {fname} ({v.duration:.1f}s)")
             except Exception as e:
-                print(f"   ⚠️ Subtitle overlay failed: {e}")
+                if "dtf_demo_" in os.path.basename(fname):
+                    raise RuntimeError(f"Real screen recording unusable ({fname}): {e}") from e
+                print(f"   ⚠️ Corrupted clip {fname}: {e} — substituting placeholder")
+                color = placeholder_colors[clip_idx % len(placeholder_colors)]
+                placeholder = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=color, duration=VEO_DURATION)
+                video_objects.append(placeholder)
 
-    # Watermark badge — small left-side tag (positioned to avoid YouTube Shorts UI)
-    # YT Shorts UI: top = channel name, right = like/comment/share, bottom = desc/music
-    # Safe zone: left side, ~17% from top
-    if ADD_WATERMARK:
-        try:
-            wm_txt = TextClip(
-                WATERMARK_TEXT,
-                fontsize=WATERMARK_FONT_SIZE, font=SUBTITLE_FONT,
-                color="white", method='label',
-            )
-            txt_w, txt_h = wm_txt.size
-            badge_w = txt_w + WATERMARK_PADDING_H * 2
-            badge_h = txt_h + WATERMARK_PADDING_V * 2
+        if not video_objects:
+            print("❌ No usable clips")
+            return
 
-            badge_x = WATERMARK_MARGIN_X
-            badge_y = int(VIDEO_HEIGHT * WATERMARK_Y_PERCENT)
+        from tools.daily_visual_timeline import assemble_visual_timeline, fit_screen_recording, plan_visual_segments
+        visual_plan = None
+        if real_clips:
+            # One complete topic recording, played once and timed to the narration (owner review of run 336 rejected a
+            # recording that looped and scrolled into unrelated sections).
+            base_video = fit_screen_recording(video_objects[0], total_duration)
+        else:
+            base_video = assemble_visual_timeline(video_objects, total_duration, CLIP_FADE_DURATION)
+            # Which clip plays when: a refused Short is repaired by making only the clip at the refused time again.
+            visual_plan = plan_visual_segments([clip.duration for clip in video_objects], total_duration, CLIP_FADE_DURATION)
 
-            wm_bg = ColorClip(size=(badge_w, badge_h), color=(0, 0, 0))
-            wm_bg = wm_bg.set_opacity(WATERMARK_OPACITY).set_position((badge_x, badge_y)).set_duration(total_duration)
-            wm_txt = wm_txt.set_opacity(0.9).set_position(
-                (badge_x + WATERMARK_PADDING_H, badge_y + WATERMARK_PADDING_V)
-            ).set_duration(total_duration)
-            layers.extend([wm_bg, wm_txt])
-        except Exception as e:
-            print(f"   ⚠️ Watermark overlay failed: {e}")
+        print(f"   🎬 Ken Burns zoom applied to all clips")
 
-    # Hook — scroll-stopping text overlay (first 2 seconds)
-    # Design: large bold white text, first word in YELLOW for attention
-    if ADD_HOOK_TEXT and real_clips:
-        try:
+        # ── 8. Overlays ──
+        layers = [base_video]
+
+        # Subtitles — karaoke word-by-word highlight (actual spoken Roman-Hinglish words)
+        def _karaoke_font(size):
+            from PIL import ImageFont
+            for p in KARAOKE_FONT_CANDIDATES:
+                if os.path.exists(p):
+                    return ImageFont.truetype(p, size)
+            return ImageFont.load_default()
+
+        def _karaoke_line_img(word_texts, hi_idx):
+            """One caption line as RGBA array; word hi_idx yellow, rest white, black stroke."""
+            from PIL import Image as _KImg, ImageDraw as _KDraw
+            import numpy as _knp
+            fsize = KARAOKE_FONTSIZE
+            while True:
+                font = _karaoke_font(fsize)
+                gap = int(fsize * 0.35)
+                dd = _KDraw.Draw(_KImg.new("RGBA", (8, 8)))
+                boxes = [dd.textbbox((0, 0), wt, font=font, stroke_width=KARAOKE_STROKE_W) for wt in word_texts]
+                widths = [b[2] - b[0] for b in boxes]
+                total_w = sum(widths) + gap * (len(word_texts) - 1)
+                if total_w <= KARAOKE_MAX_LINE_W or fsize <= 40:
+                    break
+                fsize -= 6
+            # Draw all words from the SAME origin y — PIL's default anchor is the
+            # ascender line, so a shared origin = shared baseline. Shifting each
+            # word by its own bbox top (-b[1]) misaligns short lowercase words.
+            line_h = max(b[3] for b in boxes)
+            pad = KARAOKE_STROKE_W + 6
+            img = _KImg.new("RGBA", (total_w + pad * 2, line_h + pad * 2), (0, 0, 0, 0))
+            d = _KDraw.Draw(img)
+            x = pad
+            for i, (wt, b, w_px) in enumerate(zip(word_texts, boxes, widths)):
+                color = KARAOKE_HIGHLIGHT_COLOR if i == hi_idx else KARAOKE_BASE_COLOR
+                d.text((x - b[0], pad), wt, font=font, fill=color,
+                       stroke_width=KARAOKE_STROKE_W, stroke_fill=KARAOKE_STROKE_COLOR)
+                x += w_px + gap
+            return _knp.array(img)
+
+        karaoke_rendered = False
+        if ADD_SUBTITLES and KARAOKE_CAPTIONS and karaoke_words:
+            try:
+                k_lines, cur_line = [], []
+                for kw in karaoke_words:
+                    cur_line.append(kw)
+                    if len(cur_line) >= WORDS_PER_SUBTITLE or kw["text"].rstrip().endswith((".", "!", "?")):
+                        k_lines.append(cur_line); cur_line = []
+                if cur_line:
+                    k_lines.append(cur_line)
+                n_word_clips = 0
+                # Build clips locally — layers only gets them if ALL succeed, else a
+                # partial karaoke set would composite together with the fallback subs
+                k_clips = []
+                for li, line in enumerate(k_lines):
+                    line_start = line[0]["start"]
+                    line_end = line[-1]["end"] + 0.15
+                    if li + 1 < len(k_lines):
+                        line_end = min(line_end, k_lines[li + 1][0]["start"])
+                    texts = [(w["text"].strip().strip('.,!?…"') or w["text"].strip()) for w in line]
+                    for wi, w in enumerate(line):
+                        w_start = max(line_start, w["start"])
+                        w_end = line[wi + 1]["start"] if wi + 1 < len(line) else line_end
+                        w_end = max(w_end, w_start + 0.04)
+                        if real_clips and ADD_HOOK_TEXT:
+                            if w_end <= HOOK_DURATION:
+                                continue
+                            w_start = max(w_start, HOOK_DURATION)
+                        arr = _karaoke_line_img(texts, wi)
+                        ih, iw = arr.shape[0], arr.shape[1]
+                        ic = (ImageClip(arr)
+                              .set_position(((VIDEO_WIDTH - iw) // 2,
+                                             int(VIDEO_HEIGHT * (SCREEN_CAPTION_Y if real_clips else KARAOKE_Y_PERCENT)) - ih // 2))
+                              .set_start(w_start)
+                              .set_end(min(w_end, total_duration)))
+                        k_clips.append(ic)
+                        n_word_clips += 1
+                layers.extend(k_clips)
+                karaoke_rendered = True
+                print(f"   ✅ Karaoke captions: {len(k_lines)} lines / {n_word_clips} word-states")
+            except Exception as e:
+                print(f"   ⚠️ Karaoke captions failed: {e} — falling back to segment subtitles")
+                flag("karaoke", False)
+                flag("caption_timing", {**(RUN_FLAGS.get("caption_timing") or {}), "highlight_verified": False,
+                                        "render_error": type(e).__name__})
+
+        # Fallback — old segment-level English captions (unchanged). Never on a real-screen Short: they sit mid-frame,
+        # over the website text (owner 3-Oct-2026).
+        if ADD_SUBTITLES and subtitle_segments and not karaoke_rendered and real_clips:
+            print("   ⚠️ Real-screen Short without karaoke captions: no fallback captions over the website")
+        elif ADD_SUBTITLES and subtitle_segments and not karaoke_rendered:
+            for seg in subtitle_segments:
+                dur = seg["end"] - seg["start"]
+                if dur < 0.1: continue
+                try:
+                    seg_text = seg["text"]
+                    seg_words = seg_text.split()
+                    has_keyword = any(w.lower().strip(".,!?") in SUBTITLE_HIGHLIGHT_WORDS for w in seg_words)
+
+                    if has_keyword:
+                        # Keyword detected — render entire subtitle in yellow (single layer, no overlap)
+                        txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
+                            color=SUBTITLE_HIGHLIGHT_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
+                            method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
+                        txt_w, txt_h = txt.size
+                        bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
+                        bg_h = txt_h + SUBTITLE_BG_PADDING * 2
+                        bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
+                        sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
+                        bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
+                        txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
+                        layers.extend([bg, txt])
+                    else:
+                        # No keywords — standard white subtitle
+                        txt = TextClip(seg_text, fontsize=SUBTITLE_FONTSIZE, font=SUBTITLE_FONT,
+                            color=SUBTITLE_COLOR, stroke_color=SUBTITLE_STROKE, stroke_width=SUBTITLE_STROKE_W,
+                            method='caption', size=(VIDEO_WIDTH - 160, None), align='center')
+                        txt_w, txt_h = txt.size
+                        bg_w = min(txt_w + SUBTITLE_BG_PADDING * 2, VIDEO_WIDTH - 40)
+                        bg_h = txt_h + SUBTITLE_BG_PADDING * 2
+                        bg = ColorClip(size=(bg_w, bg_h), color=SUBTITLE_BG_COLOR).set_opacity(SUBTITLE_BG_OPACITY)
+                        sub_y = int(VIDEO_HEIGHT * 0.50)  # CENTER SCREEN
+                        bg = bg.set_position(((VIDEO_WIDTH - bg_w) // 2, sub_y - SUBTITLE_BG_PADDING)).set_start(seg["start"]).set_duration(dur)
+                        txt = txt.set_position(((VIDEO_WIDTH - txt_w) // 2, sub_y)).set_start(seg["start"]).set_duration(dur)
+                        layers.extend([bg, txt])
+                except Exception as e:
+                    print(f"   ⚠️ Subtitle overlay failed: {e}")
+
+        # Watermark badge — small left-side tag (positioned to avoid YouTube Shorts UI)
+        # YT Shorts UI: top = channel name, right = like/comment/share, bottom = desc/music
+        # Safe zone: left side, ~17% from top
+        if ADD_WATERMARK:
+            try:
+                wm_txt = TextClip(
+                    WATERMARK_TEXT,
+                    fontsize=WATERMARK_FONT_SIZE, font=SUBTITLE_FONT,
+                    color="white", method='label',
+                )
+                txt_w, txt_h = wm_txt.size
+                badge_w = txt_w + WATERMARK_PADDING_H * 2
+                badge_h = txt_h + WATERMARK_PADDING_V * 2
+
+                badge_x = WATERMARK_MARGIN_X
+                badge_y = int(VIDEO_HEIGHT * WATERMARK_Y_PERCENT)
+
+                wm_bg = ColorClip(size=(badge_w, badge_h), color=(0, 0, 0))
+                wm_bg = wm_bg.set_opacity(WATERMARK_OPACITY).set_position((badge_x, badge_y)).set_duration(total_duration)
+                wm_txt = wm_txt.set_opacity(0.9).set_position(
+                    (badge_x + WATERMARK_PADDING_H, badge_y + WATERMARK_PADDING_V)
+                ).set_duration(total_duration)
+                layers.extend([wm_bg, wm_txt])
+            except Exception as e:
+                print(f"   ⚠️ Watermark overlay failed: {e}")
+
+        # Hook — scroll-stopping text overlay (first 2 seconds)
+        # Design: large bold white text, first word in YELLOW for attention
+        if ADD_HOOK_TEXT and real_clips:
+            try:
+                import numpy as _np
+                from tools.screen_short_layout import HOOK_BOTTOM, HOOK_TOP, hook_band_image
+                hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
+                hook_img = hook_band_image(hook_line, VIDEO_WIDTH)
+                hook_y = HOOK_TOP + (HOOK_BOTTOM - HOOK_TOP - hook_img.height) // 2
+                layers.append(ImageClip(_np.array(hook_img)).set_position((0, hook_y)).set_start(0)
+                              .set_duration(HOOK_DURATION).crossfadeout(0.4))
+            except Exception as e:
+                print(f"   ⚠️ Hook text overlay failed: {e}")
+        elif ADD_HOOK_TEXT:
+            try:
+                hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
+                hook_words = hook_line.split()[:6]
+
+                # First word = yellow (attention grab), rest = white
+                first_word = hook_words[0] if hook_words else ""
+                rest_words = " ".join(hook_words[1:]) if len(hook_words) > 1 else ""
+
+                hook_y = int(VIDEO_HEIGHT * 0.18)
+
+                # Semi-transparent dark panel behind text (taller for bigger text)
+                # Build text clips first to measure total height
+                text_layers = []
+
+                # First word — YELLOW, extra large
+                if first_word:
+                    ht1 = TextClip(first_word, fontsize=80, font=SUBTITLE_FONT, color="#FFD700",
+                        stroke_color="black", stroke_width=4, method='caption',
+                        size=(VIDEO_WIDTH - 120, None), align='center')
+                    text_layers.append(("first", ht1))
+
+                # Remaining words — WHITE, large
+                if rest_words:
+                    ht2 = TextClip(rest_words, fontsize=68, font=SUBTITLE_FONT, color="white",
+                        stroke_color="black", stroke_width=4, method='caption',
+                        size=(VIDEO_WIDTH - 120, None), align='center')
+                    text_layers.append(("rest", ht2))
+
+                # Calculate total height for background panel
+                total_text_h = sum(tc.size[1] for _, tc in text_layers) + 20 * len(text_layers)
+                max_text_w = max((tc.size[0] for _, tc in text_layers), default=VIDEO_WIDTH - 200)
+                panel_w = min(max_text_w + 80, VIDEO_WIDTH - 40)
+                panel_h = total_text_h + 50
+
+                # Dark panel with slight transparency
+                hbg = ColorClip(size=(panel_w, panel_h), color=(0, 0, 0)).set_opacity(0.75)
+                hbg = hbg.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+                hbg = hbg.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+                layers.append(hbg)
+
+                # Yellow accent bar on left edge of panel (MrBeast style)
+                accent_bar = ColorClip(size=(6, panel_h), color=(255, 215, 0)).set_opacity(0.95)
+                accent_bar = accent_bar.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
+                accent_bar = accent_bar.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+                layers.append(accent_bar)
+
+                # Position text clips
+                current_y = hook_y + 10
+                for label, tc in text_layers:
+                    tc_w, tc_h = tc.size
+                    tc = tc.set_position(((VIDEO_WIDTH - tc_w) // 2, current_y))
+                    tc = tc.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
+                    layers.append(tc)
+                    current_y += tc_h + 15
+
+            except Exception as e:
+                print(f"   ⚠️ Hook text overlay failed: {e}")
+
+        # CTA — end-of-video branded strip (professional bar style)
+        if ADD_CTA_OVERLAY and real_clips:
+            try:
+                import numpy as _np
+                from tools.screen_short_layout import cta_strip_image, header_box
+                strip_x, strip_y, strip_w, strip_h = header_box(VIDEO_WIDTH, VIDEO_HEIGHT, SCREEN_CLIP_SCALE, SCREEN_CLIP_BOTTOM)
+                strip = cta_strip_image((_campaign.get("cta_text") if campaign_lesson else "") or CTA_TEXT, strip_w, strip_h)
+                cta_start = max(0, total_duration - 4.0)
+                layers.append(ImageClip(_np.array(strip)).set_position((strip_x, strip_y)).set_start(cta_start)
+                              .set_duration(total_duration - cta_start).crossfadein(0.4))
+            except Exception as e:
+                print(f"   ⚠️ CTA overlay failed: {e}")
+        elif ADD_CTA_OVERLAY:
+            try:
+                cta_start = max(0, total_duration - 4.0)
+                cta_dur = 4.0
+
+                # Main branded bar (full-width, slim, orange-red brand color)
+                bar_height = 72
+                bar_y = int(VIDEO_HEIGHT * 0.80)
+                cta_bar = ColorClip(size=(VIDEO_WIDTH, bar_height), color=(230, 60, 20)).set_opacity(0.92)
+                cta_bar = cta_bar.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+                # Thin accent line on top of bar for depth
+                accent_line = ColorClip(size=(VIDEO_WIDTH, 3), color=(255, 255, 255)).set_opacity(0.50)
+                accent_line = accent_line.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+                # Clean white text (no stroke needed — bar provides contrast)
+                cta_txt = TextClip(_campaign.get("cta_text") or CTA_TEXT if campaign_lesson else CTA_TEXT, fontsize=36, font=SUBTITLE_FONT, color="white",
+                    method='label')
+                cta_w, cta_h = cta_txt.size
+                cta_txt = cta_txt.set_position(((VIDEO_WIDTH - cta_w) // 2, bar_y + (bar_height - cta_h) // 2))
+                cta_txt = cta_txt.set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
+
+                layers.extend([cta_bar, accent_line, cta_txt])
+            except Exception as e:
+                print(f"   ⚠️ CTA overlay failed: {e}")
+
+        final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
+
+        # De-click only — do NOT fade the closer. A real ending lands at full
+        # volume on the last word, then stops (a "button", not a trail-off).
+        # 1.2s used to fade the punchy final line into silence = no ending feel.
+        from moviepy.audio.fx.audio_fadeout import audio_fadeout
+        audio_clip = audio_fadeout(audio_clip, 0.25)
+
+        # Extract Veo ambient audio (scene sounds at low volume)
+        ambient_clip, ambient_temp_files = extract_ambient_audio(downloaded_clips, total_duration)
+
+        # Mix background music with voice
+        mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
+
+        # Build transition whoosh layer at clip boundaries (1 whoosh per cut)
+        num_clips_for_sfx = max(1, len(downloaded_clips))
+        cd_for_sfx = total_duration / num_clips_for_sfx
+        transition_sfx = build_transition_sfx_layer(num_clips_for_sfx, cd_for_sfx, total_duration)
+
+        # Add Veo ambient audio layer if available
+        has_ambient = False
+        audio_layers = [mixed_audio]
+        if ambient_clip:
+            audio_layers.append(ambient_clip)
+            has_ambient = True
+        if transition_sfx is not None:
+            audio_layers.append(transition_sfx)
+            print(f"   💥 Added {num_clips_for_sfx - 1} transition whooshes at clip boundaries")
+        if len(audio_layers) > 1:
+            mixed_audio_with_ambient = CompositeAudioClip(audio_layers)
+            amb_str = f" + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)" if has_ambient else ""
+            sfx_str = " + transition SFX" if transition_sfx is not None else ""
+            print(f"   ✅ Final audio: voice + BGM{amb_str}{sfx_str}")
+        else:
+            mixed_audio_with_ambient = mixed_audio
+
+        final_video = final_video.set_audio(mixed_audio_with_ambient)
+
+        # ── 8b. Branded 2-second outro card (replaces orphan black-frame ending) ──
+        campaign_outro = _campaign.get("outro") if campaign_lesson and isinstance(_campaign.get("outro"), dict) else None
+        if campaign_outro:
+            # A launch campaign Short ends on its own card (owner review of run 336: "MOQ sirf 10 pieces" is a T-shirt line).
             import numpy as _np
-            from tools.screen_short_layout import HOOK_BOTTOM, HOOK_TOP, hook_band_image
-            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
-            hook_img = hook_band_image(hook_line, VIDEO_WIDTH)
-            hook_y = HOOK_TOP + (HOOK_BOTTOM - HOOK_TOP - hook_img.height) // 2
-            layers.append(ImageClip(_np.array(hook_img)).set_position((0, hook_y)).set_start(0)
-                          .set_duration(HOOK_DURATION).crossfadeout(0.4))
-        except Exception as e:
-            print(f"   ⚠️ Hook text overlay failed: {e}")
-    elif ADD_HOOK_TEXT:
-        try:
-            hook_line = hook_text_from_claude.strip().upper() if hook_text_from_claude else " ".join(fresh_topic.split()[:4]).upper()
-            hook_words = hook_line.split()[:6]
-
-            # First word = yellow (attention grab), rest = white
-            first_word = hook_words[0] if hook_words else ""
-            rest_words = " ".join(hook_words[1:]) if len(hook_words) > 1 else ""
-
-            hook_y = int(VIDEO_HEIGHT * 0.18)
-
-            # Semi-transparent dark panel behind text (taller for bigger text)
-            # Build text clips first to measure total height
-            text_layers = []
-
-            # First word — YELLOW, extra large
-            if first_word:
-                ht1 = TextClip(first_word, fontsize=80, font=SUBTITLE_FONT, color="#FFD700",
-                    stroke_color="black", stroke_width=4, method='caption',
-                    size=(VIDEO_WIDTH - 120, None), align='center')
-                text_layers.append(("first", ht1))
-
-            # Remaining words — WHITE, large
-            if rest_words:
-                ht2 = TextClip(rest_words, fontsize=68, font=SUBTITLE_FONT, color="white",
-                    stroke_color="black", stroke_width=4, method='caption',
-                    size=(VIDEO_WIDTH - 120, None), align='center')
-                text_layers.append(("rest", ht2))
-
-            # Calculate total height for background panel
-            total_text_h = sum(tc.size[1] for _, tc in text_layers) + 20 * len(text_layers)
-            max_text_w = max((tc.size[0] for _, tc in text_layers), default=VIDEO_WIDTH - 200)
-            panel_w = min(max_text_w + 80, VIDEO_WIDTH - 40)
-            panel_h = total_text_h + 50
-
-            # Dark panel with slight transparency
-            hbg = ColorClip(size=(panel_w, panel_h), color=(0, 0, 0)).set_opacity(0.75)
-            hbg = hbg.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
-            hbg = hbg.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
-            layers.append(hbg)
-
-            # Yellow accent bar on left edge of panel (MrBeast style)
-            accent_bar = ColorClip(size=(6, panel_h), color=(255, 215, 0)).set_opacity(0.95)
-            accent_bar = accent_bar.set_position(((VIDEO_WIDTH - panel_w) // 2, hook_y - 15))
-            accent_bar = accent_bar.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
-            layers.append(accent_bar)
-
-            # Position text clips
-            current_y = hook_y + 10
-            for label, tc in text_layers:
-                tc_w, tc_h = tc.size
-                tc = tc.set_position(((VIDEO_WIDTH - tc_w) // 2, current_y))
-                tc = tc.set_start(0).set_duration(HOOK_DURATION).crossfadeout(0.4)
-                layers.append(tc)
-                current_y += tc_h + 15
-
-        except Exception as e:
-            print(f"   ⚠️ Hook text overlay failed: {e}")
-
-    # CTA — end-of-video branded strip (professional bar style)
-    if ADD_CTA_OVERLAY and real_clips:
-        try:
-            import numpy as _np
-            from tools.screen_short_layout import cta_strip_image, header_box
-            strip_x, strip_y, strip_w, strip_h = header_box(VIDEO_WIDTH, VIDEO_HEIGHT, SCREEN_CLIP_SCALE, SCREEN_CLIP_BOTTOM)
-            strip = cta_strip_image((_campaign.get("cta_text") if campaign_lesson else "") or CTA_TEXT, strip_w, strip_h)
-            cta_start = max(0, total_duration - 4.0)
-            layers.append(ImageClip(_np.array(strip)).set_position((strip_x, strip_y)).set_start(cta_start)
-                          .set_duration(total_duration - cta_start).crossfadein(0.4))
-        except Exception as e:
-            print(f"   ⚠️ CTA overlay failed: {e}")
-    elif ADD_CTA_OVERLAY:
-        try:
-            cta_start = max(0, total_duration - 4.0)
-            cta_dur = 4.0
-
-            # Main branded bar (full-width, slim, orange-red brand color)
-            bar_height = 72
-            bar_y = int(VIDEO_HEIGHT * 0.80)
-            cta_bar = ColorClip(size=(VIDEO_WIDTH, bar_height), color=(230, 60, 20)).set_opacity(0.92)
-            cta_bar = cta_bar.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
-
-            # Thin accent line on top of bar for depth
-            accent_line = ColorClip(size=(VIDEO_WIDTH, 3), color=(255, 255, 255)).set_opacity(0.50)
-            accent_line = accent_line.set_position((0, bar_y)).set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
-
-            # Clean white text (no stroke needed — bar provides contrast)
-            cta_txt = TextClip(_campaign.get("cta_text") or CTA_TEXT if campaign_lesson else CTA_TEXT, fontsize=36, font=SUBTITLE_FONT, color="white",
-                method='label')
-            cta_w, cta_h = cta_txt.size
-            cta_txt = cta_txt.set_position(((VIDEO_WIDTH - cta_w) // 2, bar_y + (bar_height - cta_h) // 2))
-            cta_txt = cta_txt.set_start(cta_start).set_duration(cta_dur).crossfadein(0.4)
-
-            layers.extend([cta_bar, accent_line, cta_txt])
-        except Exception as e:
-            print(f"   ⚠️ CTA overlay failed: {e}")
-
-    final_video = CompositeVideoClip(layers, size=(VIDEO_WIDTH, VIDEO_HEIGHT))
-
-    # De-click only — do NOT fade the closer. A real ending lands at full
-    # volume on the last word, then stops (a "button", not a trail-off).
-    # 1.2s used to fade the punchy final line into silence = no ending feel.
-    from moviepy.audio.fx.audio_fadeout import audio_fadeout
-    audio_clip = audio_fadeout(audio_clip, 0.25)
-
-    # Extract Veo ambient audio (scene sounds at low volume)
-    ambient_clip, ambient_temp_files = extract_ambient_audio(downloaded_clips, total_duration)
-
-    # Mix background music with voice
-    mixed_audio = mix_background_music(audio_clip, total_duration, mood=music_mood)
-
-    # Build transition whoosh layer at clip boundaries (1 whoosh per cut)
-    num_clips_for_sfx = max(1, len(downloaded_clips))
-    cd_for_sfx = total_duration / num_clips_for_sfx
-    transition_sfx = build_transition_sfx_layer(num_clips_for_sfx, cd_for_sfx, total_duration)
-
-    # Add Veo ambient audio layer if available
-    has_ambient = False
-    audio_layers = [mixed_audio]
-    if ambient_clip:
-        audio_layers.append(ambient_clip)
-        has_ambient = True
-    if transition_sfx is not None:
-        audio_layers.append(transition_sfx)
-        print(f"   💥 Added {num_clips_for_sfx - 1} transition whooshes at clip boundaries")
-    if len(audio_layers) > 1:
-        mixed_audio_with_ambient = CompositeAudioClip(audio_layers)
-        amb_str = f" + Veo ambient ({int(VEO_AMBIENT_VOLUME * 100)}%)" if has_ambient else ""
-        sfx_str = " + transition SFX" if transition_sfx is not None else ""
-        print(f"   ✅ Final audio: voice + BGM{amb_str}{sfx_str}")
-    else:
-        mixed_audio_with_ambient = mixed_audio
-
-    final_video = final_video.set_audio(mixed_audio_with_ambient)
-
-    # ── 8b. Branded 2-second outro card (replaces orphan black-frame ending) ──
-    campaign_outro = _campaign.get("outro") if campaign_lesson and isinstance(_campaign.get("outro"), dict) else None
-    if campaign_outro:
-        # A launch campaign Short ends on its own card (owner review of run 336: "MOQ sirf 10 pieces" is a T-shirt line).
-        import numpy as _np
-        from tools.screen_short_layout import outro_card_image
-        outro_img = outro_card_image(campaign_outro.get("title", ""), campaign_outro.get("sub", ""),
-                                     campaign_outro.get("cta", ""), (VIDEO_WIDTH, VIDEO_HEIGHT))
-        outro_card = ImageClip(_np.array(outro_img)).set_duration(2.0).crossfadein(0.3)
-        final_video = concatenate_videoclips([final_video, outro_card], method="chain")
-        print("   🎬 Appended 2.0s campaign outro card")
-    else:
-        try:
-            outro_dur = 2.0
-            outro_bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT),
-                                 color=(15, 15, 25), duration=outro_dur)
-            outro_title = TextClip("Sale91.com", fontsize=132, font=SUBTITLE_FONT,
-                                   color="white", stroke_color="black", stroke_width=3,
-                                   method='label')
-            otw, oth = outro_title.size
-            outro_title = (outro_title
-                           .set_position(((VIDEO_WIDTH - otw) // 2, int(VIDEO_HEIGHT * 0.36)))
-                           .set_duration(outro_dur)
-                           .crossfadein(0.3))
-            outro_sub = TextClip("MOQ sirf 10 pieces", fontsize=70, font=SUBTITLE_FONT,
-                                 color="#FFD700", method='label')
-            osw, osh = outro_sub.size
-            outro_sub = (outro_sub
-                         .set_position(((VIDEO_WIDTH - osw) // 2, int(VIDEO_HEIGHT * 0.50)))
-                         .set_duration(outro_dur)
-                         .crossfadein(0.3))
-            outro_cta = TextClip("Order now → Sale91.com", fontsize=48, font=SUBTITLE_FONT,
-                                 color="white", method='label')
-            ocw, och = outro_cta.size
-            outro_cta = (outro_cta
-                         .set_position(((VIDEO_WIDTH - ocw) // 2, int(VIDEO_HEIGHT * 0.60)))
-                         .set_duration(outro_dur)
-                         .crossfadein(0.3))
-            outro_card = CompositeVideoClip(
-                [outro_bg, outro_title, outro_sub, outro_cta],
-                size=(VIDEO_WIDTH, VIDEO_HEIGHT)
-            ).set_duration(outro_dur)
+            from tools.screen_short_layout import outro_card_image
+            outro_img = outro_card_image(campaign_outro.get("title", ""), campaign_outro.get("sub", ""),
+                                         campaign_outro.get("cta", ""), (VIDEO_WIDTH, VIDEO_HEIGHT))
+            outro_card = ImageClip(_np.array(outro_img)).set_duration(2.0).crossfadein(0.3)
             final_video = concatenate_videoclips([final_video, outro_card], method="chain")
-            print(f"   🎬 Appended {outro_dur}s outro card")
-        except Exception as e:
-            print(f"   ⚠️ Outro card skipped: {e}")
+            print("   🎬 Appended 2.0s campaign outro card")
+        else:
+            try:
+                outro_dur = 2.0
+                outro_bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT),
+                                     color=(15, 15, 25), duration=outro_dur)
+                outro_title = TextClip("Sale91.com", fontsize=132, font=SUBTITLE_FONT,
+                                       color="white", stroke_color="black", stroke_width=3,
+                                       method='label')
+                otw, oth = outro_title.size
+                outro_title = (outro_title
+                               .set_position(((VIDEO_WIDTH - otw) // 2, int(VIDEO_HEIGHT * 0.36)))
+                               .set_duration(outro_dur)
+                               .crossfadein(0.3))
+                outro_sub = TextClip("MOQ sirf 10 pieces", fontsize=70, font=SUBTITLE_FONT,
+                                     color="#FFD700", method='label')
+                osw, osh = outro_sub.size
+                outro_sub = (outro_sub
+                             .set_position(((VIDEO_WIDTH - osw) // 2, int(VIDEO_HEIGHT * 0.50)))
+                             .set_duration(outro_dur)
+                             .crossfadein(0.3))
+                outro_cta = TextClip("Order now → Sale91.com", fontsize=48, font=SUBTITLE_FONT,
+                                     color="white", method='label')
+                ocw, och = outro_cta.size
+                outro_cta = (outro_cta
+                             .set_position(((VIDEO_WIDTH - ocw) // 2, int(VIDEO_HEIGHT * 0.60)))
+                             .set_duration(outro_dur)
+                             .crossfadein(0.3))
+                outro_card = CompositeVideoClip(
+                    [outro_bg, outro_title, outro_sub, outro_cta],
+                    size=(VIDEO_WIDTH, VIDEO_HEIGHT)
+                ).set_duration(outro_dur)
+                final_video = concatenate_videoclips([final_video, outro_card], method="chain")
+                print(f"   🎬 Appended {outro_dur}s outro card")
+            except Exception as e:
+                print(f"   ⚠️ Outro card skipped: {e}")
 
-    # ── 9. Render (with safety net for ambient audio issues) ──
-    filename = f"SHORT_{random.randint(1000,9999)}.mp4"
-    output_path = f"{WORK_DIR}/{filename}"
-    print(f"   🎬 Rendering {filename}...")
-    try:
-        final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
-            preset="medium", bitrate="8000k", threads=4, logger=None)
-    except Exception as render_err:
-        if has_ambient:
-            print(f"   ⚠️ Render failed with ambient audio: {render_err}")
-            print(f"   🔄 Retrying WITHOUT ambient audio...")
-            final_video = final_video.set_audio(mixed_audio)
+        # ── 9. Render (with safety net for ambient audio issues) ──
+        filename = f"SHORT_{random.randint(1000,9999)}.mp4"
+        output_path = f"{WORK_DIR}/{filename}"
+        print(f"   🎬 Rendering {filename}...")
+        try:
             final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
                 preset="medium", bitrate="8000k", threads=4, logger=None)
-        else:
-            raise
+        except Exception as render_err:
+            if has_ambient:
+                print(f"   ⚠️ Render failed with ambient audio: {render_err}")
+                print(f"   🔄 Retrying WITHOUT ambient audio...")
+                final_video = final_video.set_audio(mixed_audio)
+                final_video.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+                    preset="medium", bitrate="8000k", threads=4, logger=None)
+            else:
+                raise
 
-    print(f"   ✅ Video ready: {output_path}")
+        print(f"   ✅ Video ready: {output_path}")
 
-    # ── 9b. Generate Thumbnail (AI Pipeline: Claude brief → Gemini image, with basic fallback) ──
-    first_clip = downloaded_clips[0] if downloaded_clips else None
-    thumbnail_path = None
-    if AI_THUMBNAIL:
-        thumbnail_path = generate_ai_thumbnail(
-            hook_text_from_claude, fresh_topic, script_voice,
-            veo_clip_path=first_clip, claude_client=claude,
-            genai_client=veo_client, cost_tracker=cost, real_scene=bool(real_clips)
+        # ── 9b. Generate Thumbnail (AI Pipeline: Claude brief → Gemini image, with basic fallback) ──
+        first_clip = downloaded_clips[0] if downloaded_clips else None
+        thumbnail_path = reuse_thumbnail
+        if AI_THUMBNAIL and not thumbnail_path:
+            thumbnail_path = generate_ai_thumbnail(
+                hook_text_from_claude, fresh_topic, script_voice,
+                veo_clip_path=first_clip, claude_client=claude,
+                genai_client=veo_client, cost_tracker=cost, real_scene=bool(real_clips),
+                cover_feedback=cover_feedback,
+            )
+        if not thumbnail_path:
+            thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip, script_text=script_voice)
+
+        if not thumbnail_path:
+            raise RuntimeError("No complete cover available; stop before publishing")
+        from tools.cover_quality import prepend_cover
+        COVER_META["opening_cover"] = prepend_cover(output_path, thumbnail_path)
+
+        from tools.short_review_archive import save_review_archive
+        review_path = save_review_archive(
+            video_path=output_path, thumbnail_path=thumbnail_path,
+            topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
+            script_voice=script_voice, tts_input=tts_input, script_english=script_english,
+            youtube_id=None, instagram_id=None, test_mode=TEST_MODE,
+            run_flags=RUN_FLAGS, normalized_voice_path=audio_path,
         )
-    if not thumbnail_path:
-        thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip, script_text=script_voice)
-
-    if not thumbnail_path:
-        raise RuntimeError("No complete cover available; stop before publishing")
-    from tools.cover_quality import prepend_cover
-    COVER_META["opening_cover"] = prepend_cover(output_path, thumbnail_path)
-
-    from tools.short_review_archive import save_review_archive
-    review_path = save_review_archive(
-        video_path=output_path, thumbnail_path=thumbnail_path,
-        topic=fresh_topic, youtube_title=yt_title, instagram_title=ig_title,
-        script_voice=script_voice, tts_input=tts_input, script_english=script_english,
-        youtube_id=None, instagram_id=None, test_mode=TEST_MODE,
-        run_flags=RUN_FLAGS, normalized_voice_path=audio_path,
-    )
-    if not TEST_MODE:
-        from tools.prepublication_audio import require_native_audio_review
-        flag('native_audio_review', require_native_audio_review(output_path, review_path))
-        from tools.prepublication_visual import VisualReviewError, require_native_visual_review
-        try:
-            flag('native_visual_review', require_native_visual_review(output_path, review_path))
-        except VisualReviewError:
-            _hold_failed_visual_topic(fresh_topic)
-            raise
+        if not TEST_MODE:
+            from tools.prepublication_audio import require_native_audio_review
+            flag('native_audio_review', require_native_audio_review(output_path, review_path))
+            from tools.prepublication_visual import VisualReviewError, require_native_visual_review
+            try:
+                flag('native_visual_review', require_native_visual_review(output_path, review_path))
+            except VisualReviewError:
+                repair = None
+                if render_round == 1 and visual_plan and len(clip_prompts) == len(downloaded_clips):
+                    repair = repair_refused_short(
+                        visual_plan, total_duration, downloaded_clips, clip_prompts, veo_client=veo_client,
+                        topic=fresh_topic, script_english=script_english, tts_input=tts_input,
+                        voice_alignment=voice_alignment, voice_timing_preserved=voice_timing_preserved,
+                        voice_time_scale=voice_time_scale, audio_seconds=audio_clip_dur, cost=cost)
+                if not repair:
+                    _hold_failed_visual_topic(fresh_topic)
+                    raise
+                downloaded_clips, clip_prompts = repair["clips"], repair["prompts"]
+                cover_feedback = repair["cover"]
+                reuse_thumbnail = None if (repair["cover"] or 0 in repair["replaced"]) else thumbnail_path
+                try:
+                    os.remove(output_path)
+                except OSError:
+                    pass
+                continue
+        break
 
     # ── 9z. Owner review gate (owner 3-Oct-2026: "you become the quality gate ... give it 100% thumbs up, then only
     # you move forward"). The exact rendered file waits for a reviewer's decision (tools/owner_review.py); nothing is
@@ -13831,7 +13906,8 @@ def main():
                                 for k, v in _cited_rate_facts(getattr(fresh_topic, "brief", None)).items()},
             "titles": {"youtube": yt_title, "instagram": ig_title}, "youtube_description": yt_description,
             "youtube_tags": yt_tags, "script": {"voice": script_voice, "english": script_english},
-            "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review")},
+            "machine_reviews": {"audio": RUN_FLAGS.get("native_audio_review"), "visual": RUN_FLAGS.get("native_visual_review"),
+                                "clip_check": RUN_FLAGS.get("clip_check"), "render_repair": RUN_FLAGS.get("render_repair")},
         }
         try:
             review_folder = publish_review_copy(boto3.client("s3"), BLOG_S3_BUCKET, review_run, output_path,
