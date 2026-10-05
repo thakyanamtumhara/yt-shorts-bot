@@ -4,8 +4,10 @@ Same Whisper large-v3-turbo model and the same overlapping 12 s windows every 10
 "[start s-end s] text" lines, so the reviewer reads the same transcript.txt on the Mac and in the cloud.
 """
 import sys
+import wave
 
-from faster_whisper import WhisperModel, decode_audio
+import numpy
+from faster_whisper import WhisperModel
 
 RATE = 16000
 
@@ -17,8 +19,17 @@ def windows(duration, size=12, step=10):
         start += step
 
 
+def read_wav(path):
+    """prep.sh writes 16 kHz mono 16-bit PCM; read it directly (faster-whisper's PyAV loader breaks on new PyAV)."""
+    with wave.open(path) as source:
+        if (source.getframerate(), source.getnchannels(), source.getsampwidth()) != (RATE, 1, 2):
+            raise SystemExit('transcribe.py needs 16 kHz mono 16-bit WAV')
+        frames = source.readframes(source.getnframes())
+    return numpy.frombuffer(frames, dtype='<i2').astype(numpy.float32) / 32768.0
+
+
 def main(path, duration):
-    audio = decode_audio(path, sampling_rate=RATE)
+    audio = read_wav(path)
     model = WhisperModel('large-v3-turbo', device='cpu', compute_type='int8')
     for start, end in windows(float(duration)):
         chunk = audio[start * RATE:end * RATE]
