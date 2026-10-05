@@ -18,7 +18,9 @@ Do this, in order:
 2. Read review.json. Both machine reviews (audio, visual) must say passed true.
 3. Look at cover.png, sheet.png and every image in frames/ with the Read tool. Check:
    - Cover: a complete buyer question plus a simple comparison or a real website screen (Ketu's Option B). No AI person,
-     no warehouse scene, no invented numbers. The question fits the lesson.
+     no warehouse scene, no invented numbers. The question fits the lesson. A lesson with no simple comparison may
+     show its complete question over one relevant picture of the garment or fabric (Ketu, 11-Sep-2026); still no AI
+     person or face and no warehouse or factory scene.
    - Hook (first ~2 s after the cover): readable, true, fits the first spoken sentence. On a website-recording Short it
      sits in the dark band ABOVE the recording, never over the page.
    - Captions: only in the band above the recording, never over the page text; the words match the speech.

@@ -1,0 +1,48 @@
+name: Clip check probe
+run-name: "Clip check probe"
+
+# Calibrates tools/clip_visual_check.py on windows of Shorts the final visual review already judged (5-Oct-2026:
+# the 24-Sep/1-Oct/2-Oct clips it refused, and clips it passed). Reads artifacts, prints verdicts, publishes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: 'run_id:start-end:good|bad, comma separated (rendered-video-backup must still exist)'
+        required: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      SAMPLES: ${{ inputs.samples }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ffmpeg
+        timeout-minutes: 12
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          APT_NET="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo -E apt-get $APT_NET update -qq
+          sudo -E apt-get $APT_NET install -y -qq ffmpeg
+          pip install -q requests
+
+      - name: Fetch the rendered Shorts
+        run: |
+          for run in $(echo "$SAMPLES" | tr ',' '\n' | cut -d: -f1 | tr -d ' ' | sort -u); do
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n rendered-video-backup -D "probe/$run"
+          done
+
+      - name: Check each window
+        run: python -m tools.clip_check_probe --root probe --samples "$SAMPLES"

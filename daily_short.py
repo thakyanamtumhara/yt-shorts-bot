@@ -204,6 +204,14 @@ KLING_ASPECT_RATIO = "9:16"
 KLING_MAX_RETRIES = 3
 KLING_NEGATIVE_PROMPT = "blur, distort, low quality, text, watermark, face, human face"
 
+# ── Clip check (tools/clip_visual_check.py) ──
+# Every generated clip is reviewed as soon as it exists; a clip that shows the lesson wrong is made again (at most
+# CLIP_REPAIR_BUDGET new clips per Short, ~$0.96 each) instead of the final visual review refusing the whole Short.
+CLIP_CHECK = os.environ.get("CLIP_CHECK", "1").strip().lower() not in ("0", "false", "no", "off")
+CLIP_REPAIR_BUDGET = int(os.environ.get("CLIP_REPAIR_BUDGET", "") or 4)
+CLIP_MINIMUM = 3
+HOLD_ONLY = os.environ.get("HOLD_ONLY", "").strip().lower() in ("1", "true", "yes")
+
 # Subtitles
 ADD_SUBTITLES = os.environ.get("ADD_SUBTITLES", "0").strip() in ("1", "true", "yes")
 SUBTITLE_FONT = "Noto-Sans-Bold"
@@ -1501,12 +1509,15 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                 "You are a product photographer creating a background plate for an Indian "
                 "wholesale plain t-shirt brand's Reel cover (1080x1920, 9:16).\n"
                 "Recreate/enhance the reference image into a striking, high-contrast HERO SCENE: "
-                "keep the product/fabric the clear subject, rich warehouse bokeh, cinematic lighting.\n"
+                "keep the T-shirt/fabric the clear subject, close and well lit on a plain table or soft "
+                "studio background, cinematic lighting.\n"
                 "Leave the UPPER-CENTER (25%-55% height) visually CALM and slightly darker so text can "
                 "sit there later. Put the main subject in the lower-center.\n\n"
                 "ABSOLUTELY NO TEXT: no letters, no words, no numbers, no captions, no watermark, "
-                "no logo, no price tag with digits, no signage. A person is optional; if present, "
-                "an Indian factory-owner look, no text on clothing. Output exactly 1080x1920."
+                "no logo, no price tag with digits, no signage. NO person, no face, no body: hands only "
+                "if the reference shows hands. No warehouse, factory or shop background (the final review "
+                "refuses an AI person or a warehouse scene on the cover). Do not change the garment's "
+                "fabric, knit or stitching. Output exactly 1080x1920."
             )
             from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
             for model_name in (AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK):
@@ -5534,11 +5545,18 @@ IMPORTANT VIDEO PROMPT GUIDELINES:
 - Be SPECIFIC: "Close-up of Indian man's hands holding a thick white cotton
   round-neck t-shirt, turning it to show the smooth bio-washed fabric texture,
   warm indoor lighting, slight camera dolly forward" — NOT "a tshirt"
-- NO text/words/labels in the video (subtitles are added separately)
+- NO text/words/labels in the video (subtitles are added separately): no tags, notebooks with writing, screens,
+  signs or price tags either
 - NO people's faces (to avoid AI face artifacts)
 - Show HANDS, products, fabrics, machines, packaging — not faces
 - Each prompt should be 40-80 words for best results
 - Describe realistic ILLUSTRATIONS of a textile concept, not footage of an actual test, customer incident, measured result or this business's proven stock. A generated scene does not establish that a test passed.
+- AI video draws fine textile structure WRONG (24-Sep, 1-Oct and 2-Oct-2026 it drew rib/cable knit for single
+  jersey, two braided cords for a coverseam hem, a hand-pinched swirl for wash skew, and each Short was refused).
+  Never ask for a close-up of stitches, knit loops, yarn, fibres or seam construction, and never ask it to show one
+  fabric or stitch against another. Show the lesson at arm's length: whole garments, hands holding, folding,
+  comparing or measuring them, a machine at work from a distance. The voice and captions carry the technical detail.
+- Never stage a result: no fabric pinched, twisted, torn, burnt or stretched out to show a defect or a test outcome.
 - Each of the 5 clips must show a DIFFERENT scene — NO repetition between clips
 
 ━━━ VISUAL CONTINUITY (CRITICAL FOR PERCEIVED QUALITY) ━━━
@@ -7948,7 +7966,8 @@ Score each (1-10):
 
 6. VISUAL ALIGNMENT — Do the Veo video prompts match the script's specific story?
    Bad: generic prompts like "a factory scene" or "fabric close-up" that could apply to ANY script.
-   Good: relevant illustrative views of the fabric, process or check being discussed.
+   Good: relevant illustrative views of the garment, process or check being discussed, at arm's length (AI video
+   draws close-ups of stitches, knit loops or yarn wrong, so such a close-up is not better).
    AI-generated scenes are illustrations, not actual customer incidents, measured
    demonstrations or proof that a material/test passed. Reject invented results.
    If no video prompts provided, score 6 (neutral).
@@ -12201,6 +12220,109 @@ def validate_video_file(path, min_size_bytes=10_000):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# CLIP CHECK — re-make only the clip that shows the lesson wrong
+# ═══════════════════════════════════════════════════════════════════════
+
+def veo_clip_once(veo_client, prompt_text, clip_path):
+    """One Veo clip with the usual attempts, for a clip the clip check refused. True when clip_path is a valid video."""
+    from google.genai import types
+    for attempt in range(1, VEO_MAX_RETRIES + 1):
+        wait = 15
+        try:
+            operation = veo_client.models.generate_videos(
+                model=VEO_MODEL, prompt=prompt_text,
+                config=types.GenerateVideosConfig(aspect_ratio=VEO_ASPECT_RATIO, number_of_videos=1,
+                                                  duration_seconds=VEO_DURATION))
+            poll_start = time.time()
+            while not operation.done:
+                if time.time() - poll_start > VEO_POLL_TIMEOUT:
+                    raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
+                time.sleep(10)
+                operation = veo_client.operations.get(operation)
+            videos = (not getattr(operation, "error", None) and operation.response
+                      and operation.response.generated_videos)
+            if not videos:
+                print(f"      Veo attempt {attempt}: no video ({str(getattr(operation, 'error', '') or 'empty response')[:100]})")
+            else:
+                video_data = veo_client.files.download(file=videos[0].video)
+                if video_data and len(video_data) >= 10_000:
+                    with open(clip_path, "wb") as f:
+                        f.write(video_data)
+                    valid, reason = validate_video_file(clip_path)
+                    if valid:
+                        return True
+                    print(f"      Veo attempt {attempt}: corrupted ({reason})")
+                else:
+                    print(f"      Veo attempt {attempt}: download too small")
+        except Exception as e:
+            error_msg = str(e)
+            if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                wait = VEO_RETRY_WAIT * attempt
+            print(f"      Veo attempt {attempt}: {error_msg[:120]}")
+        if attempt < VEO_MAX_RETRIES:
+            time.sleep(wait)
+    return False
+
+
+def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, tts_input, voice_alignment,
+                          voice_timing_preserved, voice_time_scale, audio_seconds, cost):
+    """Review each generated clip with the narration spoken over it and re-make a failing one (tools/clip_visual_check).
+    Returns the clips to cut the Short from and their prompts. Stops the run, and holds the lesson for 21 days, when
+    the check leaves fewer than CLIP_MINIMUM clips: AI video cannot draw this lesson truthfully today."""
+    from tools.clip_visual_check import (ClipRepairError, caption_spans, clip_narration, clip_seconds, lesson_context,
+                                         repair_clips, review_clip)
+    brief = getattr(topic, "brief", None)
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', (script_english or "").strip()) if s.strip()]
+    timed = None
+    if voice_alignment is not None and voice_timing_preserved:
+        try:
+            from tools.tts_alignment import sentence_spans, timed_sentences
+            timed = timed_sentences(sentences, sentence_spans(tts_input, voice_alignment, voice_time_scale) or [],
+                                    audio_seconds)
+        except Exception as error:
+            print(f"   ⚠️ Clip check: narration timing from the voice unavailable ({type(error).__name__}); equal slices")
+    durations = [clip_seconds(path, float(VEO_DURATION)) for path in clips]
+    narration = clip_narration(durations, audio_seconds + 0.8, CLIP_FADE_DURATION,
+                               caption_spans(sentences, audio_seconds, timed))
+    context = lesson_context(topic, brief)
+    regenerated = []
+
+    def review(index, path):
+        return review_clip(path, context=context, narration=narration[index])
+
+    def regenerate(prompt_text, index, kind):
+        print(f"   ⏸️ RPM cooldown — waiting 45s...")
+        time.sleep(45)
+        path = f"{WORK_DIR}/veo_clip_{index}_{kind}_{random.randint(100, 999)}.mp4"
+        print(f"   ⏳ Clip {index + 1} ({kind} version)...")
+        if not veo_clip_once(veo_client, prompt_text, path):
+            return None
+        regenerated.append(path)
+        cost.track_veo(1)
+        return path
+
+    print(f"   🔎 Checking {len(clips)} clips against the lesson before cutting the Short...")
+    try:
+        kept, kept_prompts, report = repair_clips(clips, prompts, review=review, regenerate=regenerate,
+                                                  budget=CLIP_REPAIR_BUDGET, minimum=min(CLIP_MINIMUM, len(clips)))
+    except ClipRepairError as error:
+        flag("clip_check", {"state": "stopped", "reason": str(error), "regenerated": len(regenerated),
+                            "clips": error.report})
+        from tools.daily_topic_selection import record_review_hold
+        if record_review_hold(brief, str(error), source="clip check"):
+            print("   ⏸️ Lesson held for 21 days: AI video could not show it truthfully")
+        print(f"   ❌ Clip check: {error}. Stopping before the Short is cut.")
+        sys.exit(2)
+    results = [entry["result"] for entry in report]
+    flag("clip_check", {"state": "done", "regenerated": len(regenerated),
+                        **{name: results.count(name) for name in ("kept", "replaced", "dropped", "unchecked")},
+                        "clips": report})
+    print(f"   ✅ Clip check: {results.count('kept')} ok, {results.count('replaced')} re-made, "
+          f"{results.count('dropped')} dropped, {results.count('unchecked')} unchecked ({len(regenerated)} new Veo clips)")
+    return kept, kept_prompts
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # KLING FALLBACK (fal.ai)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -12856,6 +12978,7 @@ def main():
         if KLING_ENABLED:
             print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
 
+        clip_prompts = []  # the prompt each downloaded clip was made from (the clip check re-makes from it)
         use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
         consecutive_failures = 0  # Early termination: stop if Veo is persistently broken
         hero_generated = False  # True only if clip #1 really rendered on the full-quality model
@@ -12930,6 +13053,7 @@ def main():
                                     time.sleep(15)
                                 continue
                             downloaded_clips.append(clip_path)
+                            clip_prompts.append(prompt_text)
                             clip_success = True
                             veo_clips_count += 1
                             if clip_model == VEO_HERO_MODEL and VEO_MODEL != VEO_HERO_MODEL:
@@ -12973,6 +13097,7 @@ def main():
                 _, clip_success = generate_clip_kling(prompt_text, clip_path)
                 if clip_success:
                     downloaded_clips.append(clip_path)
+                    clip_prompts.append(prompt_text)
                     kling_clips += 1
 
             if clip_success:
@@ -12987,6 +13112,14 @@ def main():
         else:
             print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo)")
 
+        # 24-Sep/1-Oct/2-Oct-2026: one wrongly drawn clip made the final visual review refuse the whole Short.
+        if CLIP_CHECK and downloaded_clips:
+            downloaded_clips, clip_prompts = check_generated_clips(
+                downloaded_clips, clip_prompts, veo_client=veo_client, topic=fresh_topic,
+                script_english=script_english, tts_input=tts_input, voice_alignment=voice_alignment,
+                voice_timing_preserved=voice_timing_preserved, voice_time_scale=voice_time_scale,
+                audio_seconds=AudioFileClip(audio_path).duration, cost=cost)
+
     if not downloaded_clips:
         print("❌ No clips generated. Stopping.")
         sys.exit(2)
@@ -12994,7 +13127,7 @@ def main():
     if not real_clips and not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
-        veo_count = got - kling_clips
+        veo_count = veo_clips_count  # first-pass Veo clips; the clip check bills its re-made clips itself
         if veo_count > 0:
             # Bill what was actually generated — not the flag. Pre-Aug-2026 this passed
             # VEO_HERO_FULL while no hero clip was ever rendered, overstating every run by ~$2.24.
@@ -13002,7 +13135,7 @@ def main():
         if kling_clips > 0:
             cost.track_kling(kling_clips)
         if got < expected:
-            print(f"   ⚠️ Partial recovery: {got}/{expected} clips succeeded — video will use clip looping to fill duration")
+            print(f"   ⚠️ Partial: {got}/{expected} clips usable — video will use clip looping to fill duration")
         flag("clips", {"got": got, "expected": expected, "kling": kling_clips})
     print(f"   ✅ {len(downloaded_clips)} clips ready")
 
@@ -13683,7 +13816,7 @@ def main():
     # ── 9z. Owner review gate (owner 3-Oct-2026: "you become the quality gate ... give it 100% thumbs up, then only
     # you move forward"). The exact rendered file waits for a reviewer's decision (tools/owner_review.py); nothing is
     # uploaded or posted anywhere unless that decision approves this file.
-    if owner_review_required() and not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST:
+    if (owner_review_required() or HOLD_ONLY) and not TEST_MODE and not NEW_TEST_MODE and not SINGLE_VEO_TEST:
         import boto3
         import requests
         from tools.owner_review import (OwnerReviewStop, await_owner_review, file_sha256, publish_review_copy,
@@ -13701,6 +13834,12 @@ def main():
             review_folder = publish_review_copy(boto3.client("s3"), BLOG_S3_BUCKET, review_run, output_path,
                                                 thumbnail_path, review_summary)
             print(f"   ⏸️ OWNER REVIEW: {BLOG_BASE_URL}/{review_folder}/video.mp4 (sha256 {video_sha[:16]}...)")
+            if HOLD_ONLY:
+                # A full real run that never publishes: the held copy is reviewed by hand or by a dry-run
+                # ai_final_review.yml, and nothing is uploaded or posted.
+                flag("owner_review", {"decision": "held", "reason": "hold_only run", "video_sha256": video_sha})
+                print("   🧪 HOLD ONLY: nothing is published from this run")
+                return
             print(f"      waiting for review_decisions/{review_run}.json on main")
             dispatch_cloud_review(review_run)
             review_decision = await_owner_review(

@@ -28,8 +28,8 @@ notify() {
 run_state() { gh run view "$1" -R $GHREPO --json status,conclusion -q '.status+" "+.conclusion' 2>/dev/null; }
 held() { aws s3 ls "s3://bulkplaintshirt.com/p/review/$1/review.json" >/dev/null 2>&1; }
 todays_run() {
-  gh run list -R $GHREPO -w daily_short.yml -L 15 --json databaseId,createdAt \
-    --jq "[.[] | select(((.createdAt | fromdateiso8601) + 19800 | strftime(\"%Y-%m-%d\")) == \"$TODAY\")] | first | .databaseId // empty"
+  gh run list -R $GHREPO -w daily_short.yml -L 15 --json databaseId,createdAt,displayTitle \
+    --jq "[.[] | select((.displayTitle | endswith(\"(test)\") | not) and ((.createdAt | fromdateiso8601) + 19800 | strftime(\"%Y-%m-%d\")) == \"$TODAY\")] | first | .databaseId // empty"
 }
 
 if [ "$DRY" = 1 ]; then

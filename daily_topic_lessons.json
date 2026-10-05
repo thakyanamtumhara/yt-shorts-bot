@@ -423,6 +423,8 @@
     "label": "DTF launch",
     "from": "2026-10-03",
     "until": "2026-10-14",
+    "weekdays": ["Mon", "Wed", "Fri"],
+    "weekdays_note": "Owner 5-Oct-2026: the daily AI-video (Veo) Short had stopped since the campaign began; it runs again on Tue/Thu/Sat, DTF Shorts stay on Mon/Wed/Fri until the campaign ends.",
     "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review. Owner 3-Oct-2026: Claude (Opus 5.5) is the final quality gate; nothing is published before its 100% approval of the exact file.",
     "fact_ids": [
       "dtf_sheet_size",

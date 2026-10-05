@@ -210,14 +210,19 @@ def record_published_lesson(topic, video_id, path=None, today=None):
 
 
 def active_campaign(bank, today=None):
-    """The bank's dated launch campaign while today (India time) is inside its from..until window, else None.
+    """The bank's dated launch campaign while today (India time) is inside its from..until window and, when the
+    campaign lists "weekdays" (Mon..Sat), is one of them; else None. DAILY_CAMPAIGN=off on a run switches it off.
     Only its fact ids that exist in the bank count; a campaign without any is ignored."""
     campaign = bank.get('campaign') if isinstance(bank, dict) else None
-    if not isinstance(campaign, dict):
+    if not isinstance(campaign, dict) or os.environ.get('DAILY_CAMPAIGN', '').strip().lower() == 'off':
         return None
-    day = (today or datetime.now(IST).date()).isoformat()
+    today = today or datetime.now(IST).date()
+    day = today.isoformat()
     start, until = campaign.get('from'), campaign.get('until')
     if not (isinstance(start, str) and isinstance(until, str) and start <= day <= until):
+        return None
+    weekdays = campaign.get('weekdays')
+    if isinstance(weekdays, list) and ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[today.weekday()] not in weekdays:
         return None
     facts = bank.get('facts') or {}
     ids = [key for key in campaign.get('fact_ids') or [] if isinstance(key, str) and key in facts]
@@ -406,8 +411,9 @@ def record_visual_hold(brief, report, path=None, today=None):
     return True
 
 
-def record_review_hold(brief, reason, path=None, today=None):
-    """The final AI review rejected this lesson's own footage: skip the lesson like a failed visual review."""
+def record_review_hold(brief, reason, path=None, today=None, source='final AI review'):
+    """The final AI review (or the clip check) rejected this lesson's own footage: skip the lesson like a failed
+    visual review."""
     if not isinstance(brief, dict) or not brief.get('intent_key'):
         return False
     path = Path(path or VISUAL_HOLDS_PATH)
@@ -419,7 +425,7 @@ def record_review_hold(brief, reason, path=None, today=None):
     entries.append({'date': (today or datetime.now(IST).date()).isoformat(),
                     'topic': str(brief.get('topic', ''))[:200], 'intent_key': str(brief.get('intent_key', ''))[:120],
                     'fact_ids': [key for key in brief.get('fact_ids') or [] if not key.startswith('rate_')],
-                    'reason': ('final AI review: ' + str(reason or ''))[:300]})
+                    'reason': (f'{source}: ' + str(reason or ''))[:300]})
     path.write_text(json.dumps(entries[-60:], ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     return True
 

@@ -1,5 +1,5 @@
 name: Daily YouTube Short
-run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_test || inputs.test_thumbnail) && 'Daily YouTube Short (test)' || 'Daily YouTube Short' }}
+run-name: ${{ (inputs.test_mode || inputs.new_test_mode || inputs.single_veo_test || inputs.test_thumbnail || inputs.hold_only) && 'Daily YouTube Short (test)' || 'Daily YouTube Short' }}
 
 on:
   # GitHub schedule OFF since 3-Oct-2026: every Short waits for Claude's written review (owner: "verify ... give it
@@ -71,6 +71,17 @@ on:
         required: false
         type: boolean
         default: false
+      hold_only:
+        description: 'Full real run (real clips, voice, checks) that holds the Short at p/review/<run>/ and never publishes'
+        required: false
+        type: boolean
+        default: false
+      campaign:
+        description: 'Launch campaign lessons: auto (the bank decides by date and weekday) or off (an ordinary AI-video lesson)'
+        required: false
+        type: choice
+        options: [auto, 'off']
+        default: auto
 
 concurrency:
   group: daily-short-generation
@@ -83,7 +94,8 @@ jobs:
       issues: write
       actions: write
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    # 150 + up to ~15 min for the clip check re-making refused clips (tools/clip_visual_check.py)
+    timeout-minutes: 170
 
     steps:
       # GitHub has started this cron 3-11 hours late since 27-Aug-2026, so the day's Short is
@@ -202,6 +214,8 @@ jobs:
           OWNER_REVIEW: ${{ github.event.inputs.owner_review }}
           GH_TOKEN_REVIEW: ${{ github.token }}
           REVIEW_WAIT_MINUTES: '100'
+          HOLD_ONLY: ${{ github.event.inputs.hold_only }}
+          DAILY_CAMPAIGN: ${{ github.event.inputs.campaign }}
           # Karaoke captions LIVE (baseline fix visually verified 2026-07-06; Ketu approved).
           # Kill switch: set to "0".
           ADD_SUBTITLES: "1"
@@ -241,7 +255,7 @@ jobs:
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
           GH_PAT: ${{ secrets.GH_PAT }}
           # Manual test runs print the grade instead of alerting Ketu.
-          TEST_RUN: ${{ github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true' }}
+          TEST_RUN: ${{ github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true' || github.event.inputs.hold_only == 'true' }}
         run: |
           if [ "$TEST_RUN" = "true" ]; then python health_watch.py --postrun --dry-run; else python health_watch.py --postrun; fi
 
@@ -321,7 +335,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Notify on failure
-        if: ${{ failure() && github.event.inputs.test_mode != 'true' && github.event.inputs.new_test_mode != 'true' }}
+        if: ${{ failure() && github.event.inputs.test_mode != 'true' && github.event.inputs.new_test_mode != 'true' && github.event.inputs.hold_only != 'true' }}
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "::error::❌ Daily Short pipeline FAILED! Check logs: ${RUN_URL}"

@@ -1,7 +1,9 @@
 import copy
 from datetime import date
+import os
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from tools.daily_topic_selection import (
     TopicHold, active_campaign, brainstorming_context, campaign_clips, campaign_prompt, choose_with_campaign,
@@ -13,9 +15,12 @@ ASSETS = ROOT / 'assets' / 'dtf_demo'
 BANK = load_bank()
 
 
-def with_window(start, until):
+def with_window(start, until, weekdays=None):
     bank = copy.deepcopy(BANK)
     bank['campaign'] = {**bank['campaign'], 'from': start, 'until': until}
+    bank['campaign'].pop('weekdays', None)
+    if weekdays is not None:
+        bank['campaign']['weekdays'] = weekdays
     return bank
 
 
@@ -26,6 +31,22 @@ class DailyCampaignTests(unittest.TestCase):
         self.assertIsNotNone(active_campaign(bank, date(2026, 10, 14)))
         self.assertIsNone(active_campaign(bank, date(2026, 10, 2)))
         self.assertIsNone(active_campaign(bank, date(2026, 10, 15)))
+
+    def test_campaign_runs_only_on_its_weekdays(self):
+        # Owner 5-Oct-2026: the AI-video Short runs again on Tue/Thu/Sat; DTF stays on Mon/Wed/Fri.
+        self.assertEqual(BANK['campaign']['weekdays'], ['Mon', 'Wed', 'Fri'])
+        bank = with_window('2026-10-03', '2026-10-14', ['Mon', 'Wed', 'Fri'])
+        for day, on in ((5, True), (6, False), (7, True), (8, False), (9, True), (10, False), (12, True), (14, True)):
+            self.assertEqual(active_campaign(bank, date(2026, 10, day)) is not None, on, day)
+        self.assertIsNone(active_campaign(with_window('2026-10-03', '2026-10-14', []), date(2026, 10, 5)))
+
+    def test_a_run_can_switch_the_campaign_off(self):
+        bank = with_window('2000-01-01', '2999-12-31')
+        with patch.dict(os.environ, {'DAILY_CAMPAIGN': 'off'}):
+            self.assertIsNone(active_campaign(bank, date(2026, 10, 5)))
+        for value in ('auto', ''):
+            with patch.dict(os.environ, {'DAILY_CAMPAIGN': value}):
+                self.assertIsNotNone(active_campaign(bank, date(2026, 10, 5)))
 
     def test_unknown_fact_ids_are_ignored_and_an_empty_campaign_is_off(self):
         bank = with_window('2000-01-01', '2999-12-31')
