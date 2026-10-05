@@ -49,6 +49,8 @@ Do this, in order:
      "youtube_title", "instagram_title" and/or "youtube_description" (the body only: keep its hashtags, leave out the
      "📖 More buyer guides" line, the run adds it again).
    - Anything wrong in the picture, sound, cover or facts: reject, and name each problem precisely (time, what, why).
+     If a re-render of the SAME lesson would repeat the problem (its own footage or screen recording is wrong),
+     also write "hold_lesson": true so the next runs pick another lesson for 21 days. Not for cover or text.
 8. {{MODE}}
 
 Write the decision as review_decisions/{{RUN}}.json in the repository:

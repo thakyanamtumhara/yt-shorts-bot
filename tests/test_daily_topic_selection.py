@@ -653,5 +653,30 @@ class LessonHistoryTest(unittest.TestCase):
             self.assertIsNone(unsupported_shortcut(' '.join(seed[key] for key in ('topic', 'lesson', 'buyer_decision'))))
 
 
+class ReviewHoldTest(unittest.TestCase):
+    def test_footage_rejection_holds_the_lesson_and_its_facts(self):
+        from datetime import date
+        from tools.daily_topic_selection import load_visual_holds, record_review_hold, visual_hold_reason
+        lesson = dict(brief(), intent_key='dtf_transparent_background', fact_ids=['knit_loop_stretch', 'rate_bio_rneck'])
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / 'visual_holds.json'
+            self.assertFalse(record_review_hold({'topic': 'no intent'}, 'x', path, date(2026, 10, 5)))
+            self.assertFalse(record_review_hold(None, 'x', path, date(2026, 10, 5)))
+            self.assertTrue(record_review_hold(lesson, 'recording restarts at 11 s', path, date(2026, 10, 5)))
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved[0]['fact_ids'], ['knit_loop_stretch'])
+            self.assertIn('final AI review', saved[0]['reason'])
+            holds = load_visual_holds(path, date(2026, 10, 6))
+            self.assertIsNotNone(visual_hold_reason({'fact_ids': [], 'intent_key': 'dtf_transparent_background'}, holds))
+            self.assertEqual(load_visual_holds(path, date(2026, 10, 26)), [])
+
+    def test_the_run_holds_only_when_the_reviewer_asks(self):
+        source = (ROOT / 'daily_short.py').read_text()
+        gate = source[source.index('except OwnerReviewStop as stop:'):]
+        gate = gate[:gate.index('return')]
+        self.assertIn('.get("hold_lesson") is True', gate)
+        self.assertIn('record_review_hold(', gate)
+
+
 if __name__ == '__main__':
     unittest.main()

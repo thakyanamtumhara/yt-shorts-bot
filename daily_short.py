@@ -13710,6 +13710,10 @@ def main():
         except OwnerReviewStop as stop:
             flag("owner_review", {"decision": "held", "reason": str(stop)})
             print(f"   🛑 Owner review: {stop}")
+            if (getattr(stop, "decision", None) or {}).get("hold_lesson") is True:
+                from tools.daily_topic_selection import record_review_hold
+                if record_review_hold(getattr(fresh_topic, "brief", None), stop.decision.get("notes")):
+                    print("   ⏸️ Lesson held for 21 days: the AI review found its own footage wrong")
             return
         try:
             corrections = text_overrides(review_decision)

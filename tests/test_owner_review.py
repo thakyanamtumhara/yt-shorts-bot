@@ -174,5 +174,17 @@ class CloudReviewDispatchTests(unittest.TestCase):
         self.assertLess(source.index('dispatch_cloud_review(review_run)'), source.index('review_decision = await_owner_review('))
 
 
+class RejectionDecisionTests(unittest.TestCase):
+    def test_a_rejection_carries_the_decision_for_the_lesson_hold(self):
+        decision = {'run_id': '9', 'video_sha256': SHA, 'decision': 'reject', 'reviewer': 'Claude', 'notes': 'loops',
+                    'hold_lesson': True}
+        with self.assertRaises(OwnerReviewStop) as caught:
+            await_owner_review(run_id='9', sha=SHA, repo='o/r', token='t', wait_seconds=60,
+                               fetch=fetcher(response(200, decision)), sleep=lambda s: None)
+        self.assertIs(caught.exception.decision['hold_lesson'], True)
+        self.assertIn('rejected by Claude', str(caught.exception))
+        self.assertIsNone(OwnerReviewStop('deadline').decision)
+
+
 if __name__ == '__main__':
     unittest.main()

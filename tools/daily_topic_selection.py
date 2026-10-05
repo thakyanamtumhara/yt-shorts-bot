@@ -406,6 +406,23 @@ def record_visual_hold(brief, report, path=None, today=None):
     return True
 
 
+def record_review_hold(brief, reason, path=None, today=None):
+    """The final AI review rejected this lesson's own footage: skip the lesson like a failed visual review."""
+    if not isinstance(brief, dict) or not brief.get('intent_key'):
+        return False
+    path = Path(path or VISUAL_HOLDS_PATH)
+    try:
+        entries = json.loads(path.read_text(encoding='utf-8'))
+        entries = entries if isinstance(entries, list) else []
+    except (OSError, ValueError):
+        entries = []
+    entries.append({'date': (today or datetime.now(IST).date()).isoformat(),
+                    'topic': str(brief.get('topic', ''))[:200], 'intent_key': str(brief.get('intent_key', ''))[:120],
+                    'fact_ids': [key for key in brief.get('fact_ids') or [] if not key.startswith('rate_')],
+                    'reason': ('final AI review: ' + str(reason or ''))[:300]})
+    path.write_text(json.dumps(entries[-60:], ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    return True
+
 def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max_candidates=5, holds=()):
     pending = []
     seen = set()

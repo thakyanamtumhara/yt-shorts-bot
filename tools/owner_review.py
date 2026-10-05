@@ -22,7 +22,9 @@ TEXT_LIMITS = {'youtube_title': 100, 'instagram_title': 150, 'youtube_descriptio
 
 
 class OwnerReviewStop(RuntimeError):
-    pass
+    def __init__(self, message, decision=None):
+        super().__init__(message)
+        self.decision = decision
 
 
 def file_sha256(path):
@@ -97,7 +99,8 @@ def await_owner_review(*, run_id, sha, repo, token, wait_seconds, fetch, poll_se
                 if decision['decision'] == 'approve':
                     return decision
                 notes = str(decision.get('notes') or '').strip()
-                raise OwnerReviewStop(f"rejected by {decision['reviewer'].strip()}" + (f': {notes}' if notes else ''))
+                raise OwnerReviewStop(f"rejected by {decision['reviewer'].strip()}" + (f': {notes}' if notes else ''),
+                                      decision)
             if not warned:
                 log('   ⚠️ A review decision exists but does not name this run and this exact video; ignored.')
                 warned = True
