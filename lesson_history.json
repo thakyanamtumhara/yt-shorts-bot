@@ -10,5 +10,17 @@
     "buyer_decision": "Canva से DTF शीट export करते समय Pro plan का 3.125x slider use करो ताकि actual pixel count 6840 तक पहुँचे; Free plan का 1x export DTF sheet resolution gate पास नहीं करेगा।",
     "video_id": "wR4EG8j1gKk",
     "published_on": "2026-10-03"
+  },
+  {
+    "topic": "DTF में 'Pieces' का मतलब T-Shirt नहीं, पूरी Sheet है — ग़लत समझे तो Rate बिगड़ेगा",
+    "intent_key": "dtf_pieces_means_whole_sheet_copies",
+    "fact_ids": [
+      "dtf_pieces_whole_sheet",
+      "dtf_sheet_size"
+    ],
+    "lesson": "Sale91 के DTF order form में 'pieces' का मतलब है कि आपकी पूरी uploaded sheet कितनी बार print होगी — price sheet की real height × pieces से calculate होता है। एक sheet 22.8 inch चौड़ी और 39 से 390 inch लम्बी हो सकती है, और उस पर कई T-shirts के designs एक साथ gang sheet के रूप में लगाए जा सकते हैं। हर T-shirt के लिए अलग sheet upload करने से ज़्यादा sheets बनती हैं और cost बढ़ती है।",
+    "buyer_decision": "एक sheet पर सारे designs gang करो और pieces में सिर्फ़ वो संख्या डालो जितनी बार वो पूरी sheet चाहिए — हर design को अलग sheet मत बनाओ।",
+    "video_id": "59nF0krhulc",
+    "published_on": "2026-10-05"
   }
 ]

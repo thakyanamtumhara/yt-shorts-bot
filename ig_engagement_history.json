@@ -2280,7 +2280,7 @@
     "title": "₹186 vs ₹205 Oversize T-Shirt — GSM Doesn't Mean What You Think",
     "topic": "GSM का मतलब कपड़े का वज़न है, पूरी टी-शर्ट का नहीं — ₹186 vs ₹205 Oversize में फ़र्क़ समझो",
     "published_at": "2026-09-29T21:10:50.831941+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "gIdW1Ev9zUo",
     "workflow_run_id": "36588485211",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2299,7 +2299,16 @@
       "requested": true,
       "container_id": "18347023069266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-05T15:00:59.857268+05:30",
+    "hours_since_publish": 137.8,
+    "views": 1249,
+    "reach": 1095,
+    "likes": 11,
+    "comments": 1,
+    "shares": 5,
+    "saves": 1,
+    "avg_watch_time_ms": 11770
   },
   {
     "media_id": "17986641237060023",
@@ -2323,6 +2332,31 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18347593033266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
+  },
+  {
+    "media_id": "18628577545011521",
+    "title": "Sale91 DTF Pieces vs Sheets — This Confusion Changes Your Cost",
+    "topic": "DTF में 'Pieces' का मतलब T-Shirt नहीं, पूरी Sheet है — ग़लत समझे तो Rate बिगड़ेगा",
+    "published_at": "2026-10-05T15:02:52.007110+05:30",
+    "checked": false,
+    "bot_youtube_id": "59nF0krhulc",
+    "workflow_run_id": "37289040453",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "DTF PIECES शीट है टी-शर्ट नहीं?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "dtf_pieces_vs_designs",
+    "cover_labels": [
+      "डिज़ाइन",
+      "पूरी शीट"
+    ],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18347891734266060",
       "verification": "create_accepted_native_label_unverified"
     }
   }

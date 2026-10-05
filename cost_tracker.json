@@ -3091,5 +3091,19 @@
       "replicate_music": 0.05,
       "tts_elevenlabs": 0.0142
     }
+  },
+  {
+    "date": "2026-10-05T09:36:50.429104",
+    "topic": "DTF \u092e\u0947\u0902 'Pieces' \u0915\u093e \u092e\u0924\u0932\u092c T-Shirt \u0928\u0939\u0940\u0902, \u092a\u0942\u0930\u0940 Sheet \u0939\u0948 \u2014 \u0917\u093c\u0932\u0924 \u0938\u092e\u091d\u0947 \u0924\u094b Rate \u092c\u093f\u0917\u0921\u093c\u0947\u0917\u093e",
+    "title": "Sale91 DTF Order Form \u092e\u0947\u0902 'Pieces' = \u092a\u0942\u0930\u0940 Sheet, T-Shirt \u0928\u0939\u0940\u0902 \u2014 \u092f\u0947 \u0938\u092e\u091d\u094b \u092a\u0939\u0932\u0947",
+    "total_usd": 0.8893,
+    "duration_min": 17.0,
+    "breakdown": {
+      "claude_opus": 0.5548,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0118,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1977
+    }
   }
 ]
