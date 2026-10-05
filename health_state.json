@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-03 11:40)",
+   "detail": "ElevenLabs ✅ (2026-10-05 09:36)",
    "provider": "elevenlabs",
-   "at": "2026-10-03 11:40",
-   "title": "Canva से DTF शीट बनाई — Print Blurry क्यों? 96 vs 300 DPI का फ़र्क़"
+   "at": "2026-10-05 09:36",
+   "title": "Sale91 DTF Order Form में 'Pieces' = पूरी Sheet, T-Shirt नहीं — ये समझ"
   },
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,932 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,831 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 245932,
+   "chars_left": 245831,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -740,9 +740,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-05T16:14:57+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-04T22:26:09+05:30",
- "last_green_date": "2026-10-04",
+ "last_run_ist": "2026-10-05T16:14:57+05:30",
+ "last_green_date": "2026-10-05",
  "last_still_down_date": "2026-09-23"
 }
