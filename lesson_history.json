@@ -44,5 +44,16 @@
     "buyer_decision": "PNG export करने से पहले background हटाकर transparency रखो और design में soft glow या fade effects से बचो — ये DTF sheet पर patchy आएँगे।",
     "video_id": "HaOgzWlJGDM",
     "published_on": "2026-10-06"
+  },
+  {
+    "topic": "DTF Sticker चाहिए पर पूरी Sheet बनानी नहीं आती? अब सिर्फ Logo Upload करो",
+    "intent_key": "dtf_stickers_launch_news",
+    "fact_ids": [
+      "dtf_single_designs"
+    ],
+    "lesson": "On Sale91 DTF's order form choose 'Upload any design' and upload just the logo PNG. The form shows the size it will print and how big it stays sharp; set the pieces, add more designs, and the site places every piece on the 22.8-inch sheet 0.25 inch apart. You pay only for the length the pieces take, so nobody has to build the sheet in Photoshop.",
+    "buyer_decision": "Upload each logo as a transparent PNG, set its width and pieces, and let the site make the sheet.",
+    "video_id": "ZVdl3mssPWw",
+    "published_on": "2026-10-06"
   }
 ]

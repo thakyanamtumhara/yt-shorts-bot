@@ -1,43 +1,43 @@
 {
   "date": "2026-10-06",
-  "blog_title": "T-Shirt Raw Material Shortage — Why Negotiating Too Hard Hurts Fabric Availability for Bulk Orders",
-  "blog_url": "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard.html",
-  "blog_slug": "t-shirt-raw-material-shortage-why-negotiating-too-hard",
+  "blog_title": "DTF Order Form Pieces vs Sheets Explained — Why 1 Piece Means a Full Print Sheet, Not 1 T-Shirt",
+  "blog_url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means.html",
+  "blog_slug": "dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means",
   "image_urls": [
-    "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-hero.jpg",
-    "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-img1.jpg",
-    "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-img2.jpg"
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-hero.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img1.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img2.jpg"
   ],
   "image_assets": [
     {
-      "url": "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-hero.webp",
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-hero.webp",
       "origin": "independent_generation",
-      "sha256": "5cee0818b7e018996c1770785683e9dbfcc51b57f51da588e4fcc74f2e31df92"
+      "sha256": "246c182fc1ca03c1eed90c9cdc84f48430bd9b0e81e872e5e5c2db6bd5edb34b"
     },
     {
-      "url": "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-img1.webp",
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img1.webp",
       "origin": "independent_generation",
-      "sha256": "4525e9d44fe06f016738e85e3f659e6fda83ead3db46db11ba6fdb91590810bb"
+      "sha256": "c5457e59a23f1b8e83b2f6fe1b738d89fd54d3c5e9d8ce498e58d45fc23abef3"
     },
     {
-      "url": "https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard-img2.webp",
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img2.webp",
       "origin": "independent_generation",
-      "sha256": "ab20d227f2769c4b110651a97cffcf795153ab4db896c8fa078c9fb8e88692ba"
+      "sha256": "61b111b9d4a29c5d0b0e8e5f2292b9a7c9c09f00ec35661f8c7a195caabdc0e9"
     }
   ],
   "image_policy_version": "2026-09-24",
-  "caption": "**Maal Kam Ho Toh Negotiation Kyun Mushkil?** 📦\n\nWhen yarn and fabric supply is tight and multiple buyers compete for the same stock, spending too much time negotiating the price down can mean the material gets allocated to someone else before you confirm your order. You may win on price but lose on availability—and a delayed blank means a delayed print job, missed delivery, and damaged customer trust.\n\nThis isn't an argument against negotiating. It's about reading the supply situation correctly first. During shortage seasons (cotton yarn, dyed fabric, finished blanks), each production stage has a throughput limit. A shortage at any one point compresses supply across all downstream stages.\n\n**Have you lost stock to a competitor while negotiating rate, or secured material by deciding quickly?** Share your experience—or save this for your next supplier conversation. 💼",
+  "caption": "🤔 **DTF में 'Pieces' का सवाल?**\n\n'Pieces' मतलब T-shirts नहीं—पूरी sheet है जो print होती है। अगर आप 22.8 inch चौड़ी sheet भेजते हो, तो '2 pieces' = वही sheet 2 बार print होगी। कीमत = sheet की असली height × pieces। ❌ गलती: हर design के लिए अलग sheet बनाना = कीमत बढ़ जाएगी। ✅ सही: एक sheet पर सब designs को साथ लगाएं (gang sheet)।\n\nअपने order में कितने designs एक sheet पर fit कर सकते हो?",
   "hashtags": [
-    "#rawmaterialshortage",
-    "#supplynegotiation",
+    "#dtfprinting",
+    "#gangsheet",
     "#tshirtbusiness",
-    "#apparelindustry",
-    "#suppliertips"
+    "#bulkprinting",
+    "#dtfsheetsize"
   ],
   "editorial_review": {
     "version": "2026-09-23",
     "supported": true,
-    "reason": "The caption's core claim—that tight supply causes material allocation to faster-deciding buyers, risking price-negotiation delays—is directly supported by the source material's opening paragraph: 'when yarn and fabric supply is genuinely tight and multiple buyers are competing for the same material, spending too much time negotiating the rate down can mean the material gets allocated to someone else before you confirm.' The explanation of production-stage bottlenecks ('each production stage has a throughput limit. A shortage at any one point compresses supply across all downstream stages') is also present in the source. The framing ('not an argument against negotiating' but 'about reading the supply situation correctly') matches the source's stated intent. No technical claims about fabric construction, finishing, printing, or specific products are made. The engagement question ('Have you lost stock to a competitor while negotiating rate, or secured material by deciding quickly?') invites relevant buyer experience without inventing customer stories or guarantees. No prices, launch promises, or unverified claims appear. The caption teaches one actionable lesson: assess supply tightness before deciding negotiation intensity."
+    "reason": "All substantive claims are backed by reviewed primary sources: (1) 'Pieces' means whole sheet repetitions, not individual T-shirts — supported by dtf_pieces_whole_sheet source (dtf.bulkplaintshirt.com/about, checked 2026-10-03); (2) Price formula sheet height × pieces — same source; (3) Sheet dimensions 22.8 inches wide — supported by dtf_sheet_size source (checked 2026-10-05); (4) Gang sheet concept (multiple designs on one sheet) — supported by dtf_single_designs and dtf_sheet_size sources; (5) Error of separate sheets per design increases cost — logical inference from pricing formula, supported. The caption teaches one clear buyer lesson (correct ordering method to avoid cost increases) without invented prices, guarantees, or unverified claims. Hindi explanation matches English source facts. No diagnostic shortcuts, universal settings, or customer stories added."
   },
   "rate_facts": {},
   "posted": false,

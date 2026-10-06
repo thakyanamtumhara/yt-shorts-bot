@@ -3133,5 +3133,18 @@
       "tts_elevenlabs": 0.011,
       "claude_sonnet": 0.0931
     }
+  },
+  {
+    "date": "2026-10-06T13:38:17.815741",
+    "topic": "DTF Sticker \u091a\u093e\u0939\u093f\u090f \u092a\u0930 \u092a\u0942\u0930\u0940 Sheet \u092c\u0928\u093e\u0928\u0940 \u0928\u0939\u0940\u0902 \u0906\u0924\u0940? \u0905\u092c \u0938\u093f\u0930\u094d\u092b Logo Upload \u0915\u0930\u094b",
+    "title": "DTF Sticker \u092c\u0928\u093e\u0928\u093e \u0905\u092c \u0906\u0938\u093e\u0928 \u2014 \u092c\u0938 Logo Upload \u0915\u0930\u094b, Sheet \u0916\u0941\u0926 \u092c\u0928\u0947\u0917\u0940",
+    "total_usd": 0.3719,
+    "duration_min": 11.2,
+    "breakdown": {
+      "claude_opus": 0.2467,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0141,
+      "claude_sonnet": 0.0611
+    }
   }
 ]
