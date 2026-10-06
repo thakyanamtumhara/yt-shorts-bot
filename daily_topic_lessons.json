@@ -585,7 +585,8 @@
       "intent_key": "dtf_any_design_logo_only",
       "fact_ids": [
         "dtf_single_designs"
-      ]
+      ],
+      "published_as": "DTF Sticker चाहिए पर पूरी Sheet बनानी नहीं आती? अब सिर्फ Logo Upload करो"
     },
     {
       "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
@@ -595,7 +596,10 @@
       "intent_key": "dtf_design_sharp_limit",
       "fact_ids": [
         "dtf_design_sharp_size"
-      ]
+      ],
+      "script_guide": "HOOK: Logo kitna bada print karoge toh sharp aayega? Website khud batati hai. | 1: Sale91 DTF par 'Upload any design' se logo daalo - neeche likha aata hai 'Sharp up to' - is file ke liye 7.5 inch. | 2: Itne tak logo apne hi pixels se sharp chhapega. | 3: Width badhate jao - 7.5 ke baad plus band, aur form likhta hai 'Bigger would not print sharp'. | 4: Kyunki wahi pixels kheenchne se print blur aata hai; bada print chahiye toh badi file banao - sirf number badalne se sharpness nahi badhti. | CLOSE (complete thought, then one question): Ab order se pehle hi pata - logo sharp aayega ya nahi. Comment mein batao - aapko logo kitne inch ka chahiye, chest ke liye ya back ke liye?",
+      "cover_text": "DTF LOGO | कितना बड़ा SHARP छपेगा?",
+      "cover_text_latin": "DTF LOGO | KITNA BADA SHARP CHHAPEGA?"
     }
   ],
   "campaign": {

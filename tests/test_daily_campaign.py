@@ -77,6 +77,19 @@ class DailyCampaignTests(unittest.TestCase):
         with self.assertRaises(TopicHold):
             announcement_topic(BANK, 'no_such_news')
 
+    def test_the_stickers_seed_counts_as_done_once_the_announcement_is_out_and_the_sharp_seed_has_its_guide(self):
+        from tools.daily_topic_selection import SelectedTopic, evidence_prompt
+        seeds = {seed['intent_key']: seed for seed in BANK['seed_lessons']}
+        announced = BANK['announcements']['dtf_stickers_launch']['topic']
+        self.assertTrue(validate_brief(seeds['dtf_any_design_logo_only'], BANK, ()))
+        with self.assertRaises(TopicHold):
+            validate_brief(seeds['dtf_any_design_logo_only'], BANK, (announced,))
+        self.assertTrue(validate_brief(seeds['dtf_design_sharp_limit'], BANK, (announced,)))
+        prompt = evidence_prompt(SelectedTopic(validate_brief(seeds['dtf_design_sharp_limit'], BANK)))
+        self.assertIn('OWNER-APPROVED SCRIPT GUIDE', prompt)
+        self.assertIn('Bigger would not print sharp', prompt)
+        self.assertNotIn('₹', seeds['dtf_design_sharp_limit']['script_guide'])
+
     def test_unknown_fact_ids_are_ignored_and_an_empty_campaign_is_off(self):
         bank = with_window('2000-01-01', '2999-12-31')
         bank['campaign']['fact_ids'] = ['not_a_fact']
