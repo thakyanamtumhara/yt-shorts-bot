@@ -1,7 +1,10 @@
 name: Publish Queue (17:15 IST daily)
 
 # Publishes any queued reels (publish_queue/*.json) at the account's measured
-# best window (16-18h IST; 17:15 keeps 1h gap after the daily bot reel).
+# best window (16-18h IST). Owner rule 6-Oct-2026: never two posts within 2 h.
+# Before each due job, tools/instagram_gap.py reads the account's newest post;
+# under 2 h old (e.g. the daily bot reel, ~15:05 IST), or unreadable, the job
+# stays queued for the next run. One run publishes at most one job.
 # Queue file format:
 #   {"video_url": "...", "cover_url": "...", "caption": "...", "first_comment": "..."}
 # Successful publishes move to publish_queue/done/ with the permalink appended.
@@ -32,7 +35,8 @@ jobs:
           pip install -q requests
           python3 - << 'PY'
           import os, glob, json, time, requests
-          from datetime import datetime, timedelta
+          from datetime import datetime, timedelta, timezone
+          from tools.instagram_gap import PostGap, newest_post_time
 
           files = sorted(glob.glob("publish_queue/*.json"))
           if not files:
@@ -48,6 +52,7 @@ jobs:
           # Missing field = publish on the next run, same as before.
           now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
           print("now IST:", now_ist.strftime("%Y-%m-%d %H:%M"))
+          gap = PostGap(lambda: newest_post_time(requests.get, biz, tok, V))
 
           for path in files:
               job = json.load(open(path))
@@ -57,6 +62,10 @@ jobs:
                   if now_ist < due:
                       print("holding:", path, "until", at, "IST")
                       continue
+              wait = gap.hold(datetime.now(timezone.utc))
+              if wait:
+                  print("holding:", path, "-", wait)
+                  continue
               print("publishing:", path)
               data = {"media_type": "REELS",
                       "video_url": job["video_url"],
@@ -83,6 +92,7 @@ jobs:
               print("  publish:", r.status_code, r.text[:200])
               r.raise_for_status()
               media_id = r.json()["id"]
+              gap.posted(datetime.now(timezone.utc))
               pl = requests.get(f"https://graph.facebook.com/{V}/{media_id}",
                                 params={"fields": "permalink", "access_token": tok},
                                 timeout=30).json().get("permalink", "")

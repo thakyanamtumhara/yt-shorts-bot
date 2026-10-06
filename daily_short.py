@@ -318,15 +318,16 @@ UPLOAD_AS_SHORT = True
 # Each slot: (hour, minute, label)
 PUBLISH_SLOTS = [
     (21, 30, "9:30 PM"),   # RETIRED from rotation (median 31.5 views) — analytics bucket only
-    (11,  0, "11:00 AM"),  # Small A/B arm — chai break / office downtime
+    (11,  0, "11:00 AM"),  # RETIRED A/B arm (6-Oct-2026) — analytics bucket only
     (19,  0, "7:00 PM"),   # WINNER — median 79 views (owner data, Jul 2026)
 ]
-# Rotation: 19:00 IST dominant (owner data: 79 vs 31.5 median views);
-# Wednesday keeps the 11:00 A/B arm for continued signal.
+# Rotation: 19:00 IST every day (owner data: 79 vs 31.5 median views). Wednesday's 11:00 arm retired 6-Oct-2026:
+# the 14:30 IST run always passed it, so Wednesday's Short took Thursday 19:00 beside Thursday's own Short.
+# get_publish_time() moves a Short to slot + 2 h, or a later day, when another video is within 2 h.
 PUBLISH_SLOT_SCHEDULE = {
     0: 2,  # Monday    → 7:00 PM
     1: 2,  # Tuesday   → 7:00 PM
-    2: 1,  # Wednesday → 11:00 AM (A/B arm)
+    2: 2,  # Wednesday → 7:00 PM
     3: 2,  # Thursday  → 7:00 PM
     4: 2,  # Friday    → 7:00 PM
     5: 2,  # Saturday  → 7:00 PM
@@ -5777,34 +5778,39 @@ def get_best_publish_slot(youtube):
 
 
 def get_publish_time(youtube=None):
+    """Owner rule 6-Oct-2026: never two videos within 2 h on this channel (tools/publish_slots.py). Other channels'
+    bookings (MAIN, in crosspost_ledger.json) do not move this channel's Short. If the channel cannot be read, the plain
+    table slot as before (today's, or tomorrow's once it has passed)."""
+    from tools.publish_slots import DAYS_AHEAD, channel_taken, pick_publish_time, table_publish_time
     ist = pytz.timezone(TIMEZONE)
     now = datetime.now(ist)
 
     # Try analytics-optimized slot first
     optimized = get_best_publish_slot(youtube)
 
-    if optimized:
-        hour, minute, label = optimized
-    else:
-        # A/B test: pick publish slot based on day of week
-        weekday = now.weekday()  # 0=Monday ... 6=Sunday
-        slot_idx = PUBLISH_SLOT_SCHEDULE.get(weekday, 0)
-        hour, minute, label = PUBLISH_SLOTS[slot_idx]
+    def slot_for(day):
+        return optimized or PUBLISH_SLOTS[PUBLISH_SLOT_SCHEDULE.get(day.weekday(), 0)]
 
-    today_publish = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    if now >= today_publish:
-        # If we've passed today's slot, schedule for tomorrow
-        tomorrow = now + timedelta(days=1)
-        if not optimized:
-            tomorrow_weekday = tomorrow.weekday()
-            slot_idx = PUBLISH_SLOT_SCHEDULE.get(tomorrow_weekday, 0)
-            hour, minute, label = PUBLISH_SLOTS[slot_idx]
-        publish_at = tomorrow.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    else:
-        publish_at = today_publish
+    publish_at, reason = None, "plain table slot"
+    try:
+        if youtube is None:
+            raise RuntimeError("no YouTube client")
+        taken = channel_taken(youtube, now)
+    except Exception as error:
+        taken = None
+        print(f"   ⚠️ Publish clash check skipped: could not read this channel's scheduled and recent videos "
+              f"({type(error).__name__}: {str(error)[:150]}); using the plain table slot")
+    if taken is not None:
+        publish_at, skipped = pick_publish_time(now, slot_for, taken)
+        if publish_at is None:
+            reason = f"no free slot in the next {DAYS_AHEAD} days ({len(taken)} taken times); plain table slot"
+        else:
+            reason = "; ".join(skipped) or f"free: no other video within 2 h ({len(taken)} taken times checked)"
+    if publish_at is None:
+        publish_at = table_publish_time(now, slot_for)
 
     publish_utc = publish_at.astimezone(pytz.utc)
-    print(f"   ⏰ Publish slot: {label} ({['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][publish_at.weekday()]})")
+    print(f"   ⏰ Publish slot: {publish_at.strftime('%a %d-%b %H:%M')} IST — {reason}")
     return publish_at, publish_utc
 
 
