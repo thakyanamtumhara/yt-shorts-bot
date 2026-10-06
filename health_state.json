@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-06 09:35)",
+   "detail": "ElevenLabs ✅ (2026-10-06 13:38)",
    "provider": "elevenlabs",
-   "at": "2026-10-06 09:35",
-   "title": "Dark T-Shirt फ़ीकी दिखती है — असली Colour Loss vs Surface Fuzz का फ़र्"
+   "at": "2026-10-06 13:38",
+   "title": "DTF Sticker बनाना अब आसान — बस Logo Upload करो, Sheet खुद बनेगी"
   },
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,527 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,326 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 245527,
+   "chars_left": 245326,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -37,8 +37,7 @@
    "severity": "CRITICAL",
    "detail": "key valid · 50 models · veo visible: yes",
    "veo_models": [
-    "models/veo-3.1-generate-preview",
-    "models/veo-3.1-fast-generate-preview"
+    "models/veo-3.1-generate-preview"
    ]
   },
   "meta_token": {
@@ -768,9 +767,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-07T00:02:33+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-06T16:18:26+05:30",
- "last_green_date": "2026-10-06",
+ "last_run_ist": "2026-10-07T00:02:33+05:30",
+ "last_green_date": "2026-10-07",
  "last_still_down_date": "2026-10-06"
 }
