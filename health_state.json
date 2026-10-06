@@ -10,8 +10,17 @@
   },
   "elevenlabs": {
    "ok": false,
-   "severity": "CRITICAL",
-   "detail": "subscription lookup failed (HTTP 0) {\"_raw\": \"TimeoutError: The read operation timed out\"}"
+   "severity": "WARN",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,527 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "tier": "creator",
+   "can_use_pvc": true,
+   "chars_left": 245527,
+   "char_limit": 258644,
+   "sub_status": "active",
+   "quota_resets": "14 Oct 2026",
+   "has_open_invoices": true,
+   "voice_name": "Ketu Original",
+   "voice_category": "professional"
   },
   "sarvam": {
    "ok": false,
@@ -752,9 +761,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-06T16:18:26+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-06T16:08:33+05:30",
+ "last_run_ist": "2026-10-06T16:18:26+05:30",
  "last_green_date": "2026-10-06",
  "last_still_down_date": "2026-10-06"
 }
