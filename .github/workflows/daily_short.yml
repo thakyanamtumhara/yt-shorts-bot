@@ -82,6 +82,11 @@ on:
         type: choice
         options: [auto, 'on', 'off']
         default: auto
+      campaign_fact:
+        description: 'Hand run only: use just this one campaign fact id (for example dtf_single_designs); empty = all campaign facts'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: daily-short-generation
@@ -216,6 +221,7 @@ jobs:
           REVIEW_WAIT_MINUTES: '100'
           HOLD_ONLY: ${{ github.event.inputs.hold_only }}
           DAILY_CAMPAIGN: ${{ github.event.inputs.campaign }}
+          DAILY_CAMPAIGN_FACT: ${{ github.event.inputs.campaign_fact }}
           # Karaoke captions LIVE (baseline fix visually verified 2026-07-06; Ketu approved).
           # Kill switch: set to "0".
           ADD_SUBTITLES: "1"

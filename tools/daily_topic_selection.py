@@ -229,6 +229,10 @@ def active_campaign(bank, today=None):
         return None
     facts = bank.get('facts') or {}
     ids = [key for key in campaign.get('fact_ids') or [] if isinstance(key, str) and key in facts]
+    # DAILY_CAMPAIGN_FACT (a hand run, e.g. the owner's DTF stickers news on 6-Oct-2026): only that one campaign fact.
+    only = os.environ.get('DAILY_CAMPAIGN_FACT', '').strip()
+    if only:
+        ids = [key for key in ids if key == only]
     return {**campaign, 'fact_ids': ids} if ids else None
 
 
