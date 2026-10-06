@@ -319,9 +319,17 @@
   "nudged": true
  },
  "rates0015-20260917-short02-ig": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DeKQL8TDT4O/"
  },
  "rates0015-20260917-short01-li": {
+  "nudged": true
+ },
+ "rates0015-20260917-short02-yt": {
+  "nudged": true
+ },
+ "dtf-stickers-20261006-x": {
   "nudged": true
  }
 }
