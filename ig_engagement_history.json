@@ -2391,5 +2391,31 @@
       "container_id": "18348043543266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "18090172028224985",
+    "title": "DTF Print White Box Problem — PNG Background Transparent Karo Pehle",
+    "topic": "DTF में Background Transparent नहीं किया तो Design के पीछे सफ़ेद डब्बा छपेगा",
+    "published_at": "2026-10-06T18:10:48.619280+05:30",
+    "checked": false,
+    "bot_youtube_id": "HaOgzWlJGDM",
+    "workflow_run_id": "37463183565",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "DTF PRINT सफ़ेद डब्बा क्यों?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "dtf_white_vs_transparent",
+    "cover_labels": [
+      "सफ़ेद बैकग्राउंड",
+      "ट्रांसपेरेंट"
+    ],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18348063778266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]

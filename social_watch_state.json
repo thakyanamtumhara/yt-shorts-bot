@@ -827,6 +827,10 @@
    "confirmation_method": "published_public_api_v1",
    "confirmed_at": "2026-10-06T17:17:48+05:30",
    "permalink": "https://www.facebook.com/reel/1832193008214817"
+  },
+  "1055269430660978": {
+   "queued_at": "2026-10-06 12:40",
+   "confirmed": false
   }
  },
  "history": [

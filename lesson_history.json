@@ -33,5 +33,16 @@
     "buyer_decision": "Dark shade blanks ख़रीदते समय supplier से पूछो कि fabric पर enzyme (biopolish) finish हुई है या नहीं — यह surface fuzz को कम करती है जो phantom fading का कारण बनता है।",
     "video_id": "lnYzuwjXthE",
     "published_on": "2026-10-06"
+  },
+  {
+    "topic": "DTF में Background Transparent नहीं किया तो Design के पीछे सफ़ेद डब्बा छपेगा",
+    "intent_key": "dtf_transparent_background_prints_everything",
+    "fact_ids": [
+      "dtf_transparent_background"
+    ],
+    "lesson": "DTF sheet में जो भी transparent नहीं है वो print होता है — अगर PNG में background white या कोई colour है तो वो पूरा rectangle बनकर T-shirt पर छपेगा। इसीलिए design file में background transparent होना ज़रूरी है। साथ ही, glows, shadows और soft fades patchy print हो सकते हैं क्योंकि ये semi-transparent pixels हैं जो DTF film पर cleanly transfer नहीं होते।",
+    "buyer_decision": "PNG export करने से पहले background हटाकर transparency रखो और design में soft glow या fade effects से बचो — ये DTF sheet पर patchy आएँगे।",
+    "video_id": "HaOgzWlJGDM",
+    "published_on": "2026-10-06"
   }
 ]

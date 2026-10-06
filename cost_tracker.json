@@ -3120,5 +3120,18 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0555
     }
+  },
+  {
+    "date": "2026-10-06T12:41:21.182074",
+    "topic": "DTF \u092e\u0947\u0902 Background Transparent \u0928\u0939\u0940\u0902 \u0915\u093f\u092f\u093e \u0924\u094b Design \u0915\u0947 \u092a\u0940\u091b\u0947 \u0938\u092b\u093c\u0947\u0926 \u0921\u092c\u094d\u092c\u093e \u091b\u092a\u0947\u0917\u093e",
+    "title": "DTF Print \u092e\u0947\u0902 \u0938\u092b\u093c\u0947\u0926 \u0921\u092c\u094d\u092c\u093e \u0915\u094d\u092f\u094b\u0902 \u0906\u0924\u093e \u0939\u0948? PNG Background Fix \u0915\u0930\u094b",
+    "total_usd": 0.7156,
+    "duration_min": 12.8,
+    "breakdown": {
+      "claude_opus": 0.5615,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.011,
+      "claude_sonnet": 0.0931
+    }
   }
 ]
