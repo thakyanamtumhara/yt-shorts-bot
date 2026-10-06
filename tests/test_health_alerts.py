@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import health_watch
 import social_watch
@@ -95,3 +95,33 @@ class HealthAlertsTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class UnansweredCheckTest(unittest.TestCase):
+    # 6-Oct-2026 16:08 IST: one ElevenLabs read timeout put "Fix the ElevenLabs voice plan ... no video goes out" on
+    # the WWbun bar while the clone voice worked; at the 14:30 gate it would have blocked the day's Short.
+    TIMEOUT = (0, 'TimeoutError: The read operation timed out')
+
+    def test_a_blip_is_retried_and_a_later_answer_is_used(self):
+        sleep = Mock()
+        with patch.object(health_watch, '_req_once', side_effect=[self.TIMEOUT, (503, 'busy'), (200, '{}')]):
+            self.assertEqual(health_watch._req('https://example.org', sleep=sleep), (200, '{}'))
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 15])
+
+    def test_a_real_answer_is_returned_at_once(self):
+        sleep = Mock()
+        with patch.object(health_watch, '_req_once', return_value=(401, 'invalid key')) as once:
+            self.assertEqual(health_watch._req('https://example.org', sleep=sleep), (401, 'invalid key'))
+        self.assertEqual(once.call_count, 1)
+        sleep.assert_not_called()
+
+    def test_no_answer_after_retries_is_a_warning_never_an_urgent_or_blocking_failure(self):
+        with patch.object(health_watch, '_req_once', return_value=self.TIMEOUT), \
+             patch.object(health_watch.time, 'sleep'), \
+             patch.dict(health_watch.os.environ, {'ELEVENLABS_API_KEY': 'k'}), \
+             patch.object(health_watch, 'CHECKS', (health_watch.check_elevenlabs,)):
+            result = health_watch.run_all()[0]
+        self.assertFalse(result.ok)
+        self.assertEqual(result.severity, health_watch.WARN)
+        self.assertIn('not a plan, key or billing problem', result.detail)
+        self.assertIn('TimeoutError', result.detail)

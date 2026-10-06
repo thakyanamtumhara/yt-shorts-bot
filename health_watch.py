@@ -36,7 +36,30 @@ TOKEN_EXPIRY_WARN_DAYS = 21
 CRITICAL, WARN, INFO = "CRITICAL", "WARN", "INFO"
 
 
-def _req(url, headers=None, data=None, method=None, timeout=25):
+# No answer (network error, timeout, rate limit, 5xx) is a blip, not a verdict: 6-Oct-2026 one ElevenLabs read timeout
+# made the 16:08 watch put "Fix the ElevenLabs voice plan ... no video goes out" on Ketu's WWbun bar while the clone
+# voice was working (that day's Short had just been voiced on eleven_v4), and at 14:30 the same timeout would have
+# blocked the day's Short at the gate.
+UNANSWERED = {0, 429, 500, 502, 503, 504}
+RETRY_WAITS = (5, 15)
+
+
+class Unanswered(RuntimeError):
+    """The service gave no answer to the check even after retries. Not an owner-fixable plan, key or billing
+    problem: it never goes on the urgent list and never blocks the daily run (the run's own step decides)."""
+
+
+def _req(url, headers=None, data=None, method=None, timeout=25, sleep=None):
+    for wait in (*RETRY_WAITS, None):
+        status, raw = _req_once(url, headers, data, method, timeout)
+        if status not in UNANSWERED:
+            return status, raw
+        if wait is None:
+            raise Unanswered(f"HTTP {status} {raw[:120]}".strip())
+        (sleep or time.sleep)(wait)
+
+
+def _req_once(url, headers=None, data=None, method=None, timeout=25):
     # Replicate sits behind Cloudflare and 403s "error code: 1010" on the default
     # Python-urllib agent, which reads as an outage when the service is fine
     h = {"User-Agent": "sale91-health-watch/1"}
@@ -404,6 +427,11 @@ def run_all():
     for fn in CHECKS:
         try:
             results.append(fn())
+        except Unanswered as e:
+            name = fn.__name__.replace("check_", "")
+            results.append(Result(name, name, WARN, False,
+                                  f"no answer to the check after {len(RETRY_WAITS) + 1} tries ({e}) — a network "
+                                  "or service blip, not a plan, key or billing problem"))
         except Exception as e:
             name = fn.__name__.replace("check_", "")
             severity = CRITICAL if name in {"elevenlabs", "anthropic", "google", "meta_token", "youtube"} else WARN
