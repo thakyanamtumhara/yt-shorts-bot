@@ -664,5 +664,19 @@
     "ig_line": "Naya: ab sirf apna logo upload karke DTF order karo - dtf.bulkplaintshirt.com",
     "owner_review": true,
     "stickers_note": "Owner 6-Oct-2026: 'create more videos related to DTF stickers ... spread this news: you can order DTF stickers now ... I just want a good interaction.' Two facts + two real recordings (stickers, sharp) added; end each Short with one easy comment question."
+  },
+  "announcements": {
+    "dtf_stickers_launch": {
+      "topic": "DTF Sticker चाहिए पर पूरी Sheet बनानी नहीं आती? अब सिर्फ Logo Upload करो",
+      "buyer_question": "I want DTF stickers of my logo but I cannot make a full 22.8-inch DTF sheet. Is there an easier way to order?",
+      "lesson": "On Sale91 DTF's order form choose 'Upload any design' and upload just the logo PNG. The form shows the size it will print and how big it stays sharp; set the pieces, add more designs, and the site places every piece on the 22.8-inch sheet 0.25 inch apart. You pay only for the length the pieces take, so nobody has to build the sheet in Photoshop.",
+      "buyer_decision": "Upload each logo as a transparent PNG, set its width and pieces, and let the site make the sheet.",
+      "intent_key": "dtf_stickers_launch_news",
+      "fact_ids": [
+        "dtf_single_designs"
+      ],
+      "script_guide": "HOOK: Sirf logo hai? DTF sticker ke liye poori sheet banane ki zaroorat nahi. | 1: Sale91 DTF par ab 'Upload any design' hai - apna logo seedha upload karo. | 2: Website turant batati hai logo kitne inch ka print hoga, aur kitna bada karne par bhi sharp rahega. | 3: Pieces daalo - 10 chahiye ya 50 - website saare pieces 22.8 inch ki sheet par khud set kar deti hai, 0.25 inch gap ke saath. | 4: Doosra design bhi add karo, sab ek hi sheet par; paisa sirf utni length ka jitni sheet lagi. | CLOSE (complete thought, then one question): Photoshop mein sheet banane ka jhanjhat khatam. Comment mein batao - aap pehla DTF sticker kis cheez ka banwaoge: shaadi, gym ya apna brand?",
+      "why": "Owner 6-Oct-2026: 'Write a very good script, a catchy script ... spread this news: you can order DTF stickers now ... first reason it out ... I just want a good interaction.' Reasoning: the hook names the buyer's real problem (no gang-sheet skills) in the first second; every claim is shown on the real form (no 'first/best in India' claim, no spoken price); one benefit per line; it ends on a complete thought and one easy comment question."
+    }
   }
 }

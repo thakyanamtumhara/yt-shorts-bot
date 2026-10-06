@@ -65,6 +65,18 @@ class DailyCampaignTests(unittest.TestCase):
         with patch.dict(os.environ, {'DAILY_CAMPAIGN_FACT': ''}):
             self.assertEqual(active_campaign(bank, date(2026, 10, 5))['fact_ids'], bank['campaign']['fact_ids'])
 
+    def test_an_owner_announcement_is_a_checked_brief_with_its_script_guide_in_the_prompt(self):
+        from tools.daily_topic_selection import announcement_topic, evidence_prompt, TopicHold
+        topic = announcement_topic(BANK, 'dtf_stickers_launch')
+        self.assertEqual(topic.brief['fact_ids'], ['dtf_single_designs'])
+        self.assertIn('dtf_single_designs', topic.brief['evidence'])
+        self.assertIn('OWNER-APPROVED SCRIPT GUIDE', evidence_prompt(topic))
+        self.assertIn('Comment mein batao', evidence_prompt(topic))
+        campaign = active_campaign(with_window('2000-01-01', '2999-12-31'))
+        self.assertEqual([Path(p).stem for p in campaign_clips(topic.brief, campaign, ASSETS)], ['stickers'])
+        with self.assertRaises(TopicHold):
+            announcement_topic(BANK, 'no_such_news')
+
     def test_unknown_fact_ids_are_ignored_and_an_empty_campaign_is_off(self):
         bank = with_window('2000-01-01', '2999-12-31')
         bank['campaign']['fact_ids'] = ['not_a_fact']

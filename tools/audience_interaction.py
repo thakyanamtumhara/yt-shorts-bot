@@ -31,6 +31,7 @@ QUESTIONS = {
     'dtf_press_165_180': 'Which heat press setting do you use for DTF on hoodies?',
     'dtf_any_design_logo_only': 'Which logo would you print first as a DTF sticker: a wedding design, a gym logo or your own brand?',
     'dtf_design_sharp_limit': 'How many inches wide do you print your logo on a T-shirt front?',
+    'dtf_stickers_launch_news': 'Which would you order first as a DTF sticker: a wedding design, a gym logo or your own brand logo?',
 }
 
 FACT_QUESTIONS = {

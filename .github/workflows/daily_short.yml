@@ -87,6 +87,11 @@ on:
         required: false
         type: string
         default: ''
+      announcement:
+        description: 'Hand run only: an owner-requested announcement id from daily_topic_lessons.json "announcements" (no topic scoring; the script and final reviews still apply)'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: daily-short-generation
@@ -222,6 +227,7 @@ jobs:
           HOLD_ONLY: ${{ github.event.inputs.hold_only }}
           DAILY_CAMPAIGN: ${{ github.event.inputs.campaign }}
           DAILY_CAMPAIGN_FACT: ${{ github.event.inputs.campaign_fact }}
+          DAILY_ANNOUNCEMENT: ${{ github.event.inputs.announcement }}
           # Karaoke captions LIVE (baseline fix visually verified 2026-07-06; Ketu approved).
           # Kill switch: set to "0".
           ADD_SUBTITLES: "1"

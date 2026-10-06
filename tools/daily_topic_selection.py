@@ -474,6 +474,17 @@ def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max
     return SelectedTopic(max(approved, key=lambda pair: pair[0])[1])
 
 
+def announcement_topic(bank, key, history=()):
+    """An owner-requested announcement (bank "announcements", e.g. the DTF stickers news of 6-Oct-2026) chosen for one
+    hand run: the same lesson and fact checks as any brief, but no topic scoring, which is built for teaching
+    lessons and refuses news. The script still passes the usual script review, fact-limit audit and final review."""
+    items = bank.get('announcements') if isinstance(bank, dict) else None
+    brief = items.get(key) if isinstance(items, dict) and isinstance(key, str) else None
+    if not isinstance(brief, dict):
+        raise TopicHold('Unknown announcement.')
+    return SelectedTopic(validate_brief(brief, bank, history))
+
+
 def evidence_prompt(topic):
     brief = getattr(topic, 'brief', None)
     if not brief:
@@ -493,4 +504,7 @@ def evidence_prompt(topic):
             'A rupee amount may appear only exactly as written in a cited rate_ fact (the current '
             'website rate, before GST) or as the difference between two such amounts, always in digits '
             'with the ₹ sign. Never round it or add any other price, discount, threshold, guarantee '
-            'or process-identification trick.\n' + allowed)
+            'or process-identification trick.\n' + allowed
+            + ('OWNER-APPROVED SCRIPT GUIDE (script_guide above): keep its hook, its order and its closing question; '
+               'say each line naturally in the speaker\'s own words within the length rules; add no new claim.\n'
+               if isinstance(brief.get('script_guide'), str) and brief['script_guide'].strip() else ''))

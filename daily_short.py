@@ -7877,17 +7877,25 @@ def _hold_failed_visual_topic(topic):
 
 
 def smart_pick_topic(claude_client, topic_bank, topic_history):
+    import os
     from tools.daily_topic_selection import load_bank, choose_with_campaign, load_visual_holds
     _install_live_rates()
     bank = load_bank()
-    candidates = search_trending_topics(claude_client, topic_history)
-    # Legacy bare titles, including the exhausted incident bank, are not evidence.
-    candidates = candidates + bank.get("seed_lessons", [])
-    topic = choose_with_campaign(
-        candidates, bank=bank, history=topic_history,
-        review=lambda brief: review_topic(claude_client, brief, topic_history),
-        viable=lambda title: True,
-        min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES, holds=load_visual_holds())
+    announcement = os.environ.get("DAILY_ANNOUNCEMENT", "").strip()
+    if announcement:
+        # Owner-requested news on a hand run (6-Oct-2026: "spread this news: you can order DTF stickers now").
+        from tools.daily_topic_selection import announcement_topic
+        topic = announcement_topic(bank, announcement, topic_history)
+        print(f"   📣 Announcement: {announcement}")
+    else:
+        candidates = search_trending_topics(claude_client, topic_history)
+        # Legacy bare titles, including the exhausted incident bank, are not evidence.
+        candidates = candidates + bank.get("seed_lessons", [])
+        topic = choose_with_campaign(
+            candidates, bank=bank, history=topic_history,
+            review=lambda brief: review_topic(claude_client, brief, topic_history),
+            viable=lambda title: True,
+            min_score=TOPIC_MIN_SCORE, max_candidates=TOPIC_MAX_CANDIDATES, holds=load_visual_holds())
     flag("topic_lesson", topic.brief)
     flag("topic_approved", True)
     CITED_RATE_FACTS.clear()
