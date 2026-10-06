@@ -611,15 +611,7 @@
     "weekdays_note": "Owner 5-Oct-2026: the daily AI-video (Veo) Short had stopped since the campaign began; it runs again on Tue/Thu/Sat, DTF Shorts stay on Mon/Wed/Fri until the campaign ends.",
     "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review. Owner 3-Oct-2026: Claude (Opus 5.5) is the final quality gate; nothing is published before its 100% approval of the exact file.",
     "fact_ids": [
-      "dtf_single_designs",
-      "dtf_design_sharp_size",
-      "dtf_sheet_size",
-      "dtf_min_resolution",
-      "dtf_transparent_background",
-      "dtf_canva_png_size",
-      "dtf_pieces_whole_sheet",
-      "dtf_press_settings",
-      "dtf_service_launch"
+      "dtf_single_designs"
     ],
     "clips": {
       "dtf_transparent_background": [
@@ -663,6 +655,18 @@
     "link": "https://dtf.bulkplaintshirt.com/?utm_source=youtube&utm_medium=shorts_description&utm_campaign=dtf_launch",
     "ig_line": "Naya: ab sirf apna logo upload karke DTF order karo - dtf.bulkplaintshirt.com",
     "owner_review": true,
-    "stickers_note": "Owner 6-Oct-2026: 'create more videos related to DTF stickers ... spread this news: you can order DTF stickers now ... I just want a good interaction.' Two facts + two real recordings (stickers, sharp) added; end each Short with one easy comment question."
+    "stickers_note": "Owner 6-Oct-2026: 'create more videos related to DTF stickers ... spread this news: you can order DTF stickers now ... I just want a good interaction.' Two facts + two real recordings (stickers, sharp) added; end each Short with one easy comment question.",
+    "fact_ids_full": [
+      "dtf_single_designs",
+      "dtf_design_sharp_size",
+      "dtf_sheet_size",
+      "dtf_min_resolution",
+      "dtf_transparent_background",
+      "dtf_canva_png_size",
+      "dtf_pieces_whole_sheet",
+      "dtf_press_settings",
+      "dtf_service_launch"
+    ],
+    "fact_ids_note": "06-Oct-2026 18:20 IST: narrowed to the stickers fact for ONE hand run (owner: 'spread this news: you can order DTF stickers now'); restore fact_ids from fact_ids_full right after that run."
   }
 }
