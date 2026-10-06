@@ -1276,6 +1276,36 @@
    "vizard_social_account_id": "dml6YXJkLTYtMTY5NjIyLTE3NzMw",
    "note": "Provider accepted scheduling code 2000. Future publication is not yet verified.",
    "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "dtf-stickers-20261006-x",
+   "label": "DTF stickers launch Short — x",
+   "platform": "x",
+   "due_ist": "2026-10-06 20:30",
+   "video_sha256": "ef45224ebadb24197e7fe8483e5e9a3dcf7c463471c4e895a4dd0d0b620ae05b",
+   "native_ai": false,
+   "rail": "vizard",
+   "verify": "manual",
+   "vizard_project_id": 35040991,
+   "vizard_final_video_id": 77422442,
+   "note": "Provider accepted scheduling code 2000. Future publication is not yet verified.",
+   "vizard_social_account_id": "dml6YXJkLTUtMTY5NzY5",
+   "url": "https://x.com/KetuR_"
+  },
+  {
+   "id": "dtf-stickers-20261006-linkedin",
+   "label": "DTF stickers launch Short — linkedin",
+   "platform": "linkedin",
+   "due_ist": "2026-10-07 08:15",
+   "video_sha256": "ef45224ebadb24197e7fe8483e5e9a3dcf7c463471c4e895a4dd0d0b620ae05b",
+   "native_ai": false,
+   "rail": "vizard",
+   "verify": "manual",
+   "vizard_project_id": 35040991,
+   "vizard_final_video_id": 77422442,
+   "note": "Provider accepted scheduling code 2000. Future publication is not yet verified.",
+   "vizard_social_account_id": "dml6YXJkLTYtMTY5NjIyLTE3NzMw",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
   }
  ]
 }
