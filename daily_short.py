@@ -1262,6 +1262,19 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
     import base64
     import io
 
+    # An owner announcement may carry its cover question (6-Oct-2026: the stickers launch lost its first cover to a
+    # headline fragment). Used only while it passes the same wording check and no review has refused it.
+    _owner_brief = getattr(topic, "brief", None) if isinstance(getattr(topic, "brief", None), dict) else {}
+    if _owner_brief.get("cover_text") and not cover_feedback:
+        from tools.cover_quality import choose_cover
+        _text, _latin, _check = choose_cover(str(_owner_brief["cover_text"]), str(_owner_brief.get("cover_text_latin") or ""),
+                                             script_text, topic, _rate_amounts(topic))
+        if _check == "validated":
+            print(f"   ✅ Cover text (owner announcement): \"{_text}\"  (latin-safe: \"{_latin}\")")
+            return {"brief_text": "owner announcement cover", "text": _text, "text_latin": _latin,
+                    "color": "#FFD400 (Gold Yellow)", "face": False, "quality_check": "validated (owner announcement)"}
+        print(f"   ⚠️ Owner announcement cover refused by the wording check ({_check}) — writing a new one")
+
     research_context = _json.dumps(research_patterns, indent=2, ensure_ascii=False)
 
     # Last 7 shipped covers — the brief must not reuse their power-word or

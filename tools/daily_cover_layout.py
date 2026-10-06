@@ -45,6 +45,14 @@ PROFILES = (
     {'key': 'dtf_dpi_vs_pixels', 'facts': {'dtf_min_resolution'},
      'terms': (r'dpi|डीपीआई', r'pixel|पिक्सल|पिक्सेल|\bpx\b'),
      'labels': ('सिर्फ़ DPI नंबर', 'असली पिक्सल'), 'latin': ('DPI NUMBER ONLY', 'REAL PIXELS'), 'icons': ('pixelated', 'sharp')},
+    # 'Upload any design' lessons (6-Oct-2026): the AI final review refused the website-crop cover of the stickers
+    # launch twice (run 37467073396: '₹4.81' and sliced controls in the crop). Same Option B as the other DTF lessons.
+    {'key': 'dtf_sharp_vs_too_big', 'facts': {'dtf_design_sharp_size'},
+     'terms': (r'sharp|शार्प', r'\bbad[ae]\b|bigger|बड़ा|बड़े|बडा|बडे'),
+     'labels': ('सही साइज़', 'ज़्यादा बड़ा'), 'latin': ('RIGHT SIZE', 'TOO BIG'), 'icons': ('sharp', 'pixelated')},
+    {'key': 'dtf_sheet_vs_logo', 'facts': {'dtf_single_designs'},
+     'terms': (r'logo|लोगो', r'sheet|शीट'),
+     'labels': ('पूरी शीट', 'सिर्फ लोगो'), 'latin': ('FULL SHEET', 'JUST THE LOGO'), 'icons': ('gang_sheet', 'one_logo')},
     {'key': 'dtf_separate_vs_gang', 'facts': {'dtf_sheet_size'},
      'terms': (r'gang|गैंग|ek sheet|एक शीट|one sheet|single sheet|kai design|कई डिज़ाइन|many designs|multiple designs', r'design|डिज़ाइन|डिजाइन'),
      'labels': ('अलग-अलग शीट', 'एक गैंग शीट'), 'latin': ('SEPARATE SHEETS', 'ONE GANG SHEET'), 'icons': ('many_sheets', 'gang_sheet')},
@@ -188,12 +196,12 @@ def _icon(draw, name, area, ink):
             pad=r*1.45
             draw.rectangle((cx-pad,cy-pad,cx+pad,cy+pad),fill='#ffffff')
         _badge(draw,cx,cy,r)
-    elif name in ('pixelated','sharp'):
+    elif name in ('pixelated','sharp','one_logo'):
         side=min(width,height)*.86
         x0,y0=left+(width-side)/2,top+(height-side)/2
         cx,cy,r=x0+side/2,y0+side/2,side/2
         star=_star(cx,cy,r*.66,r*.28)
-        if name=='sharp':
+        if name in ('sharp','one_logo'):
             _badge(draw,cx,cy,r)
         else:
             cells=13

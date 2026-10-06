@@ -74,12 +74,17 @@ class DailyCoverLayoutTest(unittest.TestCase):
               (['dtf_min_resolution'],'DPI number badalne se pixel nahi badhte.','dtf_dpi_vs_pixels'),
               (['dtf_pieces_whole_sheet','dtf_sheet_size'],'Pieces matlab poori sheet; 28 design ek sheet par.','dtf_pieces_vs_designs'),
               (['dtf_sheet_size','dtf_pieces_whole_sheet'],'Gang sheet: ek sheet par kai design.','dtf_separate_vs_gang'),
-              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.','dtf_tee_vs_hoodie')]
+              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.','dtf_tee_vs_hoodie'),
+              (['dtf_single_designs'],'Sirf logo hai, poori DTF sheet banana nahi aata? Bas logo PNG upload karo.','dtf_sheet_vs_logo'),
+              (['dtf_design_sharp_size'],'Sharp up to 9.3 inch; isse bada karoge toh sharp nahi chhapega.','dtf_sharp_vs_too_big'),
+              (['dtf_design_sharp_size','dtf_single_designs'],'Logo sheet par, sharp up to 9.3 inch - bada nahi.','dtf_sharp_vs_too_big')]
         for facts,script,expected in rows:
             self.assertEqual(supported_comparison(topic('dtf',facts),script)['key'],expected)
         self.assertIsNone(supported_comparison(topic('dtf',['dtf_transparent_background']),'Glow aur shadow patchy chhapte hain.'))
         self.assertIsNone(supported_comparison(topic('dtf',['dtf_press_settings']),'Press karo, phir thanda hone do.'))
         self.assertIsNone(supported_comparison(topic('dtf',['dtf_service_launch']),'DTF sheet online order karo.'))
+        self.assertIsNone(supported_comparison(topic('dtf',['dtf_single_designs']),'Apna design upload karo, pieces daalo.'))
+        self.assertIsNone(supported_comparison(topic('dtf',['dtf_design_sharp_size']),'Website width batati hai.'))
 
     @unittest.skipUnless(features.check('raqm'),'Hindi shaping required')
     def test_actual_dtf_renders_fit(self):
@@ -88,13 +93,34 @@ class DailyCoverLayoutTest(unittest.TestCase):
               (['dtf_min_resolution'],'DPI number badalne se pixel nahi badhte.',['DPI बदला फिर भी','फ़ाइल रिजेक्ट क्यों?']),
               (['dtf_pieces_whole_sheet'],'Pieces matlab poori sheet, design nahi.',['पीस मतलब','डिज़ाइन या शीट?']),
               (['dtf_sheet_size'],'Gang sheet: ek sheet par kai design.',['हर डिज़ाइन','अलग शीट पर?']),
-              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.',['DTF प्रेस','कितने डिग्री पर?'])]
+              (['dtf_press_settings'],'T-shirt 165 aur hoodie 180 degree par press karo.',['DTF प्रेस','कितने डिग्री पर?']),
+              (['dtf_single_designs'],'Sirf logo hai, poori DTF sheet banana nahi aata?',['DTF SHEET','सिर्फ LOGO से बनेगी?']),
+              (['dtf_design_sharp_size'],'Sharp up to 9.3 inch; isse bada karoge toh sharp nahi chhapega.',['LOGO कितना बड़ा','SHARP छपेगा?'])]
         with tempfile.TemporaryDirectory() as tmp:
             for i,(facts,script,lines) in enumerate(rows):
                 result=render_buyer_cover(Image.new('RGB',(1080,1920),'#456678'),lines,Path(tmp)/f'{i}.png',topic=topic('dtf',facts),script=script)
                 self.assertTrue(result['comparison_illustrated'],facts)
                 self.assertEqual(Image.open(Path(tmp)/f'{i}.png').size,(1080,1920))
                 self.assertEqual(Image.open(Path(tmp)/f'{i}_youtube.png').size,(1280,720))
+
+    def test_owner_announcement_cover_skips_the_brief_call_until_a_review_refuses_it(self):
+        path=Path(__file__).resolve().parents[1]/'daily_short.py'
+        tree=ast.parse(path.read_text())
+        nodes=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='generate_thumbnail_brief']
+        state={'_rate_amounts':lambda _topic:set(),'IG_ENGAGEMENT_FILE':'/nonexistent/ig.json'}
+        exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),state)
+        bank=load_bank()
+        brief=dict(bank['announcements']['dtf_stickers_launch'])
+        selected=SelectedTopic({**brief,'evidence':{key:bank['facts'][key] for key in brief['fact_ids']}})
+        script='Sirf logo hai, poori DTF sheet banana nahi aata? Bas logo PNG upload karo.'
+        calls=[]
+        client=types.SimpleNamespace(messages=types.SimpleNamespace(create=lambda **kw:calls.append(kw) or (_ for _ in ()).throw(RuntimeError('stop'))))
+        out=state['generate_thumbnail_brief'](client,script,'',selected,{})
+        self.assertEqual((out['text'],out['text_latin']),('DTF SHEET | सिर्फ LOGO से बनेगी?','DTF SHEET | SIRF LOGO SE BANEGI?'))
+        self.assertEqual(calls,[])
+        self.assertEqual(supported_comparison(selected,script)['key'],'dtf_sheet_vs_logo')
+        self.assertIsNone(state['generate_thumbnail_brief'](client,script,'',selected,{},cover_feedback='the question is a fragment'))
+        self.assertEqual(len(calls),1)
 
     def test_missing_evidence_does_not_enable_profile(self):
         selected=SelectedTopic({'topic':'GSM','fact_ids':['fabric_mass_per_area']})

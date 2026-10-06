@@ -676,6 +676,8 @@
         "dtf_single_designs"
       ],
       "script_guide": "HOOK: Sirf logo hai? DTF sticker ke liye poori sheet banane ki zaroorat nahi. | 1: Sale91 DTF par ab 'Upload any design' hai - apna logo seedha upload karo. | 2: Website turant batati hai logo kitne inch ka print hoga, aur kitna bada karne par bhi sharp rahega. | 3: Pieces daalo - 10 chahiye ya 50 - website saare pieces 22.8 inch ki sheet par khud set kar deti hai, 0.25 inch gap ke saath. | 4: Doosra design bhi add karo, sab ek hi sheet par; paisa sirf utni length ka jitni sheet lagi. | CLOSE (complete thought, then one question): Photoshop mein sheet banane ka jhanjhat khatam. Comment mein batao - aap pehla DTF sticker kis cheez ka banwaoge: shaadi, gym ya apna brand?",
+      "cover_text": "DTF SHEET | सिर्फ LOGO से बनेगी?",
+      "cover_text_latin": "DTF SHEET | SIRF LOGO SE BANEGI?",
       "why": "Owner 6-Oct-2026: 'Write a very good script, a catchy script ... spread this news: you can order DTF stickers now ... first reason it out ... I just want a good interaction.' Reasoning: the hook names the buyer's real problem (no gang-sheet skills) in the first second; every claim is shown on the real form (no 'first/best in India' claim, no spoken price); one benefit per line; it ends on a complete thought and one easy comment question."
     }
   }
