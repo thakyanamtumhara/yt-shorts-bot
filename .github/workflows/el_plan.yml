@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: '0'
+      history:
+        description: 'List the account models and the last 40 voice generations with the model ElevenLabs used (read-only, free)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -51,6 +56,35 @@ jobs:
           if [ "$TTS_PROBE" = "true" ]; then args+=(--tts-probe); fi
           if [ "$ALIGNMENT_PROBE" = "true" ]; then args+=(--alignment-probe); fi
           python tools/diagnose_dependencies.py "${args[@]}"
+      - name: Which model ElevenLabs actually used (history)
+        if: ${{ always() && inputs.history }}
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          python - <<'PY'
+          import datetime, json, os, urllib.request
+          def get(path):
+              request = urllib.request.Request('https://api.elevenlabs.io' + path,
+                                               headers={'xi-api-key': os.environ['ELEVENLABS_API_KEY']})
+              return json.load(urllib.request.urlopen(request, timeout=30))
+          ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+          print('Text-to-speech models on this account:')
+          for model in get('/v1/models'):
+              if model.get('can_do_text_to_speech'):
+                  print(f"  {model.get('model_id'):<34} {model.get('name')}")
+          items = get('/v1/history?page_size=40').get('history', [])
+          print(f'\nLast {len(items)} generations (newest first):')
+          counts = {}
+          for item in items:
+              when = datetime.datetime.fromtimestamp(item.get('date_unix', 0), ist).strftime('%d-%b %H:%M IST')
+              chars = (item.get('character_count_change_to') or 0) - (item.get('character_count_change_from') or 0)
+              model = item.get('model_id') or '?'
+              counts[model] = counts.get(model, 0) + 1
+              print(f"  {when}  model={model:<24} voice={item.get('voice_name')} ({item.get('voice_id')})  "
+                    f"chars={chars}  source={item.get('source')}  text={str(item.get('text') or '')[:40]!r}")
+          print('\nModels used in these generations:', counts)
+          PY
+
       - name: Install topic diagnostic dependencies
         if: ${{ always() && inputs.topics }}
         run: pip install -q -r requirements.txt
