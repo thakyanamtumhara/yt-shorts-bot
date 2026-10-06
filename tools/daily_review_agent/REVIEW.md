@@ -28,7 +28,8 @@ Do this, in order:
      unrelated section, nothing broken (blank page, error, cut-off pop-up). On other lessons: every scene fits the
      lesson and shows nothing false (wrong fabric, fake result, garbled text, odd hands).
    - Last ~4 s: the launch strip (DTF lessons) covers exactly the website's header bar: no logo sliver, no ghost text.
-   - End card: a DTF lesson ends on "Sale91 DTF / Apne PNG se DTF sheets / dtf.bulkplaintshirt.com". A DTF Short must
+   - End card: a DTF lesson ends on the campaign outro card - daily_topic_lessons.json campaign.outro title / sub / cta
+     (since 6-Oct-2026: "Sale91 DTF / Logo ya poori sheet - apne PNG se / dtf.bulkplaintshirt.com"). A DTF Short must
      never show "MOQ sirf 10 pieces".
    - Watermark "Sale91.com" small at the top left; nothing overlaps it.
 4. Read transcript.txt next to review.json script.voice. Every sentence must be spoken, in order, nothing garbled, no
