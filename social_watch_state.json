@@ -207,6 +207,10 @@
   "iK2mrgYEj9s": {
    "title": "Maal Kam Ho Toh Negotiation Kyun Mushkil? | T-Shirt Raw Material",
    "published": "2026-10-04T12:30:25+00:00"
+  },
+  "PnUiZ07bdkw": {
+   "title": "Rate Badha Toh Margin Bhi Badha? | T-Shirt Business Ki Baat",
+   "published": "2026-10-06T12:30:25+00:00"
   }
  },
  "instagram": {
@@ -713,6 +717,22 @@
   "18093105746668582": {
    "permalink": "https://www.instagram.com/reel/DeJeQ51AD9r/",
    "ts": "2026-10-06T09:34:34+0000"
+  },
+  "18500364748099854": {
+   "permalink": "https://www.instagram.com/reel/DeKQL8TDT4O/",
+   "ts": "2026-10-06T16:51:15+0000"
+  },
+  "17970235788173553": {
+   "permalink": "https://www.instagram.com/p/DeJ_Vt1DNut/",
+   "ts": "2026-10-06T14:23:28+0000"
+  },
+  "18219271165351155": {
+   "permalink": "https://www.instagram.com/reel/DeJ6FrOkfOn/",
+   "ts": "2026-10-06T13:37:42+0000"
+  },
+  "18090172028224985": {
+   "permalink": "https://www.instagram.com/reel/DeJzf12DTDK/",
+   "ts": "2026-10-06T12:40:44+0000"
   }
  },
  "facebook": {
@@ -830,11 +850,35 @@
   },
   "1055269430660978": {
    "queued_at": "2026-10-06 12:40",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-07T00:48:13+05:30",
+   "permalink": "https://www.facebook.com/reel/1055269430660978"
   },
   "3469200183250932": {
    "queued_at": "2026-10-06 13:38",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-07T00:48:14+05:30",
+   "permalink": "https://www.facebook.com/reel/3469200183250932"
   }
  },
  "history": [
@@ -1502,8 +1546,13 @@
    "at": "2026-10-06T17:17:48+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-10-07T00:48:15+05:30",
+   "alerts": 0,
+   "new": 5
   }
  ],
- "last_green_date": "2026-10-06",
- "last_run_ist": "2026-10-06T17:17:48+05:30"
+ "last_green_date": "2026-10-07",
+ "last_run_ist": "2026-10-07T00:48:15+05:30"
 }
