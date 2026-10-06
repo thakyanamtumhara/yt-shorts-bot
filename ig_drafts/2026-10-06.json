@@ -40,7 +40,8 @@
     "reason": "All substantive claims are backed by reviewed primary sources: (1) 'Pieces' means whole sheet repetitions, not individual T-shirts — supported by dtf_pieces_whole_sheet source (dtf.bulkplaintshirt.com/about, checked 2026-10-03); (2) Price formula sheet height × pieces — same source; (3) Sheet dimensions 22.8 inches wide — supported by dtf_sheet_size source (checked 2026-10-05); (4) Gang sheet concept (multiple designs on one sheet) — supported by dtf_single_designs and dtf_sheet_size sources; (5) Error of separate sheets per design increases cost — logical inference from pricing formula, supported. The caption teaches one clear buyer lesson (correct ordering method to avoid cost increases) without invented prices, guarantees, or unverified claims. Hindi explanation matches English source facts. No diagnostic shortcuts, universal settings, or customer stories added."
   },
   "rate_facts": {},
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "17970235788173553",
+  "error": null,
+  "posted_at": "2026-10-06T19:53:32.485580+05:30"
 }
