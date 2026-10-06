@@ -1,5 +1,16 @@
 {
  "format": "urgent-actions-v1",
- "updated_at": "2026-09-28T06:27:39+05:30",
- "items": []
+ "updated_at": "2026-10-06T16:08:31+05:30",
+ "items": [
+  {
+   "id": "elevenlabs",
+   "owner": "health_watch",
+   "title": "Fix the ElevenLabs voice plan",
+   "detail": "The daily Short cannot be voiced in your cloned voice, so no video goes out.",
+   "action_url": "https://elevenlabs.io/app/subscription",
+   "evidence": "subscription lookup failed (HTTP 0) {\"_raw\": \"TimeoutError: The read operation timed out\"}",
+   "since": "2026-10-06T16:08:31+05:30",
+   "last_seen": "2026-10-06T16:08:31+05:30"
+  }
+ ]
 }
