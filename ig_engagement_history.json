@@ -2315,7 +2315,7 @@
     "title": "Canva Export 96 DPI vs 300 DPI — Why Your DTF Print Looks Blurry",
     "topic": "Canva से DTF शीट बनाई — Print में Blurry क्यों आया? 96 DPI vs 300 DPI का फ़र्क़",
     "published_at": "2026-10-03T17:09:52.324023+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "wR4EG8j1gKk",
     "workflow_run_id": "37119628280",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2333,7 +2333,16 @@
       "requested": true,
       "container_id": "18347593033266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-06T15:03:02.095168+05:30",
+    "hours_since_publish": 69.9,
+    "views": 1162,
+    "reach": 816,
+    "likes": 11,
+    "comments": 2,
+    "shares": 8,
+    "saves": 8,
+    "avg_watch_time_ms": 11081
   },
   {
     "media_id": "18628577545011521",
@@ -2357,6 +2366,29 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18347891734266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
+  },
+  {
+    "media_id": "18093105746668582",
+    "title": "Dark T-Shirt Fading — Real Dye Loss vs Surface Fuzz Explained for Bulk Printers",
+    "topic": "Dark T-Shirt फ़ीकी क्यों दिखती है? — असली Colour Loss vs Phantom Colour Loss",
+    "published_at": "2026-10-06T15:04:44.752411+05:30",
+    "checked": false,
+    "bot_youtube_id": "lnYzuwjXthE",
+    "workflow_run_id": "37439997007",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "DARK T-SHIRT फ़ीकी या सिर्फ़ FUZZ?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18348043543266060",
       "verification": "create_accepted_native_label_unverified"
     }
   }

@@ -3105,5 +3105,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1977
     }
+  },
+  {
+    "date": "2026-10-06T09:35:10.840994",
+    "topic": "Dark T-Shirt \u092b\u093c\u0940\u0915\u0940 \u0915\u094d\u092f\u094b\u0902 \u0926\u093f\u0916\u0924\u0940 \u0939\u0948? \u2014 \u0905\u0938\u0932\u0940 Colour Loss vs Phantom Colour Loss",
+    "title": "Dark T-Shirt \u092b\u093c\u0940\u0915\u0940 \u0926\u093f\u0916\u0924\u0940 \u0939\u0948 \u2014 \u0905\u0938\u0932\u0940 Colour Loss vs Surface Fuzz \u0915\u093e \u092b\u093c\u0930\u094d\u0915\u093c",
+    "total_usd": 7.4569,
+    "duration_min": 31.9,
+    "breakdown": {
+      "claude_opus": 0.5752,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0112,
+      "veo_clips": 6.72,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0555
+    }
   }
 ]

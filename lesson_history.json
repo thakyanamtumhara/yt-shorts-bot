@@ -22,5 +22,16 @@
     "buyer_decision": "एक sheet पर सारे designs gang करो और pieces में सिर्फ़ वो संख्या डालो जितनी बार वो पूरी sheet चाहिए — हर design को अलग sheet मत बनाओ।",
     "video_id": "59nF0krhulc",
     "published_on": "2026-10-05"
+  },
+  {
+    "topic": "Dark T-Shirt फ़ीकी क्यों दिखती है? — असली Colour Loss vs Phantom Colour Loss",
+    "intent_key": "phantom_colour_loss_fuzz_vs_real_dye_loss",
+    "fact_ids": [
+      "phantom_colour_loss_surface_fuzz"
+    ],
+    "lesson": "हर बार fading सिर्फ़ dye निकलना नहीं होता। Home laundering में fabric-to-fabric और fabric-to-metal रगड़ से surface पर fibres उठ आते हैं (fuzz); यह fuzz रोशनी को scatter करता है और कपड़ा lighter दिखता है — इसे 'phantom colour loss' कहते हैं, जिसमें base colour अभी भी मौजूद है लेकिन surface fibres की light refraction से छुपा है। एक cited study में black interlock 20 washes के बाद faded दिखा, लेकिन mill-level cellulase enzyme treatment से fuzz हटाने पर colour strength लगभग पूरी वापस आ गई। हालाँकि असली dye removal भी fading की एक वजह है, इसलिए हर faded look को phantom loss मान लेना ग़लत होगा।",
+    "buyer_decision": "Dark shade blanks ख़रीदते समय supplier से पूछो कि fabric पर enzyme (biopolish) finish हुई है या नहीं — यह surface fuzz को कम करती है जो phantom fading का कारण बनता है।",
+    "video_id": "lnYzuwjXthE",
+    "published_on": "2026-10-06"
   }
 ]
