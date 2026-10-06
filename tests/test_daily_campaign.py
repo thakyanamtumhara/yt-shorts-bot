@@ -48,6 +48,14 @@ class DailyCampaignTests(unittest.TestCase):
             with patch.dict(os.environ, {'DAILY_CAMPAIGN': value}):
                 self.assertIsNotNone(active_campaign(bank, date(2026, 10, 5)))
 
+    def test_a_hand_run_can_switch_the_campaign_on_for_another_weekday_inside_its_dates(self):
+        bank = with_window('2026-10-03', '2026-10-14', ['Mon', 'Wed', 'Fri'])
+        tuesday = date(2026, 10, 6)
+        self.assertIsNone(active_campaign(bank, tuesday))
+        with patch.dict(os.environ, {'DAILY_CAMPAIGN': 'on'}):
+            self.assertIsNotNone(active_campaign(bank, tuesday))
+            self.assertIsNone(active_campaign(bank, date(2026, 10, 20)))
+
     def test_unknown_fact_ids_are_ignored_and_an_empty_campaign_is_off(self):
         bank = with_window('2000-01-01', '2999-12-31')
         bank['campaign']['fact_ids'] = ['not_a_fact']
@@ -61,7 +69,8 @@ class DailyCampaignTests(unittest.TestCase):
         lessons = {seed['intent_key']: seed for seed in BANK['seed_lessons'] if cites_campaign(seed, campaign)}
         expected = {'dtf_canva_png_3125': 'canva', 'dtf_dpi_label_not_pixels': 'resolution',
                     'dtf_transparent_background': 'transparent', 'dtf_gang_sheet_layout': 'gang',
-                    'dtf_pieces_means_sheets': 'pieces', 'dtf_press_165_180': 'press'}
+                    'dtf_pieces_means_sheets': 'pieces', 'dtf_press_165_180': 'press',
+                    'dtf_any_design_logo_only': 'stickers', 'dtf_design_sharp_limit': 'sharp'}
         self.assertEqual(set(expected), set(lessons))
         for key, seed in lessons.items():
             self.assertTrue(validate_brief(seed, BANK)['evidence'])

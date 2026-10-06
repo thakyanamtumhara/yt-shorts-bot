@@ -1,7 +1,7 @@
 {
   "format": "daily-topic-facts-v1",
   "reviewed": true,
-  "reviewed_on": "2026-10-05",
+  "reviewed_on": "2026-10-06",
   "scope": "Stable textile teaching facts only; no current stock, prices, incident claims or verified product-test results. Refresh the reviewed bank when useful distinct lessons are exhausted. During a dated campaign the bank also holds Sale91 DTF service facts from its own live pages and Canva Help.",
   "audience_evidence": "Owned-audience audit 12-Sep-2026: 231 non-owner top-level public comments from a purposive MAIN/Instagram sample (not unique buyers or a survey), with overlapping fabric/GSM discussion39comments across12posts, fit29/11, wash17/8 and printing14/4. Requests include biowash/fabric-label meaning, why320GSMcan feel thin and boxy proportions. Own-site GSC13-Aug–9-Sep: query240 gsm t shirt2132impressions/33clicks, oversized variant694/13, acid wash t shirt451/1. These are this site's Google Search observations, not global volume or YouTube search data. Prioritize clearly explained buyer distinctions; paid/organic channel split remains unknown. Exact lesson wording is editorial synthesis, never an invented customer quote. Boxy, printing failure and acid-wash durability need actual source-specific measurements/test footage; they are not approved technical facts in this bank.",
   "facts": {
@@ -200,6 +200,20 @@
       "source_title": "CottonWorks: Cotton Textile Printing Basics",
       "checked_on": "2026-10-05",
       "limits": "General fabric-printing principle. Do not claim a specific blank prints brighter or duller, identify yarn hairiness, twist or lustre by eye, touch or AI close-up, rank brands, promise colourfastness, or apply it to DTF transfers."
+    },
+    "dtf_single_designs": {
+      "claim": "On Sale91's DTF order form (dtf.bulkplaintshirt.com) 'Upload any design' takes a single logo or design as a PNG. The form shows the size it will print and its largest sharp width ('Sharp up to', 250 DPI); the buyer can change the width (the height follows) and choose pieces, add more designs, and the site places every piece together on the 22.8-inch sheet, 0.25 inch apart, charging only for the length the pieces take.",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Sale91 DTF order form: Upload any design",
+      "checked_on": "2026-10-06",
+      "limits": "Show it on the real form and say 22.8 inch and 0.25 inch exactly. No rupee amount in the spoken script. 'DTF sticker' is the buyers' word for a DTF heat transfer that is pressed with a heat press - never call it a self-adhesive sticker. No 'first' or 'best in India' claims."
+    },
+    "dtf_design_sharp_size": {
+      "claim": "Each single design on Sale91's DTF order form shows 'Sharp up to' a width - the widest it prints at 250 DPI or better from the file's own pixels. The form does not take a bigger width and says 'Bigger would not print sharp', because stretching the same pixels prints blurry; a bigger print needs a bigger file.",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Sale91 DTF order form: Upload any design",
+      "checked_on": "2026-10-06",
+      "limits": "Use the form's own words ('Sharp up to', 'Bigger would not print sharp'). The number differs for every file; the example on screen is 7.5 inch. No rupee amount in the spoken script."
     },
     "dtf_sheet_size": {
       "claim": "Sale91's DTF sheet is 22.8 inches wide and any height from 1 to 390 inches (since 5 Oct 2026; it was 39 inches minimum before). The buyer uploads one ready-made PNG sheet, and it is printed as uploaded: never stretched or cropped. One sheet can carry many designs (a gang sheet).",
@@ -562,6 +576,26 @@
       "fact_ids": [
         "dtf_press_settings"
       ]
+    },
+    {
+      "topic": "सिर्फ Logo है? अब DTF sheet खुद बनाने की ज़रूरत नहीं",
+      "buyer_question": "I only have my logo, not a full 22.8-inch DTF sheet. Can I order DTF prints (DTF stickers) of just my logo?",
+      "lesson": "On Sale91 DTF's order form choose 'Upload any design', upload the logo PNG and the form shows the size it will print and how big it stays sharp. Set the pieces, add more designs, and the site places every piece on the 22.8-inch sheet 0.25 inch apart. You pay only for the length the pieces take.",
+      "buyer_decision": "Upload each logo as a transparent PNG, set its width and pieces, and let the site make the sheet instead of building it in Photoshop.",
+      "intent_key": "dtf_any_design_logo_only",
+      "fact_ids": [
+        "dtf_single_designs"
+      ]
+    },
+    {
+      "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
+      "buyer_question": "How big can I print my logo as a DTF transfer before it turns blurry?",
+      "lesson": "Every design on Sale91 DTF's order form shows 'Sharp up to' a width - the biggest it prints at 250 DPI from the file's own pixels. Going bigger only stretches the same pixels, so the form stops there and says it would not print sharp.",
+      "buyer_decision": "Keep the width under the 'Sharp up to' number; for a bigger print, make the logo file bigger first - changing only the number does not add sharpness.",
+      "intent_key": "dtf_design_sharp_limit",
+      "fact_ids": [
+        "dtf_design_sharp_size"
+      ]
     }
   ],
   "campaign": {
@@ -569,10 +603,16 @@
     "label": "DTF launch",
     "from": "2026-10-03",
     "until": "2026-10-14",
-    "weekdays": ["Mon", "Wed", "Fri"],
+    "weekdays": [
+      "Mon",
+      "Wed",
+      "Fri"
+    ],
     "weekdays_note": "Owner 5-Oct-2026: the daily AI-video (Veo) Short had stopped since the campaign began; it runs again on Tue/Thu/Sat, DTF Shorts stay on Mon/Wed/Fri until the campaign ends.",
     "why": "Owner 3-Oct-2026: make DTF shorts for a few days so people know Sale91 has launched DTF; the best one may go to MAIN after the normal review. Owner 3-Oct-2026: Claude (Opus 5.5) is the final quality gate; nothing is published before its 100% approval of the exact file.",
     "fact_ids": [
+      "dtf_single_designs",
+      "dtf_design_sharp_size",
       "dtf_sheet_size",
       "dtf_min_resolution",
       "dtf_transparent_background",
@@ -602,20 +642,27 @@
       ],
       "dtf_service_launch": [
         "launch"
+      ],
+      "dtf_single_designs": [
+        "stickers"
+      ],
+      "dtf_design_sharp_size": [
+        "sharp"
       ]
     },
     "generic_clip_facts": [
       "dtf_service_launch"
     ],
-    "cta_text": "Naya: DTF sheets - dtf.bulkplaintshirt.com",
+    "cta_text": "Naya: DTF stickers - dtf.bulkplaintshirt.com",
     "outro": {
       "title": "Sale91 DTF",
-      "sub": "Apne PNG se DTF sheets",
+      "sub": "Logo ya poori sheet - apne PNG se",
       "cta": "dtf.bulkplaintshirt.com"
     },
-    "description_rule": "DTF sheets are ordered only at dtf.bulkplaintshirt.com; that link and the plain T-shirt link are added below the description automatically, so add no link and never write that DTF sheets can be ordered on Sale91.com (Sale91.com sells plain garments only). Quote every number exactly as the cited facts state it, for example a minimum of 5700 pixels (250 DPI) and 6840 pixels (300 DPI) as the best. Follow the wording each cited fact's limits ask for (for example, say the Canva figures are from Canva's current help).",
+    "description_rule": "DTF sheets are ordered only at dtf.bulkplaintshirt.com; that link and the plain T-shirt link are added below the description automatically, so add no link and never write that DTF sheets can be ordered on Sale91.com (Sale91.com sells plain garments only). Quote every number exactly as the cited facts state it, for example a minimum of 5700 pixels (250 DPI) and 6840 pixels (300 DPI) as the best. Follow the wording each cited fact's limits ask for (for example, say the Canva figures are from Canva's current help). Say 'DTF sticker' only as the buyers' word for a DTF heat transfer that is pressed with a heat press, never a self-adhesive sticker; make no 'first' or 'best in India' claim.",
     "link": "https://dtf.bulkplaintshirt.com/?utm_source=youtube&utm_medium=shorts_description&utm_campaign=dtf_launch",
-    "ig_line": "Naya: DTF sheets ab Sale91 pe - dtf.bulkplaintshirt.com par PNG upload karke order karo.",
-    "owner_review": true
+    "ig_line": "Naya: ab sirf apna logo upload karke DTF order karo - dtf.bulkplaintshirt.com",
+    "owner_review": true,
+    "stickers_note": "Owner 6-Oct-2026: 'create more videos related to DTF stickers ... spread this news: you can order DTF stickers now ... I just want a good interaction.' Two facts + two real recordings (stickers, sharp) added; end each Short with one easy comment question."
   }
 }

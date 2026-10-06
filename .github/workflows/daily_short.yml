@@ -77,10 +77,10 @@ on:
         type: boolean
         default: false
       campaign:
-        description: 'Launch campaign lessons: auto (the bank decides by date and weekday) or off (an ordinary AI-video lesson)'
+        description: 'Launch campaign lessons: auto (the bank decides by date and weekday), on (any weekday inside the campaign dates) or off (an ordinary AI-video lesson)'
         required: false
         type: choice
-        options: [auto, 'off']
+        options: [auto, 'on', 'off']
         default: auto
 
 concurrency:

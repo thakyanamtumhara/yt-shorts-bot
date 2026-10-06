@@ -180,7 +180,47 @@ const which = process.argv.slice(2);
 const popOpen = () => document.getElementById('pop').open;
 const priceSettled = () => { const e = document.querySelector('#rows .lprice'); return !!e && !e.classList.contains('busy') && e.textContent.trim().length > 0; };
 const typeCopies = (A, v) => async () => { const i = A.p.locator('#rows .copies-in'); await i.fill(v); await i.dispatchEvent('change'); await i.blur(); };
+const packReady = () => { const b = document.getElementById('packBox'); const s = document.getElementById('summary'); return !!b && !b.hidden && !!b.querySelector('canvas') && !!s && !s.classList.contains('busy'); };
+const designCopies = (A, sel, v) => async () => { const i = A.p.locator(sel); await i.fill(v); await i.dispatchEvent('change'); await i.blur(); };
 const CLIPS = {
+    async sharp(A) {
+        await A.go('/'); await A.hold(1.0);
+        await A.tap('#designBtn', () => A.p.setInputFiles('#designInput', F('groom-squad.png')));
+        await A.uploaded(); await A.until(packReady, 12000); await A.hold(0.5);
+        await A.scrollEl('#rows', 64, 0.6);
+        await A.hl('#rows .row.is-design .fsize'); await A.hold(2.4);
+        await A.hl('#rows .row.is-design .dnote'); await A.hold(3.0); await A.hl('', false);
+        const plus = '#rows .dwidth button[aria-label^="Bigger"]';
+        for (let i = 0; i < 4 && (await A.p.locator(plus).isEnabled()); i++) { await A.tap(plus); await A.live(260); }
+        await A.hl('#rows .row.is-design .dnote'); await A.hold(2.4); await A.hl('', false);
+        const width = '#rows .width-in';
+        await A.tap(width, designCopies(A, width, '12'));
+        await A.until(() => /Bigger would not print sharp/.test(document.querySelector('#rows .dnote').textContent), 6000);
+        await A.hl('#rows .row.is-design .dnote'); await A.hold(3.8); await A.hl('', false);
+        await A.hl('#rows .dwidth'); await A.hold(2.0); await A.hl('', false);
+        await A.until(packReady, 12000);
+        await A.scrollEl('#packBox', 64, 0.9);
+        await A.hl('#packBox'); await A.hold(3.4); await A.hl('', false); await A.hold(0.5);
+    },
+    async stickers(A) {
+        await A.go('/'); await A.hold(1.2);
+        await A.hl('#designPicker button, #designHint'); await A.hold(2.8); await A.hl('', false);
+        await A.tap('#designBtn', () => A.p.setInputFiles('#designInput', F('bride-tribe.png')));
+        await A.uploaded(); await A.until(packReady, 12000); await A.hold(0.5);
+        await A.scrollEl('#rows', 64, 0.6);
+        await A.hl('#rows .row.is-design .fsize'); await A.hold(2.4);
+        await A.hl('#rows .row.is-design .dnote'); await A.hold(2.8); await A.hl('', false);
+        const first = '#rows li:nth-of-type(1) .copies-in:not(.width-in)';
+        await A.tap(first, designCopies(A, first, '10')); await A.until(packReady, 12000); await A.hold(0.6);
+        await A.scrollEl('#packBox', 64, 0.9);
+        await A.hl('#packBox'); await A.hold(3.8); await A.hl('', false);
+        await A.tap('#designBtn', () => A.p.setInputFiles('#designInput', F('gym-badge.png')));
+        await A.uploaded(); await A.until(packReady, 12000); await A.hold(0.8);
+        const second = '#rows li:nth-of-type(2) .copies-in:not(.width-in)';
+        await A.tap(second, designCopies(A, second, '6')); await A.until(packReady, 12000); await A.hold(0.6);
+        await A.scrollEl('#packBox', 64, 0.9);
+        await A.hl('#packBox'); await A.hold(4.2); await A.hl('', false); await A.hold(0.5);
+    },
     async transparent(A) {
         await A.go('/'); await A.hold(1.3);
         await A.pick('white-bg.png'); await A.uploaded(); await A.hold(0.4);

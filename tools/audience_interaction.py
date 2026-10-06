@@ -29,6 +29,8 @@ QUESTIONS = {
     'dtf_gang_sheet_layout': 'How many designs do you usually fit on one DTF gang sheet?',
     'dtf_pieces_means_sheets': 'When you order DTF, do you count pieces as sheets or as T-shirts?',
     'dtf_press_165_180': 'Which heat press setting do you use for DTF on hoodies?',
+    'dtf_any_design_logo_only': 'Which logo would you print first as a DTF sticker: a wedding design, a gym logo or your own brand?',
+    'dtf_design_sharp_limit': 'How many inches wide do you print your logo on a T-shirt front?',
 }
 
 FACT_QUESTIONS = {

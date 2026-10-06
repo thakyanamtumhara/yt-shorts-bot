@@ -211,10 +211,12 @@ def record_published_lesson(topic, video_id, path=None, today=None):
 
 def active_campaign(bank, today=None):
     """The bank's dated launch campaign while today (India time) is inside its from..until window and, when the
-    campaign lists "weekdays" (Mon..Sat), is one of them; else None. DAILY_CAMPAIGN=off on a run switches it off.
+    campaign lists "weekdays" (Mon..Sat), is one of them; else None. DAILY_CAMPAIGN=off on a run switches it off;
+    DAILY_CAMPAIGN=on keeps it on any weekday inside the window.
     Only its fact ids that exist in the bank count; a campaign without any is ignored."""
     campaign = bank.get('campaign') if isinstance(bank, dict) else None
-    if not isinstance(campaign, dict) or os.environ.get('DAILY_CAMPAIGN', '').strip().lower() == 'off':
+    mode = os.environ.get('DAILY_CAMPAIGN', '').strip().lower()
+    if not isinstance(campaign, dict) or mode == 'off':
         return None
     today = today or datetime.now(IST).date()
     day = today.isoformat()
@@ -222,7 +224,8 @@ def active_campaign(bank, today=None):
     if not (isinstance(start, str) and isinstance(until, str) and start <= day <= until):
         return None
     weekdays = campaign.get('weekdays')
-    if isinstance(weekdays, list) and ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[today.weekday()] not in weekdays:
+    # DAILY_CAMPAIGN=on (a run started by hand for a campaign Short on another weekday) skips only the weekday check.
+    if mode != 'on' and isinstance(weekdays, list) and ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')[today.weekday()] not in weekdays:
         return None
     facts = bank.get('facts') or {}
     ids = [key for key in campaign.get('fact_ids') or [] if isinstance(key, str) and key in facts]
