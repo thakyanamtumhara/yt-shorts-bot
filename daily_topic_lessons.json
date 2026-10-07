@@ -281,11 +281,11 @@
       "announcement_only": true
     },
     "dtf_print_photos_2026_10_07": {
-      "claim": "Owner photos of 7-Oct-2026: black T-shirts and black hoodies pressed with DTF prints from Sale91 DTF's printing partner - full-colour designs and thin white details on black fabric, a red design along a hoodie sleeve and a full-colour print on a hoodie back.",
+      "claim": "Owner photos of 7-Oct-2026: black T-shirts and a black hoodie pressed with DTF prints from Sale91 DTF's printing partner - full-colour designs and thin white details on black fabric, and a red design along a hoodie sleeve.",
       "source_url": "https://dtf.bulkplaintshirt.com/",
-      "source_title": "Owner photos 7-Oct-2026 (six of them, cropped, numbered 1-6 in assets/dtf_demo/black_tee_real.mp4; the hoodie sleeve and a hoodie back, cropped above the wearer's name, open hoodie_press.mp4)",
+      "source_title": "Owner photos 7-Oct-2026 (six of them, cropped, numbered 1-6 in assets/dtf_demo/black_tee_real.mp4; the hoodie sleeve and a close-up of its print open and close hoodie_press.mp4)",
       "checked_on": "2026-10-07",
-      "limits": "Only what the photos show. No wash-life, stretch, feel or durability claim and no 'first' or 'best in India'. Never name the customers, colleges, events or brands printed on these garments, and never say they were pressed with any particular settings.",
+      "limits": "Only what the photos show. No wash-life, stretch, feel or durability claim and no 'first' or 'best in India'. In speech, titles and captions never name the customers, colleges, events or brands printed on these garments; no clip shows a college name or emblem or a person's name. Never say these garments were pressed with any particular settings.",
       "announcement_only": true
     }
   },
@@ -756,7 +756,7 @@
       "script_guide": "HOOK: Hoodie par DTF press karna hai? T-shirt wala temperature mat lagana. | 1: Hamari pressing guide mein patli T-shirt ke liye 165 degree, 5 second. | 2: Hoodie aur sweatshirt ke liye 180 degree, 5 second - dono mein medium-firm pressure. | 3: Print ko printed side neeche rakhkar press karo, phir poora thanda hone do aur film dheere se utaaro. | 4: Upar Teflon sheet ya baking paper rakhkar 5 second aur press karo. | CLOSE (complete thought, then one question): Aur pehle ek extra kapde par test zaroor karo. Comment mein batao - aap zyada hoodie par print karwate ho ya T-shirt par?",
       "cover_text": "HOODIE पर DTF | TEMPERATURE कितना?",
       "cover_text_latin": "HOODIE PAR DTF | TEMPERATURE KITNA?",
-      "why": "Owner 7-Oct-2026 16:10 IST, after sending his own photos and videos: 'You can also create some shots out of this. You can utilize the system that we already have on the website, the screen record ... to create multiple shots related to that.' Real footage: held for his approval of the exact file before anything is published. Reasoning: a real hoodie sleeve print opens it, then the live pressing guide: the 165 row, the 180 row and the pressure line one by one, the whole step list lit while the steps are said, 'Test first', and the hoodie again for the closing question (run 37612577073's per-step highlights lagged the narration and the visual review refused it); the photo is never said to be pressed with these settings. If published, set seed dtf_press_165_180 'published_as' to this title so the daily campaign does not repeat it."
+      "why": "Owner 7-Oct-2026 16:10 IST, after sending his own photos and videos: 'You can also create some shots out of this. You can utilize the system that we already have on the website, the screen record ... to create multiple shots related to that.' Real footage: held for his approval of the exact file before anything is published. Reasoning: a real hoodie sleeve print and a close-up of it open it (the hoodie-back photo was dropped: its print carries a college name and emblem, refused by the dry AI review of run 37615183541), then the live pressing guide: the 165 row, the 180 row and the pressure line one by one, the whole step list lit while the steps are said, 'Test first', and the hoodie again for the closing question (run 37612577073's per-step highlights lagged the narration and the visual review refused it); the photo is never said to be pressed with these settings. If published, set seed dtf_press_165_180 'published_as' to this title so the daily campaign does not repeat it."
     }
   }
 }
