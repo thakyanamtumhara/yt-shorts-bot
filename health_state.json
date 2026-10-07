@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-06 13:38)",
+   "detail": "ElevenLabs ✅ (2026-10-07 09:20)",
    "provider": "elevenlabs",
-   "at": "2026-10-06 13:38",
-   "title": "DTF Sticker बनाना अब आसान — बस Logo Upload करो, Sheet खुद बनेगी"
+   "at": "2026-10-07 09:20",
+   "title": "Logo कितना बड़ा Print करें? Website खुद बता देती है — DTF Trick"
   },
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,326 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 245,272 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 245326,
+   "chars_left": 245272,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -774,9 +774,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-07T15:58:58+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-07T00:02:33+05:30",
+ "last_run_ist": "2026-10-07T15:58:58+05:30",
  "last_green_date": "2026-10-07",
  "last_still_down_date": "2026-10-06"
 }
