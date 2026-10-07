@@ -17,5 +17,15 @@
    "garment_skew_after_laundering"
   ],
   "reason": "The video uses a heavy rib-knit fabric to illustrate single jersey loop deformation and demonstrates garment skew using an artificially hand-pinched swirl."
+ },
+ {
+  "date": "2026-10-07",
+  "topic": "Hoodie पर DTF Press करना है? T-Shirt 165°C, Hoodie 180°C — Pressing Guide",
+  "intent_key": "dtf_hoodie_vs_tee_press_temperature",
+  "fact_ids": [
+   "dtf_press_settings",
+   "dtf_print_photos_2026_10_07"
+  ],
+  "reason": "The visual highlight overlays on the pressing guide are severely misaligned with the spoken narration steps."
  }
 ]
