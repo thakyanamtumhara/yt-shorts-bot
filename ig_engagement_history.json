@@ -2443,5 +2443,30 @@
       "container_id": "18348070060266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "18132023293757101",
+    "title": "DTF Logo Print Size — How Big Before It Gets Blurry at 250 DPI",
+    "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
+    "published_at": "2026-10-07T14:46:18.618202+05:30",
+    "checked": false,
+    "bot_youtube_id": "xDVQfDJkJ-g",
+    "workflow_run_id": "37597634561",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "DTF LOGO कितना बड़ा SHARP छपेगा?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "illustration-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": "dtf_sharp_vs_too_big",
+    "cover_labels": [
+      "सही साइज़",
+      "ज़्यादा बड़ा"
+    ],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18348182689266060",
+      "verification": "create_accepted_native_label_unverified"
+    }
   }
 ]

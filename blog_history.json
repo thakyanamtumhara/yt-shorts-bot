@@ -2849,5 +2849,44 @@
       }
     ],
     "hero_image": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-hero.webp"
+  },
+  {
+    "date": "2026-10-07T14:49:59.854217+05:30",
+    "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
+    "title": "DTF Logo Print Size Guide — How Big Can You Print Sharply at 250 DPI Before It Gets Blurry",
+    "slug": "dtf-logo-print-size-guide-how-big-can-you-print-sharply-at",
+    "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at.html",
+    "vid_url": "https://youtube.com/shorts/xDVQfDJkJ-g",
+    "tags": [
+      "dtf printing",
+      "tshirt printing business",
+      "dtf transfer",
+      "logo print size",
+      "custom tshirt",
+      "printing tips",
+      "dtf design",
+      "print quality"
+    ],
+    "description": "How big can you print a DTF logo before it turns blurry? The answer is in the file's own pixels. When you upload a design on Sale91 DTF's order form, it shows 'Sharp up to' a width — the widest that f",
+    "word_count": 1684,
+    "excerpt": "The short answer: Upload your design on the Sale91 DTF order form and the form itself shows you the limit. It says \"Sharp up to\" a specific width — that is the widest your file can print at 250 DPI or better from its own pixels. Try to go wider and the form stops you with the message \"Bigger would not print sharp.\" The number is different for every file you upload. The fix, when you need a bigger print, is to start with a bigger file — not to simply drag the width slider higher. When you use the \"Upload any design\" option on Sale91's DTF order form at dtf.bulkplaintshirt.com, the form reads your file's pixel dimensions the moment you upload it. It then calculates the widest size at which those pixels can fill a print at 250 DPI — and it shows that number to you right there, labelled \"Sharp up to.\" In the example shown in the video, the limit for that particular file came out at 7.5 inches. A different file with more pixels would show a larger \"Sharp up to\" number. A lower-resolution file would show a smaller one. The number belongs to the file,...",
+    "image_assets": [
+      {
+        "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-hero.webp",
+        "origin": "independent_generation",
+        "sha256": "5156ddce90f41e598991088a7731e2f9ae02941cced93f81faafa0eee9fe618e"
+      },
+      {
+        "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img1.webp",
+        "origin": "independent_generation",
+        "sha256": "618cfb20d065c859eca7e59e55650c729f7041cc0f086493041dcdb2e36fc272"
+      },
+      {
+        "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img2.webp",
+        "origin": "independent_generation",
+        "sha256": "8d7605762380aac1618a7342d21a3a45210d3b20c17ec6b28e661144cff10e07"
+      }
+    ],
+    "hero_image": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-hero.webp"
   }
 ]

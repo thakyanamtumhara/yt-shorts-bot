@@ -55,5 +55,16 @@
     "buyer_decision": "Upload each logo as a transparent PNG, set its width and pieces, and let the site make the sheet.",
     "video_id": "ZVdl3mssPWw",
     "published_on": "2026-10-06"
+  },
+  {
+    "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
+    "intent_key": "dtf_design_sharp_limit",
+    "fact_ids": [
+      "dtf_design_sharp_size"
+    ],
+    "lesson": "Every design on Sale91 DTF's order form shows 'Sharp up to' a width - the biggest it prints at 250 DPI from the file's own pixels. Going bigger only stretches the same pixels, so the form stops there and says it would not print sharp.",
+    "buyer_decision": "Keep the width under the 'Sharp up to' number; for a bigger print, make the logo file bigger first - changing only the number does not add sharpness.",
+    "video_id": "xDVQfDJkJ-g",
+    "published_on": "2026-10-07"
   }
 ]
