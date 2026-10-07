@@ -255,9 +255,15 @@ def campaign_clips(brief, campaign, assets_dir):
     """The ONE real screen recording for a campaign lesson: the clip of the first fact it cites, in its own order, with
     the campaign's "generic_clip_facts" (broad facts like the launch itself) used only when no more specific cited fact
     has a clip. Each clip is a complete demonstration of its fact and plays once over the whole narration, because the
-    final reviews compare the picture with the spoken lesson. [] when no cited fact has a clip file."""
+    final reviews compare the picture with the spoken lesson. [] when no cited fact has a clip file.
+    An owner announcement may name its own clip ("clip", e.g. his real footage of 7-Oct-2026): then only that file, and
+    [] when it is missing (the run stops rather than show another lesson's recording)."""
     if not cites_campaign(brief, campaign):
         return []
+    if 'clip' in brief:
+        name = brief['clip']
+        path = Path(assets_dir) / f'{name}.mp4' if isinstance(name, str) and re.fullmatch(r'[a-z0-9_]{1,40}', name) else None
+        return [str(path)] if path and path.is_file() else []
     mapping = campaign.get('clips') if isinstance(campaign.get('clips'), dict) else {}
     generic = set(campaign.get('generic_clip_facts') or [])
     cited = [key for key in brief['fact_ids'] if key not in generic] + [key for key in brief['fact_ids'] if key in generic]
@@ -307,20 +313,29 @@ def brainstorming_context(bank, history, lessons=None):
             known.add(normalized(item['intent_key']))
             completed.append({'lesson': '', 'buyer_decision': '', **item})
     used = {key for brief in completed for key in brief.get('fact_ids', [])}
-    preferred = [key for key in bank['facts'] if key not in used]
+    # Facts that exist only for an owner announcement (his own real footage, 7-Oct-2026) are never offered to the daily
+    # brainstorm: that footage goes out only in the exact version he approved.
+    owner = owner_only_facts(bank)
+    preferred = [key for key in bank['facts'] if key not in used and key not in owner]
     campaign = active_campaign(bank)
     if campaign:
         # A dated launch campaign (owner request) puts its own unused facts first; the rest keep their order.
         preferred = ([key for key in preferred if key in campaign['fact_ids']]
                      + [key for key in preferred if key not in campaign['fact_ids']])
     ordered = {key: bank['facts'][key] for key in preferred}
-    ordered.update({key: fact for key, fact in bank['facts'].items() if key in used})
+    ordered.update({key: fact for key, fact in bank['facts'].items() if key in used and key not in owner})
     return {'facts': ordered, 'preferred_fact_ids': preferred, 'campaign': campaign,
             'completed_lessons': [{key: brief[key] for key in (
                 'topic', 'lesson', 'buyer_decision', 'intent_key', 'fact_ids')} for brief in completed]}
 
 
-def validate_brief(brief, bank, history=()):
+def owner_only_facts(bank):
+    """Fact ids marked "announcement_only": true (owner footage that only an owner announcement may cite)."""
+    facts = bank.get('facts') if isinstance(bank, dict) else None
+    return {key for key, fact in (facts or {}).items() if isinstance(fact, dict) and fact.get('announcement_only') is True}
+
+
+def validate_brief(brief, bank, history=(), owner=False):
     if not isinstance(brief, dict):
         raise TopicHold('A bare topic has no reviewed lesson evidence.')
     for key in ('topic', 'buyer_question', 'lesson', 'buyer_decision', 'intent_key'):
@@ -334,6 +349,8 @@ def validate_brief(brief, bank, history=()):
         raise TopicHold('Topic cites missing or unknown reviewed facts.')
     if len(set(ids)) != len(ids):
         raise TopicHold('Duplicate fact references.')
+    if not owner and set(ids) & owner_only_facts(bank):
+        raise TopicHold('Topic cites owner footage that only an owner announcement may use.')
     if normalized(brief['topic']) in {normalized(t) for t in history if isinstance(t, str)}:
         raise TopicHold('Topic repeats an existing title.')
     completed = brainstorming_context(bank, history)['completed_lessons']
@@ -482,7 +499,7 @@ def announcement_topic(bank, key, history=()):
     brief = items.get(key) if isinstance(items, dict) and isinstance(key, str) else None
     if not isinstance(brief, dict):
         raise TopicHold('Unknown announcement.')
-    return SelectedTopic(validate_brief(brief, bank, history))
+    return SelectedTopic(validate_brief(brief, bank, history, owner=True))
 
 
 def evidence_prompt(topic):

@@ -127,12 +127,39 @@ class DailyCampaignTests(unittest.TestCase):
         import subprocess
         campaign = BANK['campaign']
         names = {name for names in campaign['clips'].values() for name in names}
+        names |= {item['clip'] for item in BANK['announcements'].values() if 'clip' in item}
         self.assertEqual(names, {p.stem for p in ASSETS.glob('*.mp4')})
         for name in names:
             probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'stream=width,height:format=duration',
                                                '-of', 'json', str(ASSETS / f'{name}.mp4')], check=True, capture_output=True, text=True).stdout)
             self.assertEqual((probe['streams'][0]['width'], probe['streams'][0]['height']), (1080, 1920), name)
             self.assertGreaterEqual(float(probe['format']['duration']), 25, name)
+
+    def test_owner_footage_is_used_only_by_its_own_announcement_and_its_own_clip(self):
+        # 7-Oct-2026: the owner's real photos and videos go out only in the exact version he approved, so the daily
+        # brainstorm never sees those facts and no ordinary brief may cite them.
+        from tools.daily_topic_selection import announcement_topic, owner_only_facts
+        owner = owner_only_facts(BANK)
+        self.assertEqual(owner, {'dtf_process_film_powder', 'dtf_partner_footage_2026_10_07', 'dtf_print_photos_2026_10_07'})
+        context = brainstorming_context(BANK, ())
+        self.assertFalse(owner & set(context['facts']))
+        self.assertFalse(owner & set(context['preferred_fact_ids']))
+        campaign = active_campaign(with_window('2000-01-01', '2999-12-31'))
+        expected = {'dtf_printer_real_2026_10_07': 'printer_real', 'dtf_black_tee_real_2026_10_07': 'black_tee_real',
+                    'dtf_hoodie_press_real_2026_10_07': 'hoodie_press'}
+        for key, clip in expected.items():
+            topic = announcement_topic(BANK, key)
+            self.assertTrue(set(topic.brief['fact_ids']) & owner, key)
+            self.assertTrue(cites_campaign(topic.brief, campaign), key)
+            self.assertEqual([Path(p).stem for p in campaign_clips(topic.brief, campaign, ASSETS)], [clip], key)
+            self.assertNotIn('₹', BANK['announcements'][key]['script_guide'])
+            with self.assertRaises(TopicHold):
+                validate_brief(BANK['announcements'][key], BANK, ())
+        stem = lambda brief: [Path(p).stem for p in campaign_clips(brief, campaign, ASSETS)]
+        self.assertEqual(stem({'fact_ids': ['dtf_press_settings'], 'clip': 'missing_clip'}), [])
+        self.assertEqual(stem({'fact_ids': ['dtf_press_settings'], 'clip': '../press'}), [])
+        self.assertEqual(stem({'fact_ids': ['dtf_press_settings'], 'clip': None}), [])
+        self.assertEqual(stem({'fact_ids': ['dtf_press_settings']}), ['press'])
 
     def test_missing_files_and_odd_names_never_become_clips(self):
         campaign = copy.deepcopy(active_campaign(with_window('2000-01-01', '2999-12-31')))

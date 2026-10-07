@@ -263,6 +263,30 @@
       "source_title": "Sale91 DTF: About, contact and pricing",
       "checked_on": "2026-10-03",
       "limits": "No delivery-time or quality promise beyond the page. No price in the spoken script."
+    },
+    "dtf_process_film_powder": {
+      "claim": "In DTF printing the CMYK colours are printed on PET film, followed by white ink that makes an opaque backing; while the ink is still tacky, a fine thermoplastic polyurethane hot-melt powder is applied to the printed areas and fused. A powder shaker unit applies the powder and cures the film in a single pass. The transfer is then heat-pressed onto the garment and the carrier film is peeled.",
+      "source_url": "https://en.wikipedia.org/wiki/Direct-to-film_printing",
+      "source_title": "Wikipedia: Direct-to-film printing (revision 1376004694 of 21-Sep-2026; the process sentence cites FESPA). Quote: 'the CMYK layers are printed on PET film, followed by white ink to create an opaque backing. While still tacky, a fine thermoplastic polyurethane hot-melt powder is applied to the printed areas and fused. The transfer is then heat-pressed onto the garment and the carrier film is peeled.' and 'An integrated powder shaker unit automatically applies thermoplastic polyurethane (TPU) hot melt powder and cures the film in a single pass.'",
+      "checked_on": "2026-10-07",
+      "limits": "General DTF process only. The white layer is an opaque backing behind the colours: say it hides the fabric colour behind the print; no brightness percentage and no 'exactly the screen colour' promise. No wash-life, stretch or durability claim. Never use this page's pressing temperature or time: pressing numbers come only from Sale91's own pressing guide (dtf_press_settings). No 'first' or 'best in India' claims.",
+      "announcement_only": true
+    },
+    "dtf_partner_footage_2026_10_07": {
+      "claim": "Owner footage of 7-Oct-2026 from Sale91 DTF's printing partner in Surat: the roll DTF printer printing designs on film, and the printed film running through the powder shaker and dryer unit that follows the printer.",
+      "source_url": "https://dtf.bulkplaintshirt.com/about",
+      "source_title": "Sale91 DTF About page ('Printed by our partner in Surat') + owner videos 7-Oct-2026 (WhatsApp Video 2026-10-07 at 3.23.17 PM and 3.55.55 PM, used in assets/dtf_demo/printer_real.mp4)",
+      "checked_on": "2026-10-07",
+      "limits": "Say only what the footage shows. It is the printing partner's printer in Surat: never 'our factory' or 'our own machine'. No machine brand, speed, capacity or quality claim; no 'first' or 'best in India'.",
+      "announcement_only": true
+    },
+    "dtf_print_photos_2026_10_07": {
+      "claim": "Owner photos of 7-Oct-2026: black T-shirts and a black hoodie pressed with DTF prints from Sale91 DTF's printing partner - full-colour designs and thin white details on black fabric, and a red design along a hoodie sleeve.",
+      "source_url": "https://dtf.bulkplaintshirt.com/",
+      "source_title": "Owner photos 7-Oct-2026 (6 of them, cropped, in assets/dtf_demo/black_tee_real.mp4; the hoodie sleeve also in hoodie_press.mp4)",
+      "checked_on": "2026-10-07",
+      "limits": "Only what the photos show. No wash-life, stretch, feel or durability claim and no 'first' or 'best in India'. Never name the customers, colleges, events or brands printed on these garments, and never say they were pressed with any particular settings.",
+      "announcement_only": true
     }
   },
   "seed_lessons": [
@@ -683,6 +707,56 @@
       "cover_text": "DTF SHEET | सिर्फ LOGO से बनेगी?",
       "cover_text_latin": "DTF SHEET | SIRF LOGO SE BANEGI?",
       "why": "Owner 6-Oct-2026: 'Write a very good script, a catchy script ... spread this news: you can order DTF stickers now ... first reason it out ... I just want a good interaction.' Reasoning: the hook names the buyer's real problem (no gang-sheet skills) in the first second; every claim is shown on the real form (no 'first/best in India' claim, no spoken price); one benefit per line; it ends on a complete thought and one easy comment question."
+    },
+    "dtf_printer_real_2026_10_07": {
+      "topic": "DTF Sheet असल में कैसे बनती है? Printer से Powder तक — असली मशीन चलते हुए",
+      "buyer_question": "What actually happens to my PNG after I order a DTF sheet - how is the sheet made?",
+      "lesson": "Your PNG is printed on PET film by a roll DTF printer - at Sale91 DTF that is its printing partner's printer in Surat. While the ink is still tacky, the film runs through the powder shaker unit, which applies a fine hot-melt powder and cures the film in one pass. What comes out is a finished DTF transfer sheet: you heat-press it onto the T-shirt and peel the film.",
+      "buyer_decision": "Just send a correct PNG; the sheet arrives with the powder already on it, ready to heat-press.",
+      "intent_key": "dtf_printer_process_real_footage",
+      "fact_ids": [
+        "dtf_process_film_powder",
+        "dtf_partner_footage_2026_10_07",
+        "dtf_service_launch"
+      ],
+      "clip": "printer_real",
+      "script_guide": "HOOK: DTF sheet asal mein banti kaise hai? Surat mein hamare partner ki printer chalti hui dekho. | 1: Aapki PNG yahan film par chhapti hai - printer ka head design ko film par utaarta hai. | 2: Phir film powder wali machine se guzarti hai - geeli ink par powder chipakta hai aur machine garam karke use pakka kar deti hai. | 3: Bas, taiyaar DTF sheet nikal aati hai - aap ise T-shirt par press karke film utaar dete ho. | CLOSE (complete thought, then one question): Yaani aapko sirf sahi PNG bhejni hai, baaki kaam ye machine karti hai. Comment mein batao - aap DTF kis par lagwaoge, T-shirt ya hoodie?",
+      "cover_text": "DTF SHEET | कैसे बनती है?",
+      "cover_text_latin": "DTF SHEET | KAISE BANTI HAI?",
+      "why": "Owner 7-Oct-2026 16:10 IST, after sending his own photos and videos: 'You can also create some shots out of this. You can utilize the system that we already have on the website, the screen record ... to create multiple shots related to that.' Real footage: held for his approval of the exact file before anything is published. Reasoning: buyers have never seen a DTF sheet being made; the real printer and powder unit answer it with no claim beyond the footage and the sourced process; no price, no 'best/first'; it ends on the buyer's one job (a correct PNG) and one easy question."
+    },
+    "dtf_black_tee_real_2026_10_07": {
+      "topic": "काली T-Shirt पर DTF Print फीका पड़ेगा? पीछे की White Layer — असली Photos",
+      "buyer_question": "Will a DTF print look dull on a black T-shirt?",
+      "lesson": "In DTF the printer puts the colours on the film first and then a layer of white ink behind them - an opaque backing - so the black fabric does not show through the print. That is why full-colour designs and thin white details stay visible on black T-shirts and on a hoodie sleeve, as these real photos of garments pressed with prints from Sale91 DTF's partner show.",
+      "buyer_decision": "For a black T-shirt, upload the same PNG design; the white backing behind the colours is part of the DTF print.",
+      "intent_key": "dtf_white_backing_black_tee_photos",
+      "fact_ids": [
+        "dtf_process_film_powder",
+        "dtf_print_photos_2026_10_07",
+        "dtf_service_launch"
+      ],
+      "clip": "black_tee_real",
+      "script_guide": "HOOK: Kaali T-shirt par DTF print feeka toh nahi padega? Ye asli photos dekho. | 1: DTF mein printer film par pehle colours chhaapti hai, phir unke peeche white ink ki ek layer. | 2: Ye white layer peeche ka kaala kapda chhupa deti hai. | 3: Isliye colourful design bhi aur patli white lines bhi kaali T-shirt par saaf dikhti hain - jaise in T-shirts aur hoodie ki sleeve par. | 4: Aapko bas apna design PNG mein upload karna hai. | CLOSE (one question; the photos carry the numbers 1 to 6): Ab aap batao - comment mein number likho, 1 se 6 mein aapko kaunsa design sabse achha laga?",
+      "cover_text": "काली T-SHIRT | DTF फीका पड़ेगा?",
+      "cover_text_latin": "KAALI T-SHIRT | DTF FEEKA PADEGA?",
+      "why": "Owner 7-Oct-2026 16:10 IST, after sending his own photos and videos: 'You can also create some shots out of this. You can utilize the system that we already have on the website, the screen record ... to create multiple shots related to that.' Real footage: held for his approval of the exact file before anything is published. Reasoning: the most common doubt about DTF on dark garments, answered by the sourced white backing and shown on six real photos (numbered 1-6 so the comment question is easy); no customer, college or brand name, no wash-life claim."
+    },
+    "dtf_hoodie_press_real_2026_10_07": {
+      "topic": "Hoodie पर DTF Press करना है? T-Shirt 165°C, Hoodie 180°C — Pressing Guide",
+      "buyer_question": "Do I press a DTF print on a hoodie at the same temperature as on a T-shirt?",
+      "lesson": "Sale91's pressing guide gives two settings: thin T-shirts (cotton, polyester) 165°C for 5 seconds, hoodies and sweatshirts 180°C for 5 seconds, both with medium-firm pressure. Lay the print printed side down, let it cool fully, peel the film slowly (cold peel), then press 5 seconds more with a Teflon sheet or baking paper on top. Test on a spare garment first.",
+      "buyer_decision": "Set 180°C for hoodies and sweatshirts and 165°C for thin T-shirts, 5 seconds, medium-firm pressure; cold peel, then a second 5-second press under a Teflon sheet; test on a spare garment first.",
+      "intent_key": "dtf_hoodie_vs_tee_press_temperature",
+      "fact_ids": [
+        "dtf_press_settings",
+        "dtf_print_photos_2026_10_07"
+      ],
+      "clip": "hoodie_press",
+      "script_guide": "HOOK: Hoodie par DTF press karna hai? T-shirt wala temperature mat lagana. | 1: Hamari pressing guide mein patli T-shirt ke liye 165 degree, 5 second. | 2: Hoodie aur sweatshirt ke liye 180 degree, 5 second - dono mein medium-firm pressure. | 3: Print ko printed side neeche rakhkar press karo, phir poora thanda hone do aur film dheere se utaaro. | 4: Upar Teflon sheet ya baking paper rakhkar 5 second aur press karo. | CLOSE (complete thought, then one question): Aur pehle ek extra kapde par test zaroor karo. Comment mein batao - aap zyada hoodie par print karwate ho ya T-shirt par?",
+      "cover_text": "HOODIE पर DTF | 165° या 180°?",
+      "cover_text_latin": "HOODIE PAR DTF | 165° YA 180°?",
+      "why": "Owner 7-Oct-2026 16:10 IST, after sending his own photos and videos: 'You can also create some shots out of this. You can utilize the system that we already have on the website, the screen record ... to create multiple shots related to that.' Real footage: held for his approval of the exact file before anything is published. Reasoning: a real hoodie sleeve print opens it, then the live pressing guide shows each setting as it is said (165 vs 180, pressure, cold peel, Teflon, test first); the photo is never said to be pressed with these settings. If published, set seed dtf_press_165_180 'published_as' to this title so the daily campaign does not repeat it."
     }
   }
 }
