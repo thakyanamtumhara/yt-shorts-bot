@@ -1,16 +1,5 @@
 [
   {
-    "topic": "बायोवॉश और प्री-श्रंक एक ही चीज़ हैं क्या?",
-    "prompts": [
-      "STYLE LOCK: Two mismatched tube lights — one warm CFL and one cool white LED — hanging low over a raw plywood table in a small Indian textile office, shallow DOF, 50mm lens feel, slight handheld sway. SCENE: Close-up of Indian man's hands holding two folded white cotton t-shirts side by side on the plywood table, one hand gently pressing down on each shirt's surface. Camera slowly pushes in. Fabric textures clearly visible under the mixed lighting. No faces, no text, no labels. Vertical 9:16.",
-      "STYLE LOCK: Two mismatched tube lights — one warm CFL and one cool white LED — hanging low over a raw plywood table in a small Indian textile office, shallow DOF, 50mm lens feel, slight handheld sway. SCENE: Medium close-up of a hand slowly running fingertips across a plain white cotton fabric swatch laid flat on the plywood table, camera at a low angle showing the surface texture and tiny protruding fibers catching the light. Stacks of folded plain t-shirts blurred in the background. No faces, no text. Vertical 9:16.",
-      "STYLE LOCK: Two mismatched tube lights — one warm CFL and one cool white LED — hanging low over a raw plywood table in a small Indian textile office, shallow DOF, 50mm lens feel, slight handheld sway. SCENE: Split composition — left hand holds a fabric swatch with a slightly fuzzy surface, right hand holds a visibly smoother swatch of the same color. Camera slowly racks focus from the fuzzy piece to the smooth piece. Both fabrics rest on the plywood table surface. Warm and cool highlights on the cotton. No faces, no text. Vertical 9:16.",
-      "STYLE LOCK: Two mismatched tube lights — one warm CFL and one cool white LED — hanging low over a raw plywood table in a small Indian textile office, shallow DOF, 50mm lens feel, slight handheld sway. SCENE: Overhead top-down shot of a hand placing a steel ruler along the length of a folded white cotton t-shirt on the plywood table, illustrating dimensional measurement. A second folded t-shirt sits beside it. Camera slowly tilts as the hand adjusts the ruler. Fabric grain texture visible. No faces, no text, no numbers on screen. Vertical 9:16.",
-      "STYLE LOCK: Two mismatched tube lights — one warm CFL and one cool white LED — hanging low over a raw plywood table in a small Indian textile office, shallow DOF, 50mm lens feel, slight handheld sway. SCENE: Close-up of a hand holding a printed fabric spec sheet or garment tag next to a folded plain white cotton t-shirt on the plywood table, fingertip pointing at a line on the sheet. Camera slowly pulls back to reveal both the document and the t-shirt together. Soft bokeh on background fabric stacks. No readable text on paper, no faces. Vertical 9:16."
-    ],
-    "date": "2026-09-15T14:02:14.122406"
-  },
-  {
     "topic": "बिना लाइक्रा के भी टी-शर्ट खिंचती क्यों है?",
     "prompts": [
       "STYLE LOCK: Single warm halogen desk lamp from the left mixed with cool ambient daylight from a high window, muted earth-tone palette, cluttered Tiruppur workshop feel with fabric rolls in background, shallow DOF 50mm cinematic lens, slight handheld sway. SCENE: Close-up of Indian man's hands gently stretching a plain white 100% cotton round-neck T-shirt sideways over a worn wooden cutting table, fabric visibly flexing and returning, camera slowly dollies in, warm side light catching the knit texture, no face visible, just forearms and fabric.",
@@ -328,5 +317,16 @@
       "STYLE LOCK: Cool white fluorescent overhead mixed with a single warm side lamp, small Indian textile workshop feel, concrete walls with fabric rolls stacked behind, shallow DOF 35mm cinematic slight handheld. Medium shot of Indian hands placing a translucent Teflon sheet over a freshly printed black hoodie on the heat press platen, then the press lid coming down for a second press, camera at 30-degree angle with slow push-in, a spare plain black garment visible folded beside the press, vertical 9:16 format."
     ],
     "date": "2026-10-07T11:26:47.628429"
+  },
+  {
+    "topic": "Hoodie पर DTF Press करना है? T-Shirt 165°C, Hoodie 180°C — Pressing Guide",
+    "prompts": [
+      "STYLE LOCK: Soft diffused overhead fluorescent mixed with warm side-fill from a desk lamp on the right, neutral grey-white tones, shallow DOF 50mm lens, slight handheld, vertical 9:16. Scene: Close-up of Indian man's hands holding a folded black hoodie on a clean white worktable, placing it flat next to a folded black T-shirt, camera slowly dollies in from medium to close, both garments clearly visible and well-lit from frame 1, no text or labels visible.",
+      "STYLE LOCK: Soft diffused overhead fluorescent mixed with warm side-fill from a desk lamp on the right, neutral grey-white tones, shallow DOF 50mm lens, slight handheld, vertical 9:16. Scene: Medium shot of Indian man's hands smoothing a thin black cotton T-shirt flat on the rubber pad of a heat press machine, the press head is raised and visible in the upper frame, warm lamp catches the metal surface, camera holds steady with a gentle sway, factory worktable background softly blurred.",
+      "STYLE LOCK: Soft diffused overhead fluorescent mixed with warm side-fill from a desk lamp on the right, neutral grey-white tones, shallow DOF 50mm lens, slight handheld, vertical 9:16. Scene: Close-up of Indian man's hands laying a black hoodie flat on a heat press, placing a colourful DTF transfer sheet printed-side down onto the hoodie chest area, fingers carefully aligning the edges, the thick hoodie fabric clearly visible against the press pad, camera slowly pushes in.",
+      "STYLE LOCK: Soft diffused overhead fluorescent mixed with warm side-fill from a desk lamp on the right, neutral grey-white tones, shallow DOF 50mm lens, slight handheld, vertical 9:16. Scene: Medium-close shot of Indian man's hands slowly peeling a transparent carrier film off a pressed black hoodie on the heat press pad, the colourful DTF print revealed underneath as the film lifts from one corner, deliberate and careful motion, press head raised in the background, camera holds steady.",
+      "STYLE LOCK: Soft diffused overhead fluorescent mixed with warm side-fill from a desk lamp on the right, neutral grey-white tones, shallow DOF 50mm lens, slight handheld, vertical 9:16. Scene: Close-up of Indian man's hands placing a Teflon sheet over a freshly printed black hoodie on the heat press pad, then the press head slowly lowering down for a second press, camera at a slight low angle looking up at the press closing, warm side light catching the edge of the Teflon sheet."
+    ],
+    "date": "2026-10-07T11:41:35.206125"
   }
 ]
