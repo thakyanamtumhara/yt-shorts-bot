@@ -211,6 +211,10 @@
   "PnUiZ07bdkw": {
    "title": "Rate Badha Toh Margin Bhi Badha? | T-Shirt Business Ki Baat",
    "published": "2026-10-06T12:30:25+00:00"
+  },
+  "hcqhnfPewo8": {
+   "title": "Kharid Mehngi Ho Gayi? Apna Resale Rate Kaise Dekhein",
+   "published": "2026-10-08T12:30:13+00:00"
   }
  },
  "instagram": {
@@ -737,6 +741,10 @@
   "18132023293757101": {
    "permalink": "https://www.instagram.com/reel/DeMA57lDVdM/",
    "ts": "2026-10-07T09:15:47+0000"
+  },
+  "18094007180151730": {
+   "permalink": "https://www.instagram.com/reel/DePd1FIAVaU/",
+   "ts": "2026-10-08T17:26:12+0000"
   }
  },
  "facebook": {
@@ -1586,8 +1594,13 @@
    "at": "2026-10-08T17:16:30+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-10-09T01:09:47+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-10-08",
- "last_run_ist": "2026-10-08T17:16:30+05:30"
+ "last_green_date": "2026-10-09",
+ "last_run_ist": "2026-10-09T01:09:47+05:30"
 }
