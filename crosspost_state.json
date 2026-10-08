@@ -346,7 +346,9 @@
   "nudged": true
  },
  "rates0015-20260917-short03-ig": {
-  "alerted": true
+  "alerted": true,
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DePd1FIAVaU/"
  },
  "rates0015-20260917-short02-li": {
   "nudged": true
