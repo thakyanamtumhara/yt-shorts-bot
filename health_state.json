@@ -11,10 +11,10 @@
   "elevenlabs": {
    "ok": false,
    "severity": "WARN",
-   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 244,994 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
+   "detail": "open-invoice flag, but subscription 'active', PVC accessible and 244,945 characters left. The actual clone must succeed before video clips. Review billing: https://elevenlabs.io/app/subscription/invoices",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 244994,
+   "chars_left": 244945,
    "char_limit": 258644,
    "sub_status": "active",
    "quota_resets": "14 Oct 2026",
@@ -788,9 +788,16 @@
     "elevenlabs",
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-08T16:19:52+05:30",
+   "down": [
+    "elevenlabs",
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-08T00:32:18+05:30",
+ "last_run_ist": "2026-10-08T16:19:52+05:30",
  "last_green_date": "2026-10-08",
  "last_still_down_date": "2026-10-06"
 }
