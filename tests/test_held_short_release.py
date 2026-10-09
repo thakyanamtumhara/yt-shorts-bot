@@ -170,6 +170,14 @@ class YouTubeTest(unittest.TestCase):
                 h.release_youtube(JOB, ds, store, folder, now=NOW, get=fake_get())
         self.assertEqual(ds.calls, [])
 
+    def test_an_omitted_ai_label_readback_is_not_a_failure_but_an_explicit_false_is(self):
+        omitted = FakeDs({'privacyStatus': 'private', 'publishAt': '2026-10-10T11:30:00Z'})
+        with tempfile.TemporaryDirectory() as folder, patch('tools.publish_slots.channel_taken', return_value=[]):
+            self.assertEqual(h.release_youtube(JOB, omitted, FakeStore(), folder, now=NOW, get=fake_get()), 'AbCdEfGhIjK')
+            refused = FakeDs({'privacyStatus': 'private', 'publishAt': '2026-10-10T11:30:00Z', 'containsSyntheticMedia': False})
+            with self.assertRaisesRegex(h.ReleaseError, 'readback'):
+                h.release_youtube(JOB, refused, FakeStore(), folder, now=NOW, get=fake_get())
+
     def test_a_wrong_readback_is_reported(self):
         ds, store = FakeDs({'privacyStatus': 'private', 'publishAt': '2026-10-10T13:30:00Z', 'containsSyntheticMedia': True}), FakeStore()
         with tempfile.TemporaryDirectory() as folder, patch('tools.publish_slots.channel_taken', return_value=[]):

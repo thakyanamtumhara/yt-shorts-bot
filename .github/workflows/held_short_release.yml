@@ -12,12 +12,12 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: check = verify files and print the plan; youtube = book one job; meta_due = Facebook + Telegram of due jobs
+        description: check = verify files and print the plan; youtube = book one job; verify = re-read one booking; meta_due = Facebook + Telegram of due jobs
         type: choice
-        options: [check, youtube, meta_due]
+        options: [check, youtube, verify, meta_due]
         default: check
       job_id:
-        description: Job id from held_shorts/jobs.json (youtube mode only)
+        description: Job id from held_shorts/jobs.json (youtube / verify modes)
         type: string
         required: false
 
@@ -96,9 +96,9 @@ jobs:
           if [ "$EVENT_NAME" = schedule ]; then mode=meta_due; fi
           case "$mode" in
             check|meta_due) python3 tools/held_short_release.py --mode "$mode" ;;
-            youtube)
+            youtube|verify)
               [[ "$JOB_ID" =~ ^[a-z0-9][a-z0-9-]{0,63}$ ]] || exit 2
-              python3 tools/held_short_release.py --mode youtube --job "$JOB_ID"
+              python3 tools/held_short_release.py --mode "$mode" --job "$JOB_ID"
               ;;
             *) exit 2 ;;
           esac

@@ -12,6 +12,7 @@ as a normal daily Short.
   --mode check             fetch and verify every job's held files, print the plan and captions; posts nothing.
   --mode youtube --job ID  bot channel: private + publishAt (the job's youtube_at) after a 2 h clash check on this
                            channel (owner rule 6-Oct-2026), then the daily run's comment, cover and playlist steps.
+  --mode verify --job ID   read the booked video's status again (privacy, publishAt, AI label) and store it.
   --mode meta_due          Facebook Reel (is_ai_generated) + Telegram channel post of every job whose meta_at has
                            passed, within META_WINDOW. Instagram goes through reviewed_ai_reels.py (exact-selection
                            rail with its own state), not through this tool.
@@ -256,19 +257,26 @@ def release_youtube(job, ds, store, folder, now=None, get=None):
     except Exception as error:
         print(f"   ⚠️ Playlist step errored ({type(error).__name__}); upload kept")
 
-    items = youtube.videos().list(part='status', id=video_id).execute().get('items') or []
-    status = (items[0] if items else {}).get('status') or {}
-    checks = {
-        'private': status.get('privacyStatus') == 'private',
-        'publish_at': bool(status.get('publishAt')) and parse_at(status['publishAt'].replace('Z', '+00:00')) == at,
-        'synthetic_media': status.get('containsSyntheticMedia') is True,
-    }
+    checks = readback(youtube, video_id, at)
     state['youtube']['readback'] = checks
     store.save(state)
     if not all(checks.values()):
         raise ReleaseError(f"{job['id']}: YouTube readback failed {checks}; fix {video_id} on the channel")
-    print(f"   🔎 {job['id']}: readback private + publishAt + synthetic media label OK")
+    print(f"   🔎 {job['id']}: readback private + publishAt OK, synthetic media label not refused")
     return video_id
+
+
+def readback(youtube, video_id, at):
+    """YouTube often OMITS containsSyntheticMedia from a status readback (tools/youtube_status.py treats an omitted
+    field after an accepted True as set); only an explicit non-True value fails."""
+    items = youtube.videos().list(part='status', id=video_id).execute().get('items') or []
+    status = (items[0] if items else {}).get('status') or {}
+    print(f"   status readback: { {k: status.get(k) for k in ('privacyStatus', 'publishAt', 'containsSyntheticMedia')} }")
+    return {
+        'private': status.get('privacyStatus') == 'private',
+        'publish_at': bool(status.get('publishAt')) and parse_at(status['publishAt'].replace('Z', '+00:00')) == at,
+        'synthetic_media': status.get('containsSyntheticMedia', True) is True,
+    }
 
 
 def release_meta_due(jobs, ds, store_for, folder, now=None, get=None):
@@ -328,7 +336,7 @@ def alert(text):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--mode', choices=('check', 'youtube', 'meta_due'), required=True)
+    parser.add_argument('--mode', choices=('check', 'youtube', 'verify', 'meta_due'), required=True)
     parser.add_argument('--job')
     parser.add_argument('--jobs', type=Path, default=JOBS)
     args = parser.parse_args(argv)
@@ -351,10 +359,22 @@ def main(argv=None):
     import boto3
     import daily_short as ds
     client = boto3.client('s3')
-    if args.mode == 'youtube':
+    if args.mode in ('youtube', 'verify'):
         job = next((j for j in jobs if j['id'] == args.job), None)
         if not job:
             raise ReleaseError('unknown job id')
+    if args.mode == 'verify':
+        store = S3State(client, job['id'])
+        state = store.read()
+        video_id = (state.get('youtube') or {}).get('video_id')
+        if not video_id:
+            raise ReleaseError(f"{job['id']}: not booked")
+        checks = readback(ds.get_youtube_service(), video_id, parse_at(job['youtube_at']))
+        state['youtube']['readback'] = checks
+        store.save(state)
+        print(f"   {job['id']} {video_id}: {checks}")
+        return 0 if all(checks.values()) else 1
+    if args.mode == 'youtube':
         try:
             video_id = release_youtube(job, ds, S3State(client, job['id']), folder / job['id'])
         except ReleaseError as error:
