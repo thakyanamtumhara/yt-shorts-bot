@@ -27,5 +27,15 @@
    "dtf_print_photos_2026_10_07"
   ],
   "reason": "The visual highlight overlays on the pressing guide are severely misaligned with the spoken narration steps."
+ },
+ {
+  "date": "2026-10-09",
+  "topic": "Screen Print में हर Colour की अलग Screen — DTF में ये झंझट क्यों नहीं?",
+  "intent_key": "screen_per_colour_vs_digital_no_screen",
+  "fact_ids": [
+   "screen_print_screen_per_colour",
+   "dtf_service_launch"
+  ],
+  "reason": "Technical mismatch: Visuals display unrelated DTF website snippets, contact details, and heat-press settings while the narration discusses screen printing separation, registration defects, and inkjet screen elimination."
  }
 ]
