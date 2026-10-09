@@ -352,5 +352,12 @@
  },
  "rates0015-20260917-short02-li": {
   "nudged": true
+ },
+ "rates0015-20260917-short03-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1905355934165854/"
+ },
+ "rates0015-20260917-short03-x": {
+  "nudged": true
  }
 }
