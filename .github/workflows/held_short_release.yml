@@ -1,0 +1,104 @@
+name: Held Short release
+run-name: Held Short · ${{ github.event_name == 'schedule' && 'meta_due' || inputs.mode }} ${{ inputs.job_id }}
+
+# Owner-approved HELD Shorts (hold_only runs of daily_short.yml) released byte for byte: tools/held_short_release.py,
+# jobs in held_shorts/jobs.json. YouTube is booked by hand (mode youtube, one job); Facebook + Telegram go out at each
+# job's meta_at from the cron below (GitHub starts crons late; the tool posts only within 4 h of meta_at). Instagram is
+# the reviewed_ai_reels.yml rail. Owner approval 9-Oct-2026 13:39 IST for the three DTF real-footage Shorts.
+on:
+  schedule:
+    - cron: '30 13 * * *'   # 19:00 IST nominal
+    - cron: '30 14 * * *'   # 20:00 IST catch-up (same 4 h window)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: check = verify files and print the plan; youtube = book one job; meta_due = Facebook + Telegram of due jobs
+        type: choice
+        options: [check, youtube, meta_due]
+        default: check
+      job_id:
+        description: Job id from held_shorts/jobs.json (youtube mode only)
+        type: string
+        required: false
+
+concurrency:
+  group: held-short-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Anything to do?
+        id: due
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != schedule ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from datetime import datetime, timedelta, timezone
+          now = datetime.now(timezone.utc)
+          jobs = json.load(open("held_shorts/jobs.json"))["jobs"]
+          due = [j["id"] for j in jobs if timedelta(0) <= now - datetime.fromisoformat(j["meta_at"]) <= timedelta(hours=4)]
+          print("run=" + ("true" if due else "false"))
+          PY
+
+      - uses: actions/setup-python@v5
+        if: steps.due.outputs.run == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        if: steps.due.outputs.run == 'true'
+        timeout-minutes: 12
+        run: |
+          sudo killall -9 apt-get apt unattended-upgr 2>/dev/null || true
+          export DEBIAN_FRONTEND=noninteractive
+          APT_NET="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo -E apt-get $APT_NET update -qq
+          sudo -E apt-get $APT_NET install -y -qq imagemagick ffmpeg fonts-noto-core libraqm0
+
+      - name: Install Python packages
+        if: steps.due.outputs.run == 'true'
+        run: pip install -q -r requirements.txt
+
+      - name: Restore YouTube credentials
+        if: steps.due.outputs.run == 'true'
+        run: |
+          mkdir -p /tmp/yt_shorts
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > /tmp/yt_shorts/youtube_token.json
+          echo '${{ secrets.CLIENT_SECRET_JSON }}' > /tmp/yt_shorts/client_secret.json
+
+      - name: Release
+        if: steps.due.outputs.run == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          ALERT_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: |
+          mode="${REQUESTED_MODE:-check}"
+          if [ "$EVENT_NAME" = schedule ]; then mode=meta_due; fi
+          case "$mode" in
+            check|meta_due) python3 tools/held_short_release.py --mode "$mode" ;;
+            youtube)
+              [[ "$JOB_ID" =~ ^[a-z0-9][a-z0-9-]{0,63}$ ]] || exit 2
+              python3 tools/held_short_release.py --mode youtube --job "$JOB_ID"
+              ;;
+            *) exit 2 ;;
+          esac

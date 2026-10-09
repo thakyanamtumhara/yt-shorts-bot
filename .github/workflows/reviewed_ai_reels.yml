@@ -7,6 +7,7 @@ on:
     - cron: '15,45 7,8 * * *'
     - cron: '0,30 11 * * *'
     - cron: '30 12 * * *'
+    - cron: '30 13 * * *'   # 19:00 IST: owner-approved DTF real-footage Reels 10/11/13-Oct-2026 (2 h after the daily Reel)
   workflow_dispatch:
     inputs:
       mode:

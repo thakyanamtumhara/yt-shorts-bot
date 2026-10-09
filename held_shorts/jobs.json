@@ -1,0 +1,38 @@
+{
+  "_comment": "Owner-approved held Shorts, released byte for byte by tools/held_short_release.py (YouTube booked by hand: held_short_release.yml mode youtube; Facebook + Telegram by its 19:00 IST cron at meta_at). Instagram: reviewed_ai_reels/dtf-real-20261007-*.json. Approval page: https://claude.ai/artifact/AC4s3W8vDqdYSd2pGk46Pu",
+  "approval": {
+    "by": "Ketu (owner)",
+    "at": "2026-10-09T13:39:30+05:30",
+    "words": "All three videos look good to me."
+  },
+  "jobs": [
+    {
+      "id": "dtf-real-b",
+      "run_id": "37611306924",
+      "announcement": "dtf_black_tee_real_2026_10_07",
+      "video_sha256": "18f69ca469cf7e92a1cf9143679a7458680d774e7df9db8288c9e485e9b554b4",
+      "cover_sha256": "d747564d093915b3b235cd175bbb812d3f4ab056d3878a6868c38f8c31137916",
+      "instagram_title": "DTF Print on Black T-Shirt — Why the White Layer Matters",
+      "youtube_at": "2026-10-10T17:00:00+05:30",
+      "meta_at": "2026-10-10T19:00:00+05:30"
+    },
+    {
+      "id": "dtf-real-a",
+      "run_id": "37611270080",
+      "announcement": "dtf_printer_real_2026_10_07",
+      "video_sha256": "18bd35ee77009e9d781c4dc9c75e66270d8214dfd79d388f7b09db421f8440a8",
+      "cover_sha256": "0f1da78b2b45861ea33f3a3bb7bd394d9e49d07432d7e5edb08d0b7b3f87b9a2",
+      "youtube_at": "2026-10-11T19:00:00+05:30",
+      "meta_at": "2026-10-11T19:00:00+05:30"
+    },
+    {
+      "id": "dtf-real-c",
+      "run_id": "37616938835",
+      "announcement": "dtf_hoodie_press_real_2026_10_07",
+      "video_sha256": "729c3a184308e32906cdaf13031f7bb06bee6a78e0c7b035a9e91c28f3737965",
+      "cover_sha256": "5b1a0cb5a9f49251ac7b32344669955da2f8a6a308cc29eafc2c60cf4187e92c",
+      "youtube_at": "2026-10-13T17:00:00+05:30",
+      "meta_at": "2026-10-13T19:00:00+05:30"
+    }
+  ]
+}
