@@ -28,11 +28,15 @@ A due job still gets `meta_due` in probe mode.
 ```sh
 node --test worker.test.mjs
 node read-only-check.mjs                       # DRY_RUN; optional ISO time argument, e.g. 2026-10-11T19:04:00+05:30
-wrangler deploy --config wrangler.disabled.jsonc   # disabled, no cron = the undo, deployed first
-python3 secret-install.py                          # gh token of thakyanamtumhara -> HELD_SHORT_GH_TOKEN
-wrangler deploy --config wrangler.jsonc --var PROBE:check   # one harmless check-mode dispatch
-wrangler deploy --config wrangler.jsonc            # enabled + cron, no probe
+wrangler deploy --config wrangler.disabled.jsonc   # disabled, no cron = the undo, deployed first (b97f7feb)
+python3 secret-install.py                          # gh token of thakyanamtumhara -> HELD_SHORT_GH_TOKEN (1b4eee94)
+wrangler deploy --config wrangler.jsonc --var PROBE:check   # one harmless check-mode dispatch (370d17f0)
+wrangler deploy --config wrangler.jsonc            # enabled + cron, no probe (3ab3fd25)
 ```
+
+11-Oct-2026 evidence: the cloud tick at 12:15:00 IST dispatched run 38119068325 (`Held Short · check`, commit
+78a65af, success). It verified all three held files and printed captions identical to the 9-Oct approval check. The
+next tick (12:19:59 IST, version 3ab3fd25) logged `nothing_due` and started no run.
 
 Watch a tick: `wrangler tail held-short-trigger --format json`. If `gh auth login` is redone for thakyanamtumhara, the
 old token stops working: run `python3 secret-install.py` again (same for daily-short-trigger and
