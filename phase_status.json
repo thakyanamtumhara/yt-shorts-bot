@@ -17,9 +17,9 @@
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-10-04T23:21:23.938664+05:30",
-      "last_result": "success",
-      "details": "Recap blog published: https://www.bulkplaintshirt.com/p/t-shirt-raw-material-shortage-why-negotiating-too-hard.html · source: 'Maal Kam Ho Toh Negotiation Kyun Mushkil? | T-Shirt Raw Mate'"
+      "last_run": "2026-10-11T23:49:49.252501+05:30",
+      "last_result": "no-saturday-upload",
+      "details": "No long-form video uploaded by main channel in last 48h — skipping recap"
     },
     "4": {
       "id": 4,
@@ -29,5 +29,5 @@
       "details": "Voice style hints active in daily script gen (70 corpus entries)"
     }
   },
-  "last_update": "2026-10-04T23:21:23.939233+05:30"
+  "last_update": "2026-10-11T23:49:49.252501+05:30"
 }
