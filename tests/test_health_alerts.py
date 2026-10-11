@@ -19,9 +19,24 @@ class HealthAlertsTest(unittest.TestCase):
              patch.object(health_watch, '_json_req', side_effect=[
                  (200, subscription), (200, {'category': 'professional', 'name': 'Ketu Original'})]):
             result = health_watch.check_elevenlabs()
+        self.assertTrue(result.ok)
+        self.assertTrue(result.extra['has_open_invoices'])
+        self.assertEqual(result.extra['open_invoices'], 1)
+        self.assertEqual(result.extra['chars_left'], 257606)
+
+    def test_a_second_open_invoice_is_still_reported(self):
+        subscription = {'tier': 'creator', 'status': 'active', 'has_open_invoices': True,
+                        'open_invoices': [{'payment_intent_status': 'requires_payment_method'},
+                                          {'payment_intent_status': 'requires_payment_method'}],
+                        'can_use_professional_voice_cloning': True,
+                        'character_count': 1038, 'character_limit': 258644}
+        with patch.dict(os.environ, {'ELEVENLABS_API_KEY': 'test'}), \
+             patch.object(health_watch, '_json_req', side_effect=[
+                 (200, subscription), (200, {'category': 'professional', 'name': 'Ketu Original'})]):
+            result = health_watch.check_elevenlabs()
         self.assertFalse(result.ok)
         self.assertEqual(result.severity, health_watch.WARN)
-        self.assertEqual(result.extra['chars_left'], 257606)
+        self.assertEqual(result.extra['open_invoices'], 2)
 
     def test_real_payment_or_clone_failure_still_blocks(self):
         subscription = {'tier': 'creator', 'status': 'past_due', 'has_open_invoices': True,

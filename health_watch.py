@@ -28,6 +28,8 @@ COST_FILE = "cost_tracker.json"
 
 ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "cejtKjfE9sHUZ1FnUYEV")
 PVC_TIERS = {"creator", "pro", "scale", "business", "enterprise"}
+# an old leftover the yearly plan never cleared; only a second open invoice is news
+KNOWN_OLD_OPEN_INVOICES = 1
 
 # two videos of headroom — enough time to notice and top up before a run dies
 MIN_TTS_CHARS_LEFT = 6000
@@ -151,6 +153,8 @@ def check_elevenlabs():
         extra["quota_resets"] = datetime.fromtimestamp(reset, IST).strftime("%d %b %Y")
 
     extra["has_open_invoices"] = sub.get("has_open_invoices") is True
+    invoices = sub.get("open_invoices")
+    extra["open_invoices"] = len(invoices) if isinstance(invoices, list) else int(extra["has_open_invoices"])
 
     if str(sub.get("status", "")).lower() in ("past_due", "incomplete", "free_disabled"):
         return Result(key, label, sev, False,
@@ -179,11 +183,11 @@ def check_elevenlabs():
                       f"plan '{tier}' ok but only {left:,} characters left of {limit:,} — "
                       f"roughly {left // 1500} videos before it silently falls back", extra)
 
-    if extra["has_open_invoices"]:
+    if extra["open_invoices"] > KNOWN_OLD_OPEN_INVOICES:
         return Result(key, label, WARN, False,
-                      f"open-invoice flag, but subscription '{sub.get('status')}', PVC accessible "
-                      f"and {left:,} characters left. The actual clone must succeed before video clips. "
-                      "Review billing: https://elevenlabs.io/app/subscription/invoices", extra)
+                      f"{extra['open_invoices']} open invoices, more than the {KNOWN_OLD_OPEN_INVOICES} known old one: "
+                      f"a new bill may be unpaid. Subscription '{sub.get('status')}', PVC accessible, "
+                      f"{left:,} characters left. Review billing: https://elevenlabs.io/app/subscription/invoices", extra)
 
     return Result(key, label, sev, True,
                   f"{tier} · PVC allowed · {left:,}/{limit:,} chars left", extra)
