@@ -5,6 +5,8 @@ run-name: Held Short · ${{ github.event_name == 'schedule' && 'meta_due' || inp
 # jobs in held_shorts/jobs.json. YouTube is booked by hand (mode youtube, one job); Facebook + Telegram go out at each
 # job's meta_at from the cron below (GitHub starts crons late; the tool posts only within 4 h of meta_at). Instagram is
 # the reviewed_ai_reels.yml rail. Owner approval 9-Oct-2026 13:39 IST for the three DTF real-footage Shorts.
+# 11-Oct-2026: this cron started 4-5 h late on 9 and 10-Oct (DTF B never posted), so the Cloudflare Worker
+# cloudflare/held-short-trigger dispatches mode meta_due a few minutes after each meta_at; the cron stays as a backup.
 on:
   schedule:
     - cron: '30 13 * * *'   # 19:00 IST nominal
@@ -88,6 +90,10 @@ jobs:
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           ALERT_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          # The approved Facebook/Telegram caption ends with the DTF campaign line (printed by the 9-Oct check, a
+          # Friday). The campaign is Mon/Wed/Fri only, so on Sat/Sun/Tue it fell back to "Order: Sale91.com".
+          # "on" keeps the line on any day inside the campaign window (until 14-Oct-2026).
+          DAILY_CAMPAIGN: 'on'
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode }}
           JOB_ID: ${{ inputs.job_id }}
