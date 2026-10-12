@@ -37,5 +37,14 @@
    "dtf_service_launch"
   ],
   "reason": "Technical mismatch: Visuals display unrelated DTF website snippets, contact details, and heat-press settings while the narration discusses screen printing separation, registration defects, and inkjet screen elimination."
+ },
+ {
+  "date": "2026-10-12",
+  "topic": "Polyester T-Shirt में पसीने की बदबू ज़्यादा क्यों रुकती है? — Oleophilic Fibre का मतलब",
+  "intent_key": "polyester_oleophilic_odour_retention",
+  "fact_ids": [
+   "polyester_oleophilic"
+  ],
+  "reason": "final AI review: Technical checks pass: sha256 values match, loudness -15.7 LUFS, true peak -3.4 dBTP, audio and visual machine reviews passed. Picture is clean: cover shows a complete question over a garment photo with no face and no warehouse; the hook band is readable; captions match the speech; "
  }
 ]
