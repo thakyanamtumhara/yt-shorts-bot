@@ -1,0 +1,7 @@
+{
+ "run_id": "38373213775",
+ "video_sha256": "491f06df6bacf43ccc1c4c331cbddba1969488ee29fea209bca749e5f9a7fe5c",
+ "decision": "reject",
+ "reviewer": "Claude Opus 5.5 (cloud reviewer)",
+ "notes": "Checked: sha256 values match; loudness -15.7 LUFS, true peak -3.9 dBTP (pass); audio and visual machine reviews passed. Cover (DISCHARGE PRINT / rang hatta ya chadhta? over a plain dark tee, no face) is fine. Transcript matches script.voice in order and ends on a complete line; captions match the speech; the spoken claims stay within the discharge_printing fact and its limits; the non-DTF outro (MOQ sirf 10 pieces) is allowed. REJECT, picture: at 4.4-4.8 s (opening clip, 'Dekho ye chemical') a blurred, detached hand with no arm floats in mid-air above the table at the top right, then vanishes. This is an AI hand artifact ('odd hands'). The same opening clip (1-6 s) also shows a flat white paper sheet with a faint sketch lying on the dark tee, not a real discharge print, so it suggests something false about the result. Text faults to fix on the re-render: the Instagram title 'Discharge Print vs Screen Print on Dark T-Shirt' sets up a comparison the video never makes, and it is misleading because discharge is usually applied by screen printing. Use something like 'Discharge Print on Dark T-Shirt: Ink Layer or Dye Removal?'. No hold_lesson: the lesson and facts are sound, and the fault is in this render's generated footage."
+}
