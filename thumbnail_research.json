@@ -1,19 +1,19 @@
 {
   "power_words": [
     "Scam",
-    "सच",
     "Mistake",
     "Loss",
-    "Crack",
+    "सच",
     "Fake",
-    "Swap",
-    "Reality",
-    "Waste",
+    "Crack",
     "Reject",
-    "फर्क",
+    "Wasted",
     "Secret",
-    "Exposed",
+    "Reality",
+    "Trap",
+    "गलती",
     "बर्बाद",
+    "Exposed",
     "Fail"
   ],
   "best_colors": {
@@ -26,21 +26,21 @@
     ],
     "stroke": "#000000"
   },
-  "text_rules": "Keep cover text to 3-5 punchy words mixing Hindi/English with at least one number (₹ amount, GSM, piece count, or a shocking stat); frame it as a question or loss/damage statement to trigger curiosity — never use abstract or educational jargon-only text like 'BIOWASH ≠ PRESHRUNK' that requires prior knowledge to care about.",
-  "layout": "Place all text in the vertical 25%-70% band (safe from Instagram grid-crop at top and YouTube UI at bottom), using bold sans-serif type with thick black stroke; product or warehouse imagery fills the background with slight dark overlay so yellow/white text pops even at tiny mobile preview size.",
-  "patterns": "Top-performing Indian business Reels thumbnails combine a specific ₹ loss amount or piece count with a concrete consequence (cracked, rejected, wasted) — the formula is NUMBER + PROBLEM + SCALE. Winning covers skip faces entirely and hero the product defect or shocking visual proof instead. Yellow keyword on dark/busy background with white supporting text is the dominant high-CTR color pattern across wholesale/garment niches.",
+  "text_rules": "Keep cover text to 3-5 punchy words mixing Hindi + English, always include a specific number (₹ amount, GSM, piece count, or a quantity) to create concrete stakes. Use a question mark or accusatory tone to trigger curiosity — avoid generic educational labels like 'फर्क समझो' or dictionary-style definitions that feel like textbook content.",
+  "layout": "Place all text in a single bold cluster within the 25%-70% vertical band (safe from Instagram grid-crop at top and YouTube UI at bottom), left-aligned or centered with the product/fabric/damage visual filling the remaining space as a background. Use yellow (#FFD400) for the key number or shocking keyword and white for the remaining words, with a thick black stroke/shadow on every letter for mobile legibility at thumbnail size.",
+  "patterns": "Top-performing Indian business Reels thumbnails follow a 'money-at-risk story' formula: a specific rupee loss or piece count + a concrete failure mode (crack, peel, reject, shape loss) compressed into 3-5 words that read like a mini-headline of disaster. Winning covers never explain — they accuse or question, making the viewer feel they might be the next victim. Illustration-style or comparison-diagram covers with cream/navy palettes drastically underperform versus high-contrast yellow-white-on-dark covers with real product/warehouse imagery behind the text.",
   "example_texts": [
-    "₹1 LAKH 800 Pc REJECT",
-    "180 GSM REAL या FAKE?",
-    "₹30 T-Shirt 3 WASH खत्म",
-    "COLLAR CURL 200 Pc बर्बाद",
-    "₹15 MARGIN SECRET EXPOSED",
-    "SUBLIMATION 40°C COLOUR GONE",
-    "BULK में 5 SCAM चलते हैं",
-    "₹60 vs ₹90 SAME दिखती है?",
-    "OVERLOCK SKIP 300 Pc RETURN",
-    "SIZING CHART ने ₹20K डुबोए"
+    "₹60K 800Pc COLOUR BLEED",
+    "180 GSM SHRINK 2 WASH?",
+    "₹12 SAVING NECK RIP",
+    "SAME PRICE FAKE COMBED?",
+    "₹3 STITCHING 1000Pc RETURN",
+    "OVERLOCK SKIP ₹30K LOSS",
+    "500Pc WHITE YELLOW 1 MONTH",
+    "₹45 vs ₹85 REAL DIFFERENCE",
+    "SUBLIMATION GHOST 200Pc WASTE",
+    "₹7 SIZING MISTAKE 300 REJECT"
   ],
-  "ig_patterns": "Highest save-rate covers promise actionable checklists framed as loss-prevention ('3 Checks That Save Your Business') with a specific ₹ amount at stake — viewers bookmark these as reference tools. Highest share-rate covers expose a hidden industry problem ('200 GSM But Feels Cheap?') that buyers want to warn peers about — the 'my friend needs to see this' trigger is a relatable scam/quality trap, not generic education. Cream/navy illustration-style covers and jargon-heavy Hindi text ('BIOWASH ≠ PRESHRUNK', 'YARN COUNT बड़ा = पतला?') consistently fail on both saves and shares because they lack emotional stakes and read as textbook content rather than urgent warnings.",
-  "updated": "2026-10-05T16:16:25.640215"
+  "ig_patterns": "Highest save-rate covers (1.7%+) promise a reusable checklist or diagnostic framework hidden behind a loss story ('200 GSM Felt Cheap — 3 Checks'), making viewers bookmark them as reference tools for future orders. Highest share-rate covers (1.7%+) describe a universally relatable supplier scam or seasonal failure (humidity, yarn swap) that triggers 'my retailer friend needs to see this' forwarding behavior. Cream/navy illustration covers and purely technical Hindi labels ('BIOWASH ≠ PRESHRUNK') consistently get near-zero saves and shares — the algorithm and audience both reject anything that looks educational without emotional stakes.",
+  "updated": "2026-10-13T09:26:16.654647"
 }
