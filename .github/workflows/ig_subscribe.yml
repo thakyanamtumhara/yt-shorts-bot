@@ -33,7 +33,7 @@ jobs:
           APP_TOKEN="${FB_APP_ID}|${FB_APP_SECRET}"
 
           echo "── 1. App-level subscription (object=instagram, field=messages) ──"
-          curl -sf -X POST "https://graph.facebook.com/v21.0/${FB_APP_ID}/subscriptions" \
+          curl -sf -X POST "https://graph.facebook.com/v24.0/${FB_APP_ID}/subscriptions" \
             --data-urlencode "object=instagram" \
             --data-urlencode "callback_url=${CALLBACK}" \
             --data-urlencode "verify_token=${VERIFY}" \
@@ -42,16 +42,16 @@ jobs:
             && echo " ✅ app subscription OK (Meta validated the callback handshake)"
 
           echo "── 2. Page-level subscribed_apps (messages) ──"
-          curl -s -X POST "https://graph.facebook.com/v21.0/${PAGE_ID}/subscribed_apps" \
+          curl -s -X POST "https://graph.facebook.com/v24.0/${PAGE_ID}/subscribed_apps" \
             --data-urlencode "subscribed_fields=messages" \
             --data-urlencode "access_token=${PAGE_TOKEN}" | tee /tmp/page_sub.json
           python3 -c "import json; d=json.load(open('/tmp/page_sub.json')); assert d.get('success'), d; print(' ✅ page subscribed')"
 
           echo "── 3. IG-account subscribed_apps (belt-and-braces; may not apply on FB-login setups) ──"
-          curl -s -X POST "https://graph.facebook.com/v21.0/${IG_ID}/subscribed_apps" \
+          curl -s -X POST "https://graph.facebook.com/v24.0/${IG_ID}/subscribed_apps" \
             --data-urlencode "subscribed_fields=messages" \
             --data-urlencode "access_token=${PAGE_TOKEN}" || true
           echo ""
 
           echo "── 4. Read back app subscription state ──"
-          curl -s "https://graph.facebook.com/v21.0/${FB_APP_ID}/subscriptions?access_token=${APP_TOKEN}" | python3 -m json.tool | head -30
+          curl -s "https://graph.facebook.com/v24.0/${FB_APP_ID}/subscriptions?access_token=${APP_TOKEN}" | python3 -m json.tool | head -30

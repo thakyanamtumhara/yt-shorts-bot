@@ -12,6 +12,6 @@ jobs:
         run: |
           for Q in "limit=10&fields=id,updated_time" "limit=5&fields=id,updated_time" "limit=3&fields=id,updated_time" "limit=2&fields=id,updated_time" "fields=id" "limit=5"; do
             echo "── $Q ──"
-            curl -s "https://graph.facebook.com/v21.0/me/conversations?platform=instagram&$Q&access_token=$TOK" | head -c 400
+            curl -s "https://graph.facebook.com/v24.0/me/conversations?platform=instagram&$Q&access_token=$TOK" | head -c 400
             echo ""
           done

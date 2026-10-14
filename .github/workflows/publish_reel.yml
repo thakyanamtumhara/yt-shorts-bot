@@ -40,7 +40,7 @@ jobs:
           python3 - << 'PY'
           import os, time, requests, sys
 
-          V = "v21.0"
+          V = "v24.0"
           tok = os.environ["IG_TOKEN"].strip()
           biz = os.environ["IG_BIZ"].strip()
           caption = os.environ["CAPTION"].replace("\\n", "\n")[:2200]
@@ -79,6 +79,11 @@ jobs:
           r = requests.post(f"https://graph.facebook.com/{V}/{biz}/media_publish",
                             data={"creation_id": cid, "access_token": tok}, timeout=60)
           print("publish:", r.status_code, r.text[:300])
+          if r.status_code != 200 and "2207089" in r.text:
+              print("IG_V24_FALLBACK: v24.0 refused with 2207089, publishing on v21.0 (works until 21-Jan-2027)")
+              r = requests.post(f"https://graph.facebook.com/v21.0/{biz}/media_publish",
+                                data={"creation_id": cid, "access_token": tok}, timeout=60)
+              print("publish (v21.0):", r.status_code, r.text[:300])
           r.raise_for_status()
           media_id = r.json()["id"]
 

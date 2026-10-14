@@ -87,7 +87,7 @@ jobs:
 
           # 5. Instagram token alive
           try:
-              r = requests.get("https://graph.facebook.com/v21.0/me",
+              r = requests.get("https://graph.facebook.com/v24.0/me",
                   params={"access_token": os.environ["INSTAGRAM_ACCESS_TOKEN"], "fields":"id,name"},
                   timeout=10)
               check("Instagram (FB Graph)", r.status_code == 200,

@@ -316,14 +316,14 @@ def check_meta_token():
         return Result(key, label, sev, False, "INSTAGRAM_ACCESS_TOKEN not set")
     if not (app_id and app_secret):
         status, body = _json_req(
-            f"https://graph.facebook.com/v21.0/me?access_token={urllib.parse.quote(tok)}")
+            f"https://graph.facebook.com/v24.0/me?access_token={urllib.parse.quote(tok)}")
         if status != 200:
             return Result(key, label, sev, False, f"token rejected (HTTP {status})")
         return Result(key, label, sev, True, "token valid (no app secret — expiry unknown)")
 
     app_token = urllib.parse.quote(f"{app_id}|{app_secret}")
     status, body = _json_req(
-        f"https://graph.facebook.com/v21.0/debug_token"
+        f"https://graph.facebook.com/v24.0/debug_token"
         f"?input_token={urllib.parse.quote(tok)}&access_token={app_token}")
     data = body.get("data") or {}
     if status != 200 or not data:

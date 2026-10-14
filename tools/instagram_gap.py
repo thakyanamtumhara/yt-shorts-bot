@@ -29,7 +29,7 @@ def parse_graph_time(value):
     return None
 
 
-def newest_post_time(get, account_id, token, version="v21.0", timeout=30):
+def newest_post_time(get, account_id, token, version="v24.0", timeout=30):
     """Newest media time on the account (aware UTC), None when it has no media. Errors never carry the token."""
     try:
         response = get(f"https://graph.facebook.com/{version}/{account_id}/media",

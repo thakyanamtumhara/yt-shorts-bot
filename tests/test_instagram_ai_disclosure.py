@@ -80,7 +80,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
             'time': SimpleNamespace(time=lambda: 1700000000, sleep=Mock()),
             'datetime': SimpleNamespace(now=lambda _: fixed_time),
             'pytz': SimpleNamespace(timezone=lambda _: None), 'json': json, 'print': Mock(),
-            'CROSS_POST_INSTAGRAM': True, 'IG_API_VERSION': 'v21.0', 'TIMEZONE': 'Asia/Kolkata',
+            'CROSS_POST_INSTAGRAM': True, 'IG_API_VERSION': 'v24.0', 'IG_FALLBACK_VERSION': 'v21.0', 'TIMEZONE': 'Asia/Kolkata',
             'IG_POST_META': metadata, 'BLOG_S3_BUCKET': 'test-bucket', 'BLOG_BASE_URL': 'https://example.invalid',
             'get_instagram_best_time': lambda *args: None,
             'get_ig_hashtags': lambda _: [], 'get_ig_seo_line': lambda *args: 'Useful buyer lesson',
@@ -158,7 +158,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
 
     def test_single_photo_flag_rejection_has_no_unlabeled_retry(self):
         client = Mock(post=Mock(return_value=response(400, error={'message': 'Unsupported is_ai_generated', 'code': 100})))
-        scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
+        scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v24.0', 'IG_FALLBACK_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
         fn = load_function('publish_ig_carousel', scope)
         self.assertIsNone(fn(['https://example.invalid/one.png'], 'Useful fabric lesson',
                              image_assets=[{'url': 'https://example.invalid/one.png', 'origin': 'independent_generation'}]))
@@ -167,7 +167,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
 
     def test_single_photo_success_keeps_flag_and_publishes_once(self):
         client = Mock(post=Mock(side_effect=[response(id='photo-container'), response(id='photo-media')]), get=Mock(return_value=response(status_code='FINISHED')))
-        scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
+        scope = {'os': SimpleNamespace(environ={'INSTAGRAM_ACCESS_TOKEN': 'test', 'INSTAGRAM_BUSINESS_ID': 'business'}), 'requests': client, 'IG_API_VERSION': 'v24.0', 'IG_FALLBACK_VERSION': 'v21.0', 'print': Mock(), 'create_ai_container': create_ai_container}
         self.assertEqual(load_function('publish_ig_carousel', scope)(['https://example.invalid/one.png'], 'Useful fabric lesson',
                          image_assets=[{'url': 'https://example.invalid/one.png', 'origin': 'independent_generation'}]), 'photo-media')
         self.assertEqual(client.post.call_count, 2)

@@ -21,7 +21,7 @@ jobs:
 
           TOK = os.environ["IG_TOKEN"].strip()
           BIZ = os.environ["IG_BIZ"].strip()
-          G = "https://graph.facebook.com/v21.0"
+          G = "https://graph.facebook.com/v24.0"
 
           def get(url):
               with urllib.request.urlopen(url, timeout=30) as r:

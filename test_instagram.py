@@ -18,7 +18,7 @@ import time
 import subprocess
 import requests
 
-IG_API_VERSION = "v21.0"
+IG_API_VERSION = "v24.0"
 BLOG_S3_BUCKET = "bulkplaintshirt.com"
 BLOG_BASE_URL = "https://www.bulkplaintshirt.com"
 

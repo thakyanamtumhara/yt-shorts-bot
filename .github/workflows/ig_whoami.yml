@@ -37,7 +37,7 @@ jobs:
           print("── debug_token (via FB_APP_ID app credentials) ──")
           if app_id and app_secret:
               q = urllib.parse.urlencode({"input_token": tok, "access_token": f"{app_id}|{app_secret}"})
-              d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}")
+              d = get(f"https://graph.facebook.com/v24.0/debug_token?{q}")
               data = d.get("data", d)
               for k in ("app_id", "application", "type", "issued_at", "expires_at",
                         "data_access_expires_at", "is_valid", "scopes", "granular_scopes",
@@ -52,16 +52,16 @@ jobs:
 
           print("── token acts as (graph.instagram.com/me) ──")
           q = urllib.parse.urlencode({"fields": "id,user_id,username,account_type", "access_token": tok})
-          print(" ", get(f"https://graph.instagram.com/v21.0/me?{q}"))
+          print(" ", get(f"https://graph.instagram.com/v24.0/me?{q}"))
 
           if ig_id:
               print("── IG business account (graph.facebook.com path) ──")
               q = urllib.parse.urlencode({"fields": "username,name,followers_count", "access_token": tok})
-              print(" ", get(f"https://graph.facebook.com/v21.0/{ig_id}?{q}"))
+              print(" ", get(f"https://graph.facebook.com/v24.0/{ig_id}?{q}"))
 
               print("── online_followers insight test (needs manage_insights + 100 followers) ──")
               q = urllib.parse.urlencode({"metric": "online_followers", "period": "lifetime", "access_token": tok})
-              r = get(f"https://graph.facebook.com/v21.0/{ig_id}/insights?{q}")
+              r = get(f"https://graph.facebook.com/v24.0/{ig_id}/insights?{q}")
               vals = r.get("data", [{}])[0].get("values", []) if isinstance(r.get("data"), list) and r.get("data") else []
               print("  WORKS ✅" if vals else f"  result: {str(r)[:400]}")
 
@@ -69,11 +69,11 @@ jobs:
           pt = os.environ.get("FB_PAGE_TOKEN", "").strip()
           if pt and app_id and app_secret:
               q = urllib.parse.urlencode({"input_token": pt, "access_token": f"{app_id}|{app_secret}"})
-              d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+              d = get(f"https://graph.facebook.com/v24.0/debug_token?{q}").get("data", {})
               print("  type:", d.get("type"), "| valid:", d.get("is_valid"), "| expires_at:", d.get("expires_at"), "(0 = never)")
               data = urllib.parse.urlencode({"upload_phase": "start", "access_token": pt}).encode()
               try:
-                  with urllib.request.urlopen(urllib.request.Request("https://graph.facebook.com/v21.0/1999594936994410/video_reels", data=data), timeout=20) as r:
+                  with urllib.request.urlopen(urllib.request.Request("https://graph.facebook.com/v24.0/1999594936994410/video_reels", data=data), timeout=20) as r:
                       print("  video_reels start with STORED token: WORKS ✅" if json.load(r).get("video_id") else "  no video_id?")
               except urllib.error.HTTPError as e:
                   print("  video_reels start FAILED:", e.code, e.read().decode()[:200])
@@ -82,7 +82,7 @@ jobs:
           data = urllib.parse.urlencode({"upload_phase": "start", "access_token": tok}).encode()
           try:
               with urllib.request.urlopen(
-                  urllib.request.Request("https://graph.facebook.com/v21.0/1999594936994410/video_reels", data=data),
+                  urllib.request.Request("https://graph.facebook.com/v24.0/1999594936994410/video_reels", data=data),
                   timeout=20,
               ) as r:
                   d = json.load(r)

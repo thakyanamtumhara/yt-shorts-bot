@@ -71,7 +71,7 @@ LEDGER = os.path.join(REPO, "crosspost_ledger.json")
 STATE = os.path.join(REPO, "crosspost_state.json")
 
 VIZARD = "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1"
-GRAPH = "https://graph.facebook.com/v21.0"
+GRAPH = "https://graph.facebook.com/v24.0"
 
 # Vizard account ids we actually publish through (tools/vizard_publish.py)
 WATCHED = {

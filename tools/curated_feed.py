@@ -267,7 +267,7 @@ class Instagram:
         self.session.headers["Authorization"] = "Bearer " + token
 
     def request(self, method, path, **kwargs):
-        response = self.session.request(method, "https://graph.facebook.com/v21.0/" + path, timeout=60, **kwargs)
+        response = self.session.request(method, "https://graph.facebook.com/v24.0/" + path, timeout=60, **kwargs)
         try:
             data = response.json()
         except ValueError:

@@ -85,7 +85,7 @@ class Instagram:
         self.account_id = account_id
 
     def get(self, path, params):
-        return safe_get(self.session, "https://graph.facebook.com/v21.0/" + path,
+        return safe_get(self.session, "https://graph.facebook.com/v24.0/" + path,
                         service="Instagram", params=params)
 
     def owned_media(self, required_ids):

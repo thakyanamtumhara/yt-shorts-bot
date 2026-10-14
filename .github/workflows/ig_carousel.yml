@@ -77,7 +77,7 @@ jobs:
           if not tok or len(tok) < 20:
               print('Token missing or malformed — skipping refresh')
               sys.exit(0)
-          r = requests.get(f'https://graph.facebook.com/v21.0/debug_token',
+          r = requests.get(f'https://graph.facebook.com/v24.0/debug_token',
               params={'input_token': tok, 'access_token': tok}, timeout=10)
           if r.status_code == 200:
               data = r.json().get('data', {})

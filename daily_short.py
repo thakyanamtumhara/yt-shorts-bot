@@ -399,7 +399,11 @@ PLAYLIST_CACHE_FILE = f"{WORK_DIR}/playlist_cache.json"  # Cache playlist IDs
 
 # Instagram Reels Cross-Post (requires INSTAGRAM_ACCESS_TOKEN + INSTAGRAM_BUSINESS_ID secrets)
 CROSS_POST_INSTAGRAM = True
-IG_API_VERSION = "v21.0"  # v22.0 causes "Carousel item cannot be published standalone" error
+# Meta retires Graph v21.0 on 21-Jan-2027. The Feb-2026 "Carousel item cannot be published standalone" (2207089)
+# came with share_to_feed and a non-S3 video host (both fixed 26/27-Feb-2026), so publishing now runs on v24.0;
+# until v21.0 is gone a Reel refused with 2207089 is published again on v21.0 and the record says so (ig_api).
+IG_API_VERSION = "v24.0"
+IG_FALLBACK_VERSION = "v21.0"
 FB_API_VERSION = "v26.0"
 
 # Instagram Carousel — autonomous post of blog hero+img1+img2 to IG as a carousel.
@@ -2602,7 +2606,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
             return f"scheduled:{container_id}"
         else:
             # Immediate publish — try current version, then fallback
-            for api_ver in [IG_API_VERSION, "v20.0"]:
+            for api_ver in [IG_API_VERSION, IG_FALLBACK_VERSION]:
                 publish_resp = requests.post(
                     f"https://graph.facebook.com/{api_ver}/{ig_business_id}/media_publish",
                     data={"creation_id": container_id, "access_token": ig_token},
@@ -2613,6 +2617,9 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
 
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
+                    IG_POST_META["ig_api"] = api_ver
+                    if api_ver != IG_API_VERSION:
+                        print(f"   \u26a0\ufe0f IG_V24_FALLBACK: published on {api_ver} after {IG_API_VERSION} refused (2207089) — fix before 21-Jan-2027")
                     print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")
                     _ig_post_publish_extras(ig_media_id, cover_url, ig_token, ig_business_id,
                                             comment_text=get_ig_cta_line(topic))
@@ -3050,6 +3057,8 @@ def save_ig_upload_record(ig_media_id, title, topic, cover_meta=None, bot_youtub
             rec["collaborators"] = IG_POST_META["collaborators"]
         if IG_POST_META.get("ai_disclosure"):
             rec["ai_disclosure"] = dict(IG_POST_META["ai_disclosure"])
+        if IG_POST_META.get("ig_api"):
+            rec["ig_api"] = IG_POST_META["ig_api"]
         records.append(rec)
 
         with open(IG_ENGAGEMENT_FILE, "w") as f:

@@ -222,7 +222,7 @@ def main():
     print("\n4. Getting Instagram account info...")
 
     resp = requests.get(
-        f"https://graph.instagram.com/v21.0/me",
+        f"https://graph.instagram.com/v24.0/me",
         params={
             "fields": "user_id,username,name,account_type,profile_picture_url,followers_count,media_count",
             "access_token": long_token,

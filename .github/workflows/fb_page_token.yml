@@ -28,18 +28,18 @@ jobs:
           set -e
           PAGE_ID="1999594936994410"
 
-          LONG=$(curl -s "https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${FB_APP_ID}&client_secret=${FB_APP_SECRET}&fb_exchange_token=${SHORT_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))")
+          LONG=$(curl -s "https://graph.facebook.com/v24.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${FB_APP_ID}&client_secret=${FB_APP_SECRET}&fb_exchange_token=${SHORT_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('access_token',''))")
           [ -n "$LONG" ] || { echo "❌ long-lived exchange failed"; exit 1; }
           echo "✅ long-lived user token obtained"
 
           echo "── granular scopes on this token ──"
-          curl -s "https://graph.facebook.com/v21.0/debug_token?input_token=${LONG}&access_token=${FB_APP_ID}|${FB_APP_SECRET}" | python3 -c "
+          curl -s "https://graph.facebook.com/v24.0/debug_token?input_token=${LONG}&access_token=${FB_APP_ID}|${FB_APP_SECRET}" | python3 -c "
           import json,sys
           d = json.load(sys.stdin).get('data',{})
           print('  scopes:', d.get('scopes'))
           for g in d.get('granular_scopes',[]): print(' ', g.get('scope'), '→', g.get('target_ids'))"
 
-          ACCOUNTS=$(curl -s "https://graph.facebook.com/v21.0/me/accounts?limit=100&access_token=${LONG}")
+          ACCOUNTS=$(curl -s "https://graph.facebook.com/v24.0/me/accounts?limit=100&access_token=${LONG}")
           echo "── Pages via /me/accounts ──"
           echo "$ACCOUNTS" | python3 -c "
           import json,sys
@@ -53,7 +53,7 @@ jobs:
 
           if [ -z "$PAGE_TOKEN" ]; then
             echo "── /me/accounts empty — trying direct page token fetch (business-owned page path) ──"
-            DIRECT=$(curl -s "https://graph.facebook.com/v21.0/${PAGE_ID}?fields=access_token,name&access_token=${LONG}")
+            DIRECT=$(curl -s "https://graph.facebook.com/v24.0/${PAGE_ID}?fields=access_token,name&access_token=${LONG}")
             echo "$DIRECT" | python3 -c "
           import json,sys
           d = json.load(sys.stdin)
@@ -63,7 +63,7 @@ jobs:
           [ -n "$PAGE_TOKEN" ] || { echo "❌ Could not obtain Page token by either route — System User token via Business settings is the next path"; exit 1; }
           echo "✅ Page token obtained for Own Knitted Blank Wears"
 
-          START=$(curl -s -X POST "https://graph.facebook.com/v21.0/${PAGE_ID}/video_reels" -d "upload_phase=start&access_token=${PAGE_TOKEN}")
+          START=$(curl -s -X POST "https://graph.facebook.com/v24.0/${PAGE_ID}/video_reels" -d "upload_phase=start&access_token=${PAGE_TOKEN}")
           echo "$START" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d.get('video_id'), d; print('✅ video_reels start-phase WORKS — permission confirmed')"
 
           echo "$PAGE_TOKEN" | gh secret set FB_PAGE_ACCESS_TOKEN -R thakyanamtumhara/yt-shorts-bot --body -

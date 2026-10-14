@@ -44,7 +44,7 @@ class NewestPostTests(unittest.TestCase):
 
         self.assertEqual(newest_post_time(get, '1784', TOKEN), datetime(2026, 10, 6, 13, 37, tzinfo=UTC))
         url, kwargs = calls[0]
-        self.assertEqual(url, 'https://graph.facebook.com/v21.0/1784/media')
+        self.assertEqual(url, 'https://graph.facebook.com/v24.0/1784/media')
         self.assertEqual(kwargs['params']['fields'], 'timestamp')
         self.assertEqual(kwargs['params']['access_token'], TOKEN)
         self.assertNotIn(TOKEN, url)

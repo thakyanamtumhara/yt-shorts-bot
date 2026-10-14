@@ -38,7 +38,7 @@ IG_BIZ = (os.environ.get("INSTAGRAM_BUSINESS_ID") or "").strip()
 IG_TOKEN = (os.environ.get("INSTAGRAM_ACCESS_TOKEN") or "").strip()
 FB_PAGE_ID = (os.environ.get("FB_PAGE_ID") or "1999594936994410").strip()
 FB_TOKEN = (os.environ.get("FB_PAGE_ACCESS_TOKEN") or IG_TOKEN).strip()
-GRAPH = "https://graph.facebook.com/v21.0"
+GRAPH = "https://graph.facebook.com/v24.0"
 FB_GRAPH = "https://graph.facebook.com/v26.0"
 
 # a Factory Sach episode should land at least this often on the main channel

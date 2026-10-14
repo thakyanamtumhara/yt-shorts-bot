@@ -35,7 +35,7 @@ jobs:
 
           tok = os.environ["IG_TOKEN"].strip()
           ig = os.environ["IG_ID"].strip()
-          V = "v21.0"
+          V = "v24.0"
 
           def post(url, data):
               req = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode())
@@ -79,6 +79,9 @@ jobs:
                   raise SystemExit(f"❌ processing ERROR again: {st}")
 
           pub = post(f"https://graph.facebook.com/{V}/{ig}/media_publish", {"creation_id": cid, "access_token": tok})
+          if not pub.get("id") and "2207089" in str(pub):
+              print("IG_V24_FALLBACK: v24.0 refused with 2207089, publishing on v21.0 (works until 21-Jan-2027)")
+              pub = post(f"https://graph.facebook.com/v21.0/{ig}/media_publish", {"creation_id": cid, "access_token": tok})
           mid = pub.get("id")
           assert mid, f"publish failed: {pub}"
           print(f"✅ PUBLISHED → media_id {mid}")

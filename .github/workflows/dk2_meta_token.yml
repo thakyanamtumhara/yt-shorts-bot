@@ -40,13 +40,13 @@ jobs:
           # 1. long-lived exchange
           q = urllib.parse.urlencode({"grant_type": "fb_exchange_token", "client_id": app_id,
                                       "client_secret": app_secret, "fb_exchange_token": short})
-          long_tok = get(f"https://graph.facebook.com/v21.0/oauth/access_token?{q}").get("access_token", "")
+          long_tok = get(f"https://graph.facebook.com/v24.0/oauth/access_token?{q}").get("access_token", "")
           assert long_tok, "long-lived exchange failed"
           print("✅ long-lived user token obtained")
 
           # 2. verify scopes on the long token
           q = urllib.parse.urlencode({"input_token": long_tok, "access_token": f"{app_id}|{app_secret}"})
-          d = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+          d = get(f"https://graph.facebook.com/v24.0/debug_token?{q}").get("data", {})
           scopes = d.get("scopes", [])
           print("scopes:", scopes)
           required = {"instagram_manage_messages", "instagram_basic", "pages_manage_posts",
@@ -58,14 +58,14 @@ jobs:
 
           # 3. page token (business-owned page route)
           q = urllib.parse.urlencode({"fields": "access_token,name", "access_token": long_tok})
-          pd = get(f"https://graph.facebook.com/v21.0/{PAGE_ID}?{q}")
+          pd = get(f"https://graph.facebook.com/v24.0/{PAGE_ID}?{q}")
           page_tok = pd.get("access_token", "")
           assert page_tok, f"no page token: {str(pd)[:200]}"
           print(f"✅ Page token obtained for {pd.get('name')}")
 
           # 4. health-check the page token
           q = urllib.parse.urlencode({"input_token": page_tok, "access_token": f"{app_id}|{app_secret}"})
-          hd = get(f"https://graph.facebook.com/v21.0/debug_token?{q}").get("data", {})
+          hd = get(f"https://graph.facebook.com/v24.0/debug_token?{q}").get("data", {})
           print(f"page token: type={hd.get('type')} valid={hd.get('is_valid')} expires_at={hd.get('expires_at')} (0=never)")
           assert hd.get("is_valid") and hd.get("type") == "PAGE" and hd.get("expires_at") == 0, "page token not healthy"
 
