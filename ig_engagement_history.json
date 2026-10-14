@@ -2349,7 +2349,7 @@
     "title": "Sale91 DTF Pieces vs Sheets — This Confusion Changes Your Cost",
     "topic": "DTF में 'Pieces' का मतलब T-Shirt नहीं, पूरी Sheet है — ग़लत समझे तो Rate बिगड़ेगा",
     "published_at": "2026-10-05T15:02:52.007110+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "59nF0krhulc",
     "workflow_run_id": "37289040453",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2367,14 +2367,23 @@
       "requested": true,
       "container_id": "18347891734266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-14T15:03:05.221038+05:30",
+    "hours_since_publish": 216.0,
+    "views": 1726,
+    "reach": 1136,
+    "likes": 9,
+    "comments": 3,
+    "shares": 9,
+    "saves": 17,
+    "avg_watch_time_ms": 9763
   },
   {
     "media_id": "18093105746668582",
     "title": "Dark T-Shirt Fading — Real Dye Loss vs Surface Fuzz Explained for Bulk Printers",
     "topic": "Dark T-Shirt फ़ीकी क्यों दिखती है? — असली Colour Loss vs Phantom Colour Loss",
     "published_at": "2026-10-06T15:04:44.752411+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "lnYzuwjXthE",
     "workflow_run_id": "37439997007",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2390,14 +2399,23 @@
       "requested": true,
       "container_id": "18348043543266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-14T15:03:05.221038+05:30",
+    "hours_since_publish": 192.0,
+    "views": 324,
+    "reach": 292,
+    "likes": 5,
+    "comments": 1,
+    "shares": 0,
+    "saves": 0,
+    "avg_watch_time_ms": 7709
   },
   {
     "media_id": "18090172028224985",
     "title": "DTF Print White Box Problem — PNG Background Transparent Karo Pehle",
     "topic": "DTF में Background Transparent नहीं किया तो Design के पीछे सफ़ेद डब्बा छपेगा",
     "published_at": "2026-10-06T18:10:48.619280+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "HaOgzWlJGDM",
     "workflow_run_id": "37463183565",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2416,14 +2434,23 @@
       "requested": true,
       "container_id": "18348063778266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-14T15:03:05.221038+05:30",
+    "hours_since_publish": 188.9,
+    "views": 39,
+    "reach": 34,
+    "likes": 0,
+    "comments": 1,
+    "shares": 0,
+    "saves": 0,
+    "avg_watch_time_ms": 5523
   },
   {
     "media_id": "18219271165351155",
     "title": "DTF Sticker Without Full Sheet — Just Upload Your Logo PNG and Print",
     "topic": "DTF Sticker चाहिए पर पूरी Sheet बनानी नहीं आती? अब सिर्फ Logo Upload करो",
     "published_at": "2026-10-06T19:07:54.063039+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "ZVdl3mssPWw",
     "workflow_run_id": "37470554396",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2442,14 +2469,23 @@
       "requested": true,
       "container_id": "18348070060266060",
       "verification": "create_accepted_native_label_unverified"
-    }
+    },
+    "checked_at": "2026-10-14T15:03:05.221038+05:30",
+    "hours_since_publish": 187.9,
+    "views": 113,
+    "reach": 104,
+    "likes": 1,
+    "comments": 1,
+    "shares": 0,
+    "saves": 0,
+    "avg_watch_time_ms": 3544
   },
   {
     "media_id": "18132023293757101",
     "title": "DTF Logo Print Size — How Big Before It Gets Blurry at 250 DPI",
     "topic": "Logo कितना बड़ा print करें? Website खुद 'Sharp up to' बताती है",
     "published_at": "2026-10-07T14:46:18.618202+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "xDVQfDJkJ-g",
     "workflow_run_id": "37597634561",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2466,6 +2502,37 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18348182689266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "checked_at": "2026-10-14T15:03:05.221038+05:30",
+    "hours_since_publish": 168.3,
+    "views": 1443,
+    "reach": 1115,
+    "likes": 13,
+    "comments": 5,
+    "shares": 7,
+    "saves": 6,
+    "avg_watch_time_ms": 8843
+  },
+  {
+    "media_id": "17934473010405553",
+    "title": "Discharge Print on Dark T-Shirts: Ink Layer or Dye Removal?",
+    "topic": "डार्क टी-शर्ट पर डिस्चार्ज प्रिंट: रंग ऊपर लगता है या कपड़े से हटता है?",
+    "published_at": "2026-10-14T15:05:41.899290+05:30",
+    "checked": false,
+    "bot_youtube_id": "4tRDKKtHhOg",
+    "workflow_run_id": "38539187959",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "DISCHARGE PRINT INK लगती या DYE निकलती?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18349254832266060",
       "verification": "create_accepted_native_label_unverified"
     }
   }

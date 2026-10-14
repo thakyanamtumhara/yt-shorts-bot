@@ -3160,5 +3160,21 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1983
     }
+  },
+  {
+    "date": "2026-10-14T09:40:14.481319",
+    "topic": "\u0921\u093e\u0930\u094d\u0915 \u091f\u0940-\u0936\u0930\u094d\u091f \u092a\u0930 \u0921\u093f\u0938\u094d\u091a\u093e\u0930\u094d\u091c \u092a\u094d\u0930\u093f\u0902\u091f: \u0930\u0902\u0917 \u090a\u092a\u0930 \u0932\u0917\u0924\u093e \u0939\u0948 \u092f\u093e \u0915\u092a\u0921\u093c\u0947 \u0938\u0947 \u0939\u091f\u0924\u093e \u0939\u0948?",
+    "title": "\u0921\u093f\u0938\u094d\u091a\u093e\u0930\u094d\u091c \u092a\u094d\u0930\u093f\u0902\u091f: \u0921\u093e\u0930\u094d\u0915 \u091f\u0940-\u0936\u0930\u094d\u091f \u092a\u0930 Ink \u0932\u0917\u0924\u093e \u0939\u0948 \u092f\u093e Dye \u0939\u091f\u0924\u093e \u0939\u0948?",
+    "total_usd": 9.3629,
+    "duration_min": 37.5,
+    "breakdown": {
+      "claude_opus": 0.3159,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0149,
+      "veo_clips": 8.64,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.2221
+    }
   }
 ]

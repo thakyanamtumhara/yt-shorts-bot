@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-14",
+  "blog_title": "Discharge Printing on Dark T-Shirts — Does It Add Ink or Remove Fabric Dye? How It Works",
+  "blog_url": "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or.html",
+  "blog_slug": "discharge-printing-on-dark-t-shirts-does-it-add-ink-or",
+  "image_urls": [
+    "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-hero.jpg",
+    "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-img1.jpg",
+    "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-img2.jpg"
+  ],
+  "image_assets": [
+    {
+      "url": "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-hero.webp",
+      "origin": "independent_generation",
+      "sha256": "1512920ce81e5c37d4739d9334ac249ec8c3b562748616b9d738734f256b54b1"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-img1.webp",
+      "origin": "independent_generation",
+      "sha256": "023859c44b415b3637815fe97b64d5620c8eae3bb02c2a140ae5556cf2e4d24b"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/discharge-printing-on-dark-t-shirts-does-it-add-ink-or-img2.webp",
+      "origin": "independent_generation",
+      "sha256": "8bf572dd704987a77f2fe104934dae17c2862b9bf0b57c6150135ab02a459a26"
+    }
+  ],
+  "image_policy_version": "2026-09-24",
+  "caption": "Dark T-shirt discharge printing removes dye, not adds ink. 🎨 A chemical destroys your fabric's ground colour, leaving white where the design prints. Add a dye the chemical can't affect, and a new colour appears instead. But here's the catch: not every dark shade discharges cleanly without damage. Always confirm with your printer first—don't assume any dark tee will lift properly. Have you checked with your supplier if your chosen fabric colour can actually be discharged? 💭",
+  "hashtags": [
+    "#dischargeprinting",
+    "#darktshirtprinting",
+    "#textileprinting",
+    "#screenprinting",
+    "#tiruppur"
+  ],
+  "editorial_review": {
+    "version": "2026-09-23",
+    "supported": true,
+    "reason": "All substantive claims are directly supported by the supplied primary-source fact on discharge_printing: (1) discharge printing removes dye rather than adds ink—confirmed; (2) a chemical destroys the fabric's ground colour leaving white—confirmed; (3) adding a dye the chemical cannot affect produces a new colour—confirmed; (4) not every dark shade can be discharged without fabric damage—confirmed; (5) buyer must confirm with printer first—confirmed as the lesson's primary decision point. The caption obeys all limits: names no specific T-shirt colour, no home chemical, no soft/durable/long-lasting claims, no price, no rupee amount. The mechanism explanation precedes the buyer consequence (confirm with printer), avoiding a checklist format. The closing question reinforces the decision without replacing the explanation."
+  },
+  "rate_facts": {},
+  "posted": false,
+  "media_id": null,
+  "error": null
+}
