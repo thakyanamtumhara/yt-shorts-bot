@@ -757,6 +757,10 @@
   "18200027917379116": {
    "permalink": "https://www.instagram.com/reel/DecFnWsiUHr/",
    "ts": "2026-10-13T15:05:00+0000"
+  },
+  "17934473010405553": {
+   "permalink": "https://www.instagram.com/reel/DeeEt-xkkvl/",
+   "ts": "2026-10-14T09:35:24+0000"
   }
  },
  "facebook": {
@@ -922,7 +926,19 @@
   },
   "1699679911575566": {
    "queued_at": "2026-10-14 09:35",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-14T15:25:07+05:30",
+   "permalink": "https://www.facebook.com/reel/1699679911575566"
   }
  },
  "history": [
@@ -1665,8 +1681,13 @@
    "at": "2026-10-14T01:34:57+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-10-14T15:25:07+05:30",
+   "alerts": 0,
+   "new": 1
   }
  ],
  "last_green_date": "2026-10-14",
- "last_run_ist": "2026-10-14T01:34:57+05:30"
+ "last_run_ist": "2026-10-14T15:25:07+05:30"
 }
