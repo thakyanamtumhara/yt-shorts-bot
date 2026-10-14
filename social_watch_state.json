@@ -761,6 +761,10 @@
   "17934473010405553": {
    "permalink": "https://www.instagram.com/reel/DeeEt-xkkvl/",
    "ts": "2026-10-14T09:35:24+0000"
+  },
+  "17961890298233828": {
+   "permalink": "https://www.instagram.com/p/DeecR5DmJ20/",
+   "ts": "2026-10-14T13:00:54+0000"
   }
  },
  "facebook": {
@@ -1686,8 +1690,13 @@
    "at": "2026-10-14T15:25:07+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-10-14T23:47:53+05:30",
+   "alerts": 0,
+   "new": 1
   }
  ],
  "last_green_date": "2026-10-14",
- "last_run_ist": "2026-10-14T15:25:07+05:30"
+ "last_run_ist": "2026-10-14T23:47:53+05:30"
 }
