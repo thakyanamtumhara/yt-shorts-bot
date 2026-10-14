@@ -499,6 +499,10 @@ def grade_render():
     if got is not None and expected and got < expected:
         warn.append(f"only {got}/{expected} Veo clips rendered — the video loops footage to fill "
                     f"the duration")
+    ig_api = f.get("ig_api")
+    if ig_api and ig_api != "v24.0":
+        warn.append(f"Instagram took this reel only on the old Graph API {ig_api} (2207089 on v24.0); "
+                    f"{ig_api} stops on 21-Jan-2027, so fix the v24.0 refusal before then")
     if clips.get("kling"):
         warn.append(f"{clips['kling']} clip(s) came from the Kling fallback, not Veo")
 

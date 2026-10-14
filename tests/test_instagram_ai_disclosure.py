@@ -86,7 +86,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
             'get_ig_hashtags': lambda _: [], 'get_ig_seo_line': lambda *args: 'Useful buyer lesson',
             'get_ig_cta_line': lambda topic=None: 'What do you check?', 'NEW_TEST_MODE': False, 'SINGLE_VEO_TEST': False,
             '_ig_post_publish_extras': Mock(), 'create_ai_container': create_ai_container,
-            'raise_for_disclosure_rejection': raise_for_disclosure_rejection,
+            'raise_for_disclosure_rejection': raise_for_disclosure_rejection, 'flag': Mock(),
         }
         publish = load_function('cross_post_to_instagram', scope)
         with patch.dict(sys.modules, {'boto3': SimpleNamespace(client=lambda _: Mock())}):
@@ -125,6 +125,7 @@ class ActualDailyPublisherTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(scope['IG_POST_META']['ai_disclosure']['verification'], 'create_accepted_native_label_unverified')
         scope['_ig_post_publish_extras'].assert_called_once()
+        scope['flag'].assert_called_once_with('ig_api', 'v24.0')
 
     def test_no_container_id_or_false_flag_echo_cannot_publish(self):
         for resp in (response(), response(id='container-1', is_ai_generated=False)):

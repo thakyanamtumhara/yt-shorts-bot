@@ -2618,6 +2618,7 @@ def cross_post_to_instagram(video_path, title, description, topic, thumbnail_pat
                 if publish_resp.status_code == 200:
                     ig_media_id = publish_resp.json().get("id")
                     IG_POST_META["ig_api"] = api_ver
+                    flag("ig_api", api_ver)
                     if api_ver != IG_API_VERSION:
                         print(f"   \u26a0\ufe0f IG_V24_FALLBACK: published on {api_ver} after {IG_API_VERSION} refused (2207089) — fix before 21-Jan-2027")
                     print(f"   \u2705 Instagram Reel published! ID: {ig_media_id} (api={api_ver})")

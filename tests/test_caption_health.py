@@ -36,6 +36,13 @@ class CaptionHealthTests(unittest.TestCase):
             bad, _ = self.grade(flags)
             self.assertTrue(any('Caption timing' in item for item in bad))
 
+    def test_reel_published_on_the_old_graph_version_is_a_warning(self):
+        bad, warnings = self.grade({'ig_api': 'v21.0', 'karaoke': True})
+        self.assertEqual(bad, [])
+        self.assertTrue(any('21-Jan-2027' in item for item in warnings))
+        _, warnings = self.grade({'ig_api': 'v24.0', 'karaoke': True})
+        self.assertFalse(any('Graph API' in item for item in warnings))
+
 
 if __name__ == '__main__':
     unittest.main()
