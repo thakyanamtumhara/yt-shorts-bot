@@ -11,13 +11,13 @@
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 244,451/258,644 chars left",
+   "detail": "creator · PVC allowed · 363,000/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 244451,
-   "char_limit": 258644,
+   "chars_left": 363000,
+   "char_limit": 363000,
    "sub_status": "active",
-   "quota_resets": "14 Oct 2026",
+   "quota_resets": "14 Nov 2026",
    "has_open_invoices": true,
    "open_invoices": 1,
    "voice_name": "Ketu Original",
@@ -865,9 +865,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-14T14:26:35+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-14T00:56:56+05:30",
+ "last_run_ist": "2026-10-14T14:26:35+05:30",
  "last_green_date": "2026-10-14",
  "last_still_down_date": "2026-10-06"
 }
