@@ -1,0 +1,49 @@
+{
+  "batch_id": "raw20261011",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-10-14T18:38:00+05:30",
+  "videos": [
+    {
+      "id": "r6-prebook-v1",
+      "version": "1",
+      "sha256": "db51a53a87476311af5b8eeb3a097338d9dbc3544720c0714a5c6424f394669d",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "r3-wallet-v1",
+      "version": "1",
+      "sha256": "be129a2257c29e19751f95dc61759f3aab969fc943820295bea2c6e4b56b5f19",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "r5-launches-v1",
+      "version": "1",
+      "sha256": "77fe02feee0224d066b1f93fdb9418d7d429b0fb4ecc5f5e3b8e957454614c2e",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "r1-dtf-full-v1",
+      "version": "1",
+      "sha256": "51390ccec5ff3ea15cd8d878e0ab8166a79c9acc48769ecd2769aef8d909878c",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "r4-refer-v1",
+      "version": "1",
+      "sha256": "e4d7250c5242f9c35805aba9f47f9f822c6a7074365b2f8c4ac6d770389f3be6",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    },
+    {
+      "id": "r2-dtf-design-v1",
+      "version": "1",
+      "sha256": "0288bfcca589fe8666a7d3ba1a922b1fda9b5d1365c0e66bc1a9f57b7fef3f1f",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
