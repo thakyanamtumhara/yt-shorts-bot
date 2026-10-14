@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-07 09:20)",
+   "detail": "ElevenLabs ✅ (2026-10-14 09:40)",
    "provider": "elevenlabs",
-   "at": "2026-10-07 09:20",
-   "title": "Logo कितना बड़ा Print करें? Website खुद बता देती है — DTF Trick"
+   "at": "2026-10-14 09:40",
+   "title": "डिस्चार्ज प्रिंट: डार्क टी-शर्ट पर Ink लगता है या Dye हटता है?"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 363,000/363,000 chars left",
+   "detail": "creator · PVC allowed · 362,782/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 363000,
+   "chars_left": 362782,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -871,9 +871,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-14T22:58:13+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-14T14:26:35+05:30",
+ "last_run_ist": "2026-10-14T22:58:13+05:30",
  "last_green_date": "2026-10-14",
  "last_still_down_date": "2026-10-06"
 }
