@@ -2535,5 +2535,29 @@
       "container_id": "18349254832266060",
       "verification": "create_accepted_native_label_unverified"
     }
+  },
+  {
+    "media_id": "17962367370207256",
+    "title": "T-Shirt Pilling — Why There's Normally No Fix Once It Starts",
+    "topic": "Pilling क्यों होती है और एक बार शुरू हो गई तो रुकती क्यों नहीं?",
+    "published_at": "2026-10-15T15:02:18.548033+05:30",
+    "checked": false,
+    "bot_youtube_id": "6Es5P75X3AE",
+    "workflow_run_id": "38709748548",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "PILLING शुरू हुई रुकेगी क्यों नहीं?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18349411222266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
   }
 ]

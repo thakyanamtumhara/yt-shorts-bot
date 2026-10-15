@@ -77,5 +77,16 @@
     "buyer_decision": "Choose discharge only after the printer confirms your ground colour can be discharged, instead of assuming any dark shade will lift cleanly.",
     "video_id": "4tRDKKtHhOg",
     "published_on": "2026-10-14"
+  },
+  {
+    "topic": "Pilling क्यों होती है और एक बार शुरू हो गई तो रुकती क्यों नहीं?",
+    "intent_key": "pilling_is_construction_issue_no_post_fix",
+    "fact_ids": [
+      "pilling_causes"
+    ],
+    "lesson": "Pills entangled fibres के छोटे गोले हैं जो fabric surface पर बनते हैं। Pilling कई factors से प्रभावित होती है — fibre type या blend, fibre dimensions, yarn और fabric construction, finishing treatments और end use। इसकी वजह construction और mill processing में है, इसलिए control material specification और mill processing में ही शुरू होना चाहिए; एक बार goods में pilling tendency आ गई तो normally कोई solution नहीं है। कोई universal durability standard नहीं है — customer और supplier को हर product के लिए satisfactory performance level agree करना होता है।",
+    "buyer_decision": "Order देते समय supplier के साथ pilling performance level लिखित में agree करो — बाद में pills आने पर कोई fix नहीं होता, इसलिए यह specification stage की बात है, complaint stage की नहीं।",
+    "video_id": "6Es5P75X3AE",
+    "published_on": "2026-10-15"
   }
 ]
