@@ -404,5 +404,19 @@
  },
  "dtf-real-20261007-c-li": {
   "nudged": true
+ },
+ "raw20261011-r6-prebook-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261011-r6-prebook-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Deg-shymHRF/"
+ },
+ "raw20261011-r6-prebook-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1064636963243794/"
+ },
+ "raw20261011-r6-prebook-v1-x": {
+  "nudged": true
  }
 }
