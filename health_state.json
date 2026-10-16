@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-15 09:32)",
+   "detail": "ElevenLabs ✅ (2026-10-16 09:35)",
    "provider": "elevenlabs",
-   "at": "2026-10-15 09:32",
-   "title": "Pilling शुरू हो गई तो कोई Fix नहीं — Fabric में गलती कहाँ हुई?"
+   "at": "2026-10-16 09:35",
+   "title": "एसिड वॉश में एसिड नहीं होता — असली Process क्या है? #Shorts"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 362,602/363,000 chars left",
+   "detail": "creator · PVC allowed · 360,670/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 362602,
+   "chars_left": 360670,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -895,9 +895,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-16T22:21:36+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-16T13:53:45+05:30",
+ "last_run_ist": "2026-10-16T22:21:36+05:30",
  "last_green_date": "2026-10-16",
  "last_still_down_date": "2026-10-06"
 }
