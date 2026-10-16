@@ -781,6 +781,10 @@
   "18130240007486810": {
    "permalink": "https://www.instagram.com/reel/Deg-shymHRF/",
    "ts": "2026-10-15T12:41:03+0000"
+  },
+  "18103077683640437": {
+   "permalink": "https://www.instagram.com/reel/DejN4DBlLGy/",
+   "ts": "2026-10-16T09:31:47+0000"
   }
  },
  "facebook": {
@@ -978,7 +982,19 @@
   },
   "1865702934872936": {
    "queued_at": "2026-10-16 09:32",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-10-16T23:18:13+05:30",
+   "permalink": "https://www.facebook.com/reel/1865702934872936"
   }
  },
  "history": [
@@ -1741,8 +1757,13 @@
    "at": "2026-10-15T23:30:36+05:30",
    "alerts": 0,
    "new": 3
+  },
+  {
+   "at": "2026-10-16T23:18:14+05:30",
+   "alerts": 0,
+   "new": 1
   }
  ],
- "last_green_date": "2026-10-15",
- "last_run_ist": "2026-10-15T23:30:36+05:30"
+ "last_green_date": "2026-10-16",
+ "last_run_ist": "2026-10-16T23:18:14+05:30"
 }
