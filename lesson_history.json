@@ -88,5 +88,16 @@
     "buyer_decision": "Order देते समय supplier के साथ pilling performance level लिखित में agree करो — बाद में pills आने पर कोई fix नहीं होता, इसलिए यह specification stage की बात है, complaint stage की नहीं।",
     "video_id": "6Es5P75X3AE",
     "published_on": "2026-10-15"
+  },
+  {
+    "topic": "एसिड वॉश टी-शर्ट में एसिड होता है क्या?",
+    "intent_key": "acid_wash_is_discharge_without_acid",
+    "fact_ids": [
+      "acid_wash_discharge"
+    ],
+    "lesson": "Acid wash is one of the effects made by wet discharge washing, and the name is a misnomer: the process uses no acid. The discharging agent is typically sodium hypochlorite or potassium permanganate, which removes colour after dyeing; an abrasion step beforehand gives surface variation, otherwise the effect looks flat.",
+    "buyer_decision": "Treat acid wash as a colour-removal finish added to a base fabric, and compare the base fabric specification separately from the wash effect.",
+    "video_id": "tYrAWPy486g",
+    "published_on": "2026-10-16"
   }
 ]

@@ -2559,5 +2559,28 @@
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"
+  },
+  {
+    "media_id": "18103077683640437",
+    "title": "Acid Wash T-Shirt Has Zero Acid — Real Process Exposed",
+    "topic": "एसिड वॉश टी-शर्ट में एसिड होता है क्या?",
+    "published_at": "2026-10-16T15:02:07.019087+05:30",
+    "checked": false,
+    "bot_youtube_id": "tYrAWPy486g",
+    "workflow_run_id": "38877478026",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "ACID WASH एसिड नहीं तो क्या?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18349563697266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
   }
 ]

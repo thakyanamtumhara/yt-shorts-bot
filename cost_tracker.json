@@ -3191,5 +3191,21 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.1002
     }
+  },
+  {
+    "date": "2026-10-16T09:35:56.031068",
+    "topic": "\u090f\u0938\u093f\u0921 \u0935\u0949\u0936 \u091f\u0940-\u0936\u0930\u094d\u091f \u092e\u0947\u0902 \u090f\u0938\u093f\u0921 \u0939\u094b\u0924\u093e \u0939\u0948 \u0915\u094d\u092f\u093e?",
+    "title": "\u090f\u0938\u093f\u0921 \u0935\u0949\u0936 \u092e\u0947\u0902 \u090f\u0938\u093f\u0921 \u0928\u0939\u0940\u0902 \u0939\u094b\u0924\u093e \u2014 \u0905\u0938\u0932\u0940 Process \u0915\u094d\u092f\u093e \u0939\u0948? #Shorts",
+    "total_usd": 8.6018,
+    "duration_min": 32.5,
+    "breakdown": {
+      "claude_opus": 0.5608,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0118,
+      "veo_clips": 7.68,
+      "gemini_thumbnail": 0.045,
+      "blog_images": 0.075,
+      "claude_sonnet": 0.1792
+    }
   }
 ]
