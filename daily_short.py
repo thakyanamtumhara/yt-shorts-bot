@@ -8697,7 +8697,9 @@ def _blog_lastmod(post):
 #      query as an existing one — Google indexes one winner per query cluster
 #      and files the rest under "Crawled – not indexed", dragging section-wide
 #      quality signals down with them.
-BLOG_WEEKDAYS = {int(d) for d in os.environ.get("BLOG_WEEKDAYS", "0,2,4").split(",") if d.strip().isdigit()}
+# Auto-blog OFF since 17-Oct-2026 (Ketu: "4 to 5 real product pages a month instead"; 66 of 116 auto
+# articles had zero clicks in 90 days). Empty default = no blog day; BLOG_WEEKDAYS="0,2,4" turns it back on.
+BLOG_WEEKDAYS = {int(d) for d in os.environ.get("BLOG_WEEKDAYS", "").split(",") if d.strip().isdigit()}
 FORCE_BLOG = os.environ.get("FORCE_BLOG", "").strip() in ("1", "true", "yes")
 
 _CLUSTER_DROP_TOKENS = {
@@ -8816,7 +8818,9 @@ def blog_publish_gate(topic, title, claude_client=None):
     ist_now = datetime.now(pytz.timezone(TIMEZONE))
     if ist_now.weekday() not in BLOG_WEEKDAYS:
         slug, _sim = blog_cluster_collision(topic, title)  # no Claude call — only picks the carousel link
-        return False, f"cadence throttle — blog days are Mon/Wed/Fri, today is {ist_now.strftime('%A')}", slug
+        if not BLOG_WEEKDAYS:
+            return False, "auto-blog off (17-Oct-2026: real product pages instead)", slug
+        return False, f"cadence throttle — blog days are {sorted(BLOG_WEEKDAYS)}, today is {ist_now.strftime('%A')}", slug
     slug, sim = blog_cluster_collision(topic, title, claude_client=claude_client)
     if slug:
         return False, f"topic-cluster collision with existing article '{slug}' (similarity {sim:.2f})", slug
@@ -9918,6 +9922,14 @@ def process_main_channel_recap():
         build_voice_models()
     except Exception as e:
         print(f"   ⚠️ build_voice_models failed: {e}")
+
+    # Auto-blog off (see BLOG_WEEKDAYS): the corpus + voice models above still learn from his video;
+    # the article and its Reddit draft are skipped before any paid call.
+    if not BLOG_WEEKDAYS and not FORCE_BLOG:
+        msg = "Sunday recap blog off since 17-Oct-2026 (real product pages instead); corpus saved"
+        print(f"   ⏸️ {msg}")
+        _write_phase_status(1, "active", "auto-blog-off", msg)
+        return True
 
     # ── Step 4-6: Generate blog + publish to S3 ──
     try:
