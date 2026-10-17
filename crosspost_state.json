@@ -418,5 +418,19 @@
  },
  "raw20261011-r6-prebook-v1-x": {
   "nudged": true
+ },
+ "raw20261011-r3-wallet-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261011-r3-wallet-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DemLObMFc3g/"
+ },
+ "raw20261011-r3-wallet-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1816266712947818/"
+ },
+ "raw20261011-r3-wallet-v1-x": {
+  "nudged": true
  }
 }
