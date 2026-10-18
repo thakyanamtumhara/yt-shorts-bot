@@ -370,7 +370,7 @@ def page_html(log, now):
             where = f"r/{e['sub']}: " if e.get("sub") else ""
             parts.append(
                 f'<section class="card" data-url="{html.escape(e["url"])}">'
-                f'<p class="q"><span class="site {site.lower()}">{site}</span> {i}. {html.escape(where + e["question"])}</p>'
+                f'<p class="today-tag">👉 Today\'s answer</p><p class="q"><span class="site {site.lower()}">{site}</span> {i}. {html.escape(where + e["question"])}</p>'
                 f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
                 f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on {site}</a></div>'
                 f'<p class="ans">{html.escape(e["answer"])}</p>'
@@ -391,6 +391,9 @@ h1{font-size:22px;margin:4px 0 6px}
 h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:22px 0 8px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 14px}
 .card.done{opacity:.5}
+.card.today{border:2px solid var(--blue)}
+.today-tag{display:none;font-size:12px;font-weight:700;color:var(--blue);margin:0 0 6px}
+.card.today .today-tag{display:block}
 .q{font-weight:600;margin:0 0 10px}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .btns>*{flex:1 1 140px;box-sizing:border-box;text-align:center;padding:12px;border-radius:10px;font:600 15px system-ui,sans-serif;cursor:pointer;text-decoration:none}
@@ -410,17 +413,25 @@ footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
 <footer>Updated {{UPDATED}}</footer>
 </main>
 <script>
+function today(scroll){
+  var cards=[].slice.call(document.querySelectorAll('.card'));
+  cards.forEach(function(c){c.classList.remove('today');});
+  var t=cards.filter(function(c){return !c.classList.contains('done');})[0];
+  if(t){t.classList.add('today');if(scroll)t.scrollIntoView({block:'start'});}
+}
 document.querySelectorAll('.card').forEach(function(c){
   var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy');
   try{if(localStorage.getItem(k)){box.checked=true;c.classList.add('done');}}catch(e){}
-  box.addEventListener('change',function(){c.classList.toggle('done',box.checked);try{box.checked?localStorage.setItem(k,'1'):localStorage.removeItem(k);}catch(e){}});
+  box.addEventListener('change',function(){c.classList.toggle('done',box.checked);try{box.checked?localStorage.setItem(k,'1'):localStorage.removeItem(k);}catch(e){}today(false);});
   btn.addEventListener('click',function(){
     var t=c.querySelector('.ans').textContent;
     function ok(){btn.textContent='Copied \u2713';setTimeout(function(){btn.textContent='Copy answer';},2000);}
     function old(){var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){}a.remove();}
+    if(window.PostTime&&window.PostTime.copy){window.PostTime.copy(t);ok();return;}
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,old);}else{old();}
   });
 });
+today(true);
 </script>
 </body></html>
 """
