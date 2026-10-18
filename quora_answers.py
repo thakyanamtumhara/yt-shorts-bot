@@ -26,6 +26,12 @@ answer must read like a person typed it (no long dash, no stock AI phrases), and
 Read more. A Reddit part that fails or cannot see Reddit sends its own Telegram; the Quora answers still go out.
 The Reddit search uses OpenAI's most capable model first (gpt-6-astra, developers.openai.com 18-Oct-2026), and a thread
 is answered only when its subreddit's rules clearly let a business owner comment ("extra careful").
+
+Ketu, 18-Oct-2026 night: one answer a day instead of five on Monday ("Give only one, okay? No need to give five"), on
+the newest questions we can find ("keep checking so we are first to respond"). So it runs every Monday to Saturday
+morning, writes 3 candidates on that day's two topics, keeps the first that passes the rules and the fact check, and
+the page shows only that day's answer. A 10:47 IST run writes it if the morning run never came and tells Ketu; the
+Monday run sends him the link. The Post Time app rings the person who posts at a random minute between 11 and 12.
 """
 import argparse
 import datetime
@@ -42,9 +48,9 @@ MODEL_LINES = ["fable", "opus"]
 FALLBACK_MODEL = "claude-fable-5-1"
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = os.path.join(HERE, "quora_answers", "log.json")
-WANT = 5
-CANDIDATES = 8
-REDDIT_WANT = 3
+WANT = 1
+CANDIDATES = 3
+REDDIT_WANT = 1
 REDDIT_DAYS = 120
 REDDIT_NO_PROMO = {"streetwearstartup", "entrepreneur", "screenprinting", "dtg"}
 OPENAI_MODELS = ["gpt-6-astra", "gpt-6.1-sol", "gpt-5.5", "gpt-5.2", "gpt-5.1", "gpt-5"]
@@ -206,7 +212,7 @@ def claude(messages, system, search=True):
     key = os.environ["ANTHROPIC_API_KEY"]
     body = {"model": model(), "max_tokens": 16000, "system": system, "messages": messages}
     if search:
-        body["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8,
+        body["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 6,
                           "allowed_domains": ["quora.com"]}]
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
@@ -221,22 +227,25 @@ def claude(messages, system, search=True):
 
 
 def draft(seen, today):
-    week = today.isocalendar()[1]
-    topics = [TOPICS[(week * 4 + i) % len(TOPICS)] for i in range(4)]
+    n = today.toordinal()
+    topics = [TOPICS[(n * 2 + i) % len(TOPICS)] for i in range(2)]
     system = f"FACTS about the business:\n{FACTS}\n\nRULES for every answer:\n{RULES}"
     ask = (
         f"Today is {today:%d %b %Y}. Search quora.com for real questions that buyers of plain T-shirts, hoodies or "
-        f"blank apparel in India ask. Topics for this week: {'; '.join(topics)}. Pick questions where an honest answer "
-        f"from a plain apparel manufacturer genuinely helps the asker. Skip questions about printing services only, "
+        f"blank apparel in India ask. Topics for today: {'; '.join(topics)}. Pick questions where an honest answer "
+        f"from a plain apparel manufacturer genuinely helps the asker. Prefer the newest questions you can find and "
+        f"those with few answers, so ours is among the first. Skip questions about printing services only, "
         f"jobs, investing or personal fashion, and skip these, already answered: {', '.join(sorted(seen)) or 'none'}.\n"
         f"Return {CANDIDATES} candidates in exactly this plain-text form, one block each, and nothing else:\n"
         "@@@ QUESTION: exact question title\n@@@ URL: https://www.quora.com/...\n@@@ ANSWER:\nthe answer\n@@@ END\n"
         "Every url must be one that appeared in your search results."
     )
     messages = [{"role": "user", "content": ask}]
-    found, searches = set(), 0
+    found, searches, tin, tout = set(), 0, 0, 0
     for _ in range(4):
         resp = claude(messages, system)
+        tin += resp.get("usage", {}).get("input_tokens", 0)
+        tout += resp.get("usage", {}).get("output_tokens", 0)
         for blk in resp.get("content", []):
             if blk.get("type") == "web_search_tool_result" and isinstance(blk.get("content"), list):
                 for r in blk["content"]:
@@ -248,7 +257,7 @@ def draft(seen, today):
             break
         messages = messages + [{"role": "assistant", "content": resp["content"]}]
     text = "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
-    print(f"web searches: {searches}, Quora question URLs seen: {len(found)}, usage: {resp.get('usage')}")
+    print(f"web searches: {searches}, Quora question URLs seen: {len(found)}, tokens: {tin} in, {tout} out")
     cands = blocks(text)
     if not cands:
         sys.exit(f"No answers in the reply: {text[:400]!r}")
@@ -440,17 +449,17 @@ def verdict_lines(text):
 
 
 def page_html(log, now):
-    dates = sorted({e["date"] for e in log if e.get("answer")}, reverse=True)[:2]
+    dates = sorted({e["date"] for e in log if e.get("answer")}, reverse=True)[:1]
     parts = []
     for d in dates:
         items = [e for e in log if e["date"] == d and e.get("answer")]
-        parts.append(f"<h2>Answers from {datetime.date.fromisoformat(d):%d %b}</h2>")
+        parts.append(f"<h2>Answer for {datetime.date.fromisoformat(d):%a %d %b}</h2>")
         for i, e in enumerate(items, 1):
             site = "Reddit" if e.get("site") == "reddit" else "Quora"
             where = f"r/{e['sub']}: " if e.get("sub") else ""
             parts.append(
                 f'<section class="card" data-url="{html.escape(e["url"])}">'
-                f'<p class="today-tag">👉 Today\'s answer</p><p class="q"><span class="site {site.lower()}">{site}</span> {i}. {html.escape(where + e["question"])}</p>'
+                f'<p class="today-tag">👉 Today\'s answer</p><p class="q"><span class="site {site.lower()}">{site}</span> {str(i) + ". " if len(items) > 1 else ""}{html.escape(where + e["question"])}</p>'
                 f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
                 f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on {site}</a></div>'
                 f'<div class="foot"><label><input type="checkbox"> Posted</label>'
@@ -461,7 +470,7 @@ def page_html(log, now):
 
 PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Answers to post</title>
+<meta name="robots" content="noindex,nofollow"><title>Answer to post</title>
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--muted:#5d6470;--line:#dde1e7;--blue:#1f5fd6}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#e8eaed;--muted:#9aa3ad;--line:#2a2f37;--blue:#5b9bff}}
@@ -489,9 +498,9 @@ footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
 .site{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:4px;color:#fff;vertical-align:1px}
 .site.quora{background:#b92b27}.site.reddit{background:#d93a00}
 </style></head><body><main>
-<h1>Answers to post</h1>
-<p class="how">For each answer: 1. Copy answer. 2. Open the question. 3. Quora: tap Answer, paste, Post. Reddit: tap Add a comment, paste, Comment. 4. Tick Posted.</p>
-<p class="how">Post 1 or 2 a day, not all at once. New answers come every Monday, on top.</p>
+<h1>Answer to post</h1>
+<p class="how">1. Copy answer. 2. Open the question. 3. Tap Answer (on Reddit: Add a comment), paste, post. 4. Tick Posted.</p>
+<p class="how">A new answer comes every morning, Monday to Saturday.</p>
 {{BODY}}
 <footer>Updated {{UPDATED}}</footer>
 </main>
@@ -521,10 +530,9 @@ today(true);
 """
 
 
-def missing_batch(log, today):
-    last = max((e["date"] for e in log), default="")
-    monday = today - datetime.timedelta(days=today.weekday())
-    return None if last >= monday.isoformat() else (last or "never")
+def missing_day(log, today):
+    last = max((e["date"] for e in log if e.get("site") != "reddit"), default="")
+    return None if last >= today.isoformat() else (last or "never")
 
 
 def telegram(text):
@@ -552,7 +560,7 @@ def send_batch(header, items):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["dry-run", "send", "page", "tell", "resend", "check"], default="dry-run")
+    ap.add_argument("--mode", choices=["dry-run", "send", "catchup", "page", "tell", "resend", "check"], default="dry-run")
     ap.add_argument("--date", default="", help="resend: the date of the saved batch, e.g. 2026-10-18")
     ap.add_argument("--out", default="", help="page: where to write the HTML")
     args = ap.parse_args()
@@ -560,10 +568,10 @@ def main():
     today = now.date()
     log = load_log()
     if args.mode == "check":
-        gap = missing_batch(log, today)
+        gap = missing_day(log, today)
         if gap:
-            sys.exit(f"No Quora batch this week; the last one was {gap}")
-        print("this week's batch is in the log")
+            sys.exit(f"No Quora answer today; the last one was {gap}")
+        print("today's answer is in the log")
         return
     if args.mode == "resend":
         day = datetime.date.fromisoformat(args.date)
@@ -579,6 +587,9 @@ def main():
         print(f"page written: {args.out}")
         return
     if args.mode == "tell":
+        if today.weekday() != 0 and os.environ.get("MODE") != "page":
+            print("not Monday: no Telegram")
+            return
         url = os.environ.get("QA_PAGE_URL") or sys.exit("QA_PAGE_URL missing")
         last = max(e["date"] for e in log if e.get("answer"))
         items = [e for e in log if e["date"] == last and e.get("answer")]
@@ -586,24 +597,28 @@ def main():
                           for i, e in enumerate(items, 1))
         nq = sum(1 for e in items if e.get("site") != "reddit")
         by = next((e["by"] for e in items if e.get("by")), "")
-        telegram(f"Answers to post: {nq} Quora + {len(items) - nq} Reddit, on top of the page:\n{url}\n\n{lines}\n\n"
-                 "The link never changes; new answers appear every Monday. Post 1 or 2 a day."
+        telegram(f"Quora: one new answer every day, Monday to Saturday; the Post Time app rings at a random minute "
+                 f"between 11 and 12. Today ({nq} Quora + {len(items) - nq} Reddit), on the page:\n{url}\n\n{lines}\n\n"
+                 "The link never changes."
                  + (f"\nWritten and checked by {model_label(by)}." if by else ""))
         print("told Ketu")
+        return
+    if args.mode in ("send", "catchup") and not missing_day(log, today):
+        print("today's answer is already written")
         return
     seen = {e["url"] for e in log}
     cands, found = draft(seen, today)
     kept = fact_check(pick(cands, found, seen, limit=CANDIDATES))[:WANT]
     for i, k in enumerate(kept, 1):
         print(f"\n=== {i}. {k['question']}\n{k['url']}\n\n{k['answer']}")
-    if len(kept) < 2:
-        sys.exit(f"Only {len(kept)} answers passed the rules and the fact check")
+    if not kept:
+        sys.exit("No answer passed the rules and the fact check")
     reddit, reddit_problem = reddit_batch(seen, today, kept) if os.environ.get("REDDIT_ON") == "1" else ([], None)
     for i, k in enumerate(reddit, 1):
         print(f"\n=== REDDIT {i}. r/{k['sub']}: {k['question']}\n{k['url']}\n\n{k['answer']}")
     if reddit_problem:
         print(f"\nREDDIT PROBLEM: {reddit_problem}")
-    if args.mode != "send":
+    if args.mode not in ("send", "catchup"):
         print("\ndry run: nothing saved")
         return
     by = model()
@@ -615,11 +630,20 @@ def main():
         json.dump(log, f, indent=1, ensure_ascii=False)
         f.write("\n")
     print(f"\nsaved {len(kept)} Quora + {len(reddit)} Reddit answers")
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write("saved=1\n")
+    if args.mode == "catchup":
+        try:
+            telegram("Today's Quora answer was written late, by the 10:47 IST check: the early morning run never came. "
+                     "It is on the page now.")
+        except SystemExit as e:
+            print(f"late alert not sent: {e}")
     if reddit_problem:
         run = os.environ.get("GITHUB_RUN_ID")
         link = f"\n{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{run}" if run else ""
         try:
-            telegram(f"Reddit comments did not work this week: {reddit_problem}. The Quora answers still go out.{link}")
+            telegram(f"Reddit comments did not work today: {reddit_problem}. The Quora answers still go out.{link}")
         except SystemExit as e:
             print(f"Reddit alert not sent: {e}")
 

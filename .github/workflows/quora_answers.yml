@@ -1,23 +1,24 @@
 name: Quora answers
-run-name: "Quora answers (${{ github.event.schedule == '30 4 * * 2' && 'Monday check' || github.event_name == 'schedule' && 'weekly' || inputs.action }})"
+run-name: "Quora answers (${{ github.event.schedule == '17 5 * * 1-6' && 'late check' || github.event_name == 'schedule' && 'daily' || inputs.action }})"
 
 # Ketu 18-Oct-2026: "Whatever is the safest, you can keep doing it from your side." Quora's terms give no right to
 # post with automated tools, so this only drafts: Claude Opus finds real questions through web search and writes
-# disclosed, price-free answers (quora_answers.py). A person pastes them: every Monday 10:00 IST the new answers go
-# on one fixed posting page (bulkplaintshirt.com/p/review/qa/<QA_PAGE_KEY>.html) and Ketu gets its link on Telegram.
-# Tuesday 10:00 IST only checks that Monday's batch went out, and tells him on Telegram if it did not.
+# disclosed, price-free answers (quora_answers.py). A person pastes them from one fixed posting page
+# (bulkplaintshirt.com/p/review/qa/<QA_PAGE_KEY>.html). Since 18-Oct-2026 night it is ONE answer a day (Ketu: "Give only
+# one, okay? No need to give five"): Monday to Saturday 08:17 IST writes it and the page shows only that answer; Ketu
+# gets the link on Telegram on Mondays. 10:47 IST writes it if the morning run never came, and tells him.
 # Reddit comments join the same batch: OpenAI's web search finds the threads (Anthropic's sees no reddit.com).
 
 on:
   schedule:
-    - cron: '30 4 * * 1'
-    - cron: '30 4 * * 2'
+    - cron: '47 2 * * 1-6'
+    - cron: '17 5 * * 1-6'
   workflow_dispatch:
     inputs:
       action:
-        description: 'dry-run = print only; send = write a batch now; page = rebuild the page and send the link; resend = a saved batch to Telegram; check = is this week in the log'
+        description: 'dry-run = print only; send = write today''s answer (if not yet written); catchup = the same, and tell Ketu it was late; page = rebuild the page and send the link; resend = a saved day to Telegram; check = is today in the log'
         type: choice
-        options: [dry-run, send, page, resend, check]
+        options: [dry-run, send, catchup, page, resend, check]
         default: dry-run
       date:
         description: 'resend only: the batch date, e.g. 2026-10-18'
@@ -45,7 +46,7 @@ jobs:
       AWS_DEFAULT_REGION: ap-south-1
       QA_PAGE_KEY: ${{ secrets.QA_PAGE_KEY }}
       QA_PAGE_URL: https://www.bulkplaintshirt.com/p/review/qa/${{ secrets.QA_PAGE_KEY }}.html
-      MODE: ${{ github.event.schedule == '30 4 * * 2' && 'check' || github.event_name == 'schedule' && 'send' || inputs.action }}
+      MODE: ${{ github.event.schedule == '17 5 * * 1-6' && 'catchup' || github.event_name == 'schedule' && 'send' || inputs.action }}
       DATE: ${{ inputs.date }}
     steps:
       - uses: actions/checkout@v4
@@ -54,21 +55,22 @@ jobs:
           python-version: '3.11'
       - name: Check the answer rules
         run: python3 -m unittest tests/test_quora_answers.py -v
-      - name: Write this week's answers
-        if: env.MODE == 'send' || env.MODE == 'dry-run'
+      - name: Write today's answer
+        id: write
+        if: env.MODE == 'send' || env.MODE == 'catchup' || env.MODE == 'dry-run'
         run: python3 quora_answers.py --mode "$MODE"
       - name: Save which questions were sent
-        if: env.MODE == 'send'
+        if: steps.write.outputs.saved == '1'
         run: |
           git config user.name "Quora Answers Bot"
           git config user.email "actions@users.noreply.github.com"
           git add quora_answers/log.json
           git diff --cached --quiet && exit 0
-          git commit -m "Quora answers: log this week's questions [skip ci]"
+          git commit -m "Quora answers: log today's question [skip ci]"
           for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
           exit 1
       - name: Publish the posting page
-        if: env.MODE == 'send' || env.MODE == 'page'
+        if: steps.write.outputs.saved == '1' || env.MODE == 'page'
         run: |
           [ -n "$QA_PAGE_KEY" ] || { echo "QA_PAGE_KEY missing"; exit 1; }
           python3 quora_answers.py --mode page --out "$RUNNER_TEMP/qa.html"
@@ -76,13 +78,13 @@ jobs:
             --content-type "text/html; charset=utf-8" --cache-control "no-cache, no-store, must-revalidate"
           aws cloudfront create-invalidation --distribution-id E21QLU9SBUBY7Z \
             --paths "/p/review/qa/$QA_PAGE_KEY.html" --query 'Invalidation.Id' --output text
-      - name: Send Ketu the link
-        if: env.MODE == 'send' || env.MODE == 'page'
+      - name: Send Ketu the link (Mondays)
+        if: steps.write.outputs.saved == '1' || env.MODE == 'page'
         run: python3 quora_answers.py --mode tell
       - name: Send a saved batch to Telegram again
         if: env.MODE == 'resend'
         run: python3 quora_answers.py --mode resend --date "$DATE"
-      - name: Check that Monday's batch went out
+      - name: Check that today's answer is in the log
         if: env.MODE == 'check'
         run: python3 quora_answers.py --mode check
       - name: Tell Ketu if it failed
@@ -91,4 +93,4 @@ jobs:
           [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0
           curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
-            --data-urlencode "text=Quora answers did not go out this week: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --data-urlencode "text=Today's Quora answer did not go out: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

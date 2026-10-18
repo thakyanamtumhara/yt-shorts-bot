@@ -81,7 +81,7 @@ class Rules(unittest.TestCase):
             {"question": "seen", "url": u3, "answer": other},
             {"question": "two", "url": u2, "answer": other},
         ]
-        kept = qa.pick(cands, found={u1, u2, u3}, seen={u3})
+        kept = qa.pick(cands, found={u1, u2, u3}, seen={u3}, limit=5)
         self.assertEqual([k["url"] for k in kept], [u1, u2])
 
     def test_blocks_survive_quotes_and_lists(self):
@@ -130,21 +130,23 @@ class Rules(unittest.TestCase):
         self.assertIn('<p class="ans" hidden>The full answer</p>', page)
         self.assertIn(">Read more</button>", page)
 
-    def test_check_wants_this_mondays_batch(self):
+    def test_check_wants_todays_answer(self):
         tue = datetime.date(2026, 10, 20)
-        self.assertIsNone(qa.missing_batch([{"date": "2026-10-19"}], tue))
-        self.assertEqual(qa.missing_batch([{"date": "2026-10-18"}], tue), "2026-10-18")
-        self.assertEqual(qa.missing_batch([], tue), "never")
+        self.assertIsNone(qa.missing_day([{"date": "2026-10-20"}], tue))
+        self.assertEqual(qa.missing_day([{"date": "2026-10-19"}], tue), "2026-10-19")
+        self.assertEqual(qa.missing_day([{"date": "2026-10-20", "site": "reddit"}, {"date": "2026-10-19"}], tue), "2026-10-19")
+        self.assertEqual(qa.missing_day([], tue), "never")
 
-    def test_page_shows_the_two_newest_batches_escaped(self):
+    def test_page_shows_only_the_newest_day_escaped(self):
         log = [{"date": d, "url": f"https://www.quora.com/Q-{d}", "question": f"Q <{d}>", "answer": "A & B"}
                for d in ("2026-10-12", "2026-10-18", "2026-10-19")]
         page = qa.page_html(log, datetime.datetime(2026, 10, 19, 10, 5))
-        self.assertEqual(page.count('class="card"'), 2)
-        self.assertNotIn("Q-2026-10-12", page)
+        self.assertEqual(page.count('class="card"'), 1)
+        self.assertNotIn("Q-2026-10-18", page)
         self.assertIn("Q &lt;2026-10-19&gt;", page)
         self.assertIn("A &amp; B", page)
-        self.assertLess(page.index("19 Oct"), page.index("18 Oct"))
+        self.assertIn("Answer for Mon 19 Oct", page)
+        self.assertNotIn("Quora</span> 1. ", page)
 
 
 class RedditBatch(unittest.TestCase):
