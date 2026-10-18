@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 import unittest
@@ -66,6 +67,12 @@ class Rules(unittest.TestCase):
         ]
         kept = qa.pick(cands, found={u1, u2, u3}, seen={u3})
         self.assertEqual([k["url"] for k in kept], [u1, u2])
+
+    def test_check_wants_this_mondays_batch(self):
+        tue = datetime.date(2026, 10, 20)
+        self.assertIsNone(qa.missing_batch([{"date": "2026-10-19"}], tue))
+        self.assertEqual(qa.missing_batch([{"date": "2026-10-18"}], tue), "2026-10-18")
+        self.assertEqual(qa.missing_batch([], tue), "never")
 
 
 if __name__ == "__main__":

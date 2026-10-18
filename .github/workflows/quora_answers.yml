@@ -1,19 +1,25 @@
 name: Quora answers
-run-name: "Quora answers${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && ' (dry run)' || '' }}"
+run-name: "Quora answers${{ github.event.schedule == '30 4 * * 2' && ' (Monday check)' || github.event_name == 'workflow_dispatch' && inputs.resend != '' && ' (send again)' || github.event_name == 'workflow_dispatch' && inputs.dry_run && ' (dry run)' || '' }}"
 
 # Ketu 18-Oct-2026: "Whatever is the safest, you can keep doing it from your side." Quora's terms give no right to
 # post with automated tools, so this only drafts: Claude Opus finds real questions through web search and writes
 # disclosed, price-free answers (quora_answers.py); Ketu gets them on Telegram every Monday 10:00 IST and pastes them.
+# Tuesday 10:00 IST only checks that Monday's batch went out, and tells him on Telegram if it did not.
 
 on:
   schedule:
     - cron: '30 4 * * 1'
+    - cron: '30 4 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:
         description: 'Print the answers only: no Telegram, no log update'
         type: boolean
         default: true
+      resend:
+        description: 'Send a saved batch to Telegram again: its date, e.g. 2026-10-18'
+        type: string
+        default: ''
 
 concurrency:
   group: quora-answers
@@ -29,7 +35,8 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
-      MODE: ${{ (github.event_name == 'schedule' || !inputs.dry_run) && 'send' || 'dry-run' }}
+      MODE: ${{ github.event.schedule == '30 4 * * 2' && 'check' || github.event_name == 'workflow_dispatch' && inputs.resend != '' && 'resend' || (github.event_name == 'schedule' || !inputs.dry_run) && 'send' || 'dry-run' }}
+      RESEND: ${{ inputs.resend }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,8 +44,8 @@ jobs:
           python-version: '3.11'
       - name: Check the answer rules
         run: python3 -m unittest tests/test_quora_answers.py -v
-      - name: Find questions and write answers
-        run: python3 quora_answers.py --mode "$MODE"
+      - name: Write the answers, send a saved batch, or check Monday's
+        run: python3 quora_answers.py --mode "$MODE" --date "$RESEND"
       - name: Save which questions were sent
         if: env.MODE == 'send'
         run: |
@@ -50,7 +57,7 @@ jobs:
           for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
           exit 1
       - name: Tell Ketu if it failed
-        if: failure() && env.MODE == 'send'
+        if: failure() && env.MODE != 'dry-run'
         run: |
           [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0
           curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \

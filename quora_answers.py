@@ -5,7 +5,9 @@ Quora's terms (3.2) give no right to post answers with automated tools, and 4.4 
 so nothing here posts and no Quora page is ever fetched: Claude Opus sees only web-search results, picks real
 question URLs from them, and writes one disclosed, price-free answer per question from FACTS. The batch goes to
 Ketu's Telegram as "question + link", then the answer alone, so one long-press copies it. quora_answers/log.json
-keeps every question ever sent so none repeats.
+keeps every question and answer ever sent, so none repeats and a batch can be sent again (--mode resend). Ketu asked
+18-Oct-2026 "how would I know if something breaks": a failed run tells him on Telegram, and --mode check (Tuesday)
+does the same when Monday's batch never went out.
 """
 import argparse
 import datetime
@@ -188,6 +190,12 @@ def pick(cands, found, seen):
     return kept
 
 
+def missing_batch(log, today):
+    last = max((e["date"] for e in log), default="")
+    monday = today - datetime.timedelta(days=today.weekday())
+    return None if last >= monday.isoformat() else (last or "never")
+
+
 def telegram(text):
     tok, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_ALERT_CHAT_ID")
     if not tok or not chat:
@@ -202,12 +210,36 @@ def telegram(text):
             sys.exit("Telegram refused a message")
 
 
+def send_batch(header, items):
+    n = len(items)
+    telegram(f"{header} ({n}). Post 1 or 2 a day, not all at once: open the link, tap Answer, "
+             f"paste the message under it, Post.")
+    for i, k in enumerate(items, 1):
+        telegram(f"{i}/{n} {k['question']}\n{k['url']}")
+        telegram(k["answer"])
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["dry-run", "send"], default="dry-run")
+    ap.add_argument("--mode", choices=["dry-run", "send", "resend", "check"], default="dry-run")
+    ap.add_argument("--date", default="", help="resend: the date of the saved batch, e.g. 2026-10-18")
     args = ap.parse_args()
     today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))).date()
     log = load_log()
+    if args.mode == "check":
+        gap = missing_batch(log, today)
+        if gap:
+            sys.exit(f"No Quora batch this week; the last one was {gap}")
+        print("this week's batch is in the log")
+        return
+    if args.mode == "resend":
+        day = datetime.date.fromisoformat(args.date)
+        items = [e for e in log if e["date"] == args.date and e.get("answer")]
+        if not items:
+            sys.exit(f"No saved answers for {args.date}")
+        send_batch(f"Quora answers written {day:%d %b}", items)
+        print(f"sent {len(items)} saved answers")
+        return
     seen = {e["url"] for e in log}
     cands, found = draft(seen, today)
     kept = pick(cands, found, seen)
@@ -218,17 +250,12 @@ def main():
     if args.mode != "send":
         print("\ndry run: nothing sent, log unchanged")
         return
-    n = len(kept)
-    telegram(f"Quora answers for this week ({n}). Post 1 or 2 a day, not all at once: open the link, tap Answer, "
-             f"paste the message under it, Post.")
-    for i, k in enumerate(kept, 1):
-        telegram(f"{i}/{n} {k['question']}\n{k['url']}")
-        telegram(k["answer"])
-    log += [{"date": today.isoformat(), "url": k["url"], "question": k["question"]} for k in kept]
+    send_batch("Quora answers for this week", kept)
+    log += [{"date": today.isoformat(), "url": k["url"], "question": k["question"], "answer": k["answer"]} for k in kept]
     with open(LOG, "w") as f:
         json.dump(log, f, indent=1, ensure_ascii=False)
         f.write("\n")
-    print(f"\nsent {n} answers")
+    print(f"\nsent {len(kept)} answers")
 
 
 if __name__ == "__main__":
