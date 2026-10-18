@@ -432,5 +432,19 @@
  },
  "raw20261011-r3-wallet-v1-x": {
   "nudged": true
+ },
+ "raw20261017-d1-diwali-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261017-d1-diwali-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Deoo-AlAe4-/"
+ },
+ "raw20261017-d1-diwali-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1643913267335100/"
+ },
+ "raw20261017-d1-diwali-v1-x": {
+  "nudged": true
  }
 }
