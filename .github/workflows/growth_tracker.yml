@@ -1,0 +1,72 @@
+name: Growth tracker
+run-name: "Growth tracker (${{ github.event.schedule == '30 3 * * 2' && 'Tuesday check' || github.event_name == 'schedule' && 'weekly' || inputs.action }})"
+
+# Weekly Google Search Console numbers for bulkplaintshirt.com (growth/pull_gsc.py -> growth/weekly.json). It ran
+# silently in the ai-memory repo until 18-Oct-2026; here it Telegrams Ketu the numbers against the 17-Oct-2026 start
+# every Monday 09:00 IST (growth/report.py), tells him when the pull fails or comes back empty (blind), and Tuesday
+# 09:00 IST tells him if Monday's row never came (his rule 18-Oct-2026: every automatic job says when it breaks).
+
+on:
+  schedule:
+    - cron: '30 3 * * 1'
+    - cron: '30 3 * * 2'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'pull = add this week''s row and Telegram the numbers; check = is Monday''s row in; test = pull and print only'
+        type: choice
+        options: [pull, check, test]
+        default: pull
+
+concurrency:
+  group: growth-tracker
+  cancel-in-progress: false
+
+jobs:
+  growth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      MODE: ${{ github.event.schedule == '30 3 * * 2' && 'check' || github.event_name == 'schedule' && 'pull' || inputs.action }}
+      GSC_TOKEN: ${{ secrets.GSC_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pull Search Console numbers
+        if: env.MODE == 'pull' || env.MODE == 'test'
+        run: |
+          pip install --quiet google-api-python-client google-auth
+          python growth/pull_gsc.py
+      - name: Save the new row
+        if: env.MODE == 'pull'
+        run: |
+          git config user.name "growth-tracker"
+          git config user.email "actions@users.noreply.github.com"
+          git add growth/weekly.json
+          git diff --cached --quiet && exit 0
+          git commit -m "growth: weekly numbers $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
+      - name: Tell Ketu the numbers
+        if: env.MODE == 'pull'
+        run: python growth/report.py
+      - name: Show the message (test only)
+        if: env.MODE == 'test'
+        run: python growth/report.py --print
+      - name: Check that Monday's numbers came
+        if: env.MODE == 'check'
+        run: python growth/report.py --check
+      - name: Tell Ketu if it failed
+        if: failure() && env.MODE != 'test'
+        run: |
+          [ -f /tmp/growth_told ] && exit 0
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0
+          curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=The weekly Google numbers did not work: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

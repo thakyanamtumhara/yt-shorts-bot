@@ -1,0 +1,51 @@
+{
+  "baseline_date": "2026-10-17",
+  "note": "Numbers as they stood the day the marketing work started. Every later row in weekly.json is compared against this.",
+  "google_ads": {
+    "account": "352-446-7763",
+    "state_before": "4 YouTube video-view campaigns, Rs 600/day budget; no Search campaign",
+    "lifetime_cost_inr": 389743.78,
+    "lifetime_cost_video_inr": 382675.62,
+    "lifetime_cost_search_inr": 2242.63,
+    "lifetime_cost_pmax_inr": 4825.53,
+    "lifetime_clicks": 19062,
+    "tracked_order_value_inr": 0,
+    "conversion_actions_primary_before": ["page view", "Page view (generate_lead)", "purchase", "BulkPlainTshirt.com (web) purchase", "Conversation started"],
+    "monthly_payments_inr": {"2026-08": 15000, "2026-09": 15000, "2026-10": 10000}
+  },
+  "organic_search_console": {
+    "property": "sc-domain:bulkplaintshirt.com",
+    "india_28d_to_2026_10_14": {"clicks": 7012, "impressions": 50892, "ctr_pct": 13.78, "avg_position": 6.8},
+    "india_28d_year_ago": {"clicks": 6129, "impressions": 59368, "ctr_pct": 10.32, "avg_position": 9.5},
+    "india_non_brand_28d": {"clicks": 1634, "impressions": 21981, "distinct_queries": 2396},
+    "all_countries_90d": {"clicks": 22677, "impressions": 275624, "ctr_pct": 8.23, "avg_position": 13.7},
+    "brand_vs_nonbrand_90d": {"brand_clicks": 9092, "non_brand_clicks": 5842},
+    "key_gaps_position": {"240 gsm t shirt family": 7.2, "wholesale t shirts": 8.9, "tshirt manufacturer": 8.0, "plain t shirt wholesale": 7.8},
+    "dtf_subdomain_90d": {"clicks": 5, "impressions": 30}
+  },
+  "other_surfaces": {
+    "merchant_center_account": "736766068",
+    "mc_product_clicks_28d": 0,
+    "mc_product_impressions_28d": "<20",
+    "mc_products_approved": 16,
+    "bing_indexed_pages_estimate": 24,
+    "google_indexed_pages": 88,
+    "ga4_ai_assistant_sessions_7d": 45,
+    "google_business_profile": {"rating": 4.8, "reviews": 284},
+    "serp_position_blank_t_shirt_wholesale_india": 1
+  },
+  "business_scale_for_context": {
+    "fy2025_26_collected_inr": 140877605,
+    "orders_sep_2026_paid": 2283,
+    "courier_parcels_per_month": 2310,
+    "approx_order_value_inr": 5000
+  },
+  "changes_made_2026_10_17": [
+    "robots.txt: 12 named crawler groups deleted (they overrode the Disallow list)",
+    "cc1 new.js n=410: GA4 purchase event with order value fires on every confirmed order",
+    "Google Ads: both page-view conversion actions set to Secondary",
+    "Google Ads: all 4 YouTube video-view campaigns paused (account budget Rs 600/day -> Rs 0/day)",
+    "Google Ads: Search campaign 'Search - Bulk blanks - India' built as a draft at Rs 500/day, awaiting the owner's publish click",
+    "dtf-app: buyer pages no longer name a print partner's city"
+  ]
+}
