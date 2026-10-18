@@ -101,10 +101,11 @@ class Rules(unittest.TestCase):
     def test_reddit_threads_filtered(self):
         tue = datetime.date(2026, 10, 20)
         u = [f"https://www.reddit.com/r/x/comments/{c}/" for c in "abcdef"]
-        t = lambda url, sub="x", date="2026-10-01", promo="UNKNOWN": {
+        u.append("https://www.reddit.com/r/x/comments/g/")
+        t = lambda url, sub="x", date="2026-10-01", promo="ALLOWED": {
             "url": url, "sub": sub, "date": date, "promo": promo, "question": url, "asks": ""}
         threads = [t(u[0]), t(u[1], sub="streetwearstartup"), t(u[2], promo="NOT ALLOWED"), t(u[3], date="2026-01-01"),
-                   t(u[4]), t(u[5], date="sometime")]
+                   t(u[4]), t(u[5], date="sometime"), t(u[6], promo="UNKNOWN")]
         got = qa.usable_threads(threads, found=set(u) - {u[4]}, seen=set(), today=tue)
         self.assertEqual([g["url"] for g in got], [u[0]])
 

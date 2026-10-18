@@ -24,6 +24,8 @@ writing it", and "if any bigger version of the AI model is coming ... we will us
 Claude line the API lists (Fable, else Opus) writes and checks, a newer release of that line is used by itself, every
 answer must read like a person typed it (no long dash, no stock AI phrases), and the page hides each answer behind
 Read more. A Reddit part that fails or cannot see Reddit sends its own Telegram; the Quora answers still go out.
+The Reddit search uses OpenAI's most capable model first (gpt-6-astra, developers.openai.com 18-Oct-2026), and a thread
+is answered only when its subreddit's rules clearly let a business owner comment ("extra careful").
 """
 import argparse
 import datetime
@@ -45,7 +47,7 @@ CANDIDATES = 7
 REDDIT_WANT = 3
 REDDIT_DAYS = 120
 REDDIT_NO_PROMO = {"streetwearstartup", "entrepreneur", "screenprinting", "dtg"}
-OPENAI_MODELS = ["gpt-5.5", "gpt-5.2", "gpt-5.1", "gpt-5"]
+OPENAI_MODELS = ["gpt-6-astra", "gpt-6.1-sol", "gpt-5.5", "gpt-5.2", "gpt-5.1", "gpt-5"]
 
 FACTS = """Own Knitted Blank Wears sells plain (unprinted) apparel wholesale from Delhi. Websites: sale91.com and bulkplaintshirt.com (the same business).
 - A manufacturer: knits its own fabric and handles yarn sourcing, knitting, dyeing, processing and stitching.
@@ -366,7 +368,8 @@ def usable_threads(threads, found, seen, today):
             age = None
         why = ("not a thread URL" if not t["url"] else "URL not in the search results" if t["url"] not in found
                else "already answered" if t["url"] in seen else "subreddit bans promotion"
-               if t["sub"] in REDDIT_NO_PROMO or t["promo"].startswith("NOT") else "no date"
+               if t["sub"] in REDDIT_NO_PROMO or t["promo"].startswith("NOT") else "subreddit rules unclear"
+               if not t["promo"].startswith("ALLOWED") else "no date"
                if age is None else f"{age} days old" if not 0 <= age <= REDDIT_DAYS else "")
         if why:
             print(f"REDDIT SKIP {t['question']!r}: {why}")
