@@ -16,6 +16,8 @@ by the workflow) with Copy and Open buttons; Ketu gets only the link and the que
 Reddit joins the same batch (Ketu, 18-Oct-2026: "Reddit will help with AI suggestions"). Anthropic's search returns no
 reddit.com results, so OpenAI's web search (Reddit data partner) finds recent threads and reads each post and its
 subreddit's rules; Claude writes the comments under REDDIT_RULES; the same checks and fact check apply. Nothing posts.
+Reddit stays off until the repo variable REDDIT_ON is 1: the account used for the old daily link posts (May-Oct 2026)
+may be blocked, and a new account doing the same would be ban evasion.
 """
 import argparse
 import datetime
@@ -499,7 +501,7 @@ def main():
         print(f"\n=== {i}. {k['question']}\n{k['url']}\n\n{k['answer']}")
     if len(kept) < 2:
         sys.exit(f"Only {len(kept)} answers passed the rules and the fact check")
-    reddit = reddit_batch(seen, today, kept) if os.environ.get("OPENAI_API_KEY") else []
+    reddit = reddit_batch(seen, today, kept) if os.environ.get("REDDIT_ON") == "1" else []
     for i, k in enumerate(reddit, 1):
         print(f"\n=== REDDIT {i}. r/{k['sub']}: {k['question']}\n{k['url']}\n\n{k['answer']}")
     if args.mode != "send":
