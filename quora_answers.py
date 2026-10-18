@@ -75,11 +75,13 @@ Hard rules:
 - About the business, only facts from FACTS. No colour counts, no stock claims, no delivery promise beyond "usually 2-5 days".
 - Never claim "best quality / best price / best supplier", "cheapest", "No. 1" or "guaranteed", and say nothing about other companies; name no other brand or seller.
 - Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
+- Name cities, not markets, streets or shops; besides cities, name only Tiruppur and our godown in Khanpur, South Delhi.
+- Never "manufacturer in Delhi" or "Delhi-based manufacturer": the factory is in Tiruppur, the business ships from Delhi.
 - General market facts are fine when true and well known (Tiruppur is India's knitwear hub; sublimation needs polyester).
 - Every answer reads differently from the others: different opening, structure and examples.""" + HUMAN
 
 REDDIT_RULES = """Write a Reddit comment like the owner of a blank-apparel business replying to this post: casual, plain, specific English, first person.
-Answer what the post actually asks, with practical advice the poster can use with ANY supplier. Then a last line that starts exactly "Disclosure: I run Own Knitted Blank Wears (sale91.com)" and adds one fact from FACTS that matters for this post.
+Answer what the post actually asks, with practical advice the poster can use with ANY supplier. Then, after a blank line, a last line that starts exactly "Disclosure: I run Own Knitted Blank Wears (sale91.com)" and adds one fact from FACTS that matters for this post.
 Hard rules:
 - 70 to 170 words. No headings, emojis, hashtags or bold. A short dash list is fine.
 - No links. "sale91.com" appears once, inside the disclosure. No "DM me", no "check out", no sales talk.
@@ -87,6 +89,9 @@ Hard rules:
 - About the business, only facts from FACTS.
 - Never claim "best quality / best price / best supplier", "cheapest", "No. 1" or "guaranteed"; say nothing about other companies.
 - Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
+- Name cities, not markets, streets or shops; besides cities, name only Tiruppur and our godown in Khanpur, South Delhi.
+- Never "manufacturer in Delhi" or "Delhi-based manufacturer": the factory is in Tiruppur, the business ships from Delhi.
+- Put a blank line between paragraphs and before a list; Reddit joins lines that have no blank line between them.
 - Reply to this poster's own details (their numbers, city, product or problem), like a quick reply in a thread, not an article.
 - Every comment reads differently from the others.""" + HUMAN
 
@@ -109,6 +114,8 @@ BANNED = [
     (r"\b(?:cheapest|lowest|no\.?\s?1|number one|guarantee[sd]?)\b", "a superlative or guarantee"),
     (r"\b(?:the )?best\s+(?:quality|price|prices|rates?|supplier|manufacturer|wholesaler|seller|in india)\b", "a 'best' claim"),
     (r"\*\*|^#|#\w", "markdown or a hashtag"),
+    (r"\b(?:delhi[- ]based\s+(?:manufacturer|factory|maker|unit)|(?:manufacturer|factory|maker|unit|made|knitted|dyed|"
+     r"stitched|manufactured)\s+(?:based\s+)?(?:in|at)\s+(?:south\s+)?(?:delhi|khanpur))\b", "says the tees are made in Delhi"),
     (r"—", "a long dash (reads like AI)"),
     (r"\b(?:delve|delving|tapestry|game[- ]?changers?|seamless(?:ly)?|elevate[sd]?|furthermore|moreover)\b",
      "an AI-sounding word"),
@@ -282,7 +289,8 @@ def fact_check(kept):
     ask = ("These answers will be pasted on Quora or Reddit exactly as written. Nobody reads them first, not even the "
            "owner, so you are the last check. Fail an answer if it says anything about Own Knitted Blank Wears that FACTS "
            "do not say, gives advice that is wrong, unsafe or could mislead a buyer, names, praises or criticises another "
-           "seller or brand, does not answer its question or post, sounds like an advert, or reads like AI wrote it "
+           "seller or brand, names a market, street or shop that may not be right, does not answer its question or post, "
+           "sounds like an advert, or reads like AI wrote it "
            "(stock phrases, an essay tone in a Reddit reply). True, well-known market facts (Tiruppur is India's knitwear "
            "hub, Delhi's wholesale markets) are fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}" + (f"\nThe poster asks: {k['asks']}" if k.get("asks") else "") +
                          f"\n{k['answer']}" for i, k in enumerate(kept)) +

@@ -13,7 +13,7 @@ ADVICE = ("Start with the fabric weight. A 180 GSM cotton tee is the usual every
           "splits, because M and L usually move fastest. Compare the landed cost with GST and shipping, not just the "
           "piece rate, and keep the invoice for every order. If you print, match the blank to the method: cotton for "
           "screen print and DTF, polyester for sublimation. ")
-GOOD = ADVICE + ("\n\nDisclosure: I run Own Knitted Blank Wears (sale91.com), a plain T-shirt maker based in Delhi. "
+GOOD = ADVICE + ("\n\nDisclosure: I run Own Knitted Blank Wears (sale91.com), a plain T-shirt business based in Delhi. "
                  "The minimum order is 10 pieces in total and single samples are available.")
 
 
@@ -45,6 +45,14 @@ class Rules(unittest.TestCase):
         self.assertIn("an AI-sounding phrase", qa.problems(GOOD.replace("Start with", "When it comes to blanks, start with")))
         self.assertIn("an AI-sounding word", qa.problems(GOOD.replace("Start with", "Let me delve in. Start with")))
         self.assertEqual(qa.problems(GOOD.replace("180 GSM", "180-200 GSM")), [])
+
+    def test_made_in_delhi_fails(self):
+        d = "Disclosure: I run Own Knitted Blank Wears (sale91.com)"
+        for bad in ("a plain T-shirt manufacturer in Delhi.", "We're a Delhi-based manufacturer.", "a maker based in Delhi.",
+                    "Our tees are made in Delhi.", "knitted at Khanpur."):
+            self.assertIn("says the tees are made in Delhi", qa.problems(GOOD.replace(d + ",", d + ", " + bad)), bad)
+        for fine in ("We're based in Delhi.", "We ship from our godown in Khanpur, South Delhi.", "Our own unit in Tiruppur."):
+            self.assertEqual(qa.problems(GOOD.replace(d + ",", d + ", " + fine)), [], fine)
 
     def test_length(self):
         self.assertTrue(any("words" in p for p in qa.problems("Disclosure: I run Own Knitted Blank Wears (sale91.com).")))
