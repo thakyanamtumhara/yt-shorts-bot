@@ -1,0 +1,24 @@
+name: Voice clip
+# A short clip in Ketu's ElevenLabs clone (e.g. an app's notification sound). Download it from the run's artifacts.
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: 'What the voice says'
+        type: string
+        required: true
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/voice_clip.py "$TEXT" clip.mp3
+        env:
+          TEXT: ${{ inputs.text }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-clip
+          path: clip.mp3
+          retention-days: 3
