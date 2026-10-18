@@ -8,9 +8,14 @@ Ketu's Telegram as "question + link", then the answer alone, so one long-press c
 keeps every question and answer ever sent, so none repeats and a batch can be sent again (--mode resend). Ketu asked
 18-Oct-2026 "how would I know if something breaks": a failed run tells him on Telegram, and --mode check (Tuesday)
 does the same when Monday's batch never went out.
+
+Later on 18-Oct-2026 Ketu gave the pasting to a helper who "will not be reading": so every answer also passes a
+fact check by a second model call before it is kept, and the answers live on one fixed web page (--mode page, uploaded
+by the workflow) with Copy and Open buttons; Ketu gets only the link and the questions (--mode tell).
 """
 import argparse
 import datetime
+import html
 import json
 import os
 import re
@@ -113,15 +118,15 @@ def load_log():
         return []
 
 
-def claude(messages, system):
+def claude(messages, system, search=True):
     key = os.environ["ANTHROPIC_API_KEY"]
+    body = {"model": MODEL, "max_tokens": 8000, "system": system, "messages": messages}
+    if search:
+        body["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8,
+                          "allowed_domains": ["quora.com"]}]
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
-        data=json.dumps({
-            "model": MODEL, "max_tokens": 8000, "system": system, "messages": messages,
-            "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8,
-                       "allowed_domains": ["quora.com"]}],
-        }).encode(),
+        data=json.dumps(body).encode(),
         headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
     )
     try:
@@ -166,7 +171,7 @@ def draft(seen, today):
     return json.loads(m.group(0)).get("answers", []), found
 
 
-def pick(cands, found, seen):
+def pick(cands, found, seen, limit=WANT):
     kept, used = [], set()
     for c in cands:
         q, a, u = (c.get("question") or "").strip(), (c.get("answer") or "").strip(), norm_url(c.get("url"))
@@ -185,9 +190,97 @@ def pick(cands, found, seen):
             continue
         used |= sh
         kept.append({"question": q, "url": u, "answer": a})
-        if len(kept) == WANT:
+        if len(kept) == limit:
             break
     return kept
+
+
+def fact_check(kept):
+    ask = ("These answers will be pasted on Quora by someone who will not read them, so you are the last check. "
+           "Fail an answer if it says anything about Own Knitted Blank Wears that FACTS do not say, gives advice that is "
+           "wrong or could mislead a buyer, names, praises or criticises another seller or brand, or does not answer its "
+           "question. True, well-known market facts (Tiruppur is India's knitwear hub, Delhi's wholesale markets) are "
+           "fine.\n\n" + json.dumps([{"i": i, "question": k["question"], "answer": k["answer"]}
+                                      for i, k in enumerate(kept)], ensure_ascii=False) +
+           '\n\nReturn JSON only: {"checks":[{"i":0,"ok":true,"why":""}]}')
+    resp = claude([{"role": "user", "content": ask}], f"FACTS about the business:\n{FACTS}", search=False)
+    text = "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
+    m = re.search(r"\{.*\}", text, re.S)
+    if not m:
+        sys.exit(f"No JSON from the fact check: {text[:400]!r}")
+    checks = {c.get("i"): c for c in json.loads(m.group(0)).get("checks", [])}
+    out = []
+    for i, k in enumerate(kept):
+        c = checks.get(i)
+        if c and c.get("ok"):
+            out.append(k)
+        else:
+            print(f"FACT CHECK dropped {k['question']!r}: {(c or {}).get('why') or 'not checked'}")
+    print(f"fact check usage: {resp.get('usage', {}).get('input_tokens')} in, {resp.get('usage', {}).get('output_tokens')} out")
+    return out
+
+
+def page_html(log, now):
+    dates = sorted({e["date"] for e in log if e.get("answer")}, reverse=True)[:2]
+    parts = []
+    for d in dates:
+        items = [e for e in log if e["date"] == d and e.get("answer")]
+        parts.append(f"<h2>Answers from {datetime.date.fromisoformat(d):%d %b}</h2>")
+        for i, e in enumerate(items, 1):
+            parts.append(
+                f'<section class="card" data-url="{html.escape(e["url"])}">'
+                f'<p class="q">{i}. {html.escape(e["question"])}</p>'
+                f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
+                f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on Quora</a></div>'
+                f'<p class="ans">{html.escape(e["answer"])}</p>'
+                f'<label><input type="checkbox"> Posted</label></section>')
+    return PAGE.replace("{{BODY}}", "\n".join(parts)).replace("{{UPDATED}}", f"{now:%d %b %Y, %H:%M} IST")
+
+
+PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Quora answers</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--muted:#5d6470;--line:#dde1e7;--blue:#1f5fd6}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#e8eaed;--muted:#9aa3ad;--line:#2a2f37;--blue:#5b9bff}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 6px}
+.how{color:var(--muted);margin:0 0 8px}
+h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:22px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 14px}
+.card.done{opacity:.5}
+.q{font-weight:600;margin:0 0 10px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.btns>*{flex:1 1 140px;box-sizing:border-box;text-align:center;padding:12px;border-radius:10px;font:600 15px system-ui,sans-serif;cursor:pointer;text-decoration:none}
+.copy{background:var(--blue);color:#fff;border:2px solid var(--blue)}
+.open{color:var(--blue);border:2px solid var(--blue)}
+.ans{white-space:pre-wrap;border-top:1px solid var(--line);padding-top:10px;margin:0}
+label{display:flex;gap:10px;align-items:center;margin-top:12px;font-weight:600}
+label input{width:22px;height:22px}
+footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
+</style></head><body><main>
+<h1>Quora answers</h1>
+<p class="how">For each answer: 1. Copy answer. 2. Open on Quora. 3. Tap Answer, paste, Post. 4. Tick Posted.</p>
+<p class="how">Post 1 or 2 a day, not all at once. New answers come every Monday, on top.</p>
+{{BODY}}
+<footer>Updated {{UPDATED}}</footer>
+</main>
+<script>
+document.querySelectorAll('.card').forEach(function(c){
+  var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy');
+  try{if(localStorage.getItem(k)){box.checked=true;c.classList.add('done');}}catch(e){}
+  box.addEventListener('change',function(){c.classList.toggle('done',box.checked);try{box.checked?localStorage.setItem(k,'1'):localStorage.removeItem(k);}catch(e){}});
+  btn.addEventListener('click',function(){
+    var t=c.querySelector('.ans').textContent;
+    function ok(){btn.textContent='Copied \u2713';setTimeout(function(){btn.textContent='Copy answer';},2000);}
+    function old(){var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){}a.remove();}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,old);}else{old();}
+  });
+});
+</script>
+</body></html>
+"""
 
 
 def missing_batch(log, today):
@@ -221,10 +314,12 @@ def send_batch(header, items):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["dry-run", "send", "resend", "check"], default="dry-run")
+    ap.add_argument("--mode", choices=["dry-run", "send", "page", "tell", "resend", "check"], default="dry-run")
     ap.add_argument("--date", default="", help="resend: the date of the saved batch, e.g. 2026-10-18")
+    ap.add_argument("--out", default="", help="page: where to write the HTML")
     args = ap.parse_args()
-    today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30))).date()
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
+    today = now.date()
     log = load_log()
     if args.mode == "check":
         gap = missing_batch(log, today)
@@ -240,22 +335,35 @@ def main():
         send_batch(f"Quora answers written {day:%d %b}", items)
         print(f"sent {len(items)} saved answers")
         return
+    if args.mode == "page":
+        with open(args.out, "w") as f:
+            f.write(page_html(log, now))
+        print(f"page written: {args.out}")
+        return
+    if args.mode == "tell":
+        url = os.environ.get("QA_PAGE_URL") or sys.exit("QA_PAGE_URL missing")
+        last = max(e["date"] for e in log if e.get("answer"))
+        items = [e for e in log if e["date"] == last and e.get("answer")]
+        lines = "\n".join(f"{i}. {e['question']}" for i, e in enumerate(items, 1))
+        telegram(f"Quora: {len(items)} new answers are on the posting page, on top:\n{url}\n\n{lines}\n\n"
+                 "The link never changes; new answers appear every Monday. Post 1 or 2 a day.")
+        print("told Ketu")
+        return
     seen = {e["url"] for e in log}
     cands, found = draft(seen, today)
-    kept = pick(cands, found, seen)
+    kept = fact_check(pick(cands, found, seen, limit=CANDIDATES))[:WANT]
     for i, k in enumerate(kept, 1):
         print(f"\n=== {i}. {k['question']}\n{k['url']}\n\n{k['answer']}")
     if len(kept) < 2:
-        sys.exit(f"Only {len(kept)} answers passed the rules")
+        sys.exit(f"Only {len(kept)} answers passed the rules and the fact check")
     if args.mode != "send":
-        print("\ndry run: nothing sent, log unchanged")
+        print("\ndry run: nothing saved")
         return
-    send_batch("Quora answers for this week", kept)
     log += [{"date": today.isoformat(), "url": k["url"], "question": k["question"], "answer": k["answer"]} for k in kept]
     with open(LOG, "w") as f:
         json.dump(log, f, indent=1, ensure_ascii=False)
         f.write("\n")
-    print(f"\nsent {len(kept)} answers")
+    print(f"\nsaved {len(kept)} answers")
 
 
 if __name__ == "__main__":

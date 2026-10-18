@@ -74,6 +74,16 @@ class Rules(unittest.TestCase):
         self.assertEqual(qa.missing_batch([{"date": "2026-10-18"}], tue), "2026-10-18")
         self.assertEqual(qa.missing_batch([], tue), "never")
 
+    def test_page_shows_the_two_newest_batches_escaped(self):
+        log = [{"date": d, "url": f"https://www.quora.com/Q-{d}", "question": f"Q <{d}>", "answer": "A & B"}
+               for d in ("2026-10-12", "2026-10-18", "2026-10-19")]
+        page = qa.page_html(log, datetime.datetime(2026, 10, 19, 10, 5))
+        self.assertEqual(page.count('class="card"'), 2)
+        self.assertNotIn("Q-2026-10-12", page)
+        self.assertIn("Q &lt;2026-10-19&gt;", page)
+        self.assertIn("A &amp; B", page)
+        self.assertLess(page.index("19 Oct"), page.index("18 Oct"))
+
 
 if __name__ == "__main__":
     unittest.main()
