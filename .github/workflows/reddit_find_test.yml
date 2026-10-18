@@ -1,0 +1,13 @@
+name: Reddit find test
+# 18-Oct-2026 one-off: can OpenAI's licensed web search find Reddit threads for us? Prints only.
+on:
+  workflow_dispatch:
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/reddit_find_test.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
