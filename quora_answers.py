@@ -145,8 +145,8 @@ def draft(seen, today):
         f"blank apparel in India ask. Topics for this week: {'; '.join(topics)}. Pick questions where an honest answer "
         f"from a plain apparel manufacturer genuinely helps the asker. Skip questions about printing services only, "
         f"jobs, investing or personal fashion, and skip these, already answered: {', '.join(sorted(seen)) or 'none'}.\n"
-        f"Return {CANDIDATES} candidates as JSON only, in this shape: "
-        '{"answers":[{"question":"exact question title","url":"https://www.quora.com/...","answer":"..."}]}. '
+        f"Return {CANDIDATES} candidates in exactly this plain-text form, one block each, and nothing else:\n"
+        "@@@ QUESTION: exact question title\n@@@ URL: https://www.quora.com/...\n@@@ ANSWER:\nthe answer\n@@@ END\n"
         "Every url must be one that appeared in your search results."
     )
     messages = [{"role": "user", "content": ask}]
@@ -164,11 +164,16 @@ def draft(seen, today):
             break
         messages = messages + [{"role": "assistant", "content": resp["content"]}]
     text = "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
-    m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        sys.exit(f"No JSON in the reply: {text[:400]!r}")
     print(f"web searches: {searches}, Quora question URLs seen: {len(found)}, usage: {resp.get('usage')}")
-    return json.loads(m.group(0)).get("answers", []), found
+    cands = blocks(text)
+    if not cands:
+        sys.exit(f"No answers in the reply: {text[:400]!r}")
+    return cands, found
+
+
+def blocks(text):
+    return [{"question": m.group(1).strip(), "url": m.group(2).strip(), "answer": m.group(3).strip()}
+            for m in re.finditer(r"@@@ QUESTION:(.*?)\n@@@ URL:(.*?)\n@@@ ANSWER:[ \t]*\n(.*?)\n@@@ END", text, re.S)]
 
 
 def pick(cands, found, seen, limit=WANT):
@@ -200,23 +205,29 @@ def fact_check(kept):
            "Fail an answer if it says anything about Own Knitted Blank Wears that FACTS do not say, gives advice that is "
            "wrong or could mislead a buyer, names, praises or criticises another seller or brand, or does not answer its "
            "question. True, well-known market facts (Tiruppur is India's knitwear hub, Delhi's wholesale markets) are "
-           "fine.\n\n" + json.dumps([{"i": i, "question": k["question"], "answer": k["answer"]}
-                                      for i, k in enumerate(kept)], ensure_ascii=False) +
-           '\n\nReturn JSON only: {"checks":[{"i":0,"ok":true,"why":""}]}')
+           "fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}\n{k['answer']}" for i, k in enumerate(kept)) +
+           "\n\nReply with one line per answer and nothing else: its number, then OK, or FAIL and a short reason. "
+           "Example:\n0 OK\n1 FAIL: says we print T-shirts")
     resp = claude([{"role": "user", "content": ask}], f"FACTS about the business:\n{FACTS}", search=False)
     text = "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
-    m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        sys.exit(f"No JSON from the fact check: {text[:400]!r}")
-    checks = {c.get("i"): c for c in json.loads(m.group(0)).get("checks", [])}
+    verdicts = verdict_lines(text)
     out = []
     for i, k in enumerate(kept):
-        c = checks.get(i)
-        if c and c.get("ok"):
+        ok, why = verdicts.get(i, (False, "not checked"))
+        if ok:
             out.append(k)
         else:
-            print(f"FACT CHECK dropped {k['question']!r}: {(c or {}).get('why') or 'not checked'}")
+            print(f"FACT CHECK dropped {k['question']!r}: {why}")
     print(f"fact check usage: {resp.get('usage', {}).get('input_tokens')} in, {resp.get('usage', {}).get('output_tokens')} out")
+    return out
+
+
+def verdict_lines(text):
+    out = {}
+    for line in text.splitlines():
+        m = re.match(r"\s*(?:answer\s*)?(\d+)\s*[:.)-]?\s*(OK|FAIL)\b[\s:.-]*(.*)", line, re.I)
+        if m:
+            out[int(m.group(1))] = (m.group(2).upper() == "OK", m.group(3).strip())
     return out
 
 

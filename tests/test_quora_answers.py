@@ -68,6 +68,20 @@ class Rules(unittest.TestCase):
         kept = qa.pick(cands, found={u1, u2, u3}, seen={u3})
         self.assertEqual([k["url"] for k in kept], [u1, u2])
 
+    def test_blocks_survive_quotes_and_lists(self):
+        text = ('Here you go.\n@@@ QUESTION: Where to buy "cheap" tees?\n@@@ URL: https://www.quora.com/Q-one\n'
+                '@@@ ANSWER:\n"Cheap" means two things:\n- one\n- two\n\nDisclosure: x\n@@@ END\n'
+                '@@@ QUESTION: Second?\n@@@ URL: https://www.quora.com/Q-two\n@@@ ANSWER:\nB\n@@@ END')
+        got = qa.blocks(text)
+        self.assertEqual([g["url"] for g in got], ["https://www.quora.com/Q-one", "https://www.quora.com/Q-two"])
+        self.assertEqual(got[0]["question"], 'Where to buy "cheap" tees?')
+        self.assertTrue(got[0]["answer"].startswith('"Cheap" means'))
+        self.assertTrue(got[0]["answer"].endswith("Disclosure: x"))
+
+    def test_fact_check_lines(self):
+        got = qa.verdict_lines("0 OK\n1 FAIL: says we print T-shirts\nAnswer 2: ok\nnoise")
+        self.assertEqual(got, {0: (True, ""), 1: (False, "says we print T-shirts"), 2: (True, "")})
+
     def test_check_wants_this_mondays_batch(self):
         tue = datetime.date(2026, 10, 20)
         self.assertIsNone(qa.missing_batch([{"date": "2026-10-19"}], tue))
