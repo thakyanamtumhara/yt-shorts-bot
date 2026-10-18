@@ -12,6 +12,10 @@ does the same when Monday's batch never went out.
 Later on 18-Oct-2026 Ketu gave the pasting to a helper who "will not be reading": so every answer also passes a
 fact check by a second model call before it is kept, and the answers live on one fixed web page (--mode page, uploaded
 by the workflow) with Copy and Open buttons; Ketu gets only the link and the questions (--mode tell).
+
+Reddit joins the same batch (Ketu, 18-Oct-2026: "Reddit will help with AI suggestions"). Anthropic's search returns no
+reddit.com results, so OpenAI's web search (Reddit data partner) finds recent threads and reads each post and its
+subreddit's rules; Claude writes the comments under REDDIT_RULES; the same checks and fact check apply. Nothing posts.
 """
 import argparse
 import datetime
@@ -28,6 +32,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = os.path.join(HERE, "quora_answers", "log.json")
 WANT = 5
 CANDIDATES = 7
+REDDIT_WANT = 3
+REDDIT_DAYS = 120
+REDDIT_NO_PROMO = {"streetwearstartup", "entrepreneur", "screenprinting", "dtg"}
+OPENAI_MODELS = ["gpt-5.2", "gpt-5.1", "gpt-5"]
 
 FACTS = """Own Knitted Blank Wears sells plain (unprinted) apparel wholesale from Delhi. Websites: sale91.com and bulkplaintshirt.com (the same business).
 - A manufacturer: knits its own fabric and handles yarn sourcing, knitting, dyeing, processing and stitching.
@@ -53,6 +61,17 @@ Hard rules:
 - Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
 - General market facts are fine when true and well known (Tiruppur is India's knitwear hub; sublimation needs polyester).
 - Every answer reads differently from the others: different opening, structure and examples."""
+
+REDDIT_RULES = """Write a Reddit comment like the owner of a blank-apparel business replying to this post: casual, plain, specific English, first person.
+Answer what the post actually asks, with practical advice the poster can use with ANY supplier. Then a last line that starts exactly "Disclosure: I run Own Knitted Blank Wears (sale91.com)" and adds one fact from FACTS that matters for this post.
+Hard rules:
+- 70 to 170 words. No headings, emojis, hashtags or bold. A short dash list is fine.
+- No links. "sale91.com" appears once, inside the disclosure. No "DM me", no "check out", no sales talk.
+- Never a price, rate, amount, discount or anything in rupees.
+- About the business, only facts from FACTS.
+- Never claim "best quality / best price / best supplier", "cheapest", "No. 1" or "guaranteed"; say nothing about other companies.
+- Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
+- Every comment reads differently from the others."""
 
 TOPICS = [
     "wholesale plain T-shirts in India", "blank T-shirts for printing (DTF, screen print, DTG)",
@@ -86,10 +105,16 @@ def norm_url(u):
     return "https://www.quora.com/" + slug
 
 
-def problems(answer):
+def norm_reddit(u):
+    m = re.match(r"https?://(?:[a-z]{2,3}\.|www\.|old\.|new\.)?reddit\.com/r/([A-Za-z0-9_]+)/comments/([a-z0-9]+)",
+                 (u or "").strip(), re.I)
+    return f"https://www.reddit.com/r/{m.group(1).lower()}/comments/{m.group(2).lower()}/" if m else None
+
+
+def problems(answer, lo=120, hi=260):
     out = []
     words = len(answer.split())
-    if not 120 <= words <= 260:
+    if not lo <= words <= hi:
         out.append(f"{words} words")
     for pat, why in BANNED:
         if re.search(pat, answer, re.I | re.M):
@@ -176,13 +201,13 @@ def blocks(text):
             for m in re.finditer(r"@@@ QUESTION:(.*?)\n@@@ URL:(.*?)\n@@@ ANSWER:[ \t]*\n(.*?)\n@@@ END", text, re.S)]
 
 
-def pick(cands, found, seen, limit=WANT):
-    kept, used = [], set()
+def pick(cands, found, seen, limit=WANT, norm=norm_url, lo=120, hi=260, used=None):
+    kept, used = [], set(used or ())
     for c in cands:
-        q, a, u = (c.get("question") or "").strip(), (c.get("answer") or "").strip(), norm_url(c.get("url"))
-        why = problems(a)
+        q, a, u = (c.get("question") or "").strip(), (c.get("answer") or "").strip(), norm(c.get("url"))
+        why = problems(a, lo, hi)
         if not u:
-            why.append("not a Quora question URL")
+            why.append("not a question URL")
         elif u not in found:
             why.append("URL not in the search results")
         elif u in seen or u in {k["url"] for k in kept}:
@@ -194,18 +219,20 @@ def pick(cands, found, seen, limit=WANT):
             print(f"SKIP {q!r}: {', '.join(why)}")
             continue
         used |= sh
-        kept.append({"question": q, "url": u, "answer": a})
+        kept.append({k: v for k, v in c.items() if k not in ("question", "url", "answer")} |
+                    {"question": q, "url": u, "answer": a})
         if len(kept) == limit:
             break
     return kept
 
 
 def fact_check(kept):
-    ask = ("These answers will be pasted on Quora by someone who will not read them, so you are the last check. "
+    ask = ("These answers will be pasted on Quora or Reddit by someone who will not read them, so you are the last check. "
            "Fail an answer if it says anything about Own Knitted Blank Wears that FACTS do not say, gives advice that is "
            "wrong or could mislead a buyer, names, praises or criticises another seller or brand, or does not answer its "
            "question. True, well-known market facts (Tiruppur is India's knitwear hub, Delhi's wholesale markets) are "
-           "fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}\n{k['answer']}" for i, k in enumerate(kept)) +
+           "fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}" + (f"\nThe poster asks: {k['asks']}" if k.get("asks") else "") +
+                         f"\n{k['answer']}" for i, k in enumerate(kept)) +
            "\n\nReply with one line per answer and nothing else: its number, then OK, or FAIL and a short reason. "
            "Example:\n0 OK\n1 FAIL: says we print T-shirts")
     resp = claude([{"role": "user", "content": ask}], f"FACTS about the business:\n{FACTS}", search=False)
@@ -220,6 +247,105 @@ def fact_check(kept):
             print(f"FACT CHECK dropped {k['question']!r}: {why}")
     print(f"fact check usage: {resp.get('usage', {}).get('input_tokens')} in, {resp.get('usage', {}).get('output_tokens')} out")
     return out
+
+
+def openai(body):
+    req = urllib.request.Request("https://api.openai.com/v1/" + ("responses" if body else "models"),
+                                 data=json.dumps(body).encode() if body else None,
+                                 headers={"Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",
+                                          "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=600) as r:
+        return json.load(r)
+
+
+def reddit_threads(seen, today):
+    ids = {m["id"] for m in openai(None).get("data", [])}
+    model = next((m for m in OPENAI_MODELS if m in ids), None)
+    if not model:
+        raise RuntimeError(f"none of {OPENAI_MODELS} is available")
+    ask = (f"Today is {today:%d %b %Y}. Find Reddit threads from the last 4 months where someone in India asks where to "
+           "buy plain or blank T-shirts, oversized tees, hoodies or sweatshirts in bulk or wholesale, or which supplier "
+           "or manufacturer to use for a clothing brand, a print business or a dropshipping store. Skip threads only "
+           "about printing services, jobs, or one person's own shopping, and skip these, already answered: "
+           f"{', '.join(sorted(seen)) or 'none'}.\nFor each of up to 8 threads, read the post and the subreddit's rules, "
+           "then return exactly this block and nothing else:\n@@@ URL: https://www.reddit.com/r/.../comments/...\n"
+           "@@@ SUBREDDIT: name\n@@@ TITLE: thread title\n@@@ DATE: YYYY-MM-DD\n@@@ ASKS: what the poster wants, in "
+           "1-3 sentences, with any details they gave\n@@@ PROMO: ALLOWED if the subreddit's rules let a business owner "
+           "mention their own company in a helpful comment, NOT ALLOWED if they forbid it, UNKNOWN if you cannot tell\n"
+           "@@@ END")
+    resp = openai({"model": model, "input": ask, "include": ["web_search_call.action.sources"],
+                   "tools": [{"type": "web_search", "filters": {"allowed_domains": ["reddit.com"]}}]})
+    if resp.get("error"):
+        raise RuntimeError(f"OpenAI: {resp['error']}")
+    urls, text = set(), ""
+    for item in resp.get("output", []):
+        if item.get("type") == "web_search_call":
+            urls |= {src.get("url", "") for src in (item.get("action") or {}).get("sources") or []}
+        if item.get("type") == "message":
+            for c in item.get("content", []):
+                text += c.get("text", "")
+                urls |= {a.get("url", "") for a in c.get("annotations", [])}
+    found = {norm_reddit(u) for u in urls} - {None}
+    print(f"reddit: {model}, {len(found)} thread URLs seen, usage: {resp.get('usage')}")
+    threads = []
+    for m in re.finditer(r"@@@ URL:(.*?)\n@@@ SUBREDDIT:(.*?)\n@@@ TITLE:(.*?)\n@@@ DATE:(.*?)\n@@@ ASKS:(.*?)\n"
+                         r"@@@ PROMO:(.*?)\n@@@ END", text, re.S):
+        u, sub, title, date, asks, promo = (g.strip() for g in m.groups())
+        threads.append({"url": norm_reddit(u), "sub": sub.removeprefix("r/").lower(), "question": title,
+                        "date": date, "asks": asks, "promo": promo.upper()})
+    return threads, found
+
+
+def usable_threads(threads, found, seen, today):
+    out = []
+    for t in threads:
+        try:
+            age = (today - datetime.date.fromisoformat(t["date"][:10])).days
+        except ValueError:
+            age = None
+        why = ("not a thread URL" if not t["url"] else "URL not in the search results" if t["url"] not in found
+               else "already answered" if t["url"] in seen else "subreddit bans promotion"
+               if t["sub"] in REDDIT_NO_PROMO or t["promo"].startswith("NOT") else "no date"
+               if age is None else f"{age} days old" if not 0 <= age <= REDDIT_DAYS else "")
+        if why:
+            print(f"REDDIT SKIP {t['question']!r}: {why}")
+        else:
+            out.append(t)
+    return out
+
+
+def reddit_draft(threads):
+    system = f"FACTS about the business:\n{FACTS}\n\nRULES for every comment:\n{REDDIT_RULES}"
+    ask = ("Write one Reddit comment for each thread below.\n\n" + "\n\n".join(
+        f"THREAD {t['url']}\nSubreddit: r/{t['sub']}\nTitle: {t['question']}\nThe poster asks: {t['asks']}"
+        for t in threads) + "\n\nReturn exactly this block for each thread and nothing else:\n@@@ QUESTION: the thread "
+           "title\n@@@ URL: the thread URL\n@@@ ANSWER:\nthe comment\n@@@ END")
+    resp = claude([{"role": "user", "content": ask}], system, search=False)
+    text = "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
+    by_url = {t["url"]: t for t in threads}
+    out = []
+    for c in blocks(text):
+        t = by_url.get(norm_reddit(c["url"]))
+        if t:
+            out.append({"site": "reddit", "sub": t["sub"], "asks": t["asks"], "question": t["question"],
+                        "url": t["url"], "answer": c["answer"]})
+    return out
+
+
+def reddit_batch(seen, today, quora):
+    try:
+        threads, found = reddit_threads(seen, today)
+        usable = usable_threads(threads, found, seen, today)
+        if not usable:
+            print("REDDIT: no usable threads this week")
+            return []
+        used = set().union(*(shingles(body(k["answer"])) for k in quora)) if quora else set()
+        cands = pick(reddit_draft(usable), {t["url"] for t in usable}, seen, limit=len(usable), norm=norm_reddit,
+                     lo=60, hi=190, used=used)
+        return fact_check(cands)[:REDDIT_WANT]
+    except Exception as e:
+        print(f"REDDIT: none this week: {e!r}")
+        return []
 
 
 def verdict_lines(text):
@@ -238,11 +364,13 @@ def page_html(log, now):
         items = [e for e in log if e["date"] == d and e.get("answer")]
         parts.append(f"<h2>Answers from {datetime.date.fromisoformat(d):%d %b}</h2>")
         for i, e in enumerate(items, 1):
+            site = "Reddit" if e.get("site") == "reddit" else "Quora"
+            where = f"r/{e['sub']}: " if e.get("sub") else ""
             parts.append(
                 f'<section class="card" data-url="{html.escape(e["url"])}">'
-                f'<p class="q">{i}. {html.escape(e["question"])}</p>'
+                f'<p class="q"><span class="site {site.lower()}">{site}</span> {i}. {html.escape(where + e["question"])}</p>'
                 f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
-                f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on Quora</a></div>'
+                f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on {site}</a></div>'
                 f'<p class="ans">{html.escape(e["answer"])}</p>'
                 f'<label><input type="checkbox"> Posted</label></section>')
     return PAGE.replace("{{BODY}}", "\n".join(parts)).replace("{{UPDATED}}", f"{now:%d %b %Y, %H:%M} IST")
@@ -250,7 +378,7 @@ def page_html(log, now):
 
 PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Quora answers</title>
+<meta name="robots" content="noindex,nofollow"><title>Answers to post</title>
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--muted:#5d6470;--line:#dde1e7;--blue:#1f5fd6}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#e8eaed;--muted:#9aa3ad;--line:#2a2f37;--blue:#5b9bff}}
@@ -270,9 +398,11 @@ h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04
 label{display:flex;gap:10px;align-items:center;margin-top:12px;font-weight:600}
 label input{width:22px;height:22px}
 footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
+.site{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:4px;color:#fff;vertical-align:1px}
+.site.quora{background:#b92b27}.site.reddit{background:#d93a00}
 </style></head><body><main>
-<h1>Quora answers</h1>
-<p class="how">For each answer: 1. Copy answer. 2. Open on Quora. 3. Tap Answer, paste, Post. 4. Tick Posted.</p>
+<h1>Answers to post</h1>
+<p class="how">For each answer: 1. Copy answer. 2. Open the question. 3. Quora: tap Answer, paste, Post. Reddit: tap Add a comment, paste, Comment. 4. Tick Posted.</p>
 <p class="how">Post 1 or 2 a day, not all at once. New answers come every Monday, on top.</p>
 {{BODY}}
 <footer>Updated {{UPDATED}}</footer>
@@ -355,8 +485,10 @@ def main():
         url = os.environ.get("QA_PAGE_URL") or sys.exit("QA_PAGE_URL missing")
         last = max(e["date"] for e in log if e.get("answer"))
         items = [e for e in log if e["date"] == last and e.get("answer")]
-        lines = "\n".join(f"{i}. {e['question']}" for i, e in enumerate(items, 1))
-        telegram(f"Quora: {len(items)} new answers are on the posting page, on top:\n{url}\n\n{lines}\n\n"
+        lines = "\n".join(f"{i}. {'Reddit r/' + e['sub'] if e.get('site') == 'reddit' else 'Quora'}: {e['question']}"
+                          for i, e in enumerate(items, 1))
+        nq = sum(1 for e in items if e.get("site") != "reddit")
+        telegram(f"Answers to post: {nq} Quora + {len(items) - nq} Reddit, on top of the page:\n{url}\n\n{lines}\n\n"
                  "The link never changes; new answers appear every Monday. Post 1 or 2 a day.")
         print("told Ketu")
         return
@@ -367,14 +499,20 @@ def main():
         print(f"\n=== {i}. {k['question']}\n{k['url']}\n\n{k['answer']}")
     if len(kept) < 2:
         sys.exit(f"Only {len(kept)} answers passed the rules and the fact check")
+    reddit = reddit_batch(seen, today, kept) if os.environ.get("OPENAI_API_KEY") else []
+    for i, k in enumerate(reddit, 1):
+        print(f"\n=== REDDIT {i}. r/{k['sub']}: {k['question']}\n{k['url']}\n\n{k['answer']}")
     if args.mode != "send":
         print("\ndry run: nothing saved")
         return
-    log += [{"date": today.isoformat(), "url": k["url"], "question": k["question"], "answer": k["answer"]} for k in kept]
+    log += [{"date": today.isoformat(), "site": "quora", "url": k["url"], "question": k["question"],
+             "answer": k["answer"]} for k in kept]
+    log += [{"date": today.isoformat(), "site": "reddit", "sub": k["sub"], "url": k["url"], "question": k["question"],
+             "answer": k["answer"]} for k in reddit]
     with open(LOG, "w") as f:
         json.dump(log, f, indent=1, ensure_ascii=False)
         f.write("\n")
-    print(f"\nsaved {len(kept)} answers")
+    print(f"\nsaved {len(kept)} Quora + {len(reddit)} Reddit answers")
 
 
 if __name__ == "__main__":

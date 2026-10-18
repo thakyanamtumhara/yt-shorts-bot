@@ -82,6 +82,31 @@ class Rules(unittest.TestCase):
         got = qa.verdict_lines("0 OK\n1 FAIL: says we print T-shirts\nAnswer 2: ok\nnoise")
         self.assertEqual(got, {0: (True, ""), 1: (False, "says we print T-shirts"), 2: (True, "")})
 
+    def test_reddit_urls(self):
+        self.assertEqual(qa.norm_reddit("https://pl.reddit.com/r/IndiaBusiness/comments/1sm3djz/looking_for/?sort=new"),
+                         "https://www.reddit.com/r/indiabusiness/comments/1sm3djz/")
+        self.assertEqual(qa.norm_reddit("https://www.reddit.com/r/delhi/comments/1nzsgo8"),
+                         "https://www.reddit.com/r/delhi/comments/1nzsgo8/")
+        self.assertIsNone(qa.norm_reddit("https://www.reddit.com/r/delhi/"))
+        self.assertIsNone(qa.norm_reddit("https://www.quora.com/Q-one"))
+
+    def test_reddit_threads_filtered(self):
+        tue = datetime.date(2026, 10, 20)
+        u = [f"https://www.reddit.com/r/x/comments/{c}/" for c in "abcdef"]
+        t = lambda url, sub="x", date="2026-10-01", promo="UNKNOWN": {
+            "url": url, "sub": sub, "date": date, "promo": promo, "question": url, "asks": ""}
+        threads = [t(u[0]), t(u[1], sub="streetwearstartup"), t(u[2], promo="NOT ALLOWED"), t(u[3], date="2026-01-01"),
+                   t(u[4]), t(u[5], date="sometime")]
+        got = qa.usable_threads(threads, found=set(u) - {u[4]}, seen=set(), today=tue)
+        self.assertEqual([g["url"] for g in got], [u[0]])
+
+    def test_page_labels_reddit(self):
+        log = [{"date": "2026-10-19", "site": "reddit", "sub": "indiabusiness", "url": "https://www.reddit.com/r/indiabusiness/comments/abc/",
+                "question": "Looking for T-shirt wholesalers", "answer": "A"}]
+        page = qa.page_html(log, datetime.datetime(2026, 10, 19, 10, 5))
+        self.assertIn("Open on Reddit", page)
+        self.assertIn("r/indiabusiness: Looking for T-shirt wholesalers", page)
+
     def test_check_wants_this_mondays_batch(self):
         tue = datetime.date(2026, 10, 20)
         self.assertIsNone(qa.missing_batch([{"date": "2026-10-19"}], tue))
