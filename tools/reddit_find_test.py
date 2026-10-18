@@ -37,7 +37,7 @@ resp = call("https://api.openai.com/v1/responses", {
     "tools": [{"type": "web_search", "filters": {"allowed_domains": ["reddit.com"]}}],
     "include": ["web_search_call.action.sources"],
 })
-if "error" in resp:
+if resp.get("error"):
     sys.exit(f"responses API: {resp['error']}")
 urls, text = set(), ""
 for item in resp.get("output", []):

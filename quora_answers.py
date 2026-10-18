@@ -31,7 +31,7 @@ CANDIDATES = 7
 
 FACTS = """Own Knitted Blank Wears sells plain (unprinted) apparel wholesale from Delhi. Websites: sale91.com and bulkplaintshirt.com (the same business).
 - A manufacturer: knits its own fabric and handles yarn sourcing, knitting, dyeing, processing and stitching.
-- Godown (warehouse) in Khanpur, South Delhi. Buyers can visit Mon-Sat 10 AM-6 PM, Sun 12-4 PM.
+- Factory in Tiruppur (Tamil Nadu): fabric knitting, dyeing and processing; no visits. Warehouse and dispatch hub: the godown in Khanpur, South Delhi, which buyers can visit Mon-Sat 10 AM-6 PM, Sun 12-4 PM. Never say the garments are made, knitted, dyed or stitched in Delhi; say the business is based in Delhi or ships from Delhi.
 - Products, all plain: regular round-neck T-shirts 180 GSM (100% cotton biowash, plus a cotton-polyester non-bio option); oversized / drop-shoulder T-shirts in 180, 210, 240 and 260 GSM; acid-wash oversized 240 GSM; sublimation T-shirts 200 GSM (cotton-feel polyester); kids round-neck 180 GSM; polo T-shirts 220 GSM (a cotton polo and a 100% cotton honeycomb premium polo); hoodies 320 GSM (pullover and zip); drop-shoulder hoodie 430 GSM; sweatshirts 320 GSM; shorts 240 GSM.
 - DTF transfer sheets printed from the buyer's own designs, ordered separately on dtf.bulkplaintshirt.com.
 - Minimum order: 10 pieces in total; colours, sizes and products can be mixed. Single-piece samples can be bought.
