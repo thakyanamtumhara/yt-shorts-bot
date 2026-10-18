@@ -16,8 +16,14 @@ by the workflow) with Copy and Open buttons; Ketu gets only the link and the que
 Reddit joins the same batch (Ketu, 18-Oct-2026: "Reddit will help with AI suggestions"). Anthropic's search returns no
 reddit.com results, so OpenAI's web search (Reddit data partner) finds recent threads and reads each post and its
 subreddit's rules; Claude writes the comments under REDDIT_RULES; the same checks and fact check apply. Nothing posts.
-Reddit stays off until the repo variable REDDIT_ON is 1: the account used for the old daily link posts (May-Oct 2026)
-may be blocked, and a new account doing the same would be ban evasion.
+Reddit runs only while the repo variable REDDIT_ON is 1 (a new account replacing a blocked one would be ban evasion);
+Ketu checked the old account on 18-Oct-2026 ("Reddit is not suspended") and it was switched on.
+
+Ketu, 18-Oct-2026 evening: "my girlfriend or me mostly are not going to read them ... this should be like a human is
+writing it", and "if any bigger version of the AI model is coming ... we will use the latest model". So the biggest
+Claude line the API lists (Fable, else Opus) writes and checks, a newer release of that line is used by itself, every
+answer must read like a person typed it (no long dash, no stock AI phrases), and the page hides each answer behind
+Read more. A Reddit part that fails or cannot see Reddit sends its own Telegram; the Quora answers still go out.
 """
 import argparse
 import datetime
@@ -29,7 +35,9 @@ import sys
 import urllib.error
 import urllib.request
 
-MODEL = os.environ.get("QA_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("QA_MODEL", "")
+MODEL_LINES = ["fable", "opus"]
+FALLBACK_MODEL = "claude-fable-5-1"
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = os.path.join(HERE, "quora_answers", "log.json")
 WANT = 5
@@ -37,7 +45,7 @@ CANDIDATES = 7
 REDDIT_WANT = 3
 REDDIT_DAYS = 120
 REDDIT_NO_PROMO = {"streetwearstartup", "entrepreneur", "screenprinting", "dtg"}
-OPENAI_MODELS = ["gpt-5.2", "gpt-5.1", "gpt-5"]
+OPENAI_MODELS = ["gpt-5.5", "gpt-5.2", "gpt-5.1", "gpt-5"]
 
 FACTS = """Own Knitted Blank Wears sells plain (unprinted) apparel wholesale from Delhi. Websites: sale91.com and bulkplaintshirt.com (the same business).
 - A manufacturer: knits its own fabric and handles yarn sourcing, knitting, dyeing, processing and stitching.
@@ -52,6 +60,10 @@ FACTS = """Own Knitted Blank Wears sells plain (unprinted) apparel wholesale fro
 - Blind dropshipping for resellers: the parcel goes to the reseller's customer without our details.
 - Does not print T-shirts itself (only the DTF transfer sheets)."""
 
+HUMAN = """
+- Nobody reads these before they are posted, not even the owner, so every sentence must be true, useful and safe to post exactly as written.
+- Sound like a real person typing, not like AI: everyday words, contractions, sentences of mixed length; Indian English is fine. Use a comma, a full stop or a plain hyphen, never a long dash (—). No stock phrases such as "great question", "when it comes to", "it's worth noting", "in conclusion", "hope this helps", "delve", "game-changer", "seamless" or "elevate"."""
+
 RULES = """Write like the owner talking to a buyer: plain, warm, specific English.
 Useful first: most of the answer gives practical advice the asker can use with ANY supplier. Then a last paragraph that starts exactly "Disclosure: I run Own Knitted Blank Wears (sale91.com)" and adds one or two facts from FACTS that matter for this question.
 Hard rules:
@@ -62,7 +74,7 @@ Hard rules:
 - Never claim "best quality / best price / best supplier", "cheapest", "No. 1" or "guaranteed", and say nothing about other companies; name no other brand or seller.
 - Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
 - General market facts are fine when true and well known (Tiruppur is India's knitwear hub; sublimation needs polyester).
-- Every answer reads differently from the others: different opening, structure and examples."""
+- Every answer reads differently from the others: different opening, structure and examples.""" + HUMAN
 
 REDDIT_RULES = """Write a Reddit comment like the owner of a blank-apparel business replying to this post: casual, plain, specific English, first person.
 Answer what the post actually asks, with practical advice the poster can use with ANY supplier. Then a last line that starts exactly "Disclosure: I run Own Knitted Blank Wears (sale91.com)" and adds one fact from FACTS that matters for this post.
@@ -73,7 +85,8 @@ Hard rules:
 - About the business, only facts from FACTS.
 - Never claim "best quality / best price / best supplier", "cheapest", "No. 1" or "guaranteed"; say nothing about other companies.
 - Never a phone number, e-mail address or person's name, and never "Surat", "varsity" or "jacket".
-- Every comment reads differently from the others."""
+- Reply to this poster's own details (their numbers, city, product or problem), like a quick reply in a thread, not an article.
+- Every comment reads differently from the others.""" + HUMAN
 
 TOPICS = [
     "wholesale plain T-shirts in India", "blank T-shirts for printing (DTF, screen print, DTG)",
@@ -94,6 +107,11 @@ BANNED = [
     (r"\b(?:cheapest|lowest|no\.?\s?1|number one|guarantee[sd]?)\b", "a superlative or guarantee"),
     (r"\b(?:the )?best\s+(?:quality|price|prices|rates?|supplier|manufacturer|wholesaler|seller|in india)\b", "a 'best' claim"),
     (r"\*\*|^#|#\w", "markdown or a hashtag"),
+    (r"—", "a long dash (reads like AI)"),
+    (r"\b(?:delve|delving|tapestry|game[- ]?changers?|seamless(?:ly)?|elevate[sd]?|furthermore|moreover)\b",
+     "an AI-sounding word"),
+    (r"\b(?:great question|hope (?:this|that|it) helps|happy to help|feel free to|in conclusion|in summary|"
+     r"it[’']?s worth noting|when it comes to)\b", "an AI-sounding phrase"),
 ]
 
 
@@ -145,9 +163,39 @@ def load_log():
         return []
 
 
+def biggest_model():
+    try:
+        req = urllib.request.Request("https://api.anthropic.com/v1/models?limit=1000",
+                                     headers={"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = json.load(r).get("data", [])
+    except Exception as e:
+        print(f"model list failed, using {FALLBACK_MODEL}: {e!r}")
+        return FALLBACK_MODEL
+    for line in MODEL_LINES:
+        ms = [m for m in data if m.get("line") == line and
+              (((m.get("capabilities") or {}).get("server_tools") or {}).get("web_search") or {}).get("supported", True)]
+        if ms:
+            return max(ms, key=lambda m: m.get("created_at", ""))["id"]
+    return FALLBACK_MODEL
+
+
+def model():
+    global MODEL
+    if not MODEL:
+        MODEL = biggest_model()
+        print(f"writer model: {MODEL}")
+    return MODEL
+
+
+def model_label(m):
+    g = re.match(r"claude-([a-z]+)-(\d+)(?:-(\d+))?$", m or "")
+    return f"Claude {g[1].title()} {g[2]}{'.' + g[3] if g[3] else ''}" if g else m
+
+
 def claude(messages, system, search=True):
     key = os.environ["ANTHROPIC_API_KEY"]
-    body = {"model": MODEL, "max_tokens": 8000, "system": system, "messages": messages}
+    body = {"model": model(), "max_tokens": 16000, "system": system, "messages": messages}
     if search:
         body["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8,
                           "allowed_domains": ["quora.com"]}]
@@ -229,11 +277,12 @@ def pick(cands, found, seen, limit=WANT, norm=norm_url, lo=120, hi=260, used=Non
 
 
 def fact_check(kept):
-    ask = ("These answers will be pasted on Quora or Reddit by someone who will not read them, so you are the last check. "
-           "Fail an answer if it says anything about Own Knitted Blank Wears that FACTS do not say, gives advice that is "
-           "wrong or could mislead a buyer, names, praises or criticises another seller or brand, or does not answer its "
-           "question. True, well-known market facts (Tiruppur is India's knitwear hub, Delhi's wholesale markets) are "
-           "fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}" + (f"\nThe poster asks: {k['asks']}" if k.get("asks") else "") +
+    ask = ("These answers will be pasted on Quora or Reddit exactly as written. Nobody reads them first, not even the "
+           "owner, so you are the last check. Fail an answer if it says anything about Own Knitted Blank Wears that FACTS "
+           "do not say, gives advice that is wrong, unsafe or could mislead a buyer, names, praises or criticises another "
+           "seller or brand, does not answer its question or post, sounds like an advert, or reads like AI wrote it "
+           "(stock phrases, an essay tone in a Reddit reply). True, well-known market facts (Tiruppur is India's knitwear "
+           "hub, Delhi's wholesale markets) are fine.\n\n" + "\n\n".join(f"ANSWER {i}\nQuestion: {k['question']}" + (f"\nThe poster asks: {k['asks']}" if k.get("asks") else "") +
                          f"\n{k['answer']}" for i, k in enumerate(kept)) +
            "\n\nReply with one line per answer and nothing else: its number, then OK, or FAIL and a short reason. "
            "Example:\n0 OK\n1 FAIL: says we print T-shirts")
@@ -262,8 +311,10 @@ def openai(body):
 
 def reddit_threads(seen, today):
     ids = {m["id"] for m in openai(None).get("data", [])}
-    model = next((m for m in OPENAI_MODELS if m in ids), None)
-    if not model:
+    newer = sorted(i for i in ids if re.match(r"gpt-(?:5\.[5-9]|[6-9])", i))
+    print(f"newer OpenAI models listed: {newer}")
+    models = [m for m in OPENAI_MODELS if m in ids]
+    if not models:
         raise RuntimeError(f"none of {OPENAI_MODELS} is available")
     ask = (f"Today is {today:%d %b %Y}. Find Reddit threads from the last 4 months where someone in India asks where to "
            "buy plain or blank T-shirts, oversized tees, hoodies or sweatshirts in bulk or wholesale, or which supplier "
@@ -275,8 +326,16 @@ def reddit_threads(seen, today):
            "1-3 sentences, with any details they gave\n@@@ PROMO: ALLOWED if the subreddit's rules let a business owner "
            "mention their own company in a helpful comment, NOT ALLOWED if they forbid it, UNKNOWN if you cannot tell\n"
            "@@@ END")
-    resp = openai({"model": model, "input": ask, "include": ["web_search_call.action.sources"],
-                   "tools": [{"type": "web_search", "filters": {"allowed_domains": ["reddit.com"]}}]})
+    for model in models:
+        try:
+            resp = openai({"model": model, "input": ask, "include": ["web_search_call.action.sources"],
+                           "tools": [{"type": "web_search", "filters": {"allowed_domains": ["reddit.com"]}}]})
+        except urllib.error.HTTPError as e:
+            print(f"reddit: {model} refused ({e.code}), trying the next model")
+            continue
+        break
+    else:
+        raise RuntimeError(f"OpenAI refused {', '.join(models)}")
     if resp.get("error"):
         raise RuntimeError(f"OpenAI: {resp['error']}")
     urls, text = set(), ""
@@ -337,17 +396,27 @@ def reddit_draft(threads):
 def reddit_batch(seen, today, quora):
     try:
         threads, found = reddit_threads(seen, today)
+        if not found:
+            return [], "the search could not see any Reddit threads"
+        if not threads:
+            return [], f"the search saw {len(found)} threads but listed none in the right form"
         usable = usable_threads(threads, found, seen, today)
         if not usable:
             print("REDDIT: no usable threads this week")
-            return []
+            return [], None
+        drafts = reddit_draft(usable)
+        if not drafts:
+            return [], f"no comments came back for {len(usable)} threads"
         used = set().union(*(shingles(body(k["answer"])) for k in quora)) if quora else set()
-        cands = pick(reddit_draft(usable), {t["url"] for t in usable}, seen, limit=len(usable), norm=norm_reddit,
+        cands = pick(drafts, {t["url"] for t in usable}, seen, limit=len(usable), norm=norm_reddit,
                      lo=60, hi=190, used=used)
-        return fact_check(cands)[:REDDIT_WANT]
-    except Exception as e:
+        if not cands:
+            print("REDDIT: no comment passed the rules")
+            return [], None
+        return fact_check(cands)[:REDDIT_WANT], None
+    except (Exception, SystemExit) as e:
         print(f"REDDIT: none this week: {e!r}")
-        return []
+        return [], f"{type(e).__name__}: {e}"[:300]
 
 
 def verdict_lines(text):
@@ -373,8 +442,9 @@ def page_html(log, now):
                 f'<p class="today-tag">👉 Today\'s answer</p><p class="q"><span class="site {site.lower()}">{site}</span> {i}. {html.escape(where + e["question"])}</p>'
                 f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
                 f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on {site}</a></div>'
-                f'<p class="ans">{html.escape(e["answer"])}</p>'
-                f'<label><input type="checkbox"> Posted</label></section>')
+                f'<div class="foot"><label><input type="checkbox"> Posted</label>'
+                f'<button class="more" type="button" aria-expanded="false">Read more</button></div>'
+                f'<p class="ans" hidden>{html.escape(e["answer"])}</p></section>')
     return PAGE.replace("{{BODY}}", "\n".join(parts)).replace("{{UPDATED}}", f"{now:%d %b %Y, %H:%M} IST")
 
 
@@ -399,8 +469,10 @@ h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04
 .btns>*{flex:1 1 140px;box-sizing:border-box;text-align:center;padding:12px;border-radius:10px;font:600 15px system-ui,sans-serif;cursor:pointer;text-decoration:none}
 .copy{background:var(--blue);color:#fff;border:2px solid var(--blue)}
 .open{color:var(--blue);border:2px solid var(--blue)}
-.ans{white-space:pre-wrap;border-top:1px solid var(--line);padding-top:10px;margin:0}
-label{display:flex;gap:10px;align-items:center;margin-top:12px;font-weight:600}
+.ans{white-space:pre-wrap;border-top:1px solid var(--line);padding-top:10px;margin:10px 0 0}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{display:flex;gap:10px;align-items:center;font-weight:600}
+.more{background:none;border:0;padding:8px 0 8px 12px;color:var(--blue);font:600 15px system-ui,sans-serif;cursor:pointer}
 label input{width:22px;height:22px}
 footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
 .site{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:4px;color:#fff;vertical-align:1px}
@@ -420,7 +492,8 @@ function today(scroll){
   if(t){t.classList.add('today');if(scroll)t.scrollIntoView({block:'start'});}
 }
 document.querySelectorAll('.card').forEach(function(c){
-  var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy');
+  var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy'),more=c.querySelector('.more'),ans=c.querySelector('.ans');
+  more.addEventListener('click',function(){var o=ans.hidden;ans.hidden=!o;more.textContent=o?'Show less':'Read more';more.setAttribute('aria-expanded',String(o));});
   try{if(localStorage.getItem(k)){box.checked=true;c.classList.add('done');}}catch(e){}
   box.addEventListener('change',function(){c.classList.toggle('done',box.checked);try{box.checked?localStorage.setItem(k,'1'):localStorage.removeItem(k);}catch(e){}today(false);});
   btn.addEventListener('click',function(){
@@ -501,8 +574,10 @@ def main():
         lines = "\n".join(f"{i}. {'Reddit r/' + e['sub'] if e.get('site') == 'reddit' else 'Quora'}: {e['question']}"
                           for i, e in enumerate(items, 1))
         nq = sum(1 for e in items if e.get("site") != "reddit")
+        by = next((e["by"] for e in items if e.get("by")), "")
         telegram(f"Answers to post: {nq} Quora + {len(items) - nq} Reddit, on top of the page:\n{url}\n\n{lines}\n\n"
-                 "The link never changes; new answers appear every Monday. Post 1 or 2 a day.")
+                 "The link never changes; new answers appear every Monday. Post 1 or 2 a day."
+                 + (f"\nWritten and checked by {model_label(by)}." if by else ""))
         print("told Ketu")
         return
     seen = {e["url"] for e in log}
@@ -512,20 +587,30 @@ def main():
         print(f"\n=== {i}. {k['question']}\n{k['url']}\n\n{k['answer']}")
     if len(kept) < 2:
         sys.exit(f"Only {len(kept)} answers passed the rules and the fact check")
-    reddit = reddit_batch(seen, today, kept) if os.environ.get("REDDIT_ON") == "1" else []
+    reddit, reddit_problem = reddit_batch(seen, today, kept) if os.environ.get("REDDIT_ON") == "1" else ([], None)
     for i, k in enumerate(reddit, 1):
         print(f"\n=== REDDIT {i}. r/{k['sub']}: {k['question']}\n{k['url']}\n\n{k['answer']}")
+    if reddit_problem:
+        print(f"\nREDDIT PROBLEM: {reddit_problem}")
     if args.mode != "send":
         print("\ndry run: nothing saved")
         return
+    by = model()
     log += [{"date": today.isoformat(), "site": "quora", "url": k["url"], "question": k["question"],
-             "answer": k["answer"]} for k in kept]
+             "answer": k["answer"], "by": by} for k in kept]
     log += [{"date": today.isoformat(), "site": "reddit", "sub": k["sub"], "url": k["url"], "question": k["question"],
-             "answer": k["answer"]} for k in reddit]
+             "answer": k["answer"], "by": by} for k in reddit]
     with open(LOG, "w") as f:
         json.dump(log, f, indent=1, ensure_ascii=False)
         f.write("\n")
     print(f"\nsaved {len(kept)} Quora + {len(reddit)} Reddit answers")
+    if reddit_problem:
+        run = os.environ.get("GITHUB_RUN_ID")
+        link = f"\n{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{run}" if run else ""
+        try:
+            telegram(f"Reddit comments did not work this week: {reddit_problem}. The Quora answers still go out.{link}")
+        except SystemExit as e:
+            print(f"Reddit alert not sent: {e}")
 
 
 if __name__ == "__main__":
