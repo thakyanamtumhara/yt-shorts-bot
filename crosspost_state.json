@@ -452,5 +452,16 @@
  },
  "raw20261017-d1-diwali-v1-linkedin": {
   "nudged": true
+ },
+ "raw20261011-r5-launches-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DerfybBlJbH/"
+ },
+ "raw20261011-r5-launches-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2011064669553386/"
+ },
+ "raw20261011-r5-launches-v1-x": {
+  "nudged": true
  }
 }
