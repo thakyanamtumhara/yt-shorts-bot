@@ -46,5 +46,14 @@
    "polyester_oleophilic"
   ],
   "reason": "final AI review: Technical checks pass: sha256 values match, loudness -15.7 LUFS, true peak -3.4 dBTP, audio and visual machine reviews passed. Picture is clean: cover shows a complete question over a garment photo with no face and no warehouse; the hook band is readable; captions match the speech; "
+ },
+ {
+  "date": "2026-10-19",
+  "topic": "प्लेन टी-शर्ट पर हल्की आड़ी धारियाँ (Barré) क्यों दिखती हैं?",
+  "intent_key": "barre_bands_from_yarn_inconsistency",
+  "fact_ids": [
+   "barre_yarn_inconsistency_bands"
+  ],
+  "reason": "Script incorrectly advises checking raw fabric on a table before dyeing rather than inspecting dyed sample fabric, and accompanying visuals depict folded shelf garments instead of a table inspection."
  }
 ]
