@@ -3207,5 +3207,20 @@
       "blog_images": 0.075,
       "claude_sonnet": 0.1792
     }
+  },
+  {
+    "date": "2026-10-20T09:28:20.245661",
+    "topic": "\u092e\u0930\u094d\u0938\u0930\u093e\u0907\u091c\u093c\u094d\u0921 \u0915\u0949\u091f\u0928 \u092e\u0947\u0902 \u091a\u092e\u0915 \u0915\u0939\u093e\u0901 \u0938\u0947 \u0906\u0924\u0940 \u0939\u0948?",
+    "title": "\u092e\u0930\u094d\u0938\u0930\u093e\u0907\u091c\u093c\u094d\u0921 \u0915\u0949\u091f\u0928 \u0915\u0940 \u091a\u092e\u0915 \u0915\u093e \u0930\u093e\u091c\u093c \u2014 \u092f\u0947 \u0905\u0932\u0917 \u0915\u0949\u091f\u0928 \u0928\u0939\u0940\u0902 \u0939\u0948!",
+    "total_usd": 6.9817,
+    "duration_min": 25.3,
+    "breakdown": {
+      "claude_opus": 1.0118,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0143,
+      "veo_clips": 5.76,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.1005
+    }
   }
 ]

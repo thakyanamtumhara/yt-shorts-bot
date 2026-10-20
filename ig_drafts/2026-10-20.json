@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-20",
+  "blog_title": "DTF Logo Print Size Guide — How Big Can You Print Sharply at 250 DPI Before It Gets Blurry",
+  "blog_url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at.html",
+  "blog_slug": "dtf-logo-print-size-guide-how-big-can-you-print-sharply-at",
+  "image_urls": [
+    "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-hero.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img1.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img2.jpg"
+  ],
+  "image_assets": [
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-hero.webp",
+      "origin": "independent_generation",
+      "sha256": "5156ddce90f41e598991088a7731e2f9ae02941cced93f81faafa0eee9fe618e"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img1.webp",
+      "origin": "independent_generation",
+      "sha256": "618cfb20d065c859eca7e59e55650c729f7041cc0f086493041dcdb2e36fc272"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-logo-print-size-guide-how-big-can-you-print-sharply-at-img2.webp",
+      "origin": "independent_generation",
+      "sha256": "8d7605762380aac1618a7342d21a3a45210d3b20c17ec6b28e661144cff10e07"
+    }
+  ],
+  "image_policy_version": "2026-09-24",
+  "caption": "🎯 आपका लोगो कितना बड़ा print हो सकता है? Sale91 के DTF form पर upload करते ही पता चल जाता है। Form आपको 'Sharp up to' बताता है — यानी 250 DPI पर आपकी file किस चौड़ाई तक साफ़ print होगी। अगर उससे ज़्यादा बड़ा करना हो, तो file को ही बड़ा करना पड़ेगा, सिर्फ़ width slider खींचने से नहीं। हर design के लिए यह number अलग होता है। 📌 क्या आप अपनी design को सही resolution पर तैयार करके upload करते हो?",
+  "hashtags": [
+    "#dtfprinting",
+    "#tshirtbusiness",
+    "#logoprint",
+    "#printquality",
+    "#designtips"
+  ],
+  "editorial_review": {
+    "version": "2026-09-23",
+    "supported": true,
+    "reason": "All substantive claims are directly supported by dtf_single_designs and dtf_design_sharp_size sources: (1) 'Upload करते ही पता चल जाता है' and form shows 'Sharp up to' — supported by both sources; (2) '250 DPI पर आपकी file किस चौड़ाई तक' — supported by dtf_design_sharp_size; (3) 'अगर उससे ज़्यादा बड़ा करना हो, तो file को ही बड़ा करना पड़ेगा' — supported by dtf_design_sharp_size ('stretching the same pixels prints blurry; a bigger print needs a bigger file'); (4) 'हर design के लिए यह number अलग होता है' — supported by dtf_single_designs ('The number differs for every file'). The caption uses form's own words ('Sharp up to') as required. No price, guarantee, or diagnostic claim. The closing question teaches a buyer lesson (prepare file resolution correctly) without CTA padding. Hindi-English code-switching matches source material style."
+  },
+  "rate_facts": {},
+  "posted": false,
+  "media_id": null,
+  "error": null
+}

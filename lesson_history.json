@@ -99,5 +99,16 @@
     "buyer_decision": "Treat acid wash as a colour-removal finish added to a base fabric, and compare the base fabric specification separately from the wash effect.",
     "video_id": "tYrAWPy486g",
     "published_on": "2026-10-16"
+  },
+  {
+    "topic": "मर्सराइज़्ड कॉटन में चमक कहाँ से आती है?",
+    "intent_key": "mercerization_swells_cotton_for_lustre",
+    "fact_ids": [
+      "mercerization_lustre"
+    ],
+    "lesson": "Mercerization treats cotton yarn or fabric with a strong sodium hydroxide solution that permanently swells the fibre and changes its cellulose structure. Natural cotton is low in lustre because of its convolutions; held under tension during the treatment it attains a high lustre, and mercerized cotton is significantly stronger than natural cotton fibre.",
+    "buyer_decision": "Specify mercerization as a separate processing step, not as a cotton variety or a substitute for combing or GSM.",
+    "video_id": "bGvIHRs3xzI",
+    "published_on": "2026-10-20"
   }
 ]
