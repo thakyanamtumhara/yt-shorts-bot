@@ -40,7 +40,8 @@
     "reason": "All substantive claims are directly supported by dtf_single_designs and dtf_design_sharp_size sources: (1) 'Upload करते ही पता चल जाता है' and form shows 'Sharp up to' — supported by both sources; (2) '250 DPI पर आपकी file किस चौड़ाई तक' — supported by dtf_design_sharp_size; (3) 'अगर उससे ज़्यादा बड़ा करना हो, तो file को ही बड़ा करना पड़ेगा' — supported by dtf_design_sharp_size ('stretching the same pixels prints blurry; a bigger print needs a bigger file'); (4) 'हर design के लिए यह number अलग होता है' — supported by dtf_single_designs ('The number differs for every file'). The caption uses form's own words ('Sharp up to') as required. No price, guarantee, or diagnostic claim. The closing question teaches a buyer lesson (prepare file resolution correctly) without CTA padding. Hindi-English code-switching matches source material style."
   },
   "rate_facts": {},
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "17974891422184536",
+  "error": null,
+  "posted_at": "2026-10-20T18:22:53.215003+05:30"
 }
