@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-16 09:35)",
+   "detail": "ElevenLabs ✅ (2026-10-20 09:28)",
    "provider": "elevenlabs",
-   "at": "2026-10-16 09:35",
-   "title": "एसिड वॉश में एसिड नहीं होता — असली Process क्या है? #Shorts"
+   "at": "2026-10-20 09:28",
+   "title": "मर्सराइज़्ड कॉटन की चमक का राज़ — ये अलग कॉटन नहीं है!"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 360,062/363,000 chars left",
+   "detail": "creator · PVC allowed · 359,600/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 360062,
+   "chars_left": 359600,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -943,9 +943,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-20T22:55:52+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-20T14:17:19+05:30",
+ "last_run_ist": "2026-10-20T22:55:52+05:30",
  "last_green_date": "2026-10-20",
  "last_still_down_date": "2026-10-06"
 }
