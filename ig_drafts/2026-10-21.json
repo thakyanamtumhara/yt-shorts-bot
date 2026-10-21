@@ -40,7 +40,8 @@
     "reason": "All substantive claims are backed by supplied sources: 'Pieces' definition and pricing formula from dtf.bulkplaintshirt.com/about (dtf_pieces_whole_sheet); sheet dimensions 22.8 inches from dtf.bulkplaintshirt.com (dtf_sheet_size); gang sheet concept from dtf_pieces_whole_sheet source material. The caption correctly distinguishes between ordering multiple sheets (cost increase) versus one combined sheet. No prices, guarantees, or unverified claims included. The closing CTA asks a relevant buyer question without padding or replacing the answer."
   },
   "rate_facts": {},
-  "posted": false,
-  "media_id": null,
-  "error": null
+  "posted": true,
+  "media_id": "18096212714243653",
+  "error": null,
+  "posted_at": "2026-10-21T18:35:46.912315+05:30"
 }
