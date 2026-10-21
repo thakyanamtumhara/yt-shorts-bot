@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-20 09:28)",
+   "detail": "ElevenLabs ✅ (2026-10-21 09:38)",
    "provider": "elevenlabs",
-   "at": "2026-10-20 09:28",
-   "title": "मर्सराइज़्ड कॉटन की चमक का राज़ — ये अलग कॉटन नहीं है!"
+   "at": "2026-10-21 09:38",
+   "title": "बायोवॉश से कपड़े का वज़न कम क्यों हो सकता है? GSM finished fabric पर c"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 359,600/363,000 chars left",
+   "detail": "creator · PVC allowed · 359,376/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 359600,
+   "chars_left": 359376,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -955,9 +955,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-21T23:02:40+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-21T14:17:22+05:30",
+ "last_run_ist": "2026-10-21T23:02:40+05:30",
  "last_green_date": "2026-10-21",
  "last_still_down_date": "2026-10-06"
 }
