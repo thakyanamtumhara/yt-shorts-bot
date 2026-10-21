@@ -2633,5 +2633,28 @@
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"
+  },
+  {
+    "media_id": "18015098909982690",
+    "title": "Why Biowash Can Reduce Fabric Weight — Check GSM on the Finished Fabric",
+    "topic": "बायोवॉश से कपड़े का वज़न कम क्यों हो सकता है?",
+    "published_at": "2026-10-21T15:08:16.290986+05:30",
+    "checked": false,
+    "bot_youtube_id": "BsNZeU2PTME",
+    "workflow_run_id": "39573604684",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "BIOWASH वज़न क्यों घटता?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18350368126266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
   }
 ]

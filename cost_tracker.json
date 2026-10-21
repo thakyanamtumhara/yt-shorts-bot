@@ -3222,5 +3222,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.1005
     }
+  },
+  {
+    "date": "2026-10-21T09:38:56.723806",
+    "topic": "\u092c\u093e\u092f\u094b\u0935\u0949\u0936 \u0938\u0947 \u0915\u092a\u0921\u093c\u0947 \u0915\u093e \u0935\u091c\u093c\u0928 \u0915\u092e \u0915\u094d\u092f\u094b\u0902 \u0939\u094b \u0938\u0915\u0924\u093e \u0939\u0948?",
+    "title": "\u092c\u093e\u092f\u094b\u0935\u0949\u0936 \u0938\u0947 \u0915\u092a\u0921\u093c\u0947 \u0915\u093e \u0935\u091c\u093c\u0928 \u0915\u092e \u0915\u094d\u092f\u094b\u0902 \u0939\u094b \u0938\u0915\u0924\u093e \u0939\u0948? GSM finished fabric \u092a\u0930 check \u0915\u0930\u0947\u0902",
+    "total_usd": 9.1773,
+    "duration_min": 35.4,
+    "breakdown": {
+      "claude_opus": 0.3291,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.013,
+      "veo_clips": 8.64,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.1002
+    }
   }
 ]

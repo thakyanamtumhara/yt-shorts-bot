@@ -1043,6 +1043,10 @@
    "confirmation_method": "published_public_api_v1",
    "confirmed_at": "2026-10-20T15:18:14+05:30",
    "permalink": "https://www.facebook.com/reel/2217340195493168"
+  },
+  "1082707147919625": {
+   "queued_at": "2026-10-21 09:38",
+   "confirmed": false
   }
  },
  "history": [

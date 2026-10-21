@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-21",
+  "blog_title": "DTF Order Form Pieces vs Sheets Explained — Why 1 Piece Means a Full Print Sheet, Not 1 T-Shirt",
+  "blog_url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means.html",
+  "blog_slug": "dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means",
+  "image_urls": [
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-hero.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img1.jpg",
+    "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img2.jpg"
+  ],
+  "image_assets": [
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-hero.webp",
+      "origin": "independent_generation",
+      "sha256": "246c182fc1ca03c1eed90c9cdc84f48430bd9b0e81e872e5e5c2db6bd5edb34b"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img1.webp",
+      "origin": "independent_generation",
+      "sha256": "c5457e59a23f1b8e83b2f6fe1b738d89fd54d3c5e9d8ce498e58d45fc23abef3"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/dtf-order-form-pieces-vs-sheets-explained-why-1-piece-means-img2.webp",
+      "origin": "independent_generation",
+      "sha256": "61b111b9d4a29c5d0b0e8e5f2292b9a7c9c09f00ec35661f8c7a195caabdc0e9"
+    }
+  ],
+  "image_policy_version": "2026-09-24",
+  "caption": "❓ DTF order form में 'Pieces' का मतलब क्या है?\n\n'Pieces' = आपकी पूरी uploaded sheet कितनी बार print होगी — एक T-shirt नहीं, पूरी sheet। क्यों? Price = Sheet की actual height × Pieces। अगर हर design के लिए अलग sheet upload करोगे तो cost बढ़ेगा। बेहतर तरीका: सब designs को एक 22.8-inch चौड़ी sheet पर arrange करो (gang sheet) — सब एक ही order में print हों।\n\n✅ अपने अगले DTF order में क्या सब designs एक sheet पर रखोगे, या अलग-अलग upload करते हो? 📧",
+  "hashtags": [
+    "#dtfprinting",
+    "#bulkprinting",
+    "#gangsheet",
+    "#tshirtbusiness",
+    "#dtfindia"
+  ],
+  "editorial_review": {
+    "version": "2026-09-23",
+    "supported": true,
+    "reason": "All substantive claims are backed by supplied sources: 'Pieces' definition and pricing formula from dtf.bulkplaintshirt.com/about (dtf_pieces_whole_sheet); sheet dimensions 22.8 inches from dtf.bulkplaintshirt.com (dtf_sheet_size); gang sheet concept from dtf_pieces_whole_sheet source material. The caption correctly distinguishes between ordering multiple sheets (cost increase) versus one combined sheet. No prices, guarantees, or unverified claims included. The closing CTA asks a relevant buyer question without padding or replacing the answer."
+  },
+  "rate_facts": {},
+  "posted": false,
+  "media_id": null,
+  "error": null
+}

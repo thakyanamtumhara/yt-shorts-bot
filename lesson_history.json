@@ -110,5 +110,18 @@
     "buyer_decision": "Specify mercerization as a separate processing step, not as a cotton variety or a substitute for combing or GSM.",
     "video_id": "bGvIHRs3xzI",
     "published_on": "2026-10-20"
+  },
+  {
+    "topic": "बायोवॉश से कपड़े का वज़न कम क्यों हो सकता है?",
+    "intent_key": "enzyme_wash_reduces_finished_fabric_weight",
+    "fact_ids": [
+      "cellulase_weight_strength_loss",
+      "biopolish_surface",
+      "fabric_mass_per_area"
+    ],
+    "lesson": "A biowash, or cellulase biopolishing, removes protruding surface fibres, and because the enzyme digests cotton cellulose it can reduce fabric weight and strength; with an acid cellulase some reduction always happens, and the mill controls how much through the enzyme type, concentration, pH, time and temperature. GSM is the mass of a defined area of fabric, so the GSM that matters to a buyer is the one measured on the finished fabric.",
+    "buyer_decision": "Specify GSM as the finished weight after biowash and check it on the finished fabric, rather than accepting a pre-biowash GSM figure.",
+    "video_id": "BsNZeU2PTME",
+    "published_on": "2026-10-21"
   }
 ]
