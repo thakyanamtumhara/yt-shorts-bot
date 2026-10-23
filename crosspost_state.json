@@ -483,5 +483,16 @@
  },
  "raw20261011-r5-launches-v1-linkedin": {
   "nudged": true
+ },
+ "raw20261011-r4-refer-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261011-r4-refer-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/De1k2Dfkor-/"
+ },
+ "raw20261011-r4-refer-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2188873168672360/"
  }
 }
