@@ -8,6 +8,8 @@ run-name: "Quora answers (${{ github.event.schedule == '17 5 * * 1-6' && 'late c
 # one, okay? No need to give five"): Monday to Saturday 08:17 IST writes it and the page shows only that answer; Ketu
 # gets the link on Telegram on Mondays. 10:47 IST writes it if the morning run never came, and tells him.
 # Reddit comments join the same batch: OpenAI's web search finds the threads (Anthropic's sees no reddit.com).
+# The page's Posted tick is saved by the Cloudflare Worker qa-posted (qa_posted_worker/, secret QA_POSTED_TOKEN here and
+# there), so both phones see it; the Monday message says "Posted last week: N of M" or why it could not tell.
 
 on:
   schedule:
@@ -45,6 +47,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ap-south-1
       QA_PAGE_KEY: ${{ secrets.QA_PAGE_KEY }}
+      QA_POSTED_TOKEN: ${{ secrets.QA_POSTED_TOKEN }}
       QA_PAGE_URL: https://www.bulkplaintshirt.com/p/review/qa/${{ secrets.QA_PAGE_KEY }}.html
       MODE: ${{ github.event.schedule == '17 5 * * 1-6' && 'catchup' || github.event_name == 'schedule' && 'send' || inputs.action }}
       DATE: ${{ inputs.date }}
@@ -73,11 +76,22 @@ jobs:
         if: steps.write.outputs.saved == '1' || env.MODE == 'page'
         run: |
           [ -n "$QA_PAGE_KEY" ] || { echo "QA_PAGE_KEY missing"; exit 1; }
+          [ -n "$QA_POSTED_TOKEN" ] || { echo "QA_POSTED_TOKEN missing: the Posted tick would stay on the phone"; exit 1; }
           python3 quora_answers.py --mode page --out "$RUNNER_TEMP/qa.html"
           aws s3 cp "$RUNNER_TEMP/qa.html" "s3://bulkplaintshirt.com/p/review/qa/$QA_PAGE_KEY.html" \
             --content-type "text/html; charset=utf-8" --cache-control "no-cache, no-store, must-revalidate"
           aws cloudfront create-invalidation --distribution-id E21QLU9SBUBY7Z \
             --paths "/p/review/qa/$QA_PAGE_KEY.html" --query 'Invalidation.Id' --output text
+      - name: Check the live page has the cloud Posted tick
+        if: steps.write.outputs.saved == '1' || env.MODE == 'page'
+        run: |
+          for i in $(seq 1 12); do
+            curl -s -m 20 -H 'cache-control: no-cache' "$QA_PAGE_URL" -o "$RUNNER_TEMP/live.html" || true
+            if grep -q 'qa-posted.jqf.workers.dev' "$RUNNER_TEMP/live.html" && grep -q 'data-id="' "$RUNNER_TEMP/live.html" \
+              && cmp -s "$RUNNER_TEMP/live.html" "$RUNNER_TEMP/qa.html"; then echo "live page is the new one"; exit 0; fi
+            sleep 10
+          done
+          echo "the live page is still the old one after 2 minutes"; exit 1
       - name: Send Ketu the link (Mondays)
         if: steps.write.outputs.saved == '1' || env.MODE == 'page'
         run: python3 quora_answers.py --mode tell

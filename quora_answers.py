@@ -32,21 +32,28 @@ the newest questions we can find ("keep checking so we are first to respond"). S
 morning, writes 3 candidates on that day's two topics, keeps the first that passes the rules and the fact check, and
 the page shows only that day's answer. A 10:47 IST run writes it if the morning run never came and tells Ketu; the
 Monday run sends him the link. The Post Time app rings the person who posts at a random minute between 11 and 12.
+
+The Posted tick lives in the cloud since 23-Oct-2026 (qa_posted_worker/, Cloudflare Worker qa-posted + KV): both phones
+see the same tick, a tick made offline is sent again on the next open, and the Monday message says how many of last
+week's answers were posted, or that the record could not be read or saved, so it never goes quiet by itself.
 """
 import argparse
 import datetime
+import hashlib
 import html
 import json
 import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 MODEL = os.environ.get("QA_MODEL", "")
 MODEL_LINES = ["fable", "opus"]
 FALLBACK_MODEL = "claude-fable-5-1"
 HERE = os.path.dirname(os.path.abspath(__file__))
+POSTED_URL = "https://qa-posted.jqf.workers.dev"
 LOG = os.path.join(HERE, "quora_answers", "log.json")
 WANT = 1
 CANDIDATES = 3
@@ -448,8 +455,20 @@ def verdict_lines(text):
     return out
 
 
-def page_html(log, now):
+def answer_id(url):
+    return hashlib.sha1(url.encode()).hexdigest()[:16]
+
+
+def js(v):
+    return json.dumps(v, ensure_ascii=False).replace("<", "\\u003c")
+
+
+def page_html(log, now, token=None):
+    token = os.environ.get("QA_POSTED_TOKEN", "") if token is None else token
     dates = sorted({e["date"] for e in log if e.get("answer")}, reverse=True)[:1]
+    since = (now.date() - datetime.timedelta(days=14)).isoformat()
+    recent = [{"id": answer_id(e["url"]), "date": e["date"], "url": e["url"]}
+              for e in log if e.get("answer") and e["date"] >= since]
     parts = []
     for d in dates:
         items = [e for e in log if e["date"] == d and e.get("answer")]
@@ -458,14 +477,16 @@ def page_html(log, now):
             site = "Reddit" if e.get("site") == "reddit" else "Quora"
             where = f"r/{e['sub']}: " if e.get("sub") else ""
             parts.append(
-                f'<section class="card" data-url="{html.escape(e["url"])}">'
+                f'<section class="card" data-url="{html.escape(e["url"])}" data-id="{answer_id(e["url"])}" data-date="{e["date"]}">'
                 f'<p class="today-tag">👉 Today\'s answer</p><p class="q"><span class="site {site.lower()}">{site}</span> {str(i) + ". " if len(items) > 1 else ""}{html.escape(where + e["question"])}</p>'
                 f'<div class="btns"><button class="copy" type="button">Copy answer</button>'
                 f'<a class="open" href="{html.escape(e["url"])}" target="_blank" rel="noopener">Open on {site}</a></div>'
-                f'<div class="foot"><label><input type="checkbox"> Posted</label>'
+                f'<div class="foot"><label><input type="checkbox"> Posted<span class="save"></span></label>'
                 f'<button class="more" type="button" aria-expanded="false">Read more</button></div>'
                 f'<p class="ans" hidden>{html.escape(e["answer"])}</p></section>')
-    return PAGE.replace("{{BODY}}", "\n".join(parts)).replace("{{UPDATED}}", f"{now:%d %b %Y, %H:%M} IST")
+    return (PAGE.replace("{{BODY}}", "\n".join(parts)).replace("{{UPDATED}}", f"{now:%d %b %Y, %H:%M} IST")
+            .replace("{{API}}", js(POSTED_URL if token else "")).replace("{{PT}}", js(token))
+            .replace("{{RECENT}}", js(recent)))
 
 
 PAGE = """<!doctype html>
@@ -494,6 +515,7 @@ h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04
 label{display:flex;gap:10px;align-items:center;font-weight:600}
 .more{background:none;border:0;padding:8px 0 8px 12px;color:var(--blue);font:600 15px system-ui,sans-serif;cursor:pointer}
 label input{width:22px;height:22px}
+.save{font-weight:400;font-size:13px;color:var(--muted)}
 footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
 .site{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:4px;color:#fff;vertical-align:1px}
 .site.quora{background:#b92b27}.site.reddit{background:#d93a00}
@@ -505,29 +527,121 @@ footer{color:var(--muted);font-size:13px;margin:24px 0 8px}
 <footer>Updated {{UPDATED}}</footer>
 </main>
 <script>
+var API={{API}},PT={{PT}},RECENT={{RECENT}};
+function store(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}
+function read(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function today(scroll){
   var cards=[].slice.call(document.querySelectorAll('.card'));
   cards.forEach(function(c){c.classList.remove('today');});
   var t=cards.filter(function(c){return !c.classList.contains('done');})[0];
   if(t){t.classList.add('today');if(scroll)t.scrollIntoView({block:'start'});}
 }
+function save(a,on,note,old,tries){
+  if(!API)return;
+  tries=tries||0;
+  var want=on?'1':'0',pk='qa:pending:'+a.id;
+  store(pk,want);
+  fetch(API+'/tick',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({t:PT,id:a.id,date:a.date,url:a.url,posted:on,by:(window.PostTime?'app':'browser')+(old?', ticked before 23 Oct':'')})})
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if(!j.ok)throw new Error(j.error||'refused');
+    if(read(pk)===want){store(pk,null);store('qa:sync:'+a.id,String(Date.now()));if(note)note.textContent='';}
+  })
+  .catch(function(){
+    if(read(pk)!==want)return;
+    if(note)note.textContent=' · not saved online yet';
+    if(tries<3)setTimeout(function(){if(read(pk)===want)save(a,on,note,old,tries+1);},5000*(tries+1));
+  });
+}
+var mine={};
 document.querySelectorAll('.card').forEach(function(c){
-  var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy'),more=c.querySelector('.more'),ans=c.querySelector('.ans');
+  var k='qa:'+c.dataset.url,box=c.querySelector('input'),btn=c.querySelector('.copy'),more=c.querySelector('.more'),ans=c.querySelector('.ans'),note=c.querySelector('.save');
+  var a={id:c.dataset.id,date:c.dataset.date,url:c.dataset.url};
+  mine[a.id]=c;
   more.addEventListener('click',function(){var o=ans.hidden;ans.hidden=!o;more.textContent=o?'Show less':'Read more';more.setAttribute('aria-expanded',String(o));});
-  try{if(localStorage.getItem(k)){box.checked=true;c.classList.add('done');}}catch(e){}
-  box.addEventListener('change',function(){c.classList.toggle('done',box.checked);try{box.checked?localStorage.setItem(k,'1'):localStorage.removeItem(k);}catch(e){}today(false);});
+  if(read(k)){box.checked=true;c.classList.add('done');}
+  box.addEventListener('change',function(){c.classList.toggle('done',box.checked);store(k,box.checked?'1':null);save(a,box.checked,note);today(false);});
   btn.addEventListener('click',function(){
     var t=c.querySelector('.ans').textContent;
-    function ok(){btn.textContent='Copied \u2713';setTimeout(function(){btn.textContent='Copy answer';},2000);}
+    function ok(){btn.textContent='Copied ✓';setTimeout(function(){btn.textContent='Copy answer';},2000);}
     function old(){var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){}a.remove();}
     if(window.PostTime&&window.PostTime.copy){window.PostTime.copy(t);ok();return;}
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,old);}else{old();}
   });
 });
 today(true);
+function pending(){
+  RECENT.forEach(function(a){var p=read('qa:pending:'+a.id),c=mine[a.id];if(p!==null)save(a,p==='1',c?c.querySelector('.save'):null);});
+}
+if(API&&RECENT.length){
+  fetch(API+'/state?t='+encodeURIComponent(PT)+'&from='+RECENT.map(function(a){return a.date;}).sort()[0])
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if(!j.ok)throw new Error(j.error||'refused');
+    var on={};j.records.forEach(function(r){on[r.id]=1;});
+    RECENT.forEach(function(a){
+      var c=mine[a.id],k='qa:'+a.url,note=c?c.querySelector('.save'):null,p=read('qa:pending:'+a.id),local=!!read(k),synced=read('qa:sync:'+a.id);
+      if(p!==null){save(a,p==='1',note);return;}
+      if(!synced&&local&&!on[a.id]){save(a,true,note,true);return;}
+      if(synced&&Date.now()-Number(synced)<120000&&local!==!!on[a.id])return;
+      if(c){var box=c.querySelector('input');box.checked=!!on[a.id];c.classList.toggle('done',!!on[a.id]);}
+      store(k,on[a.id]?'1':null);store('qa:sync:'+a.id,synced||'1');
+    });
+    today(false);
+  })
+  .catch(pending);
+}
 </script>
 </body></html>
 """
+
+
+def posted_records(since, token=None):
+    token = os.environ.get("QA_POSTED_TOKEN", "") if token is None else token
+    if not token:
+        raise RuntimeError("QA_POSTED_TOKEN missing")
+    query = urllib.parse.urlencode({"t": token, "from": since})
+    req = urllib.request.Request(f"{POSTED_URL}/state?{query}", headers={"user-agent": "quora-answers"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        d = json.load(r)
+    if not d.get("ok"):
+        raise RuntimeError(d.get("error") or "the record refused the read")
+    return d["records"]
+
+
+def posted_tick(rec, token=None):
+    token = os.environ.get("QA_POSTED_TOKEN", "") if token is None else token
+    if not token:
+        raise RuntimeError("QA_POSTED_TOKEN missing")
+    req = urllib.request.Request(f"{POSTED_URL}/tick", data=json.dumps({"t": token, **rec}).encode(),
+                                 headers={"content-type": "application/json", "user-agent": "quora-answers"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        d = json.load(r)
+    if not d.get("ok"):
+        raise RuntimeError(d.get("error") or "the record refused the write")
+    return d
+
+
+def posted_line(log, today, read=posted_records, tick=posted_tick):
+    start, end = today - datetime.timedelta(days=7), today - datetime.timedelta(days=1)
+    week = [e for e in log if e.get("answer") and start.isoformat() <= e["date"] <= end.isoformat()]
+    problems = []
+    try:
+        test = {"id": "0" * 16, "date": today.isoformat(), "url": "self-test", "by": "Monday self-test"}
+        tick(test)
+        tick({**test, "posted": False})
+    except Exception as e:
+        problems.append(f"the Posted tick is not saving online ({e})")
+    if not week:
+        line = "Posted last week: there were no answers to post."
+    else:
+        try:
+            done = {r.get("id") for r in read(start.isoformat())}
+            line = f"Posted last week: {sum(answer_id(e['url']) in done for e in week)} of {len(week)}."
+        except Exception as e:
+            line = f"Posted last week: unknown, the Posted record could not be read ({e})."
+    return line + "".join(f"\nProblem: {p}. Tell Claude." for p in problems)
 
 
 def missing_day(log, today):
@@ -597,9 +711,10 @@ def main():
                           for i, e in enumerate(items, 1))
         nq = sum(1 for e in items if e.get("site") != "reddit")
         by = next((e["by"] for e in items if e.get("by")), "")
+        posted = posted_line(log, today) + "\n\n" if today.weekday() == 0 else ""
         telegram(f"Quora: one new answer every day, Monday to Saturday; the Post Time app rings at a random minute "
                  f"between 11 and 12. Today ({nq} Quora + {len(items) - nq} Reddit), on the page:\n{url}\n\n{lines}\n\n"
-                 "The link never changes."
+                 f"{posted}The link never changes."
                  + (f"\nWritten and checked by {model_label(by)}." if by else ""))
         print("told Ketu")
         return

@@ -1,0 +1,8 @@
+name = "qa-posted"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "QA_POSTED"
+id = "bcda2c4b065c467486ba4ae38461bebc"

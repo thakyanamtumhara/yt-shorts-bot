@@ -142,12 +142,59 @@ class Rules(unittest.TestCase):
                for d in ("2026-10-12", "2026-10-18", "2026-10-19")]
         page = qa.page_html(log, datetime.datetime(2026, 10, 19, 10, 5))
         self.assertEqual(page.count('class="card"'), 1)
-        self.assertNotIn("Q-2026-10-18", page)
+        self.assertNotIn('data-url="https://www.quora.com/Q-2026-10-18"', page)
         self.assertIn("Q &lt;2026-10-19&gt;", page)
         self.assertIn("A &amp; B", page)
         self.assertIn("Answer for Mon 19 Oct", page)
         self.assertNotIn("Quora</span> 1. ", page)
 
+
+class PostedRecord(unittest.TestCase):
+    LOG = [{"date": d, "url": f"https://www.quora.com/Q-{d}", "question": "Q", "answer": "A"}
+           for d in ("2026-10-01", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-26")]
+
+    def test_page_carries_answer_ids_and_the_cloud_record(self):
+        page = qa.page_html(self.LOG, datetime.datetime(2026, 10, 26, 8, 30), token="tok123")
+        aid = qa.answer_id("https://www.quora.com/Q-2026-10-26")
+        self.assertEqual(len(aid), 16)
+        self.assertIn(f'data-id="{aid}" data-date="2026-10-26"', page)
+        self.assertIn('var API="https://qa-posted.jqf.workers.dev",PT="tok123",RECENT=[', page)
+        self.assertIn(qa.answer_id("https://www.quora.com/Q-2026-10-19"), page)
+        self.assertNotIn("Q-2026-10-01", page)
+        self.assertIn("Posted<span class=\"save\"></span></label>", page)
+
+    def test_page_without_token_keeps_ticks_on_the_phone(self):
+        page = qa.page_html(self.LOG, datetime.datetime(2026, 10, 26, 8, 30), token="")
+        self.assertIn('var API="",PT="",RECENT=[', page)
+
+    def test_recent_data_cannot_close_the_script(self):
+        log = [{"date": "2026-10-26", "url": "https://www.quora.com/x</script><b>", "question": "Q", "answer": "A"}]
+        page = qa.page_html(log, datetime.datetime(2026, 10, 26, 8, 30), token="t")
+        self.assertEqual(page.count("</script>"), 1)
+
+    def test_monday_line_counts_last_week(self):
+        mon = datetime.date(2026, 10, 26)
+        done = [{"id": qa.answer_id("https://www.quora.com/Q-2026-10-19")}, {"id": qa.answer_id("https://www.quora.com/Q-2026-10-21")}]
+        calls = []
+        line = qa.posted_line(self.LOG, mon, read=lambda since: calls.append(since) or done, tick=lambda rec: {"ok": True})
+        self.assertEqual(line, "Posted last week: 2 of 3.")
+        self.assertEqual(calls, ["2026-10-19"])
+
+    def test_monday_line_never_goes_quiet(self):
+        mon = datetime.date(2026, 10, 26)
+        def boom(*a, **k):
+            raise RuntimeError("HTTP Error 403: bad token")
+        line = qa.posted_line(self.LOG, mon, read=boom, tick=boom)
+        self.assertIn("Posted last week: unknown, the Posted record could not be read (HTTP Error 403: bad token).", line)
+        self.assertIn("Problem: the Posted tick is not saving online (HTTP Error 403: bad token). Tell Claude.", line)
+        self.assertEqual(qa.posted_line([], mon, read=boom, tick=lambda rec: {"ok": True}),
+                         "Posted last week: there were no answers to post.")
+
+    def test_missing_token_is_a_problem_not_a_crash(self):
+        with self.assertRaises(RuntimeError):
+            qa.posted_records("2026-10-19", token="")
+        with self.assertRaises(RuntimeError):
+            qa.posted_tick({"id": "0" * 16, "date": "2026-10-26"}, token="")
 
 class RedditBatch(unittest.TestCase):
     def setUp(self):
