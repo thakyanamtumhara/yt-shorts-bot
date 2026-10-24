@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261024w1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-10-24T16:31:33+05:30",
+  "videos": [
+    {
+      "id": "w1-range-v5",
+      "version": "1",
+      "sha256": "566641d331c729bd09914ad6bc4348491021d177abca5a17472af505a5bc11c0",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
