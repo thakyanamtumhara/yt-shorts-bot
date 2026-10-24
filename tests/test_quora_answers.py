@@ -265,5 +265,22 @@ class Models(unittest.TestCase):
         self.assertEqual(qa.model_label("claude-opus-6"), "Claude Opus 6")
 
 
+
+class Topics(unittest.TestCase):
+    def test_winter_days_carry_one_hoodie_topic(self):
+        day = datetime.date(2026, 10, 1)
+        while day < datetime.date(2027, 2, 1):
+            topics = qa.day_topics(day)
+            self.assertEqual(len(topics), 2)
+            self.assertEqual(len(set(topics)), 2)
+            self.assertEqual(sum(t in qa.WINTER_TOPICS for t in topics), 1, day)
+            day += datetime.timedelta(days=1)
+
+    def test_other_months_keep_the_plain_rotation(self):
+        day = datetime.date(2026, 6, 10)
+        n = day.toordinal()
+        self.assertEqual(qa.day_topics(day), [qa.TOPICS[(n * 2 + i) % len(qa.TOPICS)] for i in range(2)])
+
+
 if __name__ == "__main__":
     unittest.main()

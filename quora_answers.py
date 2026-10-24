@@ -32,6 +32,8 @@ the newest questions we can find ("keep checking so we are first to respond"). S
 morning, writes 3 candidates on that day's two topics, keeps the first that passes the rules and the fact check, and
 the page shows only that day's answer. A 10:47 IST run writes it if the morning run never came and tells Ketu; the
 Monday run sends him the link. The Post Time app rings the person who posts at a random minute between 11 and 12.
+October to January one of the day's two topics is a hoodie or sweatshirt one (24-Oct-2026: hoodies were 43% of
+orders and Google hoodie searches peak in November).
 
 The Posted tick lives in the cloud since 23-Oct-2026 (qa_posted_worker/, Cloudflare Worker qa-posted + KV): both phones
 see the same tick, a tick made offline is sent again on the next open, and the Monday message says how many of last
@@ -115,6 +117,20 @@ TOPICS = [
     "which GSM or fabric is right for T-shirts", "sublimation T-shirt blanks", "polo T-shirts in bulk or uniforms",
     "kids plain T-shirts wholesale", "T-shirt wholesale market in Delhi", "custom T-shirt business suppliers",
 ]
+WINTER_TOPICS = [
+    "plain hoodies or sweatshirts in bulk", "heavyweight or drop-shoulder hoodies wholesale",
+    "zip hoodies or sweatshirts for printing, uniforms or a clothing brand",
+]
+WINTER_MONTHS = {10, 11, 12, 1}
+
+
+def day_topics(today):
+    n = today.toordinal()
+    topics = [TOPICS[(n * 2 + i) % len(TOPICS)] for i in range(2)]
+    if today.month in WINTER_MONTHS:
+        winter = WINTER_TOPICS[n % len(WINTER_TOPICS)]
+        topics = [t for t in topics if t not in WINTER_TOPICS][:1] + [winter]
+    return topics
 
 BANNED = [
     (r"₹|\bRs\.?\s*\d|\bINR\b|\brupees?\b|/-", "a price"),
@@ -234,8 +250,7 @@ def claude(messages, system, search=True):
 
 
 def draft(seen, today):
-    n = today.toordinal()
-    topics = [TOPICS[(n * 2 + i) % len(TOPICS)] for i in range(2)]
+    topics = day_topics(today)
     system = f"FACTS about the business:\n{FACTS}\n\nRULES for every answer:\n{RULES}"
     ask = (
         f"Today is {today:%d %b %Y}. Search quora.com for real questions that buyers of plain T-shirts, hoodies or "
