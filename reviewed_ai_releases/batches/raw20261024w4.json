@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261024w4",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-10-24T16:33:35+05:30",
+  "videos": [
+    {
+      "id": "w4-sweatshirt-v1",
+      "version": "1",
+      "sha256": "7ebdec1c93a86c702592d655fa2fd07dc87f3744722c615de90e7607b1c62c03",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
