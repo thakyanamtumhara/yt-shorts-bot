@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261024w5",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-10-24T16:34:11+05:30",
+  "videos": [
+    {
+      "id": "w5-zipper-v1",
+      "version": "1",
+      "sha256": "541a8f7a6e121a31700cc5a5f605df47e02ebbc77b59ab5df779588eadd90cb8",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
