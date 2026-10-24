@@ -494,5 +494,11 @@
  "raw20261011-r4-refer-v1-facebook": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/2188873168672360/"
+ },
+ "raw20261024-w1-range-v5-youtube": {
+  "nudged": true
+ },
+ "raw20261024-w1-range-v5-x": {
+  "nudged": true
  }
 }
