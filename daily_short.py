@@ -173,7 +173,7 @@ VEO_CLIPS_PER_VIDEO = 5
 VEO_MODEL = (
     "veo-3.1-generate-preview"
     if os.environ.get("VEO_FULL", "").strip() in ("1", "true", "yes")
-    else "veo-3.1-fast-generate-preview"
+    else "veo-3.1-generate-preview"  # fast-generate-preview removed 2026-10-22; full is now default
 )
 # Default OFF (2026-08-15): for months this flag was billed but never generated — the
 # production loop always used VEO_MODEL for all 5 clips while track_veo charged a full-price
