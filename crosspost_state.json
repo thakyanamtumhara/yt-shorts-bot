@@ -508,5 +508,19 @@
  "raw20261024-w1-range-v5-facebook": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/1593264962085655/"
+ },
+ "raw20261011-r2-dtf-design-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261011-r2-dtf-design-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/De6uDNfidqd/"
+ },
+ "raw20261011-r2-dtf-design-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1827085978332636/"
+ },
+ "raw20261011-r2-dtf-design-v1-x": {
+  "nudged": true
  }
 }
