@@ -116,5 +116,64 @@
         "impressions": 19
       }
     }
+  },
+  {
+    "pulled": "2026-10-26",
+    "window_28d": "2026-09-25..2026-10-23",
+    "india_28d": {
+      "clicks": 6431,
+      "impressions": 45420,
+      "ctr_pct": 14.16,
+      "avg_position": 6.7
+    },
+    "india_non_brand_28d": {
+      "clicks": 1424,
+      "impressions": 19232,
+      "distinct_queries": 2302
+    },
+    "india_brand_28d": {
+      "clicks": 2907
+    },
+    "dtf_site_28d": {
+      "clicks": 6,
+      "impressions": 60
+    },
+    "watched_queries": {
+      "bulk t shirts": {
+        "position": 5.8,
+        "clicks": 42,
+        "impressions": 233
+      },
+      "240 gsm t shirt": {
+        "position": 7.2,
+        "clicks": 17,
+        "impressions": 1409
+      },
+      "wholesale t shirts": {
+        "position": 8.9,
+        "clicks": 10,
+        "impressions": 409
+      },
+      "tshirt manufacturer": {
+        "position": 7.9,
+        "clicks": 9,
+        "impressions": 390
+      },
+      "plain t shirt wholesale": {
+        "position": 8.1,
+        "clicks": 4,
+        "impressions": 225
+      },
+      "320 gsm hoodie": {
+        "position": 5.9,
+        "clicks": 3,
+        "impressions": 236
+      },
+      "t shirt manufacturer in delhi": {
+        "position": 12.2,
+        "clicks": 1,
+        "impressions": 13
+      }
+    }
   }
 ]
