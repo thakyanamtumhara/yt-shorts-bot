@@ -528,5 +528,16 @@
  },
  "raw20261024-w2-320v430-v1-youtube": {
   "nudged": true
+ },
+ "raw20261024-w2-320v430-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/De9sAKwguY-/"
+ },
+ "raw20261024-w2-320v430-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2291302464986474/"
+ },
+ "raw20261024-w2-320v430-v1-x": {
+  "nudged": true
  }
 }
