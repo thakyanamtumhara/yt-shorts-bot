@@ -1,0 +1,12 @@
+{
+  "name": "quora-trigger",
+  "account_id": "7496d7d235ea08571b8a048299c1a282",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-05",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {"ENABLED": "true"},
+  "triggers": {"crons": ["47 2 * * MON-SAT", "17 5 * * MON-SAT"]},
+  "observability": {"enabled": true, "head_sampling_rate": 1}
+}

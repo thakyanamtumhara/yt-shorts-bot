@@ -30,7 +30,9 @@ is answered only when its subreddit's rules clearly let a business owner comment
 Ketu, 18-Oct-2026 night: one answer a day instead of five on Monday ("Give only one, okay? No need to give five"), on
 the newest questions we can find ("keep checking so we are first to respond"). So it runs every Monday to Saturday
 morning, writes 3 candidates on that day's two topics, keeps the first that passes the rules and the fact check, and
-the page shows only that day's answer. A 10:47 IST run writes it if the morning run never came and tells Ketu; the
+the page shows only that day's answer. A 10:47 IST run writes it if the morning run never came and tells Ketu (since
+26-Oct-2026 the Cloudflare Worker quora-trigger starts both on time; GitHub's own cron came ~5 h late and is now only
+a late backup in catchup mode); the
 Monday run sends him the link. The Post Time app rings the person who posts at a random minute between 11 and 12.
 October to January one of the day's two topics is a hoodie or sweatshirt one (24-Oct-2026: hoodies were 43% of
 orders and Google hoodie searches peak in November).
@@ -765,7 +767,7 @@ def main():
             f.write("saved=1\n")
     if args.mode == "catchup":
         try:
-            telegram("Today's Quora answer was written late, by the 10:47 IST check: the early morning run never came. "
+            telegram(f"Today's Quora answer was written late, at {now:%H:%M} IST: the 8:17 start never came. "
                      "It is on the page now.")
         except SystemExit as e:
             print(f"late alert not sent: {e}")

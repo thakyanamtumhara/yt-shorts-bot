@@ -1,5 +1,5 @@
 name: Quora answers
-run-name: "Quora answers (${{ github.event.schedule == '17 5 * * 1-6' && 'late check' || github.event_name == 'schedule' && 'daily' || inputs.action }})"
+run-name: "Quora answers (${{ github.event_name == 'schedule' && 'GitHub backup' || inputs.action }})"
 
 # Ketu 18-Oct-2026: "Whatever is the safest, you can keep doing it from your side." Quora's terms give no right to
 # post with automated tools, so this only drafts: Claude Opus finds real questions through web search and writes
@@ -7,6 +7,9 @@ run-name: "Quora answers (${{ github.event.schedule == '17 5 * * 1-6' && 'late c
 # (bulkplaintshirt.com/p/review/qa/<QA_PAGE_KEY>.html). Since 18-Oct-2026 night it is ONE answer a day (Ketu: "Give only
 # one, okay? No need to give five"): Monday to Saturday 08:17 IST writes it and the page shows only that answer; Ketu
 # gets the link on Telegram on Mondays. 10:47 IST writes it if the morning run never came, and tells him.
+# Since 26-Oct-2026 the Cloudflare Worker quora-trigger (quora_trigger_worker/) starts both on time with action send /
+# catchup: GitHub's cron below came ~5 h late, after the 11-12 alarm. The crons are only late backups now, in catchup
+# mode: a day already written is skipped; a day the Worker's runs missed is written and Ketu is told it was late.
 # Reddit comments join the same batch: OpenAI's web search finds the threads (Anthropic's sees no reddit.com).
 # The page's Posted tick is saved by the Cloudflare Worker qa-posted (qa_posted_worker/, secret QA_POSTED_TOKEN here and
 # there), so both phones see it; the Monday message says "Posted last week: N of M" or why it could not tell.
@@ -49,7 +52,7 @@ jobs:
       QA_PAGE_KEY: ${{ secrets.QA_PAGE_KEY }}
       QA_POSTED_TOKEN: ${{ secrets.QA_POSTED_TOKEN }}
       QA_PAGE_URL: https://www.bulkplaintshirt.com/p/review/qa/${{ secrets.QA_PAGE_KEY }}.html
-      MODE: ${{ github.event.schedule == '17 5 * * 1-6' && 'catchup' || github.event_name == 'schedule' && 'send' || inputs.action }}
+      MODE: ${{ github.event_name == 'schedule' && 'catchup' || inputs.action }}
       DATE: ${{ inputs.date }}
     steps:
       - uses: actions/checkout@v4
