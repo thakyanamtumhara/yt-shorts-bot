@@ -542,5 +542,19 @@
  },
  "raw20261011-r1-dtf-full-v1-linkedin": {
   "nudged": true
+ },
+ "raw20261024-w3-quality-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261024-w3-quality-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/De_8AsCiM8i/"
+ },
+ "raw20261024-w3-quality-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2186828612046902/"
+ },
+ "raw20261024-w3-quality-v1-x": {
+  "nudged": true
  }
 }
