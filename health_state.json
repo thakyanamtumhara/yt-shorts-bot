@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-21 09:38)",
+   "detail": "ElevenLabs ✅ (2026-10-28 09:31)",
    "provider": "elevenlabs",
-   "at": "2026-10-21 09:38",
-   "title": "बायोवॉश से कपड़े का वज़न कम क्यों हो सकता है? GSM finished fabric पर c"
+   "at": "2026-10-28 09:31",
+   "title": "धुलाई के बाद टी-शर्ट टेढ़ी क्यों? — Twist Liveliness और Torque का असली"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 358,754/363,000 chars left",
+   "detail": "creator · PVC allowed · 358,562/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 358754,
+   "chars_left": 358562,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -36,8 +36,11 @@
   "google": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "key valid · 50 models · veo visible: no",
-   "veo_models": []
+   "detail": "key valid · 50 models · omni visible: yes",
+   "omni_models": [
+    "models/gemini-omni-flash-preview",
+    "models/gemini-omni-1.1-flash"
+   ]
   },
   "meta_token": {
    "ok": true,
@@ -1033,9 +1036,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-28T15:25:52+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-27T23:39:39+05:30",
- "last_green_date": "2026-10-27",
+ "last_run_ist": "2026-10-28T15:25:52+05:30",
+ "last_green_date": "2026-10-28",
  "last_still_down_date": "2026-10-06"
 }
