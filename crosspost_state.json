@@ -562,5 +562,16 @@
  },
  "raw20261024-w4-sweatshirt-v1-youtube": {
   "nudged": true
+ },
+ "raw20261024-w4-sweatshirt-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfC1XfbjsJJ/"
+ },
+ "raw20261024-w4-sweatshirt-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1805433260395125/"
+ },
+ "raw20261024-w4-sweatshirt-v1-x": {
+  "nudged": true
  }
 }
