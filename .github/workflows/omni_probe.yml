@@ -1,0 +1,43 @@
+name: Omni video probe
+run-name: "Omni video probe"
+
+# One short Gemini Omni Flash test clip (about $0.40): proves the GOOGLE_API_KEY can make the daily Short's clips
+# (tools/omni_video.py) after Google shut Veo 3.1 down on 22-Oct-2026. Publishes nothing; the clip is an artifact.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ffmpeg
+        timeout-minutes: 12
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          APT_NET="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo -E apt-get $APT_NET update -qq
+          sudo -E apt-get $APT_NET install -y -qq ffmpeg
+          pip install -q requests
+
+      - name: Make one test clip
+        run: python -m tools.omni_video --probe omni_probe.mp4
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: omni-probe
+          path: omni_probe.mp4
+          if-no-files-found: ignore
+          retention-days: 7
