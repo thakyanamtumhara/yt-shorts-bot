@@ -123,5 +123,17 @@
     "buyer_decision": "Specify GSM as the finished weight after biowash and check it on the finished fabric, rather than accepting a pre-biowash GSM figure.",
     "video_id": "BsNZeU2PTME",
     "published_on": "2026-10-21"
+  },
+  {
+    "topic": "धुलाई के बाद टी-शर्ट टेढ़ी क्यों हो जाती है? — Torque और Twist Liveliness का असली कारण",
+    "intent_key": "singles_twist_causes_garment_skew_after_wash",
+    "fact_ids": [
+      "singles_twist_liveliness_skew",
+      "garment_skew_after_laundering"
+    ],
+    "lesson": "Single jersey में yarn का अपना twist (Z या S) knitting के बाद भी untwist होने की कोशिश करता है — इसे twist liveliness कहते हैं। Z-twist yarn wales को right तरफ़ झुकाता है, S-twist left तरफ़। यह latent stress laundering में release होता है, जिससे side seams, sleeves और overall garment shape घूम जाती है — इसे skew या torque कहते हैं। Mill level पर इसे कम करने के तरीके हैं जैसे plied yarn (दो Z-twist singles को S direction में ply करना liveliness हटाता है) और tighter knitting, लेकिन buyer के पास कोई home remedy sourced नहीं है।",
+    "buyer_decision": "Bulk order से पहले supplier से पूछो कि fabric में torque control (plied yarn, pre-skew या tighter stitch) किया गया है या नहीं — wash के बाद twist दिखने पर कोई घरेलू fix नहीं है, यह mill specification का मामला है।",
+    "video_id": "Up8UCUqikzg",
+    "published_on": "2026-10-28"
   }
 ]
