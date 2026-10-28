@@ -167,14 +167,10 @@ SPEAKING STYLE:
 VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 5
-# Default: Fast (cheap, ~$1/clip 1080p). Set VEO_FULL=1 for cinematic full-quality (~$3.20/clip).
-# Best-bang-for-buck middle path: VEO_HERO_FULL=1 → first clip uses full quality (the hook),
-# remaining clips use Fast. Adds ~$2 per video for the only clip that matters for swipe rate.
-VEO_MODEL = (
-    "veo-3.1-generate-preview"
-    if os.environ.get("VEO_FULL", "").strip() in ("1", "true", "yes")
-    else "veo-3.1-generate-preview"  # fast-generate-preview removed 2026-10-22; full is now default
-)
+# Google shut every Veo 3.1 preview model down on 22-Oct-2026 (runs 22-27 Oct died on 404 "no longer available").
+# Clips now come from Gemini Omni Flash (tools/omni_video.py, ~$0.10/s at 720p, one tier). The VEO_* names stay:
+# logs, dashboards and the clip check use them.
+VEO_MODEL = "gemini-omni-1.1-flash"
 # Default OFF (2026-08-15): for months this flag was billed but never generated — the
 # production loop always used VEO_MODEL for all 5 clips while track_veo charged a full-price
 # hero clip ($7.04/video logged vs ~$4.80 actually spent). The loop now honors the flag for
@@ -186,7 +182,7 @@ VEO_HERO_FULL = (
     os.environ.get("VEO_HERO_FULL", _VEO_HERO_DEFAULT).strip().lower()
     in ("1", "true", "yes", "on")
 )
-VEO_HERO_MODEL = "veo-3.1-generate-preview"
+VEO_HERO_MODEL = VEO_MODEL  # Omni has one tier, so the hero clip is the same model (the flag changes nothing)
 VEO_ASPECT_RATIO = "9:16"
 VEO_DURATION = 8
 VEO_MAX_RETRIES = 3
@@ -2710,8 +2706,8 @@ COST_RATES = {
     "openai_tts_per_char": 0.000015,    # $15/1M chars
     "elevenlabs_per_char": 0.00003,     # ~$0.30/1K chars (pro plan)
     "sarvam_per_char": 0.000010,        # ~$0.01/1K chars (Bulbul v3)
-    "veo_per_clip": 0.96,               # Veo 3.1 Fast: ~$0.12/sec × 8s @ 1080p
-    "veo_full_per_clip": 3.20,          # Veo 3.1 Full: $0.40/sec × 8s
+    "veo_per_clip": 0.81,               # Gemini Omni Flash 720p: $17.50/1M output tokens × 5,792 tokens/s ≈ $0.101/s × 8s
+    "veo_full_per_clip": 0.81,          # (Veo 3.1 Fast $0.96 / Full $3.20 per clip until its shutdown on 22-Oct-2026)
     "kling_per_clip": 0.35,            # ~$0.35 per 5s clip ($0.07/s via fal.ai)
     "replicate_ace_step": 0.05,         # ~$0.05 per music generation
     "replicate_flux_image": 0.025,      # ~$0.025 per FLUX Dev image
@@ -2770,6 +2766,11 @@ class CostTracker:
         else:
             cost = num_clips * per_fast
             self.add("veo_clips", cost, f"{num_clips} clips")
+
+    def track_omni(self, seconds, num_clips):
+        """Gemini Omni Flash clips, billed by the seconds Google made (about $0.10 per second at 720p)."""
+        from tools.omni_video import PRICE_PER_SECOND
+        self.add("veo_clips", seconds * PRICE_PER_SECOND, f"{num_clips} Omni clips, {seconds:.0f}s")
 
     def track_kling(self, num_clips):
         """Track Kling (fal.ai) fallback video generation cost."""
@@ -12333,45 +12334,42 @@ def validate_video_file(path, min_size_bytes=10_000):
 # CLIP CHECK — re-make only the clip that shows the lesson wrong
 # ═══════════════════════════════════════════════════════════════════════
 
+def omni_clip_attempts(prompt_text, clip_path, label="Clip", attempts=VEO_MAX_RETRIES):
+    """Up to `attempts` Gemini Omni Flash tries for one clip. Returns (result, kind): result is the omni_video result of a
+    valid clip or None; kind of the last failure ("gone" = the model is unavailable, "rate", "blocked", "error")."""
+    from tools.omni_video import generate_clip
+    kind = "error"
+    for attempt in range(1, attempts + 1):
+        print(f"      {label} attempt {attempt} (Omni)...", end=" ")
+        result = generate_clip(prompt_text, clip_path, seconds=VEO_DURATION)
+        kind = result["kind"]
+        if result["ok"]:
+            valid, reason = validate_video_file(clip_path)
+            if valid:
+                print(f"✅ {result['seconds']:.1f}s, {result['bytes']} bytes")
+                return result, "ok"
+            kind = "error"
+            print(f"corrupted ({reason})")
+        else:
+            print(result["message"][:160])
+        if kind in ("gone", "blocked"):
+            break
+        if attempt < attempts:
+            time.sleep(VEO_RETRY_WAIT * attempt if kind == "rate" else 15)
+    return None, kind
+
+
 def veo_clip_once(veo_client, prompt_text, clip_path):
-    """One Veo clip with the usual attempts, for a clip the clip check refused. True when clip_path is a valid video."""
-    from google.genai import types
-    for attempt in range(1, VEO_MAX_RETRIES + 1):
-        wait = 15
-        try:
-            operation = veo_client.models.generate_videos(
-                model=VEO_MODEL, prompt=prompt_text,
-                config=types.GenerateVideosConfig(aspect_ratio=VEO_ASPECT_RATIO, number_of_videos=1,
-                                                  duration_seconds=VEO_DURATION))
-            poll_start = time.time()
-            while not operation.done:
-                if time.time() - poll_start > VEO_POLL_TIMEOUT:
-                    raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
-                time.sleep(10)
-                operation = veo_client.operations.get(operation)
-            videos = (not getattr(operation, "error", None) and operation.response
-                      and operation.response.generated_videos)
-            if not videos:
-                print(f"      Veo attempt {attempt}: no video ({str(getattr(operation, 'error', '') or 'empty response')[:100]})")
-            else:
-                video_data = veo_client.files.download(file=videos[0].video)
-                if video_data and len(video_data) >= 10_000:
-                    with open(clip_path, "wb") as f:
-                        f.write(video_data)
-                    valid, reason = validate_video_file(clip_path)
-                    if valid:
-                        return True
-                    print(f"      Veo attempt {attempt}: corrupted ({reason})")
-                else:
-                    print(f"      Veo attempt {attempt}: download too small")
-        except Exception as e:
-            error_msg = str(e)
-            if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                wait = VEO_RETRY_WAIT * attempt
-            print(f"      Veo attempt {attempt}: {error_msg[:120]}")
-        if attempt < VEO_MAX_RETRIES:
-            time.sleep(wait)
-    return False
+    """One clip for a clip the clip check refused: Gemini Omni Flash, then Kling when Omni's model is gone or busy.
+    Returns {"provider", "seconds"} when clip_path is a valid video, else None."""
+    result, kind = omni_clip_attempts(prompt_text, clip_path, label="Re-made clip")
+    if result:
+        return {"provider": "omni", "seconds": result["seconds"] or float(VEO_DURATION)}
+    if KLING_ENABLED and kind in ("gone", "rate", "error"):
+        _, ok = generate_clip_kling(prompt_text, clip_path)
+        if ok:
+            return {"provider": "kling", "seconds": float(KLING_DURATION)}
+    return None
 
 
 def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, tts_input, voice_alignment,
@@ -12405,10 +12403,14 @@ def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, 
         time.sleep(45)
         path = f"{WORK_DIR}/veo_clip_{index}_{kind}_{random.randint(100, 999)}.mp4"
         print(f"   ⏳ Clip {index + 1} ({kind} version)...")
-        if not veo_clip_once(veo_client, prompt_text, path):
+        made = veo_clip_once(veo_client, prompt_text, path)
+        if not made:
             return None
         regenerated.append(path)
-        cost.track_veo(1)
+        if made["provider"] == "omni":
+            cost.track_omni(made["seconds"], 1)
+        else:
+            cost.track_kling(1)
         return path
 
     name = "clip_check" if refused is None else "render_repair_clips"
@@ -12432,7 +12434,7 @@ def check_generated_clips(clips, prompts, *, veo_client, topic, script_english, 
                         **{name: results.count(name) for name in ("kept", "replaced", "dropped", "unchecked")},
                         "clips": report})
     print(f"   ✅ Clip check: {results.count('kept')} ok, {results.count('replaced')} re-made, "
-          f"{results.count('dropped')} dropped, {results.count('unchecked')} unchecked ({len(regenerated)} new Veo clips)")
+          f"{results.count('dropped')} dropped, {results.count('unchecked')} unchecked ({len(regenerated)} new clips)")
     return kept, kept_prompts
 
 
@@ -13031,77 +13033,10 @@ def main():
         clip_path = f"{WORK_DIR}/veo_clip_0_{random.randint(100,999)}.mp4"
         clip_success = False
 
-        hero_model = VEO_HERO_MODEL if VEO_HERO_FULL else VEO_MODEL
-        for attempt in range(1, VEO_MAX_RETRIES + 1):
-            try:
-                model_label = "FULL" if hero_model != VEO_MODEL else "fast"
-                print(f"   ⏳ Hero Clip 1 ({model_label}): attempt {attempt}...", end=" ")
-                operation = veo_client.models.generate_videos(
-                    model=hero_model,
-                    prompt=prompt_text,
-                    config=types.GenerateVideosConfig(
-                        aspect_ratio=VEO_ASPECT_RATIO,
-                        number_of_videos=1,
-                        duration_seconds=VEO_DURATION,
-                    ),
-                )
-                poll_start = time.time()
-                while not operation.done:
-                    if time.time() - poll_start > VEO_POLL_TIMEOUT:
-                        raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
-                    time.sleep(10)
-                    operation = veo_client.operations.get(operation)
-
-                # Check for operation-level error
-                if hasattr(operation, 'error') and operation.error:
-                    print(f"generation failed: {str(operation.error)[:120]}")
-                    if attempt < VEO_MAX_RETRIES:
-                        time.sleep(15)
-                    continue
-
-                if operation.response and operation.response.generated_videos:
-                    video = operation.response.generated_videos[0]
-                    video_data = veo_client.files.download(file=video.video)
-                    if not video_data or len(video_data) < 10_000:
-                        data_len = len(video_data) if video_data else 0
-                        print(f"download too small ({data_len} bytes) — retrying")
-                        if attempt < VEO_MAX_RETRIES:
-                            time.sleep(15)
-                        continue
-                    with open(clip_path, "wb") as f:
-                        f.write(video_data)
-                    print(f"downloaded {len(video_data)} bytes...", end=" ")
-                    valid, reason = validate_video_file(clip_path)
-                    if not valid:
-                        print(f"corrupted ({reason}) — retrying")
-                        if attempt < VEO_MAX_RETRIES:
-                            time.sleep(15)
-                        continue
-                    downloaded_clips.append(clip_path)
-                    clip_success = True
-                    print("✅")
-                    break
-                else:
-                    err_detail = ""
-                    if hasattr(operation, 'error') and operation.error:
-                        err_detail = f" | error: {str(operation.error)[:80]}"
-                    elif hasattr(operation, 'response') and operation.response:
-                        err_detail = f" | response has no generated_videos"
-                    print(f"empty response{err_detail}")
-                    if attempt < VEO_MAX_RETRIES:
-                        time.sleep(15)
-            except BaseException as e:
-                error_msg = str(e)
-                if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                    wait = VEO_RETRY_WAIT * attempt
-                    print(f"rate limited — waiting {wait}s")
-                    time.sleep(wait)
-                else:
-                    print(f"error: {error_msg[:120]}")
-                    if attempt < VEO_MAX_RETRIES:
-                        time.sleep(15)
-                    else:
-                        break
+        omni_result, _ = omni_clip_attempts(prompt_text, clip_path, label="Hero Clip 1")
+        if omni_result:
+            downloaded_clips.append(clip_path)
+            clip_success = True
 
         # ── Kling fallback for single Veo test (when Veo rate-limits) ──
         veo_success = clip_success  # bill Veo only for a Veo-rendered clip, not Kling's
@@ -13123,127 +13058,49 @@ def main():
             placeholder.write_videofile(placeholder_path, fps=FPS, codec="libx264", logger=None)
             downloaded_clips.append(placeholder_path)
 
-        real_count = 1 if veo_success else 0
-        if real_count:
-            cost.track_veo(real_count, hero_full=VEO_HERO_FULL)
+        if veo_success:
+            cost.track_omni(omni_result["seconds"] or float(VEO_DURATION), 1)
         _real_total = 1 if clip_success else 0
         print(f"   ✅ {len(downloaded_clips)} clips ready ({_real_total} real + {VEO_CLIPS_PER_VIDEO - _real_total} blank)")
 
     else:
-        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Veo 3.1...")
+        print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Gemini Omni Flash ({VEO_MODEL})...")
         if KLING_ENABLED:
-            print(f"   🔄 Kling fallback: READY (auto-switch on Veo rate limit)")
+            print(f"   🔄 Kling fallback: READY (auto-switch when Omni is unavailable or rate-limited)")
 
-        use_kling_fallback = False  # Sticky: once Veo rate-limits, switch to Kling
-        consecutive_failures = 0  # Early termination: stop if Veo is persistently broken
-        hero_generated = False  # True only if clip #1 really rendered on the full-quality model
+        use_kling_fallback = False  # Sticky: once Omni is gone or rate-limited, the rest go to Kling
+        consecutive_failures = 0  # Early termination: stop if video generation is persistently broken
+        omni_seconds = 0.0
 
         for i in range(VEO_CLIPS_PER_VIDEO):
             prompt_text = video_prompts[i] if i < len(video_prompts) else video_prompts[0]
             clip_path = f"{WORK_DIR}/veo_clip_{i}_{random.randint(100,999)}.mp4"
             clip_success = False
-            # Hero clip: with VEO_HERO_FULL=1 the first clip (the hook) renders on the
-            # full-quality model while the rest stay Fast.
-            clip_model = (
-                VEO_HERO_MODEL
-                if (VEO_HERO_FULL and i == 0 and VEO_MODEL != VEO_HERO_MODEL)
-                else VEO_MODEL
-            )
 
-            # ── Early termination: if 2+ consecutive clips failed, Veo is likely broken ──
+            # ── Early termination: if 2+ consecutive clips failed, generation is likely broken ──
             if consecutive_failures >= 2 and not KLING_ENABLED:
                 remaining = VEO_CLIPS_PER_VIDEO - i
-                print(f"   ⛔ Veo persistently failing ({consecutive_failures} clips in a row) — skipping {remaining} remaining clip(s)")
+                print(f"   ⛔ Video generation persistently failing ({consecutive_failures} clips in a row) — skipping {remaining} remaining clip(s)")
                 break
 
-            # ── Try Veo first (unless already switched to Kling) ──
+            # ── Omni first (unless already switched to Kling) ──
             if not use_kling_fallback:
                 if i > 0:
                     print(f"   ⏸️ RPM cooldown — waiting 45s...")
                     time.sleep(45)
+                print(f"   ⏳ Clip {i+1}:")
+                omni_result, kind = omni_clip_attempts(prompt_text, clip_path, label=f"Clip {i+1}")
+                if omni_result:
+                    downloaded_clips.append(clip_path)
+                    clip_prompts.append(prompt_text)
+                    clip_success = True
+                    veo_clips_count += 1
+                    omni_seconds += omni_result["seconds"] or float(VEO_DURATION)
+                elif kind in ("gone", "rate") and KLING_ENABLED:
+                    print(f"   🔄 Omni {'unavailable' if kind == 'gone' else 'rate-limited'} — switching the rest to Kling")
+                    use_kling_fallback = True
 
-                for attempt in range(1, VEO_MAX_RETRIES + 1):
-                    try:
-                        print(f"   ⏳ Clip {i+1}: attempt {attempt}...", end=" ")
-                        operation = veo_client.models.generate_videos(
-                            model=clip_model,
-                            prompt=prompt_text,
-                            config=types.GenerateVideosConfig(
-                                aspect_ratio=VEO_ASPECT_RATIO,
-                                number_of_videos=1,
-                                duration_seconds=VEO_DURATION,
-                            ),
-                        )
-                        poll_start = time.time()
-                        while not operation.done:
-                            if time.time() - poll_start > VEO_POLL_TIMEOUT:
-                                raise TimeoutError(f"Veo polling exceeded {VEO_POLL_TIMEOUT}s")
-                            time.sleep(10)
-                            operation = veo_client.operations.get(operation)
-
-                        # Check for operation-level error (content filtering, server error, etc.)
-                        if hasattr(operation, 'error') and operation.error:
-                            print(f"generation failed: {str(operation.error)[:120]}")
-                            if attempt < VEO_MAX_RETRIES:
-                                time.sleep(15)
-                            continue
-
-                        if operation.response and operation.response.generated_videos:
-                            video = operation.response.generated_videos[0]
-                            video_data = veo_client.files.download(file=video.video)
-                            # Validate downloaded bytes before writing
-                            if not video_data or len(video_data) < 10_000:
-                                data_len = len(video_data) if video_data else 0
-                                print(f"download too small ({data_len} bytes) — retrying")
-                                if attempt < VEO_MAX_RETRIES:
-                                    time.sleep(15)
-                                continue
-                            with open(clip_path, "wb") as f:
-                                f.write(video_data)
-                            print(f"downloaded {len(video_data)} bytes...", end=" ")
-                            valid, reason = validate_video_file(clip_path)
-                            if not valid:
-                                print(f"corrupted ({reason}) — retrying")
-                                if attempt < VEO_MAX_RETRIES:
-                                    time.sleep(15)
-                                continue
-                            downloaded_clips.append(clip_path)
-                            clip_prompts.append(prompt_text)
-                            clip_success = True
-                            veo_clips_count += 1
-                            if clip_model == VEO_HERO_MODEL and VEO_MODEL != VEO_HERO_MODEL:
-                                hero_generated = True
-                            print("✅")
-                            break
-                        else:
-                            # Log details to help debug empty responses
-                            err_detail = ""
-                            if hasattr(operation, 'error') and operation.error:
-                                err_detail = f" | error: {str(operation.error)[:80]}"
-                            elif hasattr(operation, 'response') and operation.response:
-                                err_detail = f" | response has no generated_videos"
-                            print(f"empty response{err_detail}")
-                            if attempt < VEO_MAX_RETRIES:
-                                time.sleep(15)
-                    except BaseException as e:
-                        error_msg = str(e)
-                        if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
-                            if KLING_ENABLED:
-                                print(f"rate limited — switching to Kling fallback")
-                                use_kling_fallback = True
-                                break
-                            else:
-                                wait = VEO_RETRY_WAIT * attempt
-                                print(f"rate limited — waiting {wait}s")
-                                time.sleep(wait)
-                        else:
-                            print(f"error: {error_msg[:120]}")
-                            if attempt < VEO_MAX_RETRIES:
-                                time.sleep(15)
-                            else:
-                                break
-
-            # ── Kling fallback (rate limit or Veo failure) ──
+            # ── Kling fallback (Omni unavailable, rate-limited, or this clip failed) ──
             if not clip_success and KLING_ENABLED:
                 if kling_clips == 0:
                     remaining = VEO_CLIPS_PER_VIDEO - i
@@ -13263,9 +13120,9 @@ def main():
 
         # Summary
         if kling_clips > 0:
-            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo + {kling_clips} Kling fallback)")
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Omni + {kling_clips} Kling fallback)")
         else:
-            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Veo)")
+            print(f"   ✅ {len(downloaded_clips)} clips ready ({veo_clips_count} Omni)")
 
         # 24-Sep/1-Oct/2-Oct-2026: one wrongly drawn clip made the final visual review refuse the whole Short.
         if CLIP_CHECK and downloaded_clips:
@@ -13282,11 +13139,9 @@ def main():
     if not real_clips and not TEST_MODE and not SKIP_CLIPS and not SINGLE_VEO_TEST and not NEW_TEST_MODE:
         expected = VEO_CLIPS_PER_VIDEO
         got = len(downloaded_clips)
-        veo_count = veo_clips_count  # first-pass Veo clips; the clip check bills its re-made clips itself
-        if veo_count > 0:
-            # Bill what was actually generated — not the flag. Pre-Aug-2026 this passed
-            # VEO_HERO_FULL while no hero clip was ever rendered, overstating every run by ~$2.24.
-            cost.track_veo(veo_count, hero_full=hero_generated)
+        if veo_clips_count > 0:
+            # First-pass Omni clips, billed by the seconds Google made; the clip check bills its re-made clips itself.
+            cost.track_omni(omni_seconds, veo_clips_count)
         if kling_clips > 0:
             cost.track_kling(kling_clips)
         if got < expected:

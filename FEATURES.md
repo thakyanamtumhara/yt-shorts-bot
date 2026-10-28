@@ -90,7 +90,7 @@
 | `VIDEO_HEIGHT` | 1920 | 145 |
 | `FPS` | 30 | 146 |
 | `VEO_CLIPS_PER_VIDEO` | 5 | 147 |
-| `VEO_MODEL` | `veo-3.1-fast-generate-preview` | 148 |
+| `VEO_MODEL` | `gemini-omni-1.1-flash` (Veo 3.1 shut down 22-Oct-2026; see tools/omni_video.py) | 173 |
 | `VEO_ASPECT_RATIO` | `9:16` | 149 |
 | `VEO_DURATION` | 8 seconds | 150 |
 | `VEO_MAX_RETRIES` | 4 | 151 |
@@ -352,7 +352,7 @@ Both **publish time** and **engagement/category** decisions use this threshold:
 ## 9. Video Clip Generation (Veo + Kling)
 
 ### Veo 3.1 (Primary)
-- **Model:** `veo-3.1-fast-generate-preview` (line 148)
+- **Model:** `gemini-omni-1.1-flash` via `tools/omni_video.py` (Gemini Interactions API, 9:16, 720p, ~$0.10/s). Veo 3.1 preview ids were shut down by Google on 22-Oct-2026.
 - **API:** Google GenAI (`google.genai`)
 - **5 clips per video** following story arc:
   1. HOOK — problem/dramatic moment

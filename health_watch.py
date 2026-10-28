@@ -252,7 +252,7 @@ def check_anthropic():
 
 
 def check_google():
-    key, label, sev = "google", "Google (Veo clips + Gemini cover)", CRITICAL
+    key, label, sev = "google", "Google (Omni clips + Gemini cover)", CRITICAL
     api_key = _env("GOOGLE_API_KEY")
     if not api_key:
         return Result(key, label, sev, False, "GOOGLE_API_KEY not set")
@@ -262,10 +262,11 @@ def check_google():
         err = ((body.get("error") or {}).get("message") or json.dumps(body))[:160]
         return Result(key, label, sev, False, f"HTTP {status} {err}")
     names = [m.get("name", "") for m in body.get("models", [])]
-    veo = [n for n in names if "veo" in n.lower()]
+    # The daily Short's clips come from Gemini Omni Flash since Veo 3.1 was shut down on 22-Oct-2026 (tools/omni_video.py).
+    omni = [n for n in names if "omni" in n.lower()]
     return Result(key, label, sev, True,
-                  f"key valid · {len(names)} models · veo visible: {'yes' if veo else 'no'}",
-                  {"veo_models": veo[:4]})
+                  f"key valid · {len(names)} models · omni visible: {'yes' if omni else 'no'}",
+                  {"omni_models": omni[:4]})
 
 
 def check_replicate():
