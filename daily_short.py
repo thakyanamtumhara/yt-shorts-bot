@@ -13066,9 +13066,9 @@ def main():
     else:
         print(f"   🤖 Generating {VEO_CLIPS_PER_VIDEO} AI clips via Gemini Omni Flash ({VEO_MODEL})...")
         if KLING_ENABLED:
-            print(f"   🔄 Kling fallback: READY (auto-switch when Omni is unavailable or rate-limited)")
+            print(f"   🔄 Kling fallback: READY (when Omni is unavailable, or a clip fails / stays rate-limited)")
 
-        use_kling_fallback = False  # Sticky: once Omni is gone or rate-limited, the rest go to Kling
+        use_kling_fallback = False  # Sticky: once Omni's model is gone, the rest go to Kling
         consecutive_failures = 0  # Early termination: stop if video generation is persistently broken
         omni_seconds = 0.0
 
@@ -13096,8 +13096,10 @@ def main():
                     clip_success = True
                     veo_clips_count += 1
                     omni_seconds += omni_result["seconds"] or float(VEO_DURATION)
-                elif kind in ("gone", "rate") and KLING_ENABLED:
-                    print(f"   🔄 Omni {'unavailable' if kind == 'gone' else 'rate-limited'} — switching the rest to Kling")
+                elif kind == "gone" and KLING_ENABLED:
+                    # The model itself is unavailable: the rest go to Kling. A rate limit (already waited out three
+                    # times) only sends THIS clip to Kling; the next clip tries Omni again.
+                    print(f"   🔄 Omni unavailable — switching the rest to Kling")
                     use_kling_fallback = True
 
             # ── Kling fallback (Omni unavailable, rate-limited, or this clip failed) ──
