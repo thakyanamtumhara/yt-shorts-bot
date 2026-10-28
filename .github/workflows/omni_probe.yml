@@ -6,6 +6,11 @@ run-name: "Omni video probe"
 
 on:
   workflow_dispatch:
+    inputs:
+      through_daily_short:
+        description: 'Also make two 8 s clips through daily_short.py itself (main-loop helper + clip-check re-make, about $1.60)'
+        type: boolean
+        default: false
 
 jobs:
   probe:
@@ -34,10 +39,45 @@ jobs:
       - name: Make one test clip
         run: python -m tools.omni_video --probe omni_probe.mp4
 
+      - name: Install the daily Short's packages
+        if: ${{ inputs.through_daily_short }}
+        run: pip install -q -r requirements.txt
+
+      - name: Two clips through daily_short.py
+        if: ${{ inputs.through_daily_short }}
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, shutil
+          import daily_short as d
+          os.makedirs(d.WORK_DIR, exist_ok=True)
+          main = f"{d.WORK_DIR}/main_clip.mp4"
+          r, kind = d.omni_clip_attempts("A neatly folded plain white cotton T-shirt on a light wooden table in soft daylight; the camera slowly pushes in.", main, label="Main-loop clip")
+          print("MAIN", kind, json.dumps({k: r[k] for k in ("seconds", "bytes", "cost")} if r else None))
+          print("VALID", d.validate_video_file(main))
+          remade = f"{d.WORK_DIR}/remade_clip.mp4"
+          made = d.veo_clip_once(None, "A neat stack of plain navy blue T-shirts on a warehouse shelf; the camera slides slowly sideways.", remade)
+          print("REMADE", json.dumps(made))
+          c = d.CostTracker()
+          if r:
+              c.track_omni(r["seconds"], 1)
+          if made and made["provider"] == "omni":
+              c.track_omni(made["seconds"], 1)
+          print("COST", json.dumps(c.costs))
+          for f in (main, remade):
+              if os.path.exists(f):
+                  shutil.copy(f, os.path.basename(f))
+          raise SystemExit(0 if r and made else 1)
+          PY
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: omni-probe
-          path: omni_probe.mp4
+          path: |
+            omni_probe.mp4
+            main_clip.mp4
+            remade_clip.mp4
           if-no-files-found: ignore
           retention-days: 7
