@@ -135,5 +135,16 @@
     "buyer_decision": "Bulk order से पहले supplier से पूछो कि fabric में torque control (plied yarn, pre-skew या tighter stitch) किया गया है या नहीं — wash के बाद twist दिखने पर कोई घरेलू fix नहीं है, यह mill specification का मामला है।",
     "video_id": "Up8UCUqikzg",
     "published_on": "2026-10-28"
+  },
+  {
+    "topic": "Garment Dyeing में Thread, Label और Rib का Shade अलग क्यों आता है?",
+    "intent_key": "garment_dyed_thread_label_shade_mismatch",
+    "fact_ids": [
+      "garment_dyeing_component_shades"
+    ],
+    "lesson": "Garment dyeing में पूरा सिला हुआ garment एक साथ dye होता है, इससे lead time कम होता है और short-lot fashion shades बनाना आसान होता है। लेकिन क्योंकि पूरा garment dye bath में जाता है, thread अगर polyester है तो वो body जैसा shade नहीं पकड़ेगा — इसलिए 100% cotton या corespun cotton/polyester thread recommend होता है। इसी तरह अगर garment में अलग-अलग fabrics combine हैं (जैसे body और rib) तो कुछ shade difference आएगा, और labels भी या तो dyeing के बाद लगाए जाते हैं या dye-resistant labels use होते हैं।",
+    "buyer_decision": "Garment-dyed T-shirt order करते समय confirm करो कि sewing thread cotton-based है और labels post-dye लगेंगे — वरना thread और label का shade body से अलग दिखेगा और customer इसे defect समझेगा।",
+    "video_id": "nW9Ilp0gz3E",
+    "published_on": "2026-10-29"
   }
 ]

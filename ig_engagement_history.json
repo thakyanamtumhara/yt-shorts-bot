@@ -2697,5 +2697,29 @@
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"
+  },
+  {
+    "media_id": "17988636806881415",
+    "title": "Garment Dyed Tee — Why Thread and Rib Shade Can Differ from the Body",
+    "topic": "Garment Dyeing में Thread, Label और Rib का Shade अलग क्यों आता है?",
+    "published_at": "2026-10-29T14:56:06.368412+05:30",
+    "checked": false,
+    "bot_youtube_id": "nW9Ilp0gz3E",
+    "workflow_run_id": "40846275511",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "GARMENT DYEING THREAD SHADE अलग क्यों?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "trial": true,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18351798085266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
   }
 ]

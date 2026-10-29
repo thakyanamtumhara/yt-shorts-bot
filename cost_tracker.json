@@ -3252,5 +3252,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0334
     }
+  },
+  {
+    "date": "2026-10-29T09:26:43.488953",
+    "topic": "Garment Dyeing \u092e\u0947\u0902 Thread, Label \u0914\u0930 Rib \u0915\u093e Shade \u0905\u0932\u0917 \u0915\u094d\u092f\u094b\u0902 \u0906\u0924\u093e \u0939\u0948?",
+    "title": "Garment Dyeing \u092e\u0947\u0902 Thread \u0915\u093e Shade \u0905\u0932\u0917 \u0915\u094d\u092f\u094b\u0902? Polyester vs Cotton Thread",
+    "total_usd": 5.6387,
+    "duration_min": 23.3,
+    "breakdown": {
+      "claude_opus": 0.5694,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0121,
+      "veo_clips": 4.8912,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0711
+    }
   }
 ]
