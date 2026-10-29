@@ -579,5 +579,16 @@
  },
  "raw20261024-w5-zipper-v1-youtube": {
   "nudged": true
+ },
+ "raw20261024-w5-zipper-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfFNLOiCM8Z/"
+ },
+ "raw20261024-w5-zipper-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1151151970602210/"
+ },
+ "raw20261024-w5-zipper-v1-x": {
+  "nudged": true
  }
 }
