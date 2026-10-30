@@ -146,5 +146,16 @@
     "buyer_decision": "Garment-dyed T-shirt order करते समय confirm करो कि sewing thread cotton-based है और labels post-dye लगेंगे — वरना thread और label का shade body से अलग दिखेगा और customer इसे defect समझेगा।",
     "video_id": "nW9Ilp0gz3E",
     "published_on": "2026-10-29"
+  },
+  {
+    "topic": "Screen Print में 4 Colour = 4 Screen — हर रंग की अलग जाली क्यों बनती है?",
+    "intent_key": "screen_print_one_screen_per_colour_cost",
+    "fact_ids": [
+      "screen_print_screen_per_colour"
+    ],
+    "lesson": "Flatbed screen printing में हर colour के लिए एक अलग screen बनाना पड़ता है — design पहले individual colours में separate होता है, एक screen पर सिर्फ़ एक colour छपता है, और fabric अगले colour वाले screen तक move होता है। इसीलिए 4-colour design को 4 screens चाहिए, और हर screen की development time और cost लगती है। Digital inkjet printing इस screen की ज़रूरत ख़त्म करता है, लेकिन screen printing में out-of-registration (pattern का fit बिगड़ना) एक common defect है जिसे repair नहीं किया जा सकता।",
+    "buyer_decision": "Screen print का quote लेते समय design के colour count से screen count और setup cost जोड़ो — कम colours का design बनाने से per-screen development cost बचती है; ज़्यादा colours चाहिए तो digital inkjet का quote भी compare करो।",
+    "video_id": "H8ZhBlMk_GQ",
+    "published_on": "2026-10-30"
   }
 ]

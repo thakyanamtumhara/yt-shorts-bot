@@ -3267,5 +3267,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0711
     }
+  },
+  {
+    "date": "2026-10-30T09:35:23.574941",
+    "topic": "Screen Print \u092e\u0947\u0902 4 Colour = 4 Screen \u2014 \u0939\u0930 \u0930\u0902\u0917 \u0915\u0940 \u0905\u0932\u0917 \u091c\u093e\u0932\u0940 \u0915\u094d\u092f\u094b\u0902 \u092c\u0928\u0924\u0940 \u0939\u0948?",
+    "title": "4 Colour = 4 Screen \u2014 Flatbed Screen Print \u092e\u0947\u0902 Setup Cost \u0915\u094d\u092f\u094b\u0902 \u092c\u0922\u093c\u0924\u0940 \u0939\u0948",
+    "total_usd": 8.3129,
+    "duration_min": 32.6,
+    "breakdown": {
+      "claude_opus": 0.799,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0131,
+      "veo_clips": 7.3368,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.0689
+    }
   }
 ]

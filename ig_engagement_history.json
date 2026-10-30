@@ -2680,7 +2680,7 @@
     "title": "T-Shirt Twists After Washing? Single Jersey Torque (Twist Liveliness) Explained",
     "topic": "धुलाई के बाद टी-शर्ट टेढ़ी क्यों हो जाती है? — Torque और Twist Liveliness का असली कारण",
     "published_at": "2026-10-28T15:01:07.291712+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "Up8UCUqikzg",
     "workflow_run_id": "40660909064",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2696,7 +2696,16 @@
       "container_id": "18351594751266060",
       "verification": "create_accepted_native_label_unverified"
     },
-    "ig_api": "v24.0"
+    "ig_api": "v24.0",
+    "checked_at": "2026-10-30T15:01:37.827740+05:30",
+    "hours_since_publish": 48.0,
+    "views": 998,
+    "reach": 811,
+    "likes": 14,
+    "comments": 3,
+    "shares": 5,
+    "saves": 4,
+    "avg_watch_time_ms": 8020
   },
   {
     "media_id": "17988636806881415",
@@ -2718,6 +2727,29 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18351798085266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
+  },
+  {
+    "media_id": "18638955634038332",
+    "title": "4 Colour Flatbed Screen Print — Why Each Colour Needs Its Own Screen",
+    "topic": "Screen Print में 4 Colour = 4 Screen — हर रंग की अलग जाली क्यों बनती है?",
+    "published_at": "2026-10-30T15:04:28.501958+05:30",
+    "checked": false,
+    "bot_youtube_id": "H8ZhBlMk_GQ",
+    "workflow_run_id": "41030280750",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "SCREEN PRINT हर रंग अलग जाली क्यों?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18351985702266060",
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"
