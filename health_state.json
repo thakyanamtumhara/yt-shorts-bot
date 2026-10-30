@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-10-29 09:26)",
+   "detail": "ElevenLabs ✅ (2026-10-30 09:35)",
    "provider": "elevenlabs",
-   "at": "2026-10-29 09:26",
-   "title": "Garment Dyeing में Thread का Shade अलग क्यों? Polyester vs Cotton Thre"
+   "at": "2026-10-30 09:35",
+   "title": "4 Colour = 4 Screen — Flatbed Screen Print में Setup Cost क्यों बढ़ती "
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 358,340/363,000 chars left",
+   "detail": "creator · PVC allowed · 358,147/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 358340,
+   "chars_left": 358147,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -1060,9 +1060,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-10-30T15:50:18+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-10-30T00:06:17+05:30",
+ "last_run_ist": "2026-10-30T15:50:18+05:30",
  "last_green_date": "2026-10-30",
  "last_still_down_date": "2026-10-06"
 }
