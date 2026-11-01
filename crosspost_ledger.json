@@ -2557,31 +2557,31 @@
    "url": "https://x.com/sale91_com"
   },
   {
-   "id": "raw20261101lot-l1-polo-v1-youtube",
-   "label": "Raw 1-Nov lot l1: Cotton Polo lot 100 — YouTube MAIN",
+   "id": "raw20261101lot-l1-polo-v2-youtube",
+   "label": "Raw 1-Nov lot l1v2: Cotton Polo lot 100 (7 colours) — YouTube MAIN",
    "platform": "youtube",
    "rail": "api-scheduled",
    "due_ist": "2026-11-02 12:30",
    "verify": "manual",
-   "video_sha256": "f37d9b2571cbbfe6285bdc91402d039e714785041930283fc035dc879d1e89af",
-   "approved_version": "l1-polo-v1",
+   "video_sha256": "21d15454b6b236d03386c4c7d7edf7a612c147a473befa74dee7695b605cf1d6",
+   "approved_version": "l1-polo-v2",
    "native_ai": false,
-   "video_id": "B0fSJeoygow",
-   "url": "https://youtube.com/shorts/B0fSJeoygow",
-   "note": "MAIN owner API: private + exact publishAt read back at booking (Ketu ticked the exact file on the review page). Confirm public after due time."
+   "video_id": "q4XmRNezA-c",
+   "url": "https://youtube.com/shorts/q4XmRNezA-c",
+   "note": "v2 replaced v1 (B0fSJeoygow held private) after Ketu ticked v2. Confirm public after due time."
   },
   {
-   "id": "raw20261101lot-l1-polo-v1-instagram",
-   "label": "Raw 1-Nov lot l1: Cotton Polo lot 100 — Instagram",
+   "id": "raw20261101lot-l1-polo-v2-instagram",
+   "label": "Raw 1-Nov lot l1v2: Cotton Polo lot 100 (7 colours) — Instagram",
    "platform": "instagram",
    "rail": "reviewed-reels",
    "due_ist": "2026-11-02 12:45",
    "verify": "api",
-   "video_sha256": "f37d9b2571cbbfe6285bdc91402d039e714785041930283fc035dc879d1e89af",
-   "approved_version": "l1-polo-v1",
+   "video_sha256": "21d15454b6b236d03386c4c7d7edf7a612c147a473befa74dee7695b605cf1d6",
+   "approved_version": "l1-polo-v2",
    "native_ai": false,
    "match": "🔥 Lot Sale: Cotton Polo ₹100/pc (10+ pcs)",
-   "queue_file": "reviewed_ai_reels/raw20261101lot-l1-polo-v1.json",
+   "queue_file": "reviewed_ai_reels/raw20261101lot-l1-polo-v2.json",
    "note": "Exact-selection rail (tick on the review page), is_ai_generated=false (original recording)."
   },
   {
