@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261101t2",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-01T06:47:01.174Z",
+  "videos": [
+    {
+      "id": "t2-diwali-v2",
+      "version": "1",
+      "sha256": "18fdca18478996e32ddd4f6b16377b8a6f069a13bef80a6dfeea34cc8d25d798",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
