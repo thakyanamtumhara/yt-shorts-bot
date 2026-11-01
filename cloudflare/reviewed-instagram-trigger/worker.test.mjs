@@ -48,7 +48,10 @@ function mock(options = {}) {
     }
     if (path.endsWith('/runs')) {
       const runs = options.runs ?? [];
-      return json({workflow_runs: url.searchParams.has('status') ? runs.filter(run => run.status === url.searchParams.get('status')) : runs});
+      if (url.searchParams.has('status')) return json({workflow_runs: runs.filter(run => run.status === url.searchParams.get('status'))});
+      const created = url.searchParams.get('created');
+      assert.match(created ?? '', /^>=\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
+      return json({workflow_runs: runs.filter(run => Date.parse(run.created_at) >= Date.parse(created.slice(2)))});
     }
     if (path.endsWith('/dispatches')) {
       assert.equal(init.method, 'POST');
@@ -147,6 +150,18 @@ test('successful preflight and old successful title do not establish publication
     const m = mock({runs: [run(1, {display_title, conclusion: 'success'})]});
     assert.equal((await tick(env, {now, fetch: m.fetch})).status, 'dispatch_accepted'); assert.equal(m.posts().length, 1);
   }
+});
+
+test('run inventory reads only the retry window, so a long run history cannot exceed the response limit', async () => {
+  const history = Array.from({length: 150}, (_, i) => run(420 + i, {conclusion: 'success'}));
+  const m = mock({runs: history}); const result = await tick(env, {now, fetch: m.fetch});
+  assert.equal(result.status, 'dispatch_accepted'); assert.equal(m.posts().length, 1);
+  const runCalls = m.calls.filter(call => new URL(call.url).pathname.endsWith('/runs'));
+  assert.deepEqual(runCalls.filter(call => new URL(call.url).searchParams.has('status')).map(call => new URL(call.url).searchParams.get('status')), ['queued', 'in_progress', 'waiting', 'requested', 'pending']);
+  const inventory = runCalls.filter(call => !new URL(call.url).searchParams.has('status'));
+  assert.equal(inventory.length, 1);
+  const windowStart = Math.max(now - 6 * 3600000, Date.parse(job.publish_at));
+  assert.equal(new URL(inventory[0].url).searchParams.get('created'), '>=' + new Date(windowStart).toISOString().replace(/\.\d{3}Z$/, 'Z'));
 });
 
 test('recent publisher waits for receipt propagation before retry', async () => {

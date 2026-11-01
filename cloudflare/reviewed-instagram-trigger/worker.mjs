@@ -93,10 +93,10 @@ function safeCode(error) {
 
 export async function tick(env, options = {}) {
   const now = options.now ?? Date.now(), request = options.fetch ?? fetch;
-  if (env.ENABLED !== 'true') return {status: 'disabled', version: '1.0.1'};
+  if (env.ENABLED !== 'true') return {status: 'disabled', version: '1.0.2'};
   check(typeof env.REVIEWED_IG_GH_TOKEN === 'string' && env.REVIEWED_IG_GH_TOKEN.length > 0, 'github_secret_missing');
   async function raw(url, {github = false, method = 'GET', body, missing = false} = {}) {
-    const headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'reviewed-instagram-trigger/1.0.1', 'Cache-Control': 'no-cache'};
+    const headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'reviewed-instagram-trigger/1.0.2', 'Cache-Control': 'no-cache'};
     if (github) {
       check(url.startsWith(`https://api.github.com/repos/${REPO}/`), 'unexpected_github_target');
       headers.Authorization = `Bearer ${env.REVIEWED_IG_GH_TOKEN}`;
@@ -141,18 +141,18 @@ export async function tick(env, options = {}) {
       else ready.push(job);
     } catch (error) { blocked.push({job_id: job.id, code: safeCode(error)}); }
   }
-  const base = {version: '1.0.1', commit: head.sha, due_count: due.length, verified_count: verified.length, ready: ready.map(job => job.id), blocked};
+  const base = {version: '1.0.2', commit: head.sha, due_count: due.length, verified_count: verified.length, ready: ready.map(job => job.id), blocked};
   if (!ready.length) return {...base, status: blocked.length ? 'blocked' : 'nothing_due'};
   const runPath = `actions/workflows/${WORKFLOW}/runs?branch=main&per_page=100&exclude_pull_requests=true`;
-  for (const status of ['queued', 'in_progress', 'waiting']) {
+  for (const status of ['queued', 'in_progress', 'waiting', 'requested', 'pending']) {
     const activeRuns = await gh(`${runPath}&status=${status}`);
     check(Array.isArray(activeRuns.workflow_runs), 'invalid_run_inventory');
     if (activeRuns.workflow_runs.length) return {...base, status: 'publisher_active'};
   }
-  const runs = await gh(runPath);
+  const windowStart = Math.max(now - RETRY_WINDOW_MS, Math.min(...ready.map(job => time(job.publish_at))));
+  const runs = await gh(`${runPath}&created=${encodeURIComponent('>=' + new Date(windowStart).toISOString().replace(/\.\d{3}Z$/, 'Z'))}`);
   check(Array.isArray(runs.workflow_runs), 'invalid_run_inventory');
   if (runs.workflow_runs.some(run => ACTIVE.has(run.status))) return {...base, status: 'publisher_active'};
-  const windowStart = Math.max(now - RETRY_WINDOW_MS, Math.min(...ready.map(job => time(job.publish_at))));
   check(runs.workflow_runs.length < 100 || time(runs.workflow_runs.at(-1).created_at) < windowStart, 'run_inventory_incomplete');
   const attempts = runs.workflow_runs.filter(run => run.display_title === PUBLISH_TITLE && ['schedule', 'workflow_dispatch'].includes(run.event) && time(run.created_at) >= windowStart);
   if (attempts.length >= 3) return {...base, status: 'retry_limit', attempts: attempts.length};

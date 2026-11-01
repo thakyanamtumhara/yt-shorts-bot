@@ -1,4 +1,4 @@
-# Reviewed Instagram fallback · v1.0.1
+# Reviewed Instagram fallback · v1.0.2
 
 Dedicated Cloudflare Cron Worker; fixed target is the existing `reviewed_ai_reels.yml` workflow in `thakyanamtumhara/yt-shorts-bot`, `main`, `mode=publish_due`. It never publishes to Meta or writes release state. No routes, workers.dev URL or preview URL are enabled, and its HTTP handler always returns404.
 
@@ -7,6 +7,10 @@ Every five minutes, at UTC minutes2/7/12/…/57, it reads the reviewed queue and
 Before dispatch, any queued/in-progress/waiting run of this workflow postpones the fallback. The explicit `Reviewed Instagram · publish_due` run title supports a15-minute cooldown and at most three attempts per six-hour due window. Preflight success never proves delivery. GitHub success never overrides incomplete per-job receipts. If a workflow run list is too dense to inspect the current retry window safely, the trigger stops. Queue size is bounded to fit the Workers free-plan subrequest budget; reaching the limit requires review/archival, not silent skipping.
 
 Concurrent Cron events or delayed GitHub run visibility may dispatch more than one workflow. This trigger does not claim an atomic lock. Existing GitHub concurrency and conditional S3 media/comment claims remain the publication safeguards. It preserves every original GitHub cron as an additional trigger.
+
+## 1-Nov-2026 fix (v1.0.2)
+
+From about 10-Oct-2026 the unfiltered run inventory (last 100 runs of the workflow) grew past this Worker's 1 MB response cap (1.35 MB on 1-Nov). Every tick that had a due job then stopped with `response_too_large` before dispatch, while ticks with nothing due still logged `nothing_due`, so the fault was invisible. Reviewed Reels went out only when GitHub's late cron ran: 23-Oct to 1-Nov they were 20 min to 4 h 15 min late. v1.0.2 asks only for runs created inside the retry window (`created=>=<window start>`, 68 KB on 1-Nov) and checks `requested` and `pending` runs by status as well, so older runs in those states still postpone dispatch. The rollback point is version `8c39ef1d-862d-40e1-b16b-1eb530ff1116` (v1.0.1).
 
 ## Verification before deployment
 
