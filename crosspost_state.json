@@ -596,5 +596,16 @@
  },
  "raw20261101-t1-train-v2-youtube": {
   "nudged": true
+ },
+ "raw20261101-t1-train-v2-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfM7VhdDeiY/"
+ },
+ "raw20261101-t1-train-v2-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1468216401897205/"
+ },
+ "raw20261101-t1-train-v2-x": {
+  "nudged": true
  }
 }
