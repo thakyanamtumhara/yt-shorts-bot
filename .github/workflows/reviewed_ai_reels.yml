@@ -67,10 +67,19 @@ jobs:
               ;;
             publish_due)
               test "$GITHUB_REF" = refs/heads/main
-              python3 tools/reviewed_ai_reels.py --execute
+              set -o pipefail
+              python3 tools/reviewed_ai_reels.py --execute | tee "$RUNNER_TEMP/reviewed-ai-release.json"
               ;;
             *) exit 2 ;;
           esac
+      - name: Tell Ketu when a Reel failed or went out late
+        if: always() && (github.event_name == 'schedule' || inputs.mode == 'publish_due')
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 tools/reviewed_reels_alert.py "$RUNNER_TEMP/reviewed-ai-release.json"
       - name: Preserve identifier-only recovery records
         if: always()
         uses: actions/upload-artifact@v4
