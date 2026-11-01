@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261101lotl1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-01T08:47:57.296Z",
+  "videos": [
+    {
+      "id": "l1-polo-v1",
+      "version": "1",
+      "sha256": "f37d9b2571cbbfe6285bdc91402d039e714785041930283fc035dc879d1e89af",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
