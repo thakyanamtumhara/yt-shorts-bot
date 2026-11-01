@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261101t1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-01T06:47:04.356Z",
+  "videos": [
+    {
+      "id": "t1-train-v2",
+      "version": "1",
+      "sha256": "aec1c5e5e1f7bf44460957af55db7070220f6e7ce5f8df9fb4f28d206e884da8",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
