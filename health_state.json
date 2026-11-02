@@ -11,10 +11,10 @@
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 357,645/363,000 chars left",
+   "detail": "creator · PVC allowed · 356,044/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 357645,
+   "chars_left": 356044,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -1102,9 +1102,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-11-03T03:22:03+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-11-02T17:03:07+05:30",
- "last_green_date": "2026-11-02",
+ "last_run_ist": "2026-11-03T03:22:03+05:30",
+ "last_green_date": "2026-11-03",
  "last_still_down_date": "2026-10-06"
 }
