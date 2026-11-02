@@ -3282,5 +3282,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.0689
     }
+  },
+  {
+    "date": "2026-11-02T09:32:02.637791",
+    "topic": "Polyester T-Shirt \u092e\u0947\u0902 \u092a\u0938\u0940\u0928\u0947 \u0915\u0940 \u092c\u0926\u092c\u0942 \u091c\u093c\u094d\u092f\u093e\u0926\u093e \u0915\u094d\u092f\u094b\u0902 \u0930\u0939\u0924\u0940 \u0939\u0948? \u2014 Oleophilic Fibre \u0915\u093e \u092e\u0924\u0932\u092c",
+    "title": "Polyester T-Shirt \u092e\u0947\u0902 \u092c\u0926\u092c\u0942 \u091c\u093c\u094d\u092f\u093e\u0926\u093e \u0915\u094d\u092f\u094b\u0902 \u0930\u0939\u0924\u0940 \u0939\u0948? \u2014 Oleophilic Fibre \u0915\u093e \u092e\u0924\u0932\u092c",
+    "total_usd": 7.8307,
+    "duration_min": 28.8,
+    "breakdown": {
+      "claude_opus": 0.3187,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0121,
+      "veo_clips": 7.3368,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.068
+    }
   }
 ]

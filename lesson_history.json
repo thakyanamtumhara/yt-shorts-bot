@@ -157,5 +157,16 @@
     "buyer_decision": "Screen print का quote लेते समय design के colour count से screen count और setup cost जोड़ो — कम colours का design बनाने से per-screen development cost बचती है; ज़्यादा colours चाहिए तो digital inkjet का quote भी compare करो।",
     "video_id": "H8ZhBlMk_GQ",
     "published_on": "2026-10-30"
+  },
+  {
+    "topic": "Polyester T-Shirt में पसीने की बदबू ज़्यादा क्यों रहती है? — Oleophilic Fibre का मतलब",
+    "intent_key": "polyester_oleophilic_needs_soil_release",
+    "fact_ids": [
+      "polyester_oleophilic"
+    ],
+    "lesson": "Polyester fibre oleophilic है — यानी इसमें oils के लिए strong affinity है, इसलिए body oils और soil ज़्यादा चिपकते हैं और odour retain होती है। साथ ही polyester inert है, जिसका मतलब है कि इसे chemically modify करना आसान नहीं — इसीलिए soil-release chemistry की ज़रूरत पड़ती है ताकि soiling और odour retention कम हो। यह fibre की inherent property है, सिर्फ़ quality या brand का मामला नहीं।",
+    "buyer_decision": "Polyester या poly-blend T-shirt order करते समय supplier से पूछो कि fabric पर soil-release finish applied है या नहीं — बिना इस finish के polyester की oil affinity soiling और odour बढ़ाती है।",
+    "video_id": "1BhBNGCtjTE",
+    "published_on": "2026-11-02"
   }
 ]
