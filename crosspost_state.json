@@ -607,5 +607,38 @@
  },
  "raw20261101-t1-train-v2-x": {
   "nudged": true
+ },
+ "personal-story-20260912-x": {
+  "nudged": true
+ },
+ "raw20261024-w3-quality-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261101-t1-train-v2-linkedin": {
+  "nudged": true
+ },
+ "raw20261101-t2-diwali-v2-youtube": {
+  "nudged": true
+ },
+ "raw20261101-t2-diwali-v2-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfPQ0twExQj/"
+ },
+ "raw20261101lot-l1-polo-v2-youtube": {
+  "nudged": true
+ },
+ "raw20261101lot-l1-polo-v2-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfOwMXGDZh4/"
+ },
+ "raw20261101lot-l1-polo-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1349648410483768/"
+ },
+ "raw20261101lot-l1-polo-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261101lot-l1-polo-v1-x": {
+  "nudged": true
  }
 }
