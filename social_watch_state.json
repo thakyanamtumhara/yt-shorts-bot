@@ -271,6 +271,14 @@
   "5PXu1pLFd0M": {
    "title": "Train Se Maal Mangate Ho? 5-15 Nov Train Delivery Band | Diwali Stock Abhi Order Karo",
    "published": "2026-11-01T11:30:16+00:00"
+  },
+  "04vLXd5pXb4": {
+   "title": "Diwali Pe Maal Kam Padega? Advance Mein Extra Stock Lo | Bacha Maal Packed Wapas = Refund",
+   "published": "2026-11-02T11:30:35+00:00"
+  },
+  "q4XmRNezA-c": {
+   "title": "Cotton Polo ₹100 | Lot Sale: 7 Colours | Khatam To Dobara Nahi Aayega",
+   "published": "2026-11-02T07:00:02+00:00"
   }
  },
  "instagram": {
@@ -913,6 +921,18 @@
   "18126676463301339": {
    "permalink": "https://www.instagram.com/reel/DfM7VhdDeiY/",
    "ts": "2026-11-01T14:18:10+0000"
+  },
+  "18116121584613323": {
+   "permalink": "https://www.instagram.com/reel/DfPQ0twExQj/",
+   "ts": "2026-11-02T12:04:26+0000"
+  },
+  "18117963019818553": {
+   "permalink": "https://www.instagram.com/reel/DfO_Q6UCd2R/",
+   "ts": "2026-11-02T09:30:49+0000"
+  },
+  "17977540146159063": {
+   "permalink": "https://www.instagram.com/reel/DfOwMXGDZh4/",
+   "ts": "2026-11-02T07:19:20+0000"
   }
  },
  "facebook": {
@@ -1206,7 +1226,19 @@
   },
   "1469480188423446": {
    "queued_at": "2026-11-02 09:31",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-11-02T18:35:09+05:30",
+   "permalink": "https://www.facebook.com/reel/1469480188423446"
   }
  },
  "history": [
@@ -2134,8 +2166,13 @@
    "at": "2026-11-02T00:14:32+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-11-02T18:35:09+05:30",
+   "alerts": 0,
+   "new": 5
   }
  ],
  "last_green_date": "2026-11-02",
- "last_run_ist": "2026-11-02T00:14:32+05:30"
+ "last_run_ist": "2026-11-02T18:35:09+05:30"
 }
