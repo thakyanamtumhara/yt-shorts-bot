@@ -1,54 +1,102 @@
 {
-  "_comment": "Owner-approved held Shorts, released byte for byte by tools/held_short_release.py (YouTube booked by hand: held_short_release.yml mode youtube; Facebook + Telegram by its 19:00 IST cron at meta_at). Instagram: reviewed_ai_reels/dtf-real-20261007-*.json. Approval page: https://claude.ai/artifact/AC4s3W8vDqdYSd2pGk46Pu 2-Nov-2026: a job may carry its own approval + meta_caption (dtf-order-v2, approved in chat).",
-  "approval": {
-    "by": "Ketu (owner)",
-    "at": "2026-10-09T13:39:30+05:30",
-    "words": "All three videos look good to me."
+ "_comment": "Owner-approved held Shorts, released byte for byte by tools/held_short_release.py (YouTube booked by hand: held_short_release.yml mode youtube; Facebook + Telegram by its 19:00 IST cron at meta_at). Instagram: reviewed_ai_reels/dtf-real-20261007-*.json. Approval page: https://claude.ai/artifact/AC4s3W8vDqdYSd2pGk46Pu 2-Nov-2026: a job may carry its own approval + meta_caption (dtf-order-v2, approved in chat).",
+ "approval": {
+  "by": "Ketu (owner)",
+  "at": "2026-10-09T13:39:30+05:30",
+  "words": "All three videos look good to me."
+ },
+ "jobs": [
+  {
+   "id": "dtf-real-b",
+   "run_id": "37611306924",
+   "announcement": "dtf_black_tee_real_2026_10_07",
+   "video_sha256": "18f69ca469cf7e92a1cf9143679a7458680d774e7df9db8288c9e485e9b554b4",
+   "cover_sha256": "d747564d093915b3b235cd175bbb812d3f4ab056d3878a6868c38f8c31137916",
+   "instagram_title": "DTF Print on Black T-Shirt — Why the White Layer Matters",
+   "youtube_at": "2026-10-10T17:00:00+05:30",
+   "meta_at": "2026-10-12T19:00:00+05:30"
   },
-  "jobs": [
-    {
-      "id": "dtf-real-b",
-      "run_id": "37611306924",
-      "announcement": "dtf_black_tee_real_2026_10_07",
-      "video_sha256": "18f69ca469cf7e92a1cf9143679a7458680d774e7df9db8288c9e485e9b554b4",
-      "cover_sha256": "d747564d093915b3b235cd175bbb812d3f4ab056d3878a6868c38f8c31137916",
-      "instagram_title": "DTF Print on Black T-Shirt — Why the White Layer Matters",
-      "youtube_at": "2026-10-10T17:00:00+05:30",
-      "meta_at": "2026-10-12T19:00:00+05:30"
-    },
-    {
-      "id": "dtf-real-a",
-      "run_id": "37611270080",
-      "announcement": "dtf_printer_real_2026_10_07",
-      "video_sha256": "18bd35ee77009e9d781c4dc9c75e66270d8214dfd79d388f7b09db421f8440a8",
-      "cover_sha256": "0f1da78b2b45861ea33f3a3bb7bd394d9e49d07432d7e5edb08d0b7b3f87b9a2",
-      "youtube_at": "2026-10-11T19:00:00+05:30",
-      "meta_at": "2026-10-11T19:00:00+05:30"
-    },
-    {
-      "id": "dtf-real-c",
-      "run_id": "37616938835",
-      "announcement": "dtf_hoodie_press_real_2026_10_07",
-      "video_sha256": "729c3a184308e32906cdaf13031f7bb06bee6a78e0c7b035a9e91c28f3737965",
-      "cover_sha256": "5b1a0cb5a9f49251ac7b32344669955da2f8a6a308cc29eafc2c60cf4187e92c",
-      "youtube_at": "2026-10-13T17:00:00+05:30",
-      "meta_at": "2026-10-13T19:00:00+05:30"
-    },
-    {
-      "id": "dtf-order-v2",
-      "run_id": "20261102001",
-      "video_sha256": "35bd080ba265bb9ff984efab8f297c973510fd328c3dc5ef9fa16d46b2d7ab62",
-      "cover_sha256": "2d414e868efba84f6f5fb9a83ad40b13a08a6508f7d212ea27f586cc8413ab59",
-      "approval": {
-        "by": "Ketu (owner), in chat",
-        "at": "2026-11-02T20:30:00+05:30",
-        "words": "The video you have created is good. You can proceed. You can make more videos and keep posting DTF-related videos."
-      },
-      "meta_caption": "DTF sheet order kaise karein? Upload designs → size aur pieces set karo → website khud 22.8 in sheet bana deti hai → sheet ki print file FREE download, payment se pehle → pincode, delivery, Order print. ₹155 per metre.\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
-      "instagram_title": "How to Order DTF Sheets — Upload Designs, Free Print File, Order Print",
-      "youtube_at": "2026-11-03T11:00:00+05:30",
-      "meta_at": "2026-11-03T11:30:00+05:30",
-      "note": "Finished Short (not a daily run): MAIN YouTube Fg1EIQ8KW3o booked with tools/upload_main.py; Instagram reviewed_ai_reels/dtforder20261102-dtf-order-v2.json; X + LinkedIn via Vizard. Files at p/review/20261102001/. Review page https://claude.ai/artifact/KB38QFp5BKbW4o2FhkDwRq"
-    }
-  ]
+  {
+   "id": "dtf-real-a",
+   "run_id": "37611270080",
+   "announcement": "dtf_printer_real_2026_10_07",
+   "video_sha256": "18bd35ee77009e9d781c4dc9c75e66270d8214dfd79d388f7b09db421f8440a8",
+   "cover_sha256": "0f1da78b2b45861ea33f3a3bb7bd394d9e49d07432d7e5edb08d0b7b3f87b9a2",
+   "youtube_at": "2026-10-11T19:00:00+05:30",
+   "meta_at": "2026-10-11T19:00:00+05:30"
+  },
+  {
+   "id": "dtf-real-c",
+   "run_id": "37616938835",
+   "announcement": "dtf_hoodie_press_real_2026_10_07",
+   "video_sha256": "729c3a184308e32906cdaf13031f7bb06bee6a78e0c7b035a9e91c28f3737965",
+   "cover_sha256": "5b1a0cb5a9f49251ac7b32344669955da2f8a6a308cc29eafc2c60cf4187e92c",
+   "youtube_at": "2026-10-13T17:00:00+05:30",
+   "meta_at": "2026-10-13T19:00:00+05:30"
+  },
+  {
+   "id": "dtf-order-v2",
+   "run_id": "20261102001",
+   "video_sha256": "35bd080ba265bb9ff984efab8f297c973510fd328c3dc5ef9fa16d46b2d7ab62",
+   "cover_sha256": "2d414e868efba84f6f5fb9a83ad40b13a08a6508f7d212ea27f586cc8413ab59",
+   "approval": {
+    "by": "Ketu (owner), in chat",
+    "at": "2026-11-02T20:30:00+05:30",
+    "words": "The video you have created is good. You can proceed. You can make more videos and keep posting DTF-related videos."
+   },
+   "meta_caption": "DTF sheet order kaise karein? Upload designs → size aur pieces set karo → website khud 22.8 in sheet bana deti hai → sheet ki print file FREE download, payment se pehle → pincode, delivery, Order print. ₹155 per metre.\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
+   "instagram_title": "How to Order DTF Sheets — Upload Designs, Free Print File, Order Print",
+   "youtube_at": "2026-11-03T11:00:00+05:30",
+   "meta_at": "2026-11-03T11:30:00+05:30",
+   "note": "Finished Short (not a daily run): MAIN YouTube Fg1EIQ8KW3o booked with tools/upload_main.py; Instagram reviewed_ai_reels/dtforder20261102-dtf-order-v2.json; X + LinkedIn via Vizard. Files at p/review/20261102001/. Review page https://claude.ai/artifact/KB38QFp5BKbW4o2FhkDwRq"
+  },
+  {
+   "id": "dtf-gang-sheet-free-file",
+   "run_id": "20261102002",
+   "video_sha256": "030f234586fdc66636d8010057778f34b105fecd22889aa5ae231b07d50d0087",
+   "cover_sha256": "07984b2632d1fb6e1795d0c1d6f27153135024403f1df5289816fda755609235",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page",
+    "at": "2026-11-02T16:50:22.859Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan)"
+   },
+   "meta_caption": "DTF gang sheet khud banane ka jhanjhat khatam: saare logo ek saath upload karo, size aur pieces set karo, website poori 22.8 in sheet khud bana deti hai, designs quarter inch gap ke saath, cutting ke liye ready. Sheet ki print file FREE download, 300 DPI PNG, aur ek chhoti picture customer ke liye.\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
+   "instagram_title": "Free DTF Gang Sheet Builder — Upload Logos, Download the Print File",
+   "youtube_at": "2026-11-04T11:00:00+05:30",
+   "meta_at": "2026-11-04T11:30:00+05:30",
+   "note": "DTF series #1 Gang sheet khud banani padegi? Website bana degi, print file free: finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan (2026-11-02T16:50:22.859Z); MAIN YouTube booked with release-series/youtube/upload_main.py, Instagram reviewed_ai_reels/dtfseries20261102-gang-sheet-free-file.json, X + LinkedIn via Vizard. Files at p/review/20261102002/."
+  },
+  {
+   "id": "dtf-design-or-sheet",
+   "run_id": "20261102003",
+   "video_sha256": "18b1e4ee01f8217fe7878fa7c9b2c068bd83062825bf319b8c67ea870362a9ea",
+   "cover_sha256": "7cce7cd6df73fd3d1c9e6219e70c5a4f07baa735b251ea13f62d88b764134501",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page",
+    "at": "2026-11-02T16:52:07.676Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan)"
+   },
+   "meta_caption": "DTF mein ek logo bhejna hai ya poori sheet? Dono ek hi button se: logo ko website design maan kar sheet par laga deti hai, poori sheet ko waise hi print karti hai, aur file se samajh na aaye to khud poochti hai: ek design ya poori sheet?\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
+   "instagram_title": "One Logo or a Full Sheet? Both Go In Through the Same DTF Upload Button",
+   "youtube_at": "2026-11-05T11:00:00+05:30",
+   "meta_at": "2026-11-05T11:30:00+05:30",
+   "note": "DTF series #3 Ek logo ya poori sheet? Dono ek hi button se: finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan (2026-11-02T16:52:07.676Z); MAIN YouTube booked with release-series/youtube/upload_main.py, Instagram reviewed_ai_reels/dtfseries20261102-design-or-sheet.json, X + LinkedIn via Vizard. Files at p/review/20261102003/."
+  },
+  {
+   "id": "dtf-photo-patch",
+   "run_id": "20261102004",
+   "video_sha256": "0301bbfca081e1c38d8aa691e66f73afef5b2fd428e8133d035180c7f364c5c4",
+   "cover_sha256": "10a550d70beeab19723f5b9666003c7116e5810386d64bd22b2528277aa1f8de",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page",
+    "at": "2026-11-02T16:52:48.158Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan)"
+   },
+   "meta_caption": "WhatsApp wali photo se DTF print ho sakta hai? Ab haan: photo upload karo, website poochti hai, background transparent nahi hai, ye solid patch ki tarah print hoga, background ke saath. Print as a patch dabao aur photo ek design ban kar sheet par lag jaati hai, poore box ke saath. Sirf design chahiye? Transparent background wali PNG bhejo.\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
+   "instagram_title": "Can a WhatsApp Photo Be DTF Printed? Yes — As a Solid Patch (PNG Is Better)",
+   "youtube_at": "2026-11-06T11:00:00+05:30",
+   "meta_at": "2026-11-06T11:30:00+05:30",
+   "note": "DTF series #4 WhatsApp wali photo se DTF print ho sakta hai?: finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan (2026-11-02T16:52:48.158Z); MAIN YouTube booked with release-series/youtube/upload_main.py, Instagram reviewed_ai_reels/dtfseries20261102-photo-patch.json, X + LinkedIn via Vizard. Files at p/review/20261102004/."
+  }
+ ]
 }
