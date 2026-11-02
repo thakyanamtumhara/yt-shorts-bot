@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 import worker, {tick, digest, classifyState} from './worker.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const job = JSON.parse(readFileSync(ROOT + 'reviewed_ai_reels/raw0004-20260929-full-v1.json'));
+const job = JSON.parse(readFileSync(ROOT + 'reviewed_ai_reels/archive/raw0004-20260929-full-v1.json'));
 const receipt = JSON.parse(readFileSync(ROOT + 'reviewed_ai_releases/batches/raw0004-20260929.json'));
 const now = Date.parse('2026-09-29T14:00:00+05:30');
 const env = {ENABLED: 'true', DRY_RUN: 'false', REVIEWED_IG_GH_TOKEN: 'test-secret-only'};
