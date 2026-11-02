@@ -102,10 +102,13 @@ class FakeDs:
 class JobsFileTest(unittest.TestCase):
     def test_the_real_jobs_file_holds_the_three_approved_shorts(self):
         jobs = h.load_jobs()
-        self.assertEqual([j['id'] for j in jobs], ['dtf-real-b', 'dtf-real-a', 'dtf-real-c'])
+        self.assertEqual([j['id'] for j in jobs][:3], ['dtf-real-b', 'dtf-real-a', 'dtf-real-c'])
         bank = load_bank()
         for job in jobs:
-            self.assertTrue(str(announcement_topic(bank, job['announcement'])))
+            if job.get('meta_caption'):
+                self.assertTrue(job['approval']['words'])
+            else:
+                self.assertTrue(str(announcement_topic(bank, job['announcement'])))
 
     def test_refuses_a_time_before_the_approval_and_a_short_hash(self):
         data = json.loads(h.JOBS.read_text(encoding='utf-8'))
@@ -223,6 +226,51 @@ class MetaTest(unittest.TestCase):
         ds.fb_result = 'fb999'
         self.assertEqual(self.run_meta(ds, stores, due + timedelta(minutes=20)), [])
         self.assertEqual(ds.calls, [])
+
+
+OWN_JOB = {'id': 'dtf-order-v2', 'run_id': '20261102001', 'video_sha256': SHA_V, 'cover_sha256': SHA_C,
+           'meta_caption': 'Pinned caption\n\nOrder DTF sheets: dtf.bulkplaintshirt.com',
+           'approval': {'by': 'Ketu (owner), in chat', 'at': '2026-11-02T20:30:00+05:30', 'words': 'The video you have created is good. You can proceed.'},
+           'youtube_at': '2026-11-03T11:00:00+05:30', 'meta_at': '2026-11-03T11:30:00+05:30'}
+OWN_REVIEW = {'run_id': '20261102001', 'video_sha256': SHA_V, 'topic': 'finished Short',
+              'titles': {'youtube': 'a', 'instagram': 'b'}, 'youtube_description': 'c'}
+
+
+class OwnApprovalTest(unittest.TestCase):
+    """A finished Short approved by the owner outside a daily run: its own approval, its own caption, no announcement."""
+
+    def jobs(self, **changes):
+        data = json.loads(h.JOBS.read_text(encoding='utf-8'))
+        return {'approval': data['approval'], 'jobs': [dict(OWN_JOB, **changes)]}
+
+    def test_loads_with_its_own_approval_and_refuses_without_caption_or_in_time(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'jobs.json'
+            path.write_text(json.dumps(self.jobs()))
+            self.assertEqual(h.load_jobs(path)[0]['meta_caption'], OWN_JOB['meta_caption'])
+            path.write_text(json.dumps(self.jobs(meta_at='2026-11-02T10:00:00+05:30')))
+            with self.assertRaisesRegex(h.ReleaseError, 'after the owner'):
+                h.load_jobs(path)
+            no_caption = self.jobs()
+            del no_caption['jobs'][0]['meta_caption']
+            path.write_text(json.dumps(no_caption))
+            with self.assertRaisesRegex(h.ReleaseError, 'announcement id missing'):
+                h.load_jobs(path)
+
+    def test_facebook_and_telegram_use_the_pinned_caption(self):
+        ds, stores = FakeDs(), {}
+        now = datetime(2026, 11, 3, 6, 10, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as folder:
+            report = h.release_meta_due([OWN_JOB], ds, lambda job_id: stores.setdefault(job_id, FakeStore()), folder,
+                                        now=now, get=fake_get(review=OWN_REVIEW))
+        self.assertEqual(report, ['dtf-order-v2: facebook posted (fb123)', 'dtf-order-v2: telegram posted (77)'])
+        self.assertEqual(ds.calls, [('fb', OWN_JOB['meta_caption'], COVER), ('tg', OWN_JOB['meta_caption'])])
+
+    def test_youtube_mode_refuses_a_job_without_an_announcement(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(h.ReleaseError, 'outside this tool'):
+                h.release_youtube(OWN_JOB, FakeDs(), FakeStore(), folder,
+                                  now=datetime(2026, 11, 2, 16, 0, tzinfo=timezone.utc), get=fake_get(review=OWN_REVIEW))
 
 
 if __name__ == '__main__':

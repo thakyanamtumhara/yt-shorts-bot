@@ -17,6 +17,10 @@ as a normal daily Short.
                            passed, within META_WINDOW. Instagram goes through reviewed_ai_reels.py (exact-selection
                            rail with its own state), not through this tool.
 
+A job may carry its own "approval" {by, at, words} (owner approval given for that file alone, e.g. in chat) and a
+"meta_caption": the exact Facebook / Telegram caption; such a job needs no announcement in the bank (a finished Short
+that no daily run made, 2-Nov-2026) and its YouTube booking is made outside this tool (MAIN, tools/upload_main.py).
+
 State per job in S3 (p/automation-state-held-shorts/<id>.json, conditional writes). A platform that has an id, a
 pending attempt or a failure is never posted again by this tool: a failure is reported for a human to reconcile.
 """
@@ -86,10 +90,17 @@ def load_jobs(path=JOBS):
         for key in ('video_sha256', 'cover_sha256'):
             if not SHA.fullmatch(str(job.get(key, ''))):
                 raise ReleaseError(f"{job['id']}: {key} must be a full sha256")
-        if not isinstance(job.get('announcement'), str) or not job['announcement']:
+        caption = job.get('meta_caption')
+        if caption is not None and (not isinstance(caption, str) or not 1 <= len(caption) <= 2200):
+            raise ReleaseError(f"{job['id']}: meta_caption must be 1-2200 characters")
+        if caption is None and (not isinstance(job.get('announcement'), str) or not job['announcement']):
             raise ReleaseError(f"{job['id']}: announcement id missing")
+        own = job.get('approval')
+        if own is not None and (not isinstance(own, dict) or not isinstance(own.get('by'), str) or not own.get('words')):
+            raise ReleaseError(f"{job['id']}: approval needs by, at and words")
+        job_approved_at = parse_at(own.get('at')) if own is not None else approved_at
         for key in ('youtube_at', 'meta_at'):
-            if parse_at(job.get(key)) <= approved_at:
+            if parse_at(job.get(key)) <= job_approved_at:
                 raise ReleaseError(f"{job['id']}: {key} must be after the owner's approval")
         for key in ('youtube_title', 'instagram_title'):
             if key in job and (not isinstance(job[key], str) or not 1 <= len(job[key]) <= 100):
@@ -137,7 +148,10 @@ def fetch_held(job, folder, get=None):
 
 
 def topic_for(job, review, bank=None):
-    """The run's own topic object (same announcement brief), refused if the bank changed it since the run."""
+    """The run's own topic object (same announcement brief), refused if the bank changed it since the run.
+    A finished Short with its own meta_caption (owner-approved outside a daily run, 2-Nov-2026) has no announcement: None."""
+    if job.get('meta_caption'):
+        return None
     from tools.daily_topic_selection import announcement_topic, load_bank
     topic = announcement_topic(bank if bank is not None else load_bank(), job['announcement'])
     if str(topic) != review.get('topic'):
@@ -146,7 +160,9 @@ def topic_for(job, review, bank=None):
 
 
 def meta_caption(ds, topic, job, review):
-    """The daily run's Facebook / Telegram caption (daily_short.py step 10d2)."""
+    """The daily run's Facebook / Telegram caption (daily_short.py step 10d2), or the job's own pinned caption."""
+    if job.get('meta_caption'):
+        return job['meta_caption']
     title = job.get('instagram_title') or review['titles']['instagram']
     first = review['youtube_description'].split('\n')[0]
     launch = ds.campaign_line(topic, 'ig_line')
@@ -209,6 +225,8 @@ def release_youtube(job, ds, store, folder, now=None, get=None):
         raise ReleaseError(f"{job['id']}: youtube_at must be at least 30 min ahead")
     video, cover, review = fetch_held(job, folder, get=get)
     topic = topic_for(job, review)
+    if topic is None:
+        raise ReleaseError(f"{job['id']}: a job with its own meta_caption has no announcement; its YouTube booking is made outside this tool")
     youtube = ds.get_youtube_service()
     if youtube is None:
         raise ReleaseError('no YouTube client; nothing uploaded')
@@ -346,7 +364,8 @@ def main(argv=None):
         for job in jobs:
             video, cover, review = fetch_held(job, folder / job['id'])
             topic = topic_for(job, review)
-            print(f"✅ {job['id']}: run {job['run_id']} video {job['video_sha256'][:16]} = approved; topic matches")
+            print(f"✅ {job['id']}: run {job['run_id']} video {job['video_sha256'][:16]} = approved; "
+                  + ('topic matches' if topic else 'own caption (no announcement)'))
             print(f"   YouTube {parse_at(job['youtube_at']).astimezone(IST):%a %d-%b %H:%M} IST: "
                   f"{job.get('youtube_title') or review['titles']['youtube']}")
             print(f"   Facebook + Telegram {parse_at(job['meta_at']).astimezone(IST):%a %d-%b %H:%M} IST")

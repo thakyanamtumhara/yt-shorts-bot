@@ -1,0 +1,14 @@
+{
+  "batch_id": "dtforder20261102",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-02T15:00:00+00:00",
+  "videos": [
+    {
+      "id": "dtf-order-v2",
+      "version": "1",
+      "sha256": "35bd080ba265bb9ff984efab8f297c973510fd328c3dc5ef9fa16d46b2d7ab62",
+      "public_release_approved": true,
+      "media_kind": "cloned_voice_screen_recording"
+    }
+  ]
+}

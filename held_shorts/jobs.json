@@ -1,5 +1,5 @@
 {
-  "_comment": "Owner-approved held Shorts, released byte for byte by tools/held_short_release.py (YouTube booked by hand: held_short_release.yml mode youtube; Facebook + Telegram by its 19:00 IST cron at meta_at). Instagram: reviewed_ai_reels/dtf-real-20261007-*.json. Approval page: https://claude.ai/artifact/AC4s3W8vDqdYSd2pGk46Pu",
+  "_comment": "Owner-approved held Shorts, released byte for byte by tools/held_short_release.py (YouTube booked by hand: held_short_release.yml mode youtube; Facebook + Telegram by its 19:00 IST cron at meta_at). Instagram: reviewed_ai_reels/dtf-real-20261007-*.json. Approval page: https://claude.ai/artifact/AC4s3W8vDqdYSd2pGk46Pu 2-Nov-2026: a job may carry its own approval + meta_caption (dtf-order-v2, approved in chat).",
   "approval": {
     "by": "Ketu (owner)",
     "at": "2026-10-09T13:39:30+05:30",
@@ -33,6 +33,22 @@
       "cover_sha256": "5b1a0cb5a9f49251ac7b32344669955da2f8a6a308cc29eafc2c60cf4187e92c",
       "youtube_at": "2026-10-13T17:00:00+05:30",
       "meta_at": "2026-10-13T19:00:00+05:30"
+    },
+    {
+      "id": "dtf-order-v2",
+      "run_id": "20261102001",
+      "video_sha256": "35bd080ba265bb9ff984efab8f297c973510fd328c3dc5ef9fa16d46b2d7ab62",
+      "cover_sha256": "2d414e868efba84f6f5fb9a83ad40b13a08a6508f7d212ea27f586cc8413ab59",
+      "approval": {
+        "by": "Ketu (owner), in chat",
+        "at": "2026-11-02T20:30:00+05:30",
+        "words": "The video you have created is good. You can proceed. You can make more videos and keep posting DTF-related videos."
+      },
+      "meta_caption": "DTF sheet order kaise karein? Upload designs → size aur pieces set karo → website khud 22.8 in sheet bana deti hai → sheet ki print file FREE download, payment se pehle → pincode, delivery, Order print. ₹155 per metre.\n\nOrder DTF sheets: dtf.bulkplaintshirt.com\n\nAI voice: my own cloned voice. Screen recording of our order form.",
+      "instagram_title": "How to Order DTF Sheets — Upload Designs, Free Print File, Order Print",
+      "youtube_at": "2026-11-03T11:00:00+05:30",
+      "meta_at": "2026-11-03T11:30:00+05:30",
+      "note": "Finished Short (not a daily run): MAIN YouTube Fg1EIQ8KW3o booked with tools/upload_main.py; Instagram reviewed_ai_reels/dtforder20261102-dtf-order-v2.json; X + LinkedIn via Vizard. Files at p/review/20261102001/. Review page https://claude.ai/artifact/KB38QFp5BKbW4o2FhkDwRq"
     }
   ]
 }
