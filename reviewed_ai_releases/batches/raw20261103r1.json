@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261103r1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-03T06:11:11.065Z",
+  "videos": [
+    {
+      "id": "r1-lastorder-v1",
+      "version": "1",
+      "sha256": "074228c12b57b33859f09b76f3e18edb1800f0be59d629f17fcdaa8d39acd1cf",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
