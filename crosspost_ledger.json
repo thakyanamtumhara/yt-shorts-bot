@@ -3172,6 +3172,54 @@
    "booking_status": "accepted",
    "note": "Vizard accepted (code 2000); not proof of publication. Confirm after due time.",
    "url": "https://x.com/sale91_com"
+  },
+  {
+   "id": "raw20261103-train-howto-b-youtube",
+   "label": "Raw 3-Nov hb: Aaj last din: train se order kaise karein — YouTube MAIN",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-11-04 13:30",
+   "verify": "manual",
+   "video_sha256": "7b04d5d4c054ba35fdebf52fd4d1eee649b20f2a9aacd444b873b170bbddd271",
+   "approved_version": "train-howto-b",
+   "native_ai": true,
+   "video_id": "pmS7ByKBu2U",
+   "url": "https://youtube.com/shorts/pmS7ByKBu2U",
+   "note": "MAIN owner API: private + exact publishAt read back at booking (Ketu ticked the exact file on the review page). Confirm public after due time."
+  },
+  {
+   "id": "raw20261103-train-howto-b-linkedin",
+   "label": "Raw 3-Nov hb: Aaj last din: train se order kaise karein — Linkedin",
+   "platform": "linkedin",
+   "rail": "vizard",
+   "due_ist": "2026-11-04 14:35",
+   "verify": "manual",
+   "video_sha256": "7b04d5d4c054ba35fdebf52fd4d1eee649b20f2a9aacd444b873b170bbddd271",
+   "approved_version": "train-howto-b",
+   "native_ai": true,
+   "project_id": 35864402,
+   "final_video_id": 82933796,
+   "vizard_social_account_id": "dml6YXJkLTYtMTY5NjIyLTE3NzMw",
+   "booking_status": "accepted",
+   "note": "Vizard accepted (code 2000); not proof of publication. Confirm after due time.",
+   "url": "https://www.linkedin.com/in/ketu-r/recent-activity/all/"
+  },
+  {
+   "id": "raw20261103-train-howto-b-x",
+   "label": "Raw 3-Nov hb: Aaj last din: train se order kaise karein — X",
+   "platform": "x",
+   "rail": "vizard",
+   "due_ist": "2026-11-04 14:05",
+   "verify": "manual",
+   "video_sha256": "7b04d5d4c054ba35fdebf52fd4d1eee649b20f2a9aacd444b873b170bbddd271",
+   "approved_version": "train-howto-b",
+   "native_ai": true,
+   "project_id": 35864402,
+   "final_video_id": 82933796,
+   "vizard_social_account_id": "dml6YXJkLTUtMTY5NzY5",
+   "booking_status": "accepted",
+   "note": "Vizard accepted (code 2000); not proof of publication. Confirm after due time.",
+   "url": "https://x.com/sale91_com"
   }
  ]
 }
