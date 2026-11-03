@@ -1,32 +1,41 @@
 name: Retro AI-Disclosure Backfill
 
-# Flags already-published bot videos with status.containsSyntheticMedia=true.
-# Quota-aware (videos.update = 50 units, shared 10k/day bucket) and idempotent:
-# run with default max_updates=100, then again the next day until pending: 0.
+# Flags bot videos with status.containsSyntheticMedia=true, once each, oldest
+# first (videos.update = 50 quota units). YouTube never returns that field on a
+# read, so retro_disclose_state.json is the record of what is done ("flagged")
+# and of what a person checked and left unlabelled ("skip"). A day with
+# nothing left only lists the channel (~15 units) and writes nothing; it stays
+# daily so a new upload the normal path missed still gets flagged.
 
 on:
   schedule:
-    # 07:45 UTC = 13:15 IST daily: AFTER the midnight-PT quota reset (~07:00 UTC)
-    # and BEFORE the 09:00 UTC daily run, so the shared YouTube quota isn't
-    # contended (batch-2 failed 07-Jul on quotaExceeded when it ran mid-day).
-    # Idempotent: finishes the remaining videos in one run, then daily no-op.
-    # Remove once a run logs "back-catalog fully disclosed".
+    # 07:45 UTC; GitHub usually starts it hours late, which is fine here.
     - cron: '45 7 * * *'
   workflow_dispatch:
     inputs:
       max_updates:
         description: 'Max videos.update calls this run (50 quota units each)'
         required: false
-        default: '100'
+        default: '120'
       dry_run:
         description: 'true = only list what would change, write nothing'
         required: false
         default: 'false'
+      video_ids:
+        description: 'Only these BOT video ids, comma separated (one-off repair; re-flags even if done)'
+        required: false
+        default: ''
+
+concurrency:
+  group: retro-disclose
+  cancel-in-progress: false
 
 jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,6 +49,9 @@ jobs:
       - name: Install deps
         run: pip install -q google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
 
+      - name: Check the backfill rules
+        run: python3 -m unittest tests/test_retro_disclose.py
+
       - name: Materialize YouTube token
         run: |
           mkdir -p /tmp/yt_shorts
@@ -49,4 +61,31 @@ jobs:
         env:
           MAX_UPDATES: ${{ inputs.max_updates }}
           DRY_RUN: ${{ inputs.dry_run == 'true' && '1' || '0' }}
+          VIDEO_IDS: ${{ inputs.video_ids }}
         run: python3 retro_disclose.py
+
+      - name: Save which videos are done
+        if: ${{ always() && inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add retro_disclose_state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "retro disclose state [skip ci]"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::Retro AI-Disclosure Backfill FAILED: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Retro AI-Disclosure Backfill FAILED — $(date -u +'%d %b %Y %H:%M UTC'). AI labels on @sale91_com Shorts were not checked. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
