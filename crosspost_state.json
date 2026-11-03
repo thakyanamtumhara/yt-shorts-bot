@@ -685,5 +685,28 @@
  },
  "raw20261103-train-howto-a-linkedin": {
   "nudged": true
+ },
+ "raw20261101-t2-diwali-v2-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1511335321050489/"
+ },
+ "raw20261103-r1-lastorder-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfR1mT9Dnua/"
+ },
+ "raw20261103-r1-lastorder-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1510277157587470/"
+ },
+ "raw20261103-train-howto-a-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfSDbtrCGNJ/"
+ },
+ "raw20261103-train-howto-a-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1662782375553549/"
+ },
+ "raw20261103-train-howto-a-x": {
+  "nudged": true
  }
 }
