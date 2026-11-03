@@ -644,5 +644,46 @@
  "personal-story-20260912-fb": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/1119179737537760/"
+ },
+ "personal-story-20260912-li": {
+  "nudged": true
+ },
+ "raw20261101-t2-diwali-v2-linkedin": {
+  "nudged": true
+ },
+ "raw20261101-t2-diwali-v2-x": {
+  "nudged": true
+ },
+ "dtforder20261102-dtf-order-v2-youtube": {
+  "nudged": true
+ },
+ "dtforder20261102-dtf-order-v2-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfRLP3TghQR/"
+ },
+ "dtforder20261102-dtf-order-v2-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1678270930485576/"
+ },
+ "dtforder20261102-dtf-order-v2-x": {
+  "nudged": true
+ },
+ "dtforder20261102-dtf-order-v2-linkedin": {
+  "nudged": true
+ },
+ "raw20261103-r1-lastorder-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261103-r1-lastorder-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261103-r1-lastorder-v1-x": {
+  "nudged": true
+ },
+ "raw20261103-train-howto-a-youtube": {
+  "nudged": true
+ },
+ "raw20261103-train-howto-a-linkedin": {
+  "nudged": true
  }
 }
