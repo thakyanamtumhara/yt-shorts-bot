@@ -1,5 +1,6 @@
 import contextlib
 import copy
+from datetime import datetime, timezone
 import io
 import json
 import os
@@ -15,6 +16,7 @@ import retro_disclose as rd
 
 MAIN_CHANNEL = "UCdgOMA7WO48MYimj6q6mvNQ"
 MUTABLE = set(rd.MUTABLE_STATUS_FIELDS) | {"containsSyntheticMedia"}
+NOW = datetime(2026, 11, 3, 4, 0, tzinfo=timezone.utc)
 TODAY = "2026-11-03"
 
 
@@ -94,7 +96,7 @@ class FakeYouTube:
 
 
 def run(youtube, state, **kwargs):
-    kwargs.setdefault("today", TODAY)
+    kwargs.setdefault("now", NOW)
     kwargs.setdefault("sleep", lambda seconds: None)
     with contextlib.redirect_stdout(io.StringIO()):
         return rd.run(youtube, state, **kwargs)
@@ -107,7 +109,7 @@ def flagged_ids(youtube):
 class RetroDiscloseTest(unittest.TestCase):
     def catalog(self):
         return [  # uploads playlist order: newest first
-            video("newShort001", "2026-11-02T13:30:00Z"),
+            video("newShort001", "2026-11-02T03:30:00Z"),
             video("liveStream1", "2026-10-01T05:00:00Z", live=True),
             video("warehouseLv", "2026-09-01T05:00:00Z", title="Sale91 Warehouse Live — Office Camera"),
             video("midShort001", "2026-06-01T13:30:00Z"),
@@ -141,18 +143,25 @@ class RetroDiscloseTest(unittest.TestCase):
         for untouched in ("liveStream1", "warehouseLv", "doneShort01", "realFootage"):
             self.assertNotIn(untouched, flagged_ids(youtube))
 
-    def test_new_upload_the_normal_path_missed_is_flagged_next_run(self):
+    def test_new_upload_the_normal_path_missed_is_flagged_after_its_first_day(self):
         youtube = FakeYouTube(self.catalog())
         state = self.state()
         run(youtube, state)
-        youtube.store["brandNew001"] = video("brandNew001", "2026-11-04T13:30:00Z")
+        youtube.store["brandNew001"] = video("brandNew001", "2026-11-03T03:30:00Z", "private",
+                                             publishAt="2026-11-03T13:30:00Z")
         youtube.playlist.insert(0, "brandNew001")
-        result = run(youtube, state)
+        same_day = run(youtube, state)
+        self.assertEqual((same_day["flagged"], same_day["too_new"]), (0, 1))
+        self.assertNotIn("brandNew001", flagged_ids(youtube))
+        youtube.store["brandNew001"] = video("brandNew001", "2026-11-03T13:30:00Z")  # went public at its slot
+        self.assertEqual(run(youtube, state, now=NOW.replace(day=4, hour=5))["too_new"], 1)
+        next_day = run(youtube, state, now=NOW.replace(day=4, hour=14))
         self.assertEqual(flagged_ids(youtube)[-1:], ["brandNew001"])
-        self.assertEqual(result["flagged"], 1)
+        self.assertEqual((next_day["flagged"], next_day["too_new"]), (1, 0))
+        self.assertEqual(run(youtube, state, only_ids=["brandNew001"])["flagged"], 1)
 
     def test_update_resends_every_status_field_unchanged(self):
-        scheduled = video("schedShort1", "2026-11-03T02:00:00Z", "private", publishAt="2026-11-05T13:30:00Z",
+        scheduled = video("schedShort1", "2026-11-01T02:00:00Z", "private", publishAt="2026-11-05T13:30:00Z",
                           embeddable=False, publicStatsViewable=False, license="creativeCommon")
         youtube = FakeYouTube([scheduled])
         before = copy.deepcopy(scheduled["status"])

@@ -20,6 +20,9 @@ Safe-update pattern (verified against API docs 2026-07-06):
   record is retro_disclose_state.json: "flagged" ids are done for good, "skip"
   ids were checked by a person and need no label. Oldest first; a day with
   nothing left only lists (~15 units) and writes nothing.
+- Leaves a video alone for its first 24 h: the upload run itself sets the flag
+  and briefly switches the video to unlisted to post the owner comment, and a
+  stale status written back then would un-schedule it.
 - Refuses a token for any channel but the BOT channel (@sale91_com).
 - Quota: videos.update = 50 units from the shared 10,000/day bucket, so
   MAX_UPDATES caps a run. Halts cleanly on quotaExceeded (resets midnight PT).
@@ -30,7 +33,7 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from tools.youtube_status import status_verification
@@ -38,6 +41,7 @@ from tools.youtube_status import status_verification
 BOT_CHANNEL = "UCHZbA84OiM9COlTQ4JcVgeQ"
 STATE_FILE = Path(__file__).resolve().parent / "retro_disclose_state.json"
 TOKEN_FILE = os.environ.get("TOKEN_FILE", "/tmp/yt_shorts/youtube_token.json")
+SETTLE = timedelta(hours=24)
 
 # status fields that are mutable via videos.update — all must be re-sent or
 # the API clears them
@@ -133,7 +137,15 @@ def flag(yt, video, sleep=time.sleep):
         raise Halt(f"{vid}: {evidence['state']} after the update — HALTING, check this video in Studio")
 
 
-def run(yt, state, *, max_updates=120, dry_run=False, only_ids=(), today=None, sleep=time.sleep):
+def published_after(video, cutoff):
+    try:
+        published = datetime.fromisoformat(video.get("snippet", {})["publishedAt"].replace("Z", "+00:00"))
+    except (KeyError, AttributeError, ValueError):
+        return False
+    return published.tzinfo is not None and published > cutoff
+
+
+def run(yt, state, *, max_updates=120, dry_run=False, only_ids=(), now=None, sleep=time.sleep):
     playlist = uploads_playlist(yt)
     if only_ids:
         videos = read_videos(yt, list(only_ids))
@@ -146,10 +158,11 @@ def run(yt, state, *, max_updates=120, dry_run=False, only_ids=(), today=None, s
         ids = upload_ids(yt, playlist)
         print(f"📼 Channel uploads found: {len(ids)}")
         videos = read_videos(yt, ids)
-    today = today or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now = now or datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
 
-    c = {"flagged": 0, "done_before": 0, "api_true": 0, "skipped_real": 0,
-         "skip_list": 0, "pending": 0, "errors": 0, "halted": False, "halt": None}
+    c = {"flagged": 0, "done_before": 0, "api_true": 0, "skipped_real": 0, "skip_list": 0,
+         "too_new": 0, "pending": 0, "errors": 0, "halted": False, "halt": None}
     todo = []
     for v in videos:
         vid, status = v["id"], v.get("status", {})
@@ -167,6 +180,8 @@ def run(yt, state, *, max_updates=120, dry_run=False, only_ids=(), today=None, s
             c["api_true"] += 1
             if not dry_run:
                 state["flagged"][vid] = f"api {today}"
+        elif not only_ids and published_after(v, now - SETTLE):
+            c["too_new"] += 1
         else:
             todo.append(v)
     todo.sort(key=lambda v: v.get("snippet", {}).get("publishedAt") or "")
@@ -212,11 +227,12 @@ def report(c, dry_run=False):
     print(f"  API said flagged : {c['api_true']}")
     print(f"  real footage skip: {c['skipped_real']}")
     print(f"  skip list        : {c['skip_list']}")
+    print(f"  under 24 h old   : {c['too_new']} (next run)")
     print(f"  still pending    : {c['pending']}{' (halted early)' if c['halted'] else ''}")
     print(f"  errors/skipped   : {c['errors']}")
     if c["halt"]:
         print(f"  ❌ {c['halt']}")
-    elif c["pending"]:
+    elif c["pending"] or c["too_new"]:
         print("  ➡️ the next run carries on, oldest first")
     else:
         print("  ✅ back-catalog fully disclosed — later runs only list, until a new upload appears")
