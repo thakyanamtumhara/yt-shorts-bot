@@ -97,6 +97,22 @@
    "youtube_at": "2026-11-06T11:00:00+05:30",
    "meta_at": "2026-11-06T11:30:00+05:30",
    "note": "DTF series #4 WhatsApp wali photo se DTF print ho sakta hai?: finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/5X5MdQ1qu5yWGUYvruYLan (2026-11-02T16:52:48.158Z); MAIN YouTube booked with release-series/youtube/upload_main.py, Instagram reviewed_ai_reels/dtfseries20261102-photo-patch.json, X + LinkedIn via Vizard. Files at p/review/20261102004/."
+  },
+  {
+   "id": "raw20261103-train-howto-a",
+   "run_id": "20261103901",
+   "video_sha256": "beca91da77ea453f82644ebc926090382b985a0b3c7eccc24b55a152dff35c01",
+   "cover_sha256": "3555e942108af5fa11735b1bf0da37fe794dfe0a528f73c59bd88fb08494d8d7",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page",
+    "at": "2026-11-03T06:11:43.713Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/2iLdTXHBdo3a2JGDAE4qmQ)"
+   },
+   "meta_caption": "Train se order kaise karein? 🚆 Pieces daalo → Add to Cart → Order Now → Shipping mein Train + station ka naam → billing details → Pay Now. Last train order: 4 Nov, shaam 6 baje (5-15 Nov train band, Diwali). sale91.com\n\nAI voice: my own cloned voice.",
+   "instagram_title": "Train se order kaise karein (website steps)",
+   "youtube_at": "2026-11-03T17:00:00+05:30",
+   "meta_at": "2026-11-03T21:30:00+05:30",
+   "note": "Train last-order batch ha Train se order kaise karein (website steps): Ketu ticked ✓ Final on https://claude.ai/artifact/2iLdTXHBdo3a2JGDAE4qmQ (2026-11-03T06:11:43.713Z); MAIN YouTube booked with raw-video-2026-11-03-train-urgency/release/youtube/upload_main.py, Instagram reviewed_ai_reels/raw20261103-train-howto-a.json, X + LinkedIn via Vizard. Files at p/review/20261103901/."
   }
  ]
 }
