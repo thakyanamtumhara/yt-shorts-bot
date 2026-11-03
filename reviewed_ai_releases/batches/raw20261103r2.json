@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261103r2",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-03T06:11:59.728Z",
+  "videos": [
+    {
+      "id": "r2-aajlastdin-v1",
+      "version": "1",
+      "sha256": "2eff6874a205f7a2103339c038c6c258fa877d34e60b19230ba851bc669df7fb",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
