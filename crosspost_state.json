@@ -708,5 +708,51 @@
  },
  "raw20261103-train-howto-a-x": {
   "nudged": true
+ },
+ "raw20261024-w4-sweatshirt-v1-linkedin": {
+  "nudged": true
+ },
+ "dtfseries20261102-gang-sheet-free-file-youtube": {
+  "nudged": true
+ },
+ "dtfseries20261102-gang-sheet-free-file-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfTtxaNgoEd/"
+ },
+ "dtfseries20261102-gang-sheet-free-file-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1028051900326502/"
+ },
+ "dtfseries20261102-gang-sheet-free-file-x": {
+  "nudged": true
+ },
+ "dtfseries20261102-gang-sheet-free-file-linkedin": {
+  "nudged": true
+ },
+ "raw20261103-r2-aajlastdin-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261103-r2-aajlastdin-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfTcqd7FCZx/"
+ },
+ "raw20261103-r2-aajlastdin-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1166667329119243/"
+ },
+ "raw20261103-r2-aajlastdin-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261103-r2-aajlastdin-v1-x": {
+  "nudged": true
+ },
+ "raw20261103-train-howto-b-youtube": {
+  "nudged": true
+ },
+ "raw20261103-train-howto-b-linkedin": {
+  "nudged": true
+ },
+ "raw20261103-train-howto-b-x": {
+  "nudged": true
  }
 }
