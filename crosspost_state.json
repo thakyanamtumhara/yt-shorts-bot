@@ -754,5 +754,25 @@
  },
  "raw20261103-train-howto-b-x": {
   "nudged": true
+ },
+ "raw20261024-w5-zipper-v1-linkedin": {
+  "nudged": true
+ },
+ "dtfseries20261102-design-or-sheet-youtube": {
+  "nudged": true
+ },
+ "dtfseries20261102-design-or-sheet-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfWSi5AlAE0/"
+ },
+ "dtfseries20261102-design-or-sheet-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/29616028434721534/"
+ },
+ "dtfseries20261102-design-or-sheet-x": {
+  "nudged": true
+ },
+ "dtfseries20261102-design-or-sheet-linkedin": {
+  "nudged": true
  }
 }
