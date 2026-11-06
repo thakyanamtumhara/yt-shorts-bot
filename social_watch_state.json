@@ -307,6 +307,10 @@
   "32r2cKZIu2o": {
    "title": "DTF में Logo भेजें या पूरी Sheet? दोनों एक ही Button से — Website खुद पूछती है",
    "published": "2026-11-05T05:30:20+00:00"
+  },
+  "J5LxZzjqWQU": {
+   "title": "WhatsApp Photo से DTF Print? अब हाँ — Solid Patch, Background के साथ (PNG बेहतर)",
+   "published": "2026-11-06T05:30:31+00:00"
   }
  },
  "instagram": {
@@ -985,6 +989,10 @@
   "18095350118679111": {
    "permalink": "https://www.instagram.com/reel/DfWSi5AlAE0/",
    "ts": "2026-11-05T05:34:16+0000"
+  },
+  "18101849333660604": {
+   "permalink": "https://www.instagram.com/reel/DfY6yLxDhMy/",
+   "ts": "2026-11-06T06:04:21+0000"
   }
  },
  "facebook": {
@@ -2258,8 +2266,13 @@
    "at": "2026-11-06T02:25:51+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-06T18:12:53+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-11-06",
- "last_run_ist": "2026-11-06T02:25:51+05:30"
+ "last_run_ist": "2026-11-06T18:12:53+05:30"
 }
