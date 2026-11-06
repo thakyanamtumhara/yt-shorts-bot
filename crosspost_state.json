@@ -774,5 +774,22 @@
  },
  "dtfseries20261102-design-or-sheet-linkedin": {
   "nudged": true
+ },
+ "dtfseries20261102-photo-patch-youtube": {
+  "nudged": true
+ },
+ "dtfseries20261102-photo-patch-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfY6yLxDhMy/"
+ },
+ "dtfseries20261102-photo-patch-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1155656756884557/"
+ },
+ "dtfseries20261102-photo-patch-x": {
+  "nudged": true
+ },
+ "dtfseries20261102-photo-patch-linkedin": {
+  "nudged": true
  }
 }
