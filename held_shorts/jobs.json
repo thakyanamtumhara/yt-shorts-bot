@@ -113,6 +113,54 @@
    "youtube_at": "2026-11-03T17:00:00+05:30",
    "meta_at": "2026-11-03T21:30:00+05:30",
    "note": "Train last-order batch ha Train se order kaise karein (website steps): Ketu ticked ✓ Final on https://claude.ai/artifact/2iLdTXHBdo3a2JGDAE4qmQ (2026-11-03T06:11:43.713Z); MAIN YouTube booked with raw-video-2026-11-03-train-urgency/release/youtube/upload_main.py, Instagram reviewed_ai_reels/raw20261103-train-howto-a.json, X + LinkedIn via Vizard. Files at p/review/20261103901/."
+  },
+  {
+   "id": "rs4off-how",
+   "run_id": "20261106001",
+   "video_sha256": "57f60b9b54ffdbf154408cac042cf0c8ca62964b11cf70fb4057ee5ce0ecf651",
+   "cover_sha256": "785af30ace2a63caccf53f0f928a7a276f4bc3b859164cb42429cc21af2efb8f",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page + chat \"All three videos look good. You can proceed further.\"",
+    "at": "2026-11-06T16:00:41.970Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm)"
+   },
+   "meta_caption": "₹4 per piece ka discount kaise milta hai? Har size 10 ke multiple mein lo, hoodie, polo, sweatshirt aur 260 GSM mein 5 ke. Discount apne aap lagta hai, tick zaroori nahi. Jaise 70 pieces: ₹280 seedha kam. Pre-book pe bhi.\n\nOrder: sale91.com\n\nAI voice: my own cloned voice. Screen recording of our website.",
+   "instagram_title": "₹4/pc OFF: How to Get It on Every Order",
+   "youtube_at": "2026-11-07T11:00:00+05:30",
+   "meta_at": "2026-11-07T11:30:00+05:30",
+   "note": "₹4/pc OFF Short how (₹4/pc OFF kaise milega?): finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm (2026-11-06T16:00:41.970Z) and approved in chat; MAIN YouTube booked with rs4-off-videos-2026-11-06/release/youtube/upload_main.py, Instagram reviewed_ai_reels/rs4off20261106-how.json, X + LinkedIn via Vizard. Files at p/review/20261106001/."
+  },
+  {
+   "id": "rs4off-prebook",
+   "run_id": "20261106002",
+   "video_sha256": "570533424651db08b5e12cac5e24bb532cace6d0e5dc18c087ad0a008ba99eb6",
+   "cover_sha256": "2e5271a347cbb671de8e334bd7a979928c87134cb9d18e9afa4b126931866eda",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page + chat \"All three videos look good. You can proceed further.\"",
+    "at": "2026-11-06T16:01:08.218Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm)"
+   },
+   "meta_caption": "Pre-book order pe bhi ₹4 per piece ka discount milta hai? Haan, ab milta hai. Har size 10 ke multiple mein, hoodie aur polo mein 5 ke. Stock aate hi order dispatch.\n\nPre-book: sale91.com\n\nAI voice: my own cloned voice. Screen recording of our website.",
+   "instagram_title": "Pre-Book Orders Now Get ₹4/pc OFF Too",
+   "youtube_at": "2026-11-08T11:00:00+05:30",
+   "meta_at": "2026-11-08T11:30:00+05:30",
+   "note": "₹4/pc OFF Short prebook (Pre-book pe bhi ₹4/pc OFF?): finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm (2026-11-06T16:01:08.218Z) and approved in chat; MAIN YouTube booked with rs4-off-videos-2026-11-06/release/youtube/upload_main.py, Instagram reviewed_ai_reels/rs4off20261106-prebook.json, X + LinkedIn via Vizard. Files at p/review/20261106002/."
+  },
+  {
+   "id": "rs4off-mistake",
+   "run_id": "20261106003",
+   "video_sha256": "4f91b1ecb982a0cb1b9b506cc6e85141bb29309b6f90aa347dddbd43bd43f6ff",
+   "cover_sha256": "94fe61decc1c9733798801ad24fc1ece825e755aea230bd14162382aa8868d52",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page + chat \"All three videos look good. You can proceed further.\"",
+    "at": "2026-11-06T16:01:36.385Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm)"
+   },
+   "meta_caption": "₹4 ka discount kyun nahi laga? Ek size bhi 10 ke multiple mein nahi (jaise 15), to discount nahi lagta. 15 ko 20 karo, ₹4 per piece seedha kam. Hoodie aur polo mein 5 ke multiple.\n\nOrder: sale91.com\n\nAI voice: my own cloned voice. Screen recording of our website.",
+   "instagram_title": "Why Didn't My ₹4/pc Discount Apply?",
+   "youtube_at": "2026-11-09T11:00:00+05:30",
+   "meta_at": "2026-11-09T11:30:00+05:30",
+   "note": "₹4/pc OFF Short mistake (₹4 discount kyun nahi laga?): finished Short Ketu ticked ✓ Final on https://claude.ai/artifact/6TuXS5VofWBLRYZkdRvMzm (2026-11-06T16:01:36.385Z) and approved in chat; MAIN YouTube booked with rs4-off-videos-2026-11-06/release/youtube/upload_main.py, Instagram reviewed_ai_reels/rs4off20261106-mistake.json, X + LinkedIn via Vizard. Files at p/review/20261106003/."
   }
  ]
 }

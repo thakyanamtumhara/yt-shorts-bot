@@ -1,0 +1,28 @@
+{
+ "batch_id": "rs4off20261106",
+ "approval_method": "user_exact_selection",
+ "approved_at": "2026-11-06T16:01:36+00:00",
+ "videos": [
+  {
+   "id": "how",
+   "version": "1",
+   "sha256": "57f60b9b54ffdbf154408cac042cf0c8ca62964b11cf70fb4057ee5ce0ecf651",
+   "public_release_approved": true,
+   "media_kind": "cloned_voice_screen_recording"
+  },
+  {
+   "id": "prebook",
+   "version": "1",
+   "sha256": "570533424651db08b5e12cac5e24bb532cace6d0e5dc18c087ad0a008ba99eb6",
+   "public_release_approved": true,
+   "media_kind": "cloned_voice_screen_recording"
+  },
+  {
+   "id": "mistake",
+   "version": "1",
+   "sha256": "4f91b1ecb982a0cb1b9b506cc6e85141bb29309b6f90aa347dddbd43bd43f6ff",
+   "public_release_approved": true,
+   "media_kind": "cloned_voice_screen_recording"
+  }
+ ]
+}
