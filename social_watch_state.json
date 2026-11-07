@@ -311,6 +311,10 @@
   "J5LxZzjqWQU": {
    "title": "WhatsApp Photo से DTF Print? अब हाँ — Solid Patch, Background के साथ (PNG बेहतर)",
    "published": "2026-11-06T05:30:31+00:00"
+  },
+  "SuY5YSUq6p4": {
+   "title": "₹4/pc OFF कैसे मिलेगा? हर size 10 या 5 के multiple में",
+   "published": "2026-11-07T05:30:28+00:00"
   }
  },
  "instagram": {
@@ -993,6 +997,14 @@
   "18101849333660604": {
    "permalink": "https://www.instagram.com/reel/DfY6yLxDhMy/",
    "ts": "2026-11-06T06:04:21+0000"
+  },
+  "18033089207684329": {
+   "permalink": "https://www.instagram.com/reel/Dfb3MFvAtaX/",
+   "ts": "2026-11-07T09:30:34+0000"
+  },
+  "18075360362486482": {
+   "permalink": "https://www.instagram.com/reel/DfbcIkagENb/",
+   "ts": "2026-11-07T05:34:12+0000"
   }
  },
  "facebook": {
@@ -1302,7 +1314,19 @@
   },
   "2158996248060135": {
    "queued_at": "2026-11-07 09:31",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-11-07T17:00:35+05:30",
+   "permalink": "https://www.facebook.com/reel/2158996248060135"
   }
  },
  "history": [
@@ -2280,8 +2304,13 @@
    "at": "2026-11-07T01:44:14+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-07T17:00:35+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-11-07",
- "last_run_ist": "2026-11-07T01:44:14+05:30"
+ "last_run_ist": "2026-11-07T17:00:35+05:30"
 }
