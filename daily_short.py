@@ -1486,9 +1486,63 @@ def generate_thumbnail_brief(claude_client, script_text, hook_text, topic, resea
         return None
 
 
+def _pick_cover_frame(claude_client, clip_paths, topic, script_text, cover_feedback=None, cost_tracker=None):
+    """The final review refused the 3- and 5-Nov-2026 covers: the first clip's frame showed the neckline while the
+    lesson was about the hem. Claude sees two frames of every clip and picks the one that shows what the lesson is
+    about; None keeps the first-clip frame."""
+    import base64 as _b64
+    import io as _io
+    from PIL import Image
+    frames = []
+    for path in [p for p in (clip_paths or []) if p and os.path.exists(p)][:6]:
+        try:
+            clip = VideoFileClip(path)
+            try:
+                for t_pct in (0.35, 0.7):
+                    frames.append(Image.fromarray(clip.get_frame(min(t_pct * clip.duration, clip.duration - 0.1))))
+            finally:
+                clip.close()
+        except Exception as e:
+            print(f"   ⚠️ Cover frame scan skipped {os.path.basename(path)} ({type(e).__name__})")
+    if len(frames) < 2:
+        return None
+    content = []
+    for i, img in enumerate(frames, 1):
+        small = img.convert("RGB")
+        small.thumbnail((360, 640))
+        buf = _io.BytesIO()
+        small.save(buf, format="JPEG", quality=80)
+        content.append({"type": "text", "text": f"Frame {i}:"})
+        content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                                     "data": _b64.b64encode(buf.getvalue()).decode("ascii")}})
+    ask = (f"These {len(frames)} frames come from one YouTube Short for Indian T-shirt buyers.\nLesson: {topic}\n"
+           f"Script: {str(script_text or '')[:600]}\n")
+    if cover_feedback:
+        ask += f"The final review refused the last cover: {str(cover_feedback)[:600]}\n"
+    ask += ("Pick the ONE frame to use as the cover picture. It must clearly show the garment part or thing this lesson "
+            "is about (for example the hem when the lesson is about hems), large, sharp and well lit, with no face and "
+            "no text. Reply with the frame number only, or 0 if no frame shows it.")
+    content.append({"type": "text", "text": ask})
+    model = "claude-opus-4-6"
+    resp = claude_client.messages.create(model=model, max_tokens=10, messages=[{"role": "user", "content": content}])
+    if cost_tracker:
+        try:
+            cost_tracker.track_claude_call(model, resp.usage.input_tokens, resp.usage.output_tokens)
+        except Exception:
+            pass
+    answer = "".join(getattr(block, "text", "") or "" for block in resp.content).strip()
+    found = re.match(r"\d+", answer)
+    pick = int(found.group()) if found else 0
+    if not 1 <= pick <= len(frames):
+        print(f"   🖼️ Cover frame: no clip shows the lesson clearly ({answer[:12]!r}) → first clip")
+        return None
+    print(f"   🖼️ Cover frame: {pick} of {len(frames)} picked for the lesson")
+    return frames[pick - 1].convert("RGB").resize((THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT), Image.LANCZOS)
+
+
 def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                           claude_client=None, genai_client=None, cost_tracker=None, real_scene=False,
-                          cover_feedback=None):
+                          cover_feedback=None, clip_paths=None):
     """High-CTR cover: Claude writes SHORT punchy text (with vision on the Veo
     frame) -> Gemini paints a TEXT-FREE hero scene -> our PIL renderer
     composites big, crisp, keyword-highlighted text. The image model never
@@ -1504,8 +1558,16 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
         print("   \U0001F916 Cover pipeline: Claude text -> Gemini TEXT-FREE scene -> PIL crisp text...")
         research = refresh_thumbnail_research(claude_client)
 
-        # 1. Best Veo frame = the base scene (and Claude's vision reference)
-        frame_image = _thumbnail_background(veo_clip_path, enhance=False)
+        # 1. The frame that shows the lesson (any clip), else the first clip's best frame = the base scene
+        frame_image = None
+        if clip_paths and len(clip_paths) > 1:
+            try:
+                frame_image = _pick_cover_frame(claude_client, clip_paths, topic, script_text,
+                                                cover_feedback=cover_feedback, cost_tracker=cost_tracker)
+            except Exception as _pick_error:
+                print(f"   ⚠️ Cover frame pick failed ({type(_pick_error).__name__}) → first clip")
+        if frame_image is None:
+            frame_image = _thumbnail_background(veo_clip_path, enhance=False)
 
         # 2. Claude writes the cover text (2 lines, one number highlighted)
         source_insights = get_source_channel_top_topics(5)
@@ -1548,7 +1610,9 @@ def generate_ai_thumbnail(hook_text, topic, script_text, veo_clip_path=None,
                 "no logo, no price tag with digits, no signage. NO person, no face, no body: hands only "
                 "if the reference shows hands. No warehouse, factory or shop background (the final review "
                 "refuses an AI person or a warehouse scene on the cover). Do not change the garment's "
-                "fabric, knit or stitching. Output exactly 1080x1920."
+                "fabric, knit or stitching. Output exactly 1080x1920.\n"
+                f"The cover asks: \"{' '.join(lines)}\". Keep the part of the garment this question is about "
+                "clearly visible, whole and not cropped, as it is in the reference."
             )
             from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
             for model_name in (AI_THUMBNAIL_GEMINI_MODEL, AI_THUMBNAIL_GEMINI_FALLBACK):
@@ -13817,7 +13881,7 @@ def main():
                 hook_text_from_claude, fresh_topic, script_voice,
                 veo_clip_path=first_clip, claude_client=claude,
                 genai_client=veo_client, cost_tracker=cost, real_scene=bool(real_clips),
-                cover_feedback=cover_feedback,
+                cover_feedback=cover_feedback, clip_paths=downloaded_clips,
             )
         if not thumbnail_path:
             thumbnail_path = generate_thumbnail(hook_text_from_claude, fresh_topic, veo_clip_path=first_clip, script_text=script_voice)
@@ -13917,7 +13981,8 @@ def main():
                         new_thumbnail = generate_ai_thumbnail(
                             hook_text_from_claude, fresh_topic, script_voice, veo_clip_path=first_clip,
                             claude_client=claude, genai_client=veo_client, cost_tracker=cost,
-                            real_scene=bool(real_clips), cover_feedback=notes)
+                            real_scene=bool(real_clips), cover_feedback=notes,
+                            clip_paths=downloaded_clips)
                         if not new_thumbnail:
                             raise RuntimeError("no new cover")
                         new_output = f"{WORK_DIR}/SHORT_{random.randint(1000, 9999)}.mp4"
