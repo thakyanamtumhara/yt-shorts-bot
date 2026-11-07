@@ -791,5 +791,22 @@
  },
  "dtfseries20261102-photo-patch-linkedin": {
   "nudged": true
+ },
+ "rs4off20261106-how-youtube": {
+  "nudged": true
+ },
+ "rs4off20261106-how-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfbcIkagENb/"
+ },
+ "rs4off20261106-how-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1095998299925158/"
+ },
+ "rs4off20261106-how-x": {
+  "nudged": true
+ },
+ "rs4off20261106-how-linkedin": {
+  "nudged": true
  }
 }
