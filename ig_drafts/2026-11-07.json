@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-07",
+  "blog_title": "Acid Wash T-Shirt — No Acid Used? Discharge Washing Process Explained for Bulk Printers",
+  "blog_url": "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process.html",
+  "blog_slug": "acid-wash-t-shirt-no-acid-used-discharge-washing-process",
+  "image_urls": [
+    "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-hero.jpg",
+    "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-img1.jpg",
+    "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-img2.jpg"
+  ],
+  "image_assets": [
+    {
+      "url": "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-hero.webp",
+      "origin": "independent_generation",
+      "sha256": "db0ae39ba33d9e219328bae18c240efaed8f9c42b7032d6ea2de2e24643c9c0c"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-img1.webp",
+      "origin": "independent_generation",
+      "sha256": "1987cfbb1d4bedd1c6e9ca63a328692c80bf5892a242c26b34cc2afc44c6f8ed"
+    },
+    {
+      "url": "https://www.bulkplaintshirt.com/p/acid-wash-t-shirt-no-acid-used-discharge-washing-process-img2.webp",
+      "origin": "independent_generation",
+      "sha256": "73bc433cafa7f9fd95a82b80c80021b28c6e66b51ae41bcc8056c54adbadb149"
+    }
+  ],
+  "image_policy_version": "2026-09-24",
+  "caption": "सवाल: क्या एसिड वॉश टी-शर्ट में एसिड होता है? 🤔\n\nजवाब: नहीं। यह नाम गलत है। असल में डिस्चार्ज वॉशिंग होती है — पहले रंग लगाया जाता है, फिर सोडियम हाइपोक्लोराइट या पोटेशियम परमैंगनेट से उसे हटाया जाता है। कोई एसिड नहीं।\n\nव्यावहारिक सीख: बल्क ऑर्डर देते समय, वॉश इफेक्ट और फैब्रिक स्पेसिफिकेशन दोनों अलग-अलग चेक करें। ✓\n\nअपने बल्क प्रिंटिंग में एसिड वॉश फिनिश का कभी अनुभव है?",
+  "hashtags": [
+    "#acidwash",
+    "#dischargewashing",
+    "#bulktshirts",
+    "#textileknowledge",
+    "#garmentfinishing"
+  ],
+  "editorial_review": {
+    "version": "2026-09-23",
+    "supported": true,
+    "reason": "All substantive claims are backed by the acid_wash_discharge source (CottonWorks: Garment Finishing, checked 2026-10-01): the caption correctly states no acid is used, names the actual discharging agents (sodium hypochlorite, potassium permanganate), and explains the discharge process. The practical buyer lesson — that wash effect and fabric specification must be checked separately — is a valid inference from the source's distinction between the finishing process and the base fabric. The caption avoids unsupported claims about durability, colour fastness, chemical specifics for any particular T-shirt, or home methods. Tone and length suit Instagram carousel format."
+  },
+  "rate_facts": {},
+  "posted": false,
+  "media_id": null,
+  "error": null
+}

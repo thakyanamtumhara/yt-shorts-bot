@@ -3297,5 +3297,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.068
     }
+  },
+  {
+    "date": "2026-11-07T09:31:19.575169",
+    "topic": "\u0924\u0947\u091c\u093c \u0927\u0942\u092a \u092e\u0947\u0902 \u091f\u0940-\u0936\u0930\u094d\u091f \u0915\u093e \u0930\u0902\u0917 \u0915\u094d\u092f\u094b\u0902 \u0909\u0921\u093c \u0938\u0915\u0924\u093e \u0939\u0948?",
+    "title": "\u0924\u0947\u091c\u093c \u0927\u0942\u092a \u092e\u0947\u0902 \u091f\u0940-\u0936\u0930\u094d\u091f \u0915\u093e \u0930\u0902\u0917 \u0915\u094d\u092f\u094b\u0902 \u0909\u0921\u093c\u0924\u093e \u0939\u0948? Light Fastness Test \u0938\u092e\u091d\u094b",
+    "total_usd": 7.8806,
+    "duration_min": 28.1,
+    "breakdown": {
+      "claude_opus": 0.3667,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.015,
+      "veo_clips": 7.3368,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.067
+    }
   }
 ]

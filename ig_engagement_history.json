@@ -2777,7 +2777,7 @@
     "title": "Polyester T-Shirt Mein Badbu Kyun? — Oleophilic Fibre Ka Matlab",
     "topic": "Polyester T-Shirt में पसीने की बदबू ज़्यादा क्यों रहती है? — Oleophilic Fibre का मतलब",
     "published_at": "2026-11-02T15:01:06.550776+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "1BhBNGCtjTE",
     "workflow_run_id": "41417203777",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2791,6 +2791,38 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18352503892266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0",
+    "checked_at": "2026-11-07T14:58:26.996626+05:30",
+    "hours_since_publish": 120.0,
+    "views": 1742,
+    "reach": 1412,
+    "likes": 15,
+    "comments": 2,
+    "shares": 8,
+    "saves": 12,
+    "avg_watch_time_ms": 11424
+  },
+  {
+    "media_id": "18033089207684329",
+    "title": "Why Can T-Shirt Colour Fade in Strong Sun? Ask for a Light Fastness Rating",
+    "topic": "तेज़ धूप में टी-शर्ट का रंग क्यों उड़ सकता है?",
+    "published_at": "2026-11-07T15:00:53.129391+05:30",
+    "checked": false,
+    "bot_youtube_id": "zwEebzz9lpU",
+    "workflow_run_id": "42357852743",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "LIGHT FASTNESS सप्लायर से क्यों पूछें?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18353241979266060",
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"

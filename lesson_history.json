@@ -168,5 +168,16 @@
     "buyer_decision": "Polyester या poly-blend T-shirt order करते समय supplier से पूछो कि fabric पर soil-release finish applied है या नहीं — बिना इस finish के polyester की oil affinity soiling और odour बढ़ाती है।",
     "video_id": "1BhBNGCtjTE",
     "published_on": "2026-11-02"
+  },
+  {
+    "topic": "तेज़ धूप में टी-शर्ट का रंग क्यों उड़ सकता है?",
+    "intent_key": "sunlight_fading_needs_lightfastness_rating",
+    "fact_ids": [
+      "lightfastness_sunlight_colour_loss"
+    ],
+    "lesson": "Sunlight is a major cause of colour loss, and light fastness has its own test: it measures how much a colour fades when a sample is exposed to a standard light source, usually rated on a scale where a higher number means better performance. The potential for damage depends on the colorant, the end use, where and in which season it is used, light incidence and humidity, so, as with most test methods, how a lab rating relates to real use must be agreed between manufacturer and customer.",
+    "buyer_decision": "For T-shirts that will hang in a sunny shop front or be worn outdoors all day, such as staff uniforms, ask the supplier for a light-fastness rating and agree the level you need before ordering.",
+    "video_id": "zwEebzz9lpU",
+    "published_on": "2026-11-07"
   }
 ]
