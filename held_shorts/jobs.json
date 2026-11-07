@@ -177,6 +177,22 @@
    "youtube_at": "2026-11-08T18:00:00+05:30",
    "meta_at": "2026-11-08T18:30:00+05:30",
    "note": "Kids Hoodie batch howto (Kids Hoodie pre-book kaise karein?): Ketu ticked ✓ Final on https://claude.ai/artifact/SJW4p6CE3hsSMF6oAsn5AL (2026-11-07T06:57:06.577Z) and approved in chat; MAIN YouTube booked with raw-video-2026-11-07-kids-hoodie/release/youtube/upload_main.py, Instagram reviewed_ai_reels/kidshood20261107-howto.json, X + LinkedIn via Vizard. Files at p/review/20261107002/."
+  },
+  {
+   "id": "kidshood20261107-launch",
+   "run_id": "20261107001",
+   "video_sha256": "c483b1e2cfb3eeea4c440e72a395ef381ce1337f6055e0d0fe501960035bfea4",
+   "cover_sha256": "1ade8378db9fe77651b088c6d2dd4740cb86a6b73e8ae9afc6edee484ebe7a01",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page + chat \"All three items look good: two videos and one Instagram post. You can proceed further and just get everything done in this session.\"",
+    "at": "2026-11-07T06:56:41.111Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/SJW4p6CE3hsSMF6oAsn5AL)"
+   },
+   "meta_caption": "Kids hoodie launch ho gayi hai. Black colour, 320 GSM, andar brushed fleece. Size 3-4 saal se 11-12 saal, chest 28-36 inch. 10 piece ya zyada: ₹200/pc (3-4, 5-6, 7-8), ₹210/pc (9-10, 11-12). 1 piece sample ₹250. Pre-booking chalu hai.\n\nsale91.com\n\nAI voice: my own cloned voice. Real footage of our sample.",
+   "instagram_title": "Kids Hoodie launch",
+   "youtube_at": "2026-11-09T18:00:00+05:30",
+   "meta_at": "2026-11-09T18:30:00+05:30",
+   "note": "Kids Hoodie batch launch (Kids Hoodie launch): Ketu ticked ✓ Final on https://claude.ai/artifact/SJW4p6CE3hsSMF6oAsn5AL (2026-11-07T06:56:41.111Z) and approved in chat; MAIN YouTube booked with raw-video-2026-11-07-kids-hoodie/release/youtube/upload_main.py, Instagram reviewed_ai_reels/kidshood20261107-launch.json, X + LinkedIn via Vizard. Files at p/review/20261107001/."
   }
  ]
 }
