@@ -3,18 +3,18 @@
   "last_video_voice": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "ElevenLabs ✅ (2026-11-02 09:32)",
+   "detail": "ElevenLabs ✅ (2026-11-07 09:31)",
    "provider": "elevenlabs",
-   "at": "2026-11-02 09:32",
-   "title": "Polyester T-Shirt में बदबू ज़्यादा क्यों रहती है? — Oleophilic Fibre क"
+   "at": "2026-11-07 09:31",
+   "title": "तेज़ धूप में टी-शर्ट का रंग क्यों उड़ता है? Light Fastness Test समझो"
   },
   "elevenlabs": {
    "ok": true,
    "severity": "CRITICAL",
-   "detail": "creator · PVC allowed · 354,669/363,000 chars left",
+   "detail": "creator · PVC allowed · 354,056/363,000 chars left",
    "tier": "creator",
    "can_use_pvc": true,
-   "chars_left": 354669,
+   "chars_left": 354056,
    "char_limit": 363000,
    "sub_status": "active",
    "quota_resets": "14 Nov 2026",
@@ -1151,9 +1151,15 @@
    "down": [
     "sarvam"
    ]
+  },
+  {
+   "at": "2026-11-07T16:03:26+05:30",
+   "down": [
+    "sarvam"
+   ]
   }
  ],
- "last_run_ist": "2026-11-07T01:07:37+05:30",
+ "last_run_ist": "2026-11-07T16:03:26+05:30",
  "last_green_date": "2026-11-07",
  "last_still_down_date": "2026-10-06"
 }
