@@ -1,0 +1,14 @@
+{
+  "batch_id": "kidshood20261107launch",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-07T06:56:41.111Z",
+  "videos": [
+    {
+      "id": "launch",
+      "version": "1",
+      "sha256": "c483b1e2cfb3eeea4c440e72a395ef381ce1337f6055e0d0fe501960035bfea4",
+      "public_release_approved": true,
+      "media_kind": "real_footage_ai"
+    }
+  ]
+}
