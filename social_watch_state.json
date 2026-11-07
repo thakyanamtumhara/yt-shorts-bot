@@ -1005,6 +1005,10 @@
   "18075360362486482": {
    "permalink": "https://www.instagram.com/reel/DfbcIkagENb/",
    "ts": "2026-11-07T05:34:12+0000"
+  },
+  "18100466804081156": {
+   "permalink": "https://www.instagram.com/p/DfcYOBeFPgU/",
+   "ts": "2026-11-07T14:18:35+0000"
   }
  },
  "facebook": {
@@ -2309,8 +2313,13 @@
    "at": "2026-11-07T17:00:35+05:30",
    "alerts": 0,
    "new": 3
+  },
+  {
+   "at": "2026-11-07T23:57:58+05:30",
+   "alerts": 0,
+   "new": 1
   }
  ],
  "last_green_date": "2026-11-07",
- "last_run_ist": "2026-11-07T17:00:35+05:30"
+ "last_run_ist": "2026-11-07T23:57:58+05:30"
 }
