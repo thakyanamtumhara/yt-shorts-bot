@@ -266,6 +266,23 @@ class FactLimitAuditTest(unittest.TestCase):
         self.assertEqual(self.audit(unused, SimpleNamespace(brief={'evidence': {}})), '')
         unused.messages.create.assert_not_called()
 
+    def test_json_after_prose_or_a_stray_brace_is_still_read(self):
+        # 28-Oct to 7-Nov-2026: 6 of 8 daily runs printed "Fact-limit audit unavailable (JSONDecodeError)", so most
+        # rewrites were never checked and the 6-Nov overclaim reached the finished video.
+        breach = {'quote': 'wash count likha mein le lo', 'rule': 'no number of washes', 'fix': 'agree a pilling level'}
+        prose = ('I checked every line against the limits {as asked}.\n\n```json\n'
+                 + json.dumps({'breaches': [breach]}) + '\n```\nDone.')
+        self.assertIn('wash count likha mein le lo', self.audit(client_for(raw=prose)))
+        self.assertEqual(self.audit(client_for(raw='No breaches found.\n{"breaches": []}')), '')
+
+    def test_the_reply_has_room_and_an_unreadable_one_is_logged(self):
+        client = client_for(raw='{"breaches": [{"quote": "cut off')
+        printed = Mock()
+        text = load_function('audit_script_limits', {'print': printed})(client, 'a', 'b', self.TOPIC)
+        self.assertEqual(text, '')
+        self.assertGreaterEqual(client.messages.create.call_args.kwargs['max_tokens'], 2000)
+        self.assertIn('reply starts', printed.call_args.args[0])
+
     def test_the_audit_runs_only_on_an_approved_script_and_sends_it_back_for_a_rewrite(self):
         loop = SOURCE[SOURCE.index('# ── 3. Generate Script (with quality gate) ──'):SOURCE.index('# ── 3b. Load Background Music ──')]
         self.assertLess(loop.index('review_script(claude'), loop.index('audit_script_limits(claude'))

@@ -8165,20 +8165,32 @@ HINGLISH SCRIPT: {script_voice}
 ENGLISH SUBTITLES: {script_english}
 
 Return JSON only: {{"breaches": [{{"quote": "...", "rule": "...", "fix": "..."}}]}}"""
+    raw, stop = "", None
     try:
-        resp = claude_client.messages.create(model="claude-opus-4-6", max_tokens=700,
+        resp = claude_client.messages.create(model="claude-opus-4-6", max_tokens=2500,
                                              messages=[{"role": "user", "content": prompt}])
+        stop = getattr(resp, "stop_reason", None)
         raw = resp.content[0].text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1].rsplit("```", 1)[0]
-        breaches = json.loads(raw).get("breaches")
+        decoder, found = json.JSONDecoder(), None
+        for brace in re.finditer(r"\{", raw):
+            try:
+                value, _ = decoder.raw_decode(raw, brace.start())
+            except ValueError:
+                continue
+            if isinstance(value, dict) and "breaches" in value:
+                found = value
+                break
+        if found is None:
+            raise ValueError("no breaches JSON in the reply")
+        breaches = found.get("breaches")
         if not isinstance(breaches, list):
             return ""
         lines = [f"\"{item.get('quote')}\" breaks: {item.get('rule')} (fix: {item.get('fix')})"
                  for item in breaches if isinstance(item, dict) and item.get("quote")]
         return " | ".join(lines)[:900]
     except Exception as error:
-        print(f"   ⚠️ Fact-limit audit unavailable ({type(error).__name__}); the final review still checks")
+        print(f"   ⚠️ Fact-limit audit unavailable ({type(error).__name__}, stop={stop}, reply starts "
+              f"{raw[:120]!r}); the final review still checks")
         return ""
 
 
