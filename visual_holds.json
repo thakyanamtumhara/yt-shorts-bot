@@ -55,5 +55,14 @@
    "barre_yarn_inconsistency_bands"
   ],
   "reason": "Script incorrectly advises checking raw fabric on a table before dyeing rather than inspecting dyed sample fabric, and accompanying visuals depict folded shelf garments instead of a table inspection."
+ },
+ {
+  "date": "2026-11-07",
+  "topic": "टी-शर्ट के नीचे और जोड़ पर अलग सिलाई क्यों होती है?",
+  "intent_key": "knit_hem_coverseam_vs_joining_overedge",
+  "fact_ids": [
+   "stitch_construction_jobs"
+  ],
+  "reason": "repeat failures: 4 runs posted nothing: 3-Nov run 41607529440 and 5-Nov 41998847995 refused, cover never showed the hem; 4-Nov 41803901381 no approved script (fact limit); 6-Nov 42191761896 refused, script broke the fact limit"
  }
 ]

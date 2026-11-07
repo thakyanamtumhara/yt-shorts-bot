@@ -587,6 +587,42 @@ class VisualHoldTest(unittest.TestCase):
         self.assertIsNone(visual_hold_reason({'fact_ids': ['knit_loop_stretch'], 'intent_key': 'stretch'}, holds))
 
 
+class LessonStrikeTest(unittest.TestCase):
+    def test_second_run_that_posted_nothing_within_ten_days_holds_the_lesson(self):
+        from datetime import date
+        from tools.daily_topic_selection import load_visual_holds, record_lesson_strike, visual_hold_reason
+        lesson = dict(brief(), fact_ids=['stitch_construction_jobs', 'rate_bio_rneck'], intent_key='hem_two_lines')
+        renamed = dict(lesson, intent_key='hem_vs_side_seam', topic='Same fact, new angle')
+        other = dict(brief(), fact_ids=['knit_loop_stretch'], intent_key='stretch_back')
+        with TemporaryDirectory() as folder:
+            strikes, holds = Path(folder) / 'lesson_strikes.json', Path(folder) / 'visual_holds.json'
+            self.assertFalse(record_lesson_strike(lesson, 'cover shows the neckline', strikes, holds, date(2026, 11, 3)))
+            self.assertFalse(record_lesson_strike(other, 'script too long', strikes, holds, date(2026, 11, 4)))
+            self.assertFalse(holds.exists())
+            self.assertEqual(json.loads(strikes.read_text())[0]['fact_ids'], ['stitch_construction_jobs'])
+            self.assertTrue(record_lesson_strike(renamed, 'fact limit broken', strikes, holds, date(2026, 11, 5)))
+            saved = json.loads(holds.read_text())
+            self.assertEqual(len(saved), 1)
+            self.assertTrue(saved[0]['reason'].startswith('repeat failures: 2 runs in 10 days posted nothing'))
+            active = load_visual_holds(holds, date(2026, 11, 6))
+            self.assertIsNotNone(visual_hold_reason(lesson, active))
+            self.assertIsNone(visual_hold_reason(other, active))
+
+    def test_old_strikes_and_briefs_without_a_lesson_key_do_not_hold(self):
+        from datetime import date
+        from tools.daily_topic_selection import record_lesson_strike
+        lesson = dict(brief(), fact_ids=['stitch_construction_jobs'], intent_key='hem_two_lines')
+        with TemporaryDirectory() as folder:
+            strikes, holds = Path(folder) / 'lesson_strikes.json', Path(folder) / 'visual_holds.json'
+            self.assertFalse(record_lesson_strike(lesson, 'first', strikes, holds, date(2026, 10, 20)))
+            self.assertFalse(record_lesson_strike(lesson, 'eleven days later', strikes, holds, date(2026, 10, 31)))
+            self.assertFalse(record_lesson_strike({'fact_ids': ['stitch_construction_jobs']}, 'no key', strikes, holds,
+                                                  date(2026, 10, 31)))
+            self.assertFalse(record_lesson_strike(None, 'nothing', strikes, holds, date(2026, 10, 31)))
+            self.assertFalse(holds.exists())
+            self.assertEqual(len(json.loads(strikes.read_text())), 2)
+
+
 class LessonHistoryTest(unittest.TestCase):
     VIDEO_ID = 'aB3dE5gH7_-'
 

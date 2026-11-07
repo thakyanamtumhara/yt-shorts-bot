@@ -12644,7 +12644,7 @@ def main():
 
     from google import genai
     from google.genai import types
-    veo_client = genai.Client(api_key=google_key)
+    veo_client = genai.Client(api_key=google_key, http_options=types.HttpOptions(api_version='v1beta'))
 
     # ── 1b. Fetch source channel insights (read-only, cached 24h) ──
     fetch_source_channel_insights()
@@ -12757,6 +12757,14 @@ def main():
 
     if data is None:
         flag("script_approved", False)
+        try:
+            from tools.daily_topic_selection import record_lesson_strike
+            if not TEST_MODE and record_lesson_strike(
+                    getattr(fresh_topic, "brief", None),
+                    f"no approved script after {SCRIPT_MAX_ATTEMPTS} attempts: {previous_feedback[:200]}"):
+                print("   ⏸️ Lesson held for 21 days: its second run in 10 days posted nothing")
+        except Exception as _strike_error:
+            print(f"   ⚠️ Lesson strike not saved ({type(_strike_error).__name__})")
         raise RuntimeError(
             f"No approved script after {SCRIPT_MAX_ATTEMPTS} attempts; stopping before music, voice or video generation. Topic: {fresh_topic}")
 
@@ -13940,6 +13948,15 @@ def main():
                     from tools.daily_topic_selection import record_review_hold
                     if record_review_hold(getattr(fresh_topic, "brief", None), decision.get("notes")):
                         print("   ⏸️ Lesson held for 21 days: the AI review found its own footage wrong")
+                elif decision.get("decision") == "reject":
+                    try:
+                        from tools.daily_topic_selection import record_lesson_strike
+                        if not TEST_MODE and record_lesson_strike(
+                                getattr(fresh_topic, "brief", None),
+                                "final AI review: " + str(decision.get("notes") or "")[:250]):
+                            print("   ⏸️ Lesson held for 21 days: its second run in 10 days posted nothing")
+                    except Exception as _strike_error:
+                        print(f"   ⚠️ Lesson strike not saved ({type(_strike_error).__name__})")
                 return
             break
         try:
@@ -14280,7 +14297,8 @@ def test_ai_thumbnail_standalone(topic=None, script=None, video_path=None, base_
         return
 
     claude_client = anthropic.Anthropic(api_key=anthropic_key)
-    genai_client = genai.Client(api_key=google_key)
+    from google.genai import types as _gtypes
+    genai_client = genai.Client(api_key=google_key, http_options=_gtypes.HttpOptions(api_version='v1beta'))
 
     # Defaults for testing
     if not topic:

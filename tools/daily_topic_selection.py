@@ -11,6 +11,9 @@ BANK_PATH = Path(__file__).resolve().parents[1] / 'daily_topic_lessons.json'
 VISUAL_HOLDS_PATH = BANK_PATH.parent / 'visual_holds.json'
 LESSON_HISTORY_PATH = BANK_PATH.parent / 'lesson_history.json'
 VISUAL_HOLD_DAYS = 21
+LESSON_STRIKES_PATH = BANK_PATH.parent / 'lesson_strikes.json'
+STRIKE_DAYS = 10
+STRIKE_LIMIT = 2
 IST = timezone(timedelta(hours=5, minutes=30))
 DIMENSIONS = {'buyer_interest', 'freshness', 'learning_value', 'shareability'}
 LIVE_FACTS = {}
@@ -452,6 +455,37 @@ def record_review_hold(brief, reason, path=None, today=None, source='final AI re
                     'reason': (f'{source}: ' + str(reason or ''))[:300]})
     path.write_text(json.dumps(entries[-60:], ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     return True
+
+def record_lesson_strike(brief, reason, path=None, holds_path=None, today=None):
+    """A run of this lesson posted nothing: no approved script, or the final review refused it without holding the
+    lesson. The second such run inside STRIKE_DAYS holds it for VISUAL_HOLD_DAYS, so one lesson cannot take the daily
+    Short day after day (stitch_construction_jobs refused or stopped 3, 4, 5 and 6-Nov-2026). Returns True when held."""
+    if not isinstance(brief, dict) or not brief.get('intent_key'):
+        return False
+    today = today or datetime.now(IST).date()
+    path = Path(path or LESSON_STRIKES_PATH)
+    try:
+        entries = json.loads(path.read_text(encoding='utf-8'))
+        entries = entries if isinstance(entries, list) else []
+    except (OSError, ValueError):
+        entries = []
+    entries.append({'date': today.isoformat(), 'topic': str(brief.get('topic', ''))[:200],
+                    'intent_key': str(brief.get('intent_key', ''))[:120],
+                    'fact_ids': [key for key in brief.get('fact_ids') or [] if not key.startswith('rate_')],
+                    'reason': str(reason or '')[:300]})
+    path.write_text(json.dumps(entries[-60:], ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    recent = 0
+    for entry in entries:
+        try:
+            age = (today - datetime.strptime(entry['date'], '%Y-%m-%d').date()).days
+        except (KeyError, TypeError, ValueError):
+            continue
+        if 0 <= age < STRIKE_DAYS and visual_hold_reason(brief, [entry]):
+            recent += 1
+    if recent < STRIKE_LIMIT:
+        return False
+    return record_review_hold(brief, f'{recent} runs in {STRIKE_DAYS} days posted nothing; last: {reason}',
+                              path=holds_path, today=today, source='repeat failures')
 
 def choose_topic(candidates, *, bank, history, review, viable, min_score=25, max_candidates=5, holds=()):
     pending = []
