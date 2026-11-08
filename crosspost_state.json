@@ -828,5 +828,19 @@
  },
  "kidshood20261107-howto-youtube": {
   "nudged": true
+ },
+ "kidshood20261107-howto-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfexAVJiGE3/"
+ },
+ "kidshood20261107-howto-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1417242617124426/"
+ },
+ "kidshood20261107-howto-x": {
+  "nudged": true
+ },
+ "kidshood20261107-howto-linkedin": {
+  "nudged": true
  }
 }
