@@ -107,8 +107,20 @@ jobs:
             done
             echo 'handled_today=true' >> "$GITHUB_OUTPUT"
           else
-            python3 tools/curated_feed.py --queue-dir feed_queue --execute
+            set -o pipefail
+            python3 tools/curated_feed.py --queue-dir feed_queue --execute | tee "$RUNNER_TEMP/curated-feed.json"
           fi
+
+      # 8-Nov-2026: the Cloudflare Worker feed-photo-trigger dispatches this run when a photo is due; if it ever
+      # stops, the photo waits for this workflow's late GitHub cron (6-8 h), and this step says so.
+      - name: Tell Ketu when a reviewed photo went out late
+        if: always() && inputs.verify_only != true
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 tools/curated_feed_alert.py "$RUNNER_TEMP/curated-feed.json" feed_queue
 
       - name: Publish IG carousel
         if: steps.curated.outputs.handled_today != 'true' && (github.event_name != 'schedule' || github.event.schedule == '30 7 * * *')
