@@ -808,5 +808,25 @@
  },
  "rs4off20261106-how-linkedin": {
   "nudged": true
+ },
+ "rs4off20261106-prebook-youtube": {
+  "nudged": true
+ },
+ "rs4off20261106-prebook-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfeIjKEE1w5/"
+ },
+ "rs4off20261106-prebook-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1690177526013202/"
+ },
+ "rs4off20261106-prebook-x": {
+  "nudged": true
+ },
+ "rs4off20261106-prebook-linkedin": {
+  "nudged": true
+ },
+ "kidshood20261107-howto-youtube": {
+  "nudged": true
  }
 }
