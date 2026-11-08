@@ -152,6 +152,12 @@ jobs:
               --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" --data-urlencode "text=$1" -o /tmp/tg.json
             python3 -c 'import json; r=json.load(open("/tmp/tg.json")); print("Telegram delivered:", r.get("ok"))'
           }
+          fact_line() {
+            local n
+            n=$(grep -c "Fact-limit audit unavailable" <<<"$1" || true)
+            [ "${n:-0}" -gt 0 ] && printf '\n%s' "Fact check: could not read its answer $n time(s) in this run, so only this AI review checked the facts."
+            return 0
+          }
           RUN_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$RUN"
           TITLE=$(python3 -c "import json;print(json.load(open('$DIR/review.json'))['titles']['youtube'])" 2>/dev/null)
           git fetch -q origin main
@@ -170,9 +176,14 @@ jobs:
             exit 0
           fi
           if [ "$DEC" != approve ]; then
+            for i in $(seq 1 10); do
+              [ "$(gh run view "$RUN" --json status -q .status)" = completed ] && break
+              sleep 30
+            done
+            FACT=$(fact_line "$(gh run view "$RUN" --log 2>/dev/null || true)")
             tg "Daily Short rejected by the cloud AI review${ROUND:+ ($ROUND)}
           $TITLE
-          Nothing was posted. ${LINE#DECISION: }"
+          Nothing was posted. ${LINE#DECISION: }${FACT}"
             exit 0
           fi
           for i in $(seq 1 120); do
@@ -185,9 +196,10 @@ jobs:
           IG=$(grep -c "Instagram Reel published" <<<"$LOGTXT" || true)
           FB=$(grep -c "FB Reel: PUBLISHED" <<<"$LOGTXT" || true)
           TG=$(grep -c "Telegram: posted" <<<"$LOGTXT" || true)
+          FACT=$(fact_line "$LOGTXT")
           tg "Daily Short approved by the cloud AI review
           $TITLE
           YouTube: ${YT:-not uploaded} ${WHEN}
-          Instagram: $([ "${IG:-0}" -gt 0 ] && echo posted || echo NOT posted) · Facebook: $([ "${FB:-0}" -gt 0 ] && echo posted || echo NOT posted) · Telegram: $([ "${TG:-0}" -gt 0 ] && echo posted || echo NOT posted)
+          Instagram: $([ "${IG:-0}" -gt 0 ] && echo posted || echo NOT posted) · Facebook: $([ "${FB:-0}" -gt 0 ] && echo posted || echo NOT posted) · Telegram: $([ "${TG:-0}" -gt 0 ] && echo posted || echo NOT posted)${FACT}
           ${LINE#DECISION: }
           Review cost: ${COST:-?} USD"
