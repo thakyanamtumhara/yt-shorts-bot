@@ -315,6 +315,10 @@
   "SuY5YSUq6p4": {
    "title": "₹4/pc OFF कैसे मिलेगा? हर size 10 या 5 के multiple में",
    "published": "2026-11-07T05:30:28+00:00"
+  },
+  "30FxfAe7Vf8": {
+   "title": "Pre-book पर भी ₹4/pc OFF! हाँ, अब मिलता है",
+   "published": "2026-11-08T05:30:22+00:00"
   }
  },
  "instagram": {
@@ -1009,6 +1013,10 @@
   "18100466804081156": {
    "permalink": "https://www.instagram.com/p/DfcYOBeFPgU/",
    "ts": "2026-11-07T14:18:35+0000"
+  },
+  "18360418159171049": {
+   "permalink": "https://www.instagram.com/reel/DfeIjKEE1w5/",
+   "ts": "2026-11-08T06:40:50+0000"
   }
  },
  "facebook": {
@@ -2318,8 +2326,13 @@
    "at": "2026-11-07T23:57:58+05:30",
    "alerts": 0,
    "new": 1
+  },
+  {
+   "at": "2026-11-08T17:11:18+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-11-07",
- "last_run_ist": "2026-11-07T23:57:58+05:30"
+ "last_green_date": "2026-11-08",
+ "last_run_ist": "2026-11-08T17:11:18+05:30"
 }
