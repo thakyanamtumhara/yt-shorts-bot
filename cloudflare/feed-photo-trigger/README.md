@@ -42,6 +42,15 @@ wrangler deploy --config wrangler.jsonc --var DRY_RUN:true   # one cloud tick th
 wrangler deploy --config wrangler.jsonc             # enabled + cron
 ```
 
+Deployed 8-Nov-2026 (code d1bef9a):
+- `e850e0aa-c264-41f3-907e-fa15f3b3e573`: disabled, no cron (the undo), deployed first at 12:25 IST.
+- `FEED_PHOTO_GH_TOKEN` stored with `secret-install.py`.
+- `d8191ef5-f855-4984-a7fb-d25fbfd34bac`: enabled + cron with `DRY_RUN:true`. Cloud tick 12:36:40 IST: `nothing_due`,
+  queued 4, so the token reads the queue from Cloudflare.
+- `cbf88155-aba6-4b0e-b3ec-44bb3e63e88d`: enabled + cron, live from 12:37 IST. Tick 12:41:40 IST: `nothing_due`, queued 4.
+- The read-only check on live data said `would_dispatch kidshood20261107-igpost` at Tue 10-Nov 13:01 IST and
+  `nothing_due` at 12:59 and 16:35 IST. That photo is the first live dispatch.
+
 Watch a tick: `wrangler tail feed-photo-trigger --format json`. If `gh auth login` is redone for thakyanamtumhara,
 the old token stops working: run `python3 secret-install.py` again (same for the other three trigger Workers).
 
