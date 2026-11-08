@@ -12,6 +12,10 @@ Concurrent Cron events or delayed GitHub run visibility may dispatch more than o
 
 From about 10-Oct-2026 the unfiltered run inventory (last 100 runs of the workflow) grew past this Worker's 1 MB response cap (1.35 MB on 1-Nov). Every tick that had a due job then stopped with `response_too_large` before dispatch, while ticks with nothing due still logged `nothing_due`, so the fault was invisible. Reviewed Reels went out only when GitHub's late cron ran: 23-Oct to 1-Nov they were 20 min to 4 h 15 min late. v1.0.2 asks only for runs created inside the retry window (`created=>=<window start>`, 68 KB on 1-Nov) and checks `requested` and `pending` runs by status as well, so older runs in those states still postpone dispatch. The rollback point is version `8c39ef1d-862d-40e1-b16b-1eb530ff1116` (v1.0.1).
 
+## 8-Nov-2026: the approval folder holds at most 20 receipts
+
+`directory()` allows at most 20 JSON files in `reviewed_ai_reels/` AND in `reviewed_ai_releases/batches/`, on top of the `2 × jobs + receipts + 12 <= 48` budget. On 7-Nov-2026 two Kids Hoodie receipts made it 22, so every tick from about 12:36 IST stopped with `queue_limit_or_path` and the 8-Nov 11:00 IST Reel (`rs4off20261106-prebook`) was dispatched by hand at 12:09. Fix: receipts whose videos have all been released (job in `reviewed_ai_reels/archive/`) moved to `reviewed_ai_releases/batches/archive/`; the publisher (`glob('*.json')`) and this Worker (files only) both skip that folder. Before booking a new batch, count both folders; archive released receipts first. Undo: `git mv` a receipt back if a job of that batch is ever queued again.
+
 ## Verification before deployment
 
 From this directory:
