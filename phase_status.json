@@ -17,9 +17,9 @@
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-11-02T00:00:46.495256+05:30",
-      "last_result": "auto-blog-off",
-      "details": "Sunday recap blog off since 17-Oct-2026 (real product pages instead); corpus saved"
+      "last_run": "2026-11-08T23:57:48.067088+05:30",
+      "last_result": "no-saturday-upload",
+      "details": "No long-form video uploaded by main channel in last 48h — skipping recap"
     },
     "4": {
       "id": 4,
@@ -29,5 +29,5 @@
       "details": "Voice style hints active in daily script gen (70 corpus entries)"
     }
   },
-  "last_update": "2026-11-02T00:00:46.495256+05:30"
+  "last_update": "2026-11-08T23:57:48.067088+05:30"
 }
