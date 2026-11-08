@@ -1,0 +1,79 @@
+name: Reviewed Reels housekeeping
+run-name: Reviewed Reels housekeeping · ${{ github.event_name }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reviewed_ai_reels/**'
+      - 'reviewed_ai_releases/**'
+      - 'cloudflare/reviewed-instagram-trigger/**'
+      - 'tools/reviewed_queue_housekeeping.mjs'
+      - 'tools/reviewed_queue_housekeeping.test.mjs'
+      - '.github/workflows/reviewed_reels_housekeeping.yml'
+  schedule:
+    - cron: '30 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: reviewed-reels-housekeeping
+  cancel-in-progress: false
+
+jobs:
+  housekeeping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test the housekeeping tool
+        run: node --test tools/reviewed_queue_housekeeping.test.mjs
+
+      - name: Archive released Reels and their approval receipts
+        run: node tools/reviewed_queue_housekeeping.mjs archive
+
+      - name: Commit the archive moves
+        run: |
+          git add -A reviewed_ai_reels reviewed_ai_releases
+          if git diff --cached --quiet; then echo "Nothing to archive."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Reviewed Reels housekeeping: archive released [skip ci]"
+          for attempt in 1 2 3; do
+            if git pull --rebase -q origin main; then
+              if git push -q origin HEAD:main; then exit 0; fi
+            else
+              git rebase --abort || true
+              exit 1
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Check the on-time trigger can read the queue (dry run, cannot dispatch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          sleep 5
+          node tools/reviewed_queue_housekeeping.mjs check
+
+      - name: Tell Ketu when housekeeping itself failed
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Reviewed Reels housekeeping FAILED. Instagram Reels may stop going out on time until an AI session looks. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi
