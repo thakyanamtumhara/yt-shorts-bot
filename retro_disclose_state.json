@@ -306,7 +306,8 @@
   "zcaJQ1DdyIc": "seen on page 2026-11-03",
   "zk44NuGLfZI": "flagged 2026-11-03",
   "zrXzlP_EZN0": "seen on page 2026-11-03",
-  "zvjXtXErdBY": "seen on page 2026-11-03"
+  "zvjXtXErdBY": "seen on page 2026-11-03",
+  "zwEebzz9lpU": "flagged 2026-11-08"
  },
  "note": "Videos the Retro AI-Disclosure Backfill never touches again. The YouTube API never returns containsSyntheticMedia, so this file is the only record. flagged: AI label set (seen on page = the public watch page showed 'Made with AI' in the 2026-11-03 audit). skip: a person checked the video and it needs no label; remove an id here to let the job flag it.",
  "skip": {
