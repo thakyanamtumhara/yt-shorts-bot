@@ -168,9 +168,10 @@ VIDEO_WIDTH, VIDEO_HEIGHT = 1080, 1920
 FPS = 30
 VEO_CLIPS_PER_VIDEO = 5
 # Google shut every Veo 3.1 preview model down on 22-Oct-2026 (runs 22-27 Oct died on 404 "no longer available").
-# Clips now come from Gemini Omni Flash (tools/omni_video.py, ~$0.10/s at 720p, one tier). The VEO_* names stay:
+# Clips now come from Gemini Omni Flash (tools/omni_video.py: 1.1 ~$0.10/s at 720p; from 3-Dec-2026 1.2 ~$0.07/s with
+# the clip length sent as response_format.duration, since Google routes 1.1 to 1.2 that day). The VEO_* names stay:
 # logs, dashboards and the clip check use them.
-VEO_MODEL = "gemini-omni-1.1-flash"
+from tools.omni_video import MODEL as VEO_MODEL
 # Default OFF (2026-08-15): for months this flag was billed but never generated — the
 # production loop always used VEO_MODEL for all 5 clips while track_veo charged a full-price
 # hero clip ($7.04/video logged vs ~$4.80 actually spent). The loop now honors the flag for

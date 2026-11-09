@@ -11,6 +11,10 @@ on:
         description: 'Also make two 8 s clips through daily_short.py itself (main-loop helper + clip-check re-make, about $1.60)'
         type: boolean
         default: false
+      model:
+        description: 'Omni model to test (empty = the date pick: 1.1 until 3-Dec-2026, then 1.2), e.g. gemini-omni-1.2-flash'
+        type: string
+        default: ''
 
 jobs:
   probe:
@@ -20,6 +24,7 @@ jobs:
       contents: read
     env:
       GOOGLE_API_KEY: ${{ secrets.GEMINI_PREPAY_KEY || secrets.GOOGLE_API_KEY }}
+      OMNI_MODEL: ${{ inputs.model }}
     steps:
       - uses: actions/checkout@v4
 
