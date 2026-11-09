@@ -842,5 +842,39 @@
  },
  "kidshood20261107-howto-linkedin": {
   "nudged": true
+ },
+ "rs4off20261106-mistake-youtube": {
+  "nudged": true
+ },
+ "rs4off20261106-mistake-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfgluM8jPPy/"
+ },
+ "rs4off20261106-mistake-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2039230380073862/"
+ },
+ "rs4off20261106-mistake-x": {
+  "nudged": true
+ },
+ "rs4off20261106-mistake-linkedin": {
+  "nudged": true
+ },
+ "kidshood20261107-launch-youtube": {
+  "nudged": true
+ },
+ "kidshood20261107-launch-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfhVz9DAOV8/"
+ },
+ "kidshood20261107-launch-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/3723104377852444/"
+ },
+ "kidshood20261107-launch-x": {
+  "nudged": true
+ },
+ "kidshood20261107-launch-linkedin": {
+  "nudged": true
  }
 }
