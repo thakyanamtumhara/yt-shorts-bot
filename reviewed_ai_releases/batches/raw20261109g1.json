@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261109g1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-09T13:55:36.908Z",
+  "videos": [
+    {
+      "id": "ls-gift-v1",
+      "version": "1",
+      "sha256": "e20b168918322688c85d7f367cb92b410249b3c453a95edfb69d9ece8364621d",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
