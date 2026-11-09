@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261109m1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-09T13:55:52.008Z",
+  "videos": [
+    {
+      "id": "ls-meesho-v1",
+      "version": "1",
+      "sha256": "3ed565e5b5633550598215bd6b882d23c8465a1107ee2fcf68069a424bc5ba88",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
