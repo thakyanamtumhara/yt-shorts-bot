@@ -64,5 +64,14 @@
    "stitch_construction_jobs"
   ],
   "reason": "repeat failures: 4 runs posted nothing: 3-Nov run 41607529440 and 5-Nov 41998847995 refused, cover never showed the hem; 4-Nov 41803901381 no approved script (fact limit); 6-Nov 42191761896 refused, script broke the fact limit"
+ },
+ {
+  "date": "2026-11-09",
+  "topic": "प्लेन टी-शर्ट पर हल्की आड़ी धारियाँ (Barré) क्यों दिखती हैं?",
+  "intent_key": "barre_bands_from_yarn_inconsistency",
+  "fact_ids": [
+   "barre_yarn_inconsistency_bands"
+  ],
+  "reason": "clip check: only 2 of 5 clips show this lesson truthfully"
  }
 ]
