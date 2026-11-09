@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261109f1",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-09T13:54:12.993Z",
+  "videos": [
+    {
+      "id": "ls-full-v1",
+      "version": "1",
+      "sha256": "fea93d811765a583ec3cf9efb1cb3401321483c3fe388f7c76fb89851a0bb635",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
