@@ -331,6 +331,10 @@
   "LD9IApdO7fQ": {
    "title": "₹4 discount क्यों नहीं लगा? एक size 15 = discount नहीं",
    "published": "2026-11-09T05:30:34+00:00"
+  },
+  "KY82W6Oh6KY": {
+   "title": "Lot Sale: ₹60 Se T-Shirt, Itna Sasta Kyun? | Polo ₹100, True Bio ₹80, Shorts ₹110",
+   "published": "2026-11-10T11:30:01+00:00"
   }
  },
  "instagram": {
@@ -1041,6 +1045,14 @@
   "18096725078661004": {
    "permalink": "https://www.instagram.com/reel/DfgluM8jPPy/",
    "ts": "2026-11-09T05:34:14+0000"
+  },
+  "18343568371261803": {
+   "permalink": "https://www.instagram.com/reel/Dfj3LLMiEC0/",
+   "ts": "2026-11-10T12:05:17+0000"
+  },
+  "18115585457131210": {
+   "permalink": "https://www.instagram.com/p/DfjYTIUDqHg/",
+   "ts": "2026-11-10T07:33:47+0000"
   }
  },
  "facebook": {
@@ -1366,11 +1378,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-01T10:25:57+05:30",
-   "alerts": 0,
-   "new": 0
-  },
   {
    "at": "2026-08-01T10:27:38+05:30",
    "alerts": 0,
@@ -2365,8 +2372,13 @@
    "at": "2026-11-10T04:46:11+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-10T18:45:11+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-11-10",
- "last_run_ist": "2026-11-10T04:46:11+05:30"
+ "last_run_ist": "2026-11-10T18:45:11+05:30"
 }
