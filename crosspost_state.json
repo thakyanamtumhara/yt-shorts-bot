@@ -876,5 +876,19 @@
  },
  "kidshood20261107-launch-linkedin": {
   "nudged": true
+ },
+ "kidshood20261107-igpost-ig-feed": {
+  "resolved": true,
+  "url": "https://www.instagram.com/p/DfjYTIUDqHg/"
+ },
+ "raw20261109-ls-full-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261109-ls-full-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dfj3LLMiEC0/"
+ },
+ "raw20261109-ls-full-v1-x": {
+  "nudged": true
  }
 }
