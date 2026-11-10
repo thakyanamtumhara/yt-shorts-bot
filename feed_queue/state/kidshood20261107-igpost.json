@@ -1,0 +1,15 @@
+{
+  "format": "curated-feed-v1",
+  "mode": "publish",
+  "job_id": "kidshood20261107-igpost",
+  "job_sha256": "a350ef2f231ddf8cd1ece22aaf275ba091f6b47ad7c8e17d1581a07868475abd",
+  "account_id": "17841407981790313",
+  "phase": "published",
+  "child_ids": [],
+  "pending": null,
+  "parent_id": "18353689474266060",
+  "publish_attempt_at": "2026-11-10T07:33:45.965273+00:00",
+  "media_id": "18115585457131210",
+  "published_at": "2026-11-10T07:33:45.965273+00:00",
+  "permalink": "https://www.instagram.com/p/DfjYTIUDqHg/"
+}
