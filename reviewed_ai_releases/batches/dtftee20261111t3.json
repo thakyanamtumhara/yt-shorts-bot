@@ -1,0 +1,14 @@
+{
+  "batch_id": "dtftee20261111t3",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-11T15:32:37.591Z",
+  "videos": [
+    {
+      "id": "tee-share",
+      "version": "1",
+      "sha256": "8e9e9c15fda307b3a8288db0f560a257b9062d924e41eebef1b9a4e079d7a7e3",
+      "public_release_approved": true,
+      "media_kind": "cloned_voice_screen_recording"
+    }
+  ]
+}
