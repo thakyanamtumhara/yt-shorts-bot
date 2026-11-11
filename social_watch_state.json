@@ -335,6 +335,10 @@
   "KY82W6Oh6KY": {
    "title": "Lot Sale: ₹60 Se T-Shirt, Itna Sasta Kyun? | Polo ₹100, True Bio ₹80, Shorts ₹110",
    "published": "2026-11-10T11:30:01+00:00"
+  },
+  "TeSdi4KpuLA": {
+   "title": "Gift Ke Liye Printed T-Shirt? Lot Sale T-Shirt ₹60 Se | sale91.com",
+   "published": "2026-11-11T11:30:23+00:00"
   }
  },
  "instagram": {
@@ -1053,6 +1057,10 @@
   "18115585457131210": {
    "permalink": "https://www.instagram.com/p/DfjYTIUDqHg/",
    "ts": "2026-11-10T07:33:47+0000"
+  },
+  "18134753950666732": {
+   "permalink": "https://www.instagram.com/reel/Dfmb-A_FJVz/",
+   "ts": "2026-11-11T12:04:24+0000"
   }
  },
  "facebook": {
@@ -1378,11 +1386,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-01T10:29:17+05:30",
-   "alerts": 0,
-   "new": 0
-  },
   {
    "at": "2026-08-01T12:56:15+05:30",
    "alerts": 0,
@@ -2377,8 +2380,13 @@
    "at": "2026-11-11T02:12:34+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-11T17:55:48+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-11-11",
- "last_run_ist": "2026-11-11T02:12:34+05:30"
+ "last_run_ist": "2026-11-11T17:55:48+05:30"
 }
