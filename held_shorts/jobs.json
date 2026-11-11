@@ -209,6 +209,22 @@
    "youtube_at": "2026-11-13T11:00:00+05:30",
    "meta_at": "2026-11-13T11:30:00+05:30",
    "note": "DTF See-on-T-shirt batch t1 Print kitna bada dikhega?: Ketu ticked ✓ Final on https://claude.ai/artifact/2QFKcx4rKDXKo55xAwxDdQ (2026-11-11T15:31:40.178Z); MAIN YouTube booked with dtf-tee-videos-2026-11-11/release/youtube/upload_main.py, Instagram reviewed_ai_reels/dtftee20261111-tee-size.json, X + LinkedIn via Vizard. Files at p/review/20261111001/."
+  },
+  {
+   "id": "dtftee20261111-tee-hoodie",
+   "run_id": "20261111002",
+   "video_sha256": "c9070d03a9452d4f7e0a424e45045acf827ce84ccf3f0ed8e4b6dbbe02d84345",
+   "cover_sha256": "e4f30747e7d3c08ea8ed26cd5fa7ac3b1c65d4fc05405e7b8ce802a16e0f9c48",
+   "approval": {
+    "by": "Ketu (owner), ✓ Final tick on the review page",
+    "at": "2026-11-11T15:32:12.809Z",
+    "words": "✓ Final (tick on https://claude.ai/artifact/2QFKcx4rKDXKo55xAwxDdQ)"
+   },
+   "meta_caption": "Sardi mein hoodie pe print karwana hai? Pehle dekh lo, kaisa lagega. DTF website pe design upload karo, \"See on T-shirt\" dabao: Round neck, Polo, Oversize aur Hoodie, chaaron pe wahi design, asli size mein. Hoodie pe Back dabao, design hood ke neeche aata hai. 6 colour. Hoodie sirf dekhne ke liye hai, aapko DTF print milega.\n\ndtf.bulkplaintshirt.com/tshirt\n\nAI voice: my own cloned voice. Screen recording of our DTF website.",
+   "instagram_title": "Hoodie aur oversize pe kaisa lagega?",
+   "youtube_at": "2026-11-14T11:00:00+05:30",
+   "meta_at": "2026-11-14T11:30:00+05:30",
+   "note": "DTF See-on-T-shirt batch t2 Hoodie aur oversize pe kaisa lagega?: Ketu ticked ✓ Final on https://claude.ai/artifact/2QFKcx4rKDXKo55xAwxDdQ (2026-11-11T15:32:12.809Z); MAIN YouTube booked with dtf-tee-videos-2026-11-11/release/youtube/upload_main.py, Instagram reviewed_ai_reels/dtftee20261111-tee-hoodie.json, X + LinkedIn via Vizard. Files at p/review/20261111002/."
   }
  ]
 }
