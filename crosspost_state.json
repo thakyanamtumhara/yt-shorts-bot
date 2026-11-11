@@ -894,5 +894,14 @@
  "raw20261109-ls-full-v1-facebook": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/5863355473888897/"
+ },
+ "raw20261109-ls-full-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261109-ls-gift-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261109-ls-gift-v1-x": {
+  "nudged": true
  }
 }
