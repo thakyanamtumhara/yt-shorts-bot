@@ -73,5 +73,15 @@
    "barre_yarn_inconsistency_bands"
   ],
   "reason": "clip check: only 2 of 5 clips show this lesson truthfully"
+ },
+ {
+  "date": "2026-11-11",
+  "topic": "धुलाई में टी-शर्ट सिर्फ सिकुड़ती नहीं, बढ़ भी सकती है?",
+  "intent_key": "laundering_growth_shrinkage_and_test_conditions",
+  "fact_ids": [
+   "dimensional_change_growth_shrinkage",
+   "garment_dimensional_change_home_laundering_test"
+  ],
+  "reason": "repeat failures: 2 runs in 10 days posted nothing; last: no approved script after 5 attempts: These lines break the cited facts' limits or are wrong Hindi; rewrite without them: \"Apna sample dhoke check kar lo\" breaks: garment_dimensional_change_home_laundering_test limits: Do not present a ho"
  }
 ]
