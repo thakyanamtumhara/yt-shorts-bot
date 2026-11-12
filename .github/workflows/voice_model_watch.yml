@@ -6,12 +6,15 @@ name: Voice model watch
 # words and pace checks pass (tools/voice_model_watch.py). Silent on a normal day.
 # Way back: run this workflow with rollback = flagship or realtime.
 #
-# 03:35 UTC = 09:05 IST, well before the daily Short reads the file at 14:30 IST.
+# 03:35 UTC = 09:05 IST, well before the daily Short reads the file at 14:30 IST. 09:35 UTC = 15:05 IST is
+# the second try, because GitHub timers skip runs: a day needs only one of the two. A timer run also says
+# when the check had not run for more than 2 days, and sends one "still running" line a month.
 # The Telegram goes out only after voice_models.json is pushed, so "moved" is never said early.
 
 on:
   schedule:
     - cron: '35 3 * * *'
+    - cron: '35 9 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -34,6 +37,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: voice-model-watch
@@ -59,8 +63,11 @@ jobs:
           PRETEND_CURRENT: ${{ inputs.pretend_current }}
           FORCE_CANDIDATE: ${{ inputs.force_candidate }}
           ROLLBACK: ${{ inputs.rollback }}
+          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           args=(--outbox "$RUNNER_TEMP/voice-watch")
+          if [ "$EVENT" = "schedule" ]; then args+=(--scheduled); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           if [ -n "$PRETEND_CURRENT" ]; then args+=(--pretend-current "$PRETEND_CURRENT"); fi
           if [ -n "$FORCE_CANDIDATE" ]; then args+=(--force-candidate "$FORCE_CANDIDATE"); fi

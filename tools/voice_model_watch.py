@@ -51,13 +51,16 @@ UNANSWERED = {0, 429, 500, 502, 503, 504}
 RETRY_WAITS = (5, 15)
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 BLIND = 'Voice model check could not read ElevenLabs today. Nothing was changed. It will try again tomorrow.'
+# No numbers or hyphenated words: speech-to-text writes them two ways ("240" / "दो सौ चालीस", "prebook" / "pre book"),
+# which cost a line 0.24 in the first real proof (12-Nov-2026) with nothing wrong in the voice.
 LINES = (
-    'दो सौ चालीस GSM oversize T-shirt का rate एक सौ छियासी रुपये है, दस pieces का carton लो तो चार रुपये per piece discount मिलेगा.',
-    'दिल्ली में delivery दो घंटे में हो जाती है, बाक़ी cities में courier से तीन से पाँच दिन लगते हैं.',
-    'Black colour का stock कल सुबह तक आ जाएगा, आप अभी website पे pre-book कर सकते हो.',
+    'हमारी oversize T-shirt का fabric बहुत soft है, और bulk order पर अच्छा discount मिलता है.',
+    'दिल्ली में delivery उसी दिन हो जाती है, बाक़ी cities में courier से कुछ दिन लगते हैं.',
+    'Black colour का stock कल सुबह तक आ जाएगा, आप अभी website पर order कर सकते हो.',
     'Sample order करके पहले fabric और fit check कर लो, फिर bulk order करो.',
-    'Payment के बाद order same day dispatch होता है और tracking link WhatsApp पे आ जाता है.',
+    'Payment के बाद order same day dispatch होता है और tracking link WhatsApp पर आ जाता है.',
 )
+MISSED_DAYS = 2
 
 
 def kind_of(model):
@@ -544,6 +547,37 @@ def rollback(state, kind, api, today, dry=False):
                         f'The daily check will not move to {show(current)} again by itself.')], False
 
 
+def last_run_days(now):
+    repo, token = os.environ.get('GITHUB_REPOSITORY'), os.environ.get('GH_TOKEN')
+    if not repo or not token:
+        return None
+    status, body = http('GET', f'https://api.github.com/repos/{repo}/actions/workflows/voice_model_watch.yml/runs'
+                        '?status=success&per_page=1',
+                        {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+                         'User-Agent': 'voice-model-watch'}, timeout=30)
+    value = parse(body)
+    try:
+        created = datetime.datetime.fromisoformat(value['workflow_runs'][0]['created_at'].replace('Z', '+00:00'))
+    except (TypeError, KeyError, IndexError, ValueError, AttributeError):
+        return None
+    return (now - created).days
+
+
+def routine(state, today, gap):
+    notes = []
+    if gap is not None and gap > MISSED_DAYS:
+        notes.append(note(f'Voice model check had not run for {gap} days (GitHub skipped it). It ran today.'))
+    month = today.strftime('%Y-%m')
+    if state.get('heartbeat') != month:
+        state['heartbeat'] = month
+        waiting = sorted(show(model) for model in state['pending'])
+        extra = f' A newer model is waiting for its check: {", ".join(waiting)}.' if waiting else ''
+        notes.append(note(f'Voice model check is running every day. Videos speak with {show(state["flagship"])}, live '
+                          f'calls with {show(state["realtime"])}.{extra} You get this line once a month; if it '
+                          f'stops coming, tell an AI session.'))
+    return notes
+
+
 def load_state(path=None):
     with open(path or STATE_FILE, encoding='utf-8') as handle:
         raw = json.load(handle)
@@ -658,6 +692,7 @@ def main(argv=None):
     parser.add_argument('--rollback', choices=KINDS, help='go back to the previous model of this kind')
     parser.add_argument('--outbox', help='save the Telegram messages here for --send-outbox instead of sending')
     parser.add_argument('--send-outbox', help='send the messages an earlier run saved')
+    parser.add_argument('--scheduled', action='store_true', help='timer run: monthly line and missed-days alert')
     args = parser.parse_args(argv)
     if args.send_outbox:
         return send_outbox(args.send_outbox)
@@ -687,6 +722,8 @@ def main(argv=None):
         changed, notes, blind = state, [note(BLIND)], True
     else:
         changed, notes, blind = run(state, Eleven(key), today, dry, pretend, forced)
+        if args.scheduled and not dry and not blind:
+            notes = notes + routine(changed, today, last_run_days(datetime.datetime.now(datetime.timezone.utc)))
     if not dry and changed != state:
         save_state(changed)
     print(json.dumps({'flagship': changed['flagship'], 'realtime': changed['realtime'], 'known': len(changed['known']),

@@ -717,11 +717,41 @@ class MainTest(unittest.TestCase):
             self.assertEqual(wire.calls, [])
 
 
+class RoutineTest(unittest.TestCase):
+    def test_one_line_a_month_and_a_missed_days_alert(self):
+        current = state()
+        notes = watch.routine(current, DAY, 0)
+        self.assertEqual((len(notes), current['heartbeat']), (1, '2026-11'))
+        self.assertIn('Videos speak with eleven_v4, live calls with eleven_v4_turbo. You get this line once a month',
+                      notes[0]['text'])
+        self.assertEqual(watch.routine(current, later(1), 1), [])
+        self.assertEqual(watch.routine(current, later(1), None), [])
+        notes = watch.routine(current, later(5), 4)
+        self.assertEqual(len(notes), 1)
+        self.assertIn('had not run for 4 days', notes[0]['text'])
+        notes = watch.routine(state(pending={'eleven_v5': {'kind': 'flagship'}}), later(30), 0)
+        self.assertIn('A newer model is waiting for its check: eleven_v5.', notes[0]['text'])
+
+    def test_last_run_age_needs_a_token_and_survives_any_answer(self):
+        now = datetime.datetime(2026, 11, 12, 4, 0, tzinfo=datetime.timezone.utc)
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': '', 'GH_TOKEN': ''}):
+            self.assertIsNone(watch.last_run_days(now))
+        env = {'GITHUB_REPOSITORY': 'o/r', 'GH_TOKEN': 'ghs_SECRET'}
+        for body, expected in ((b'{"workflow_runs":[{"created_at":"2026-11-08T03:40:00Z"}]}', 4),
+                               (b'{"workflow_runs":[]}', None), (b'not json', None), (b'[]', None)):
+            with patch.dict('os.environ', env), patch.object(watch, 'http', lambda *a, **k: (200, body)), \
+                    redirect_stdout(StringIO()) as output:
+                self.assertEqual(watch.last_run_days(now), expected)
+            self.assertNotIn('ghs_SECRET', output.getvalue())
+
+
 class WorkflowTest(unittest.TestCase):
     def test_workflow_runs_daily_can_commit_and_never_fails_quietly(self):
         workflow = (ROOT/'.github/workflows/voice_model_watch.yml').read_text()
         self.assertIn("- cron: '35 3 * * *'", workflow)
-        self.assertIn('permissions:\n  contents: write\n', workflow)
+        self.assertIn("- cron: '35 9 * * *'", workflow)
+        self.assertIn('permissions:\n  contents: write\n  actions: read\n', workflow)
+        self.assertIn('if [ "$EVENT" = "schedule" ]; then args+=(--scheduled); fi', workflow)
         for name in ('dry_run', 'pretend_current', 'force_candidate', 'rollback'):
             self.assertRegex(workflow, r'(?m)^      ' + name + ':$')
         self.assertIn("if: ${{ failure() && steps.tell.outputs.told != '1' }}", workflow)
