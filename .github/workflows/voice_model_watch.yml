@@ -1,0 +1,111 @@
+name: Voice model watch
+
+# Owner's rule (12-Nov-2026): every AI voice job speaks with ElevenLabs' newest voice model and
+# moves to a newer one by itself. voice_models.json names the model for each kind of job; this
+# job moves it to a higher ElevenLabs generation only after Ketu's clone is trained on it and the
+# words and pace checks pass (tools/voice_model_watch.py). Silent on a normal day.
+# Way back: run this workflow with rollback = flagship or realtime.
+#
+# 03:35 UTC = 09:05 IST, well before the daily Short reads the file at 14:30 IST.
+# The Telegram goes out only after voice_models.json is pushed, so "moved" is never said early.
+
+on:
+  schedule:
+    - cron: '35 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Check and print only: no file change, no agent change, no training, no Telegram'
+        required: false
+        type: boolean
+        default: false
+      pretend_current:
+        description: 'Proof only, forces a dry run: act as if the model in use were e.g. flagship=eleven_v3'
+        required: false
+        default: ''
+      force_candidate:
+        description: 'Test this model id now, e.g. eleven_v4'
+        required: false
+        default: ''
+      rollback:
+        description: 'Go back to the previous model: flagship or realtime'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: voice-model-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Step timeouts fail the step, so the failure Telegram below still runs; a job timeout would skip it.
+      - name: Check ElevenLabs for a newer voice model
+        timeout-minutes: 15
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PRETEND_CURRENT: ${{ inputs.pretend_current }}
+          FORCE_CANDIDATE: ${{ inputs.force_candidate }}
+          ROLLBACK: ${{ inputs.rollback }}
+        run: |
+          args=(--outbox "$RUNNER_TEMP/voice-watch")
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "$PRETEND_CURRENT" ]; then args+=(--pretend-current "$PRETEND_CURRENT"); fi
+          if [ -n "$FORCE_CANDIDATE" ]; then args+=(--force-candidate "$FORCE_CANDIDATE"); fi
+          if [ -n "$ROLLBACK" ]; then args+=(--rollback "$ROLLBACK"); fi
+          python3 tools/voice_model_watch.py "${args[@]}"
+
+      - name: Save voice_models.json
+        id: save
+        if: ${{ !cancelled() }}
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          if [ -z "$(git status --porcelain voice_models.json)" ]; then echo "No change."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add voice_models.json
+          git commit -q -m "voice model watch state [skip ci]"
+          for attempt in 1 2 3 4; do
+            if git pull --rebase -q origin "$REF" && git push -q origin "HEAD:$REF"; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 10))
+          done
+          echo "::error::voice_models.json push failed after 4 tries"
+          exit 1
+
+      - name: Tell the owner
+        id: tell
+        timeout-minutes: 5
+        if: ${{ !cancelled() && steps.save.outcome == 'success' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: python3 tools/voice_model_watch.py --send-outbox "$RUNNER_TEMP/voice-watch"
+
+      - name: Notify on failure
+        if: ${{ failure() && steps.tell.outputs.told != '1' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::Voice model check failed: ${RUN_URL}"
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+              --data-urlencode "text=⚠️ Voice model check failed today ($(date -u +'%d %b %Y')). Please tell an AI session to look. Logs: ${RUN_URL}" \
+              -o /dev/null || true
+          fi

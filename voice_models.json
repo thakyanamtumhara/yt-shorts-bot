@@ -1,0 +1,11 @@
+{
+  "flagship": "eleven_v4",
+  "realtime": "eleven_v4_turbo",
+  "previous": {
+    "flagship": "eleven_v3",
+    "realtime": "eleven_flash_v2_5"
+  },
+  "known": [],
+  "pending": {},
+  "log": []
+}

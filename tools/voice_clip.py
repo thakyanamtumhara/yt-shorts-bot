@@ -6,8 +6,10 @@ import os
 import sys
 import urllib.request
 
+from voice_model import flagship
+
 VOICE = os.environ.get("ELEVENLABS_VOICE_ID", "cejtKjfE9sHUZ1FnUYEV")
-MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_v4")
+MODEL = os.environ.get("ELEVENLABS_MODEL") or flagship()
 
 text, out = sys.argv[1], sys.argv[2]
 req = urllib.request.Request(

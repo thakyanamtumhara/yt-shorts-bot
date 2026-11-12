@@ -31,6 +31,7 @@ import time
 import pytz
 from datetime import datetime, timedelta
 from tools.instagram_ai_disclosure import create_ai_container, raise_for_disclosure_rejection
+from tools.voice_model import flagship as voice_flagship
 
 from openai import OpenAI
 # Fix Pillow 10+ compatibility with MoviePy
@@ -134,7 +135,9 @@ ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "cejtKjfE9sHUZ1FnUYE
 # Ketu picked Eleven v4 in a blind listening test on 2-Oct-2026 and wants it for all the work.
 # v4 reads only stability + similarity; it ignores speed and SSML <break> tags (natural pace,
 # ~27% slower than eleven_v3, so the script length target in tools/script_length.py follows it).
-ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_v4")
+# The model is voice_models.json "flagship" (default eleven_v4), which tools/voice_model_watch.py moves to a
+# newer ElevenLabs model only after its clone, words and pace checks; ELEVENLABS_MODEL in the env is a manual pin.
+ELEVENLABS_MODEL = os.environ.get("ELEVENLABS_MODEL") or voice_flagship()
 ELEVENLABS_VOICE_SETTINGS = {
     "stability": 0.5,
     "similarity_boost": 0.9,

@@ -193,8 +193,11 @@ jobs:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           # Voice picked by Ketu in a blind listening test on 2-Oct-2026: Eleven v4 at its
           # natural pace (v4 ignores speed); VOICE_TEMPO 1.0 = no time-stretch.
-          # Rollback: eleven_v3 here plus its old settings in daily_short.py (git revert).
-          ELEVENLABS_MODEL: eleven_v4
+          # The model is "flagship" in voice_models.json (eleven_v4 on 12-Nov-2026); voice_model_watch.yml
+          # moves it to a newer ElevenLabs model only after its clone, words and pace checks.
+          # Manual pin, wins over the file: add one env line here, `ELEVENLABS_MODEL: <model id>`.
+          # Rollback of a watch switch: run voice_model_watch.yml with rollback=flagship.
+          # Rollback to eleven_v3: that pin line plus its old settings in daily_short.py (git revert).
           VOICE_TEMPO: "1.0"
           SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}

@@ -1,6 +1,7 @@
 import ast
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -8,6 +9,7 @@ import textwrap
 import unittest
 from unittest.mock import Mock, patch
 
+from tools import voice_model
 from tools.voice_runtime import load_normalize_for_tts, production_voice_config
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -16,18 +18,32 @@ ROOT=Path(__file__).resolve().parents[1]
 class VoiceRuntimeTest(unittest.TestCase):
     def test_daily_workflow_model_settings_and_learned_aliases_are_loaded(self):
         config=production_voice_config()
-        self.assertEqual(config['model_id'],'eleven_v4')
+        self.assertEqual(config['model_id'],voice_model.flagship())
         self.assertEqual(config['voice_settings'],{'stability':0.5,'similarity_boost':0.9})
         self.assertEqual(config['voice_tempo'],1.0)
         normalize=load_normalize_for_tts()
         self.assertEqual(normalize('saimpal order GSM combed galat seekha'),'सैंपल order GSM कोम्ड ग़लत सीखा')
         self.assertEqual(normalize('ऑर्डर सैंपल एम मीडियम बायो वॉश'),'ऑर्डर सैंपल एम मीडियम बायो वॉश')
 
-    def test_code_default_is_v4_and_spoken_text_carries_no_ssml_or_tags(self):
+    def daily_model(self, env):
+        tree=ast.parse((ROOT/'daily_short.py').read_text())
+        nodes=[node for node in tree.body if (isinstance(node,ast.ImportFrom) and node.module=='tools.voice_model')
+               or (isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='ELEVENLABS_MODEL' for t in node.targets))]
+        self.assertEqual([type(node) for node in nodes],[ast.ImportFrom,ast.Assign])
+        namespace={'os':os}
+        with patch.dict('os.environ',env):
+            if 'ELEVENLABS_MODEL' not in env:os.environ.pop('ELEVENLABS_MODEL',None)
+            exec(compile(ast.Module(body=nodes,type_ignores=[]),'daily_short.py','exec'),namespace)
+        return namespace['ELEVENLABS_MODEL']
+
+    def test_code_default_is_the_voice_models_file_then_v4_and_spoken_text_carries_no_ssml_or_tags(self):
         tree=ast.parse((ROOT/'daily_short.py').read_text())
         default=next(node.value for node in tree.body if isinstance(node,ast.Assign)
                      and any(isinstance(t,ast.Name) and t.id=='ELEVENLABS_MODEL' for t in node.targets))
-        self.assertEqual(ast.literal_eval(default.args[1]),'eleven_v4')
+        self.assertEqual(ast.unparse(default),"os.environ.get('ELEVENLABS_MODEL') or voice_flagship()")
+        with TemporaryDirectory() as folder:
+            self.assertEqual(voice_model.flagship(root=folder),'eleven_v4')
+            self.assertEqual(voice_model.realtime(root=folder),'eleven_v4_turbo')
         normalize=load_normalize_for_tts()
         for text in ('Dekho, sample check kar lo... matlab, fit pehle. Bas itna hi...',
                      'Ek oversize ₹186 aur doosra ₹205, kyun? Theek hai.'):
@@ -42,16 +58,33 @@ class VoiceRuntimeTest(unittest.TestCase):
                      'combed galat seekha delhi','ऑर्डर करो।','Sample ka print dekh ke decide karo...'):
             with self.subTest(text=text):self.assertEqual(actual(text),namespace['normalize_for_tts'](text))
 
+    def test_daily_short_speaks_with_the_same_model_until_the_watch_logs_a_switch(self):
+        state=json.loads((ROOT/'voice_models.json').read_text())
+        moves=[row for row in state['log'] if row.get('kind')=='flagship' and row.get('result') in ('switched','rolled_back')]
+        expected=moves[-1]['to'] if moves else 'eleven_v4'
+        workflow=(ROOT/'.github/workflows/daily_short.yml').read_text()
+        self.assertNotRegex(workflow,r'(?m)^\s+ELEVENLABS_MODEL:')
+        self.assertEqual(state['flagship'],expected)
+        self.assertEqual(self.daily_model({}),expected)
+        self.assertEqual(self.daily_model({'ELEVENLABS_MODEL':''}),expected)
+        self.assertEqual(production_voice_config()['model_id'],expected)
+        self.assertEqual(self.daily_model({'ELEVENLABS_MODEL':'eleven_v3'}),'eleven_v3')
+
     def fixture(self, folder):
         root=Path(folder);(root/'.github/workflows').mkdir(parents=True)
-        for rel in ['daily_short.py','learned_pronunciations.json','.github/workflows/daily_short.yml']:
+        for rel in ['daily_short.py','learned_pronunciations.json','voice_models.json','.github/workflows/daily_short.yml']:
             (root/rel).write_bytes((ROOT/rel).read_bytes())
         return root
 
-    def test_config_follows_explicit_daily_workflow_not_stale_v2_default(self):
+    def test_config_follows_voice_models_file_and_an_explicit_workflow_pin_wins(self):
         with TemporaryDirectory() as folder:
             root=self.fixture(folder);path=root/'.github/workflows/daily_short.yml'
-            path.write_text(path.read_text().replace('ELEVENLABS_MODEL: eleven_v4','ELEVENLABS_MODEL: test_production_model').replace('VOICE_TEMPO: "1.0"','VOICE_TEMPO: "0.94"'))
+            (root/'voice_models.json').write_text(json.dumps({'flagship':'eleven_test_file_model'}))
+            self.assertEqual(production_voice_config(root)['model_id'],'eleven_test_file_model')
+            (root/'voice_models.json').write_text('not json')
+            self.assertEqual(production_voice_config(root)['model_id'],'eleven_v4')
+            (root/'voice_models.json').write_text(json.dumps({'flagship':'eleven_test_file_model'}))
+            path.write_text(path.read_text().replace('VOICE_TEMPO: "1.0"','ELEVENLABS_MODEL: test_production_model\n          VOICE_TEMPO: "0.94"'))
             self.assertEqual(production_voice_config(root)['model_id'],'test_production_model')
             self.assertEqual(production_voice_config(root)['voice_tempo'],0.94)
             path.write_text(path.read_text().replace('ELEVENLABS_MODEL: test_production_model','ELEVENLABS_MODEL: ${{ secrets.MODEL }}'))
@@ -72,7 +105,7 @@ class VoiceRuntimeTest(unittest.TestCase):
             self.assertEqual(text,'सैंपल');post.assert_not_called()
             post.return_value=Mock(content=b'fake-audio')
             with TemporaryDirectory() as folder:module.elevenlabs_tts(text,Path(folder)/'test.mp3','not-real')
-            self.assertEqual(post.call_args.kwargs['json']['model_id'],'eleven_v4')
+            self.assertEqual(post.call_args.kwargs['json']['model_id'],voice_model.flagship())
             self.assertEqual(post.call_args.kwargs['json']['text'],'सैंपल')
             self.assertEqual(post.call_args.kwargs['json']['voice_settings'],production_voice_config()['voice_settings'])
 

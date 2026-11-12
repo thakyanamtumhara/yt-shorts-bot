@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import re
 
+from tools.voice_model import flagship
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -36,9 +38,10 @@ def production_voice_config(root=ROOT):
     tempo = float(_literal_workflow_value(workflow, 'VOICE_TEMPO'))
     if not isinstance(voice, str) or not voice or not isinstance(settings, dict) or not 0.5 <= tempo <= 2:
         raise ValueError('Invalid production voice configuration')
-    return {'voice_id': voice, 'model_id': _literal_workflow_value(workflow, 'ELEVENLABS_MODEL'),
+    model = _literal_workflow_value(workflow, 'ELEVENLABS_MODEL', required=False) or flagship(root=root)
+    return {'voice_id': voice, 'model_id': model,
             'voice_settings': settings, 'voice_tempo': tempo,
-            'source': '.github/workflows/daily_short.yml + daily_short.py',
+            'source': '.github/workflows/daily_short.yml + daily_short.py + voice_models.json',
             'daily_short_sha256': hashlib.sha256(source.encode()).hexdigest(),
             'learned_pronunciations_sha256': hashlib.sha256((root/'learned_pronunciations.json').read_bytes()).hexdigest()}
 
