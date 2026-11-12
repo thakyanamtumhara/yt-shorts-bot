@@ -44,6 +44,9 @@ GENERATION = re.compile(r'eleven_v(\d+)(?:_(\d+))?(?:_|$)')
 WORDS_MEAN, WORDS_LINE = 0.85, 0.70
 SPEED_RANGE = (0.90, 1.10)
 RETEST_DAYS, MAX_RETESTS, REMIND_DAYS, LOG_ROWS = 7, 4, 7, 200
+# ElevenLabs answered the v4 training request with 200 on 2-Oct-2026 and never showed a state for it, yet the
+# clone speaks on v4: a model with no training state a day after asking is checked as it is.
+ASK_WAIT_DAYS, TRAIN_WAIT_DAYS = 1, 14
 UNANSWERED = {0, 429, 500, 502, 503, 504}
 RETRY_WAITS = (5, 15)
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
@@ -308,32 +311,36 @@ def voice_check(api, kind, current, model, dry=False):
             'words_min': down(min(scores)), 'speed': round(speed, 3), 'clips': (old[0], new[0])}
 
 
-def assess(api, kind, current, model, entry, waiting, dry=False):
+def assess(api, kind, current, model, entry, waiting, today, dry=False):
     voice = api.voice()
     if voice is None:
         return {'result': 'error'}
     clone = clone_state(voice, model, entry)
-    print(f'{show(model)}: clone is {clone}')
+    waited = (today - day(waiting.get('since'))).days if waiting else 0
+    print(f'{show(model)}: clone is {clone}' + (f', first seen {waited} day(s) ago' if waiting else ''))
     if clone == 'trained':
         return voice_check(api, kind, current, model, dry)
-    if clone == 'training':
-        return {'result': 'pending', 'state': 'training', 'train_started': True}
-    if clone == 'unknown':
-        return {'result': 'pending', 'state': 'unknown', 'train_started': False}
+    if clone in ('training', 'unknown'):
+        if waiting and waited >= TRAIN_WAIT_DAYS:
+            return voice_check(api, kind, current, model, dry)
+        return {'result': 'pending', 'state': clone, 'train_started': clone == 'training'}
     if waiting:
         if clone == 'failed' and waiting.get('train_started'):
             return {'result': 'failed', 'reason': 'training'}
-        return {'result': 'pending', 'state': waiting.get('state') or 'unknown',
+        if waited >= ASK_WAIT_DAYS:
+            return voice_check(api, kind, current, model, dry)
+        return {'result': 'pending', 'state': waiting.get('state') or 'asked',
                 'train_started': bool(waiting.get('train_started'))}
     if dry:
-        return {'result': 'pending', 'state': 'would_train', 'train_started': False}
+        print(f'{show(model)}: a real run would first ask ElevenLabs to train the clone on it and test a day later')
+        return voice_check(api, kind, current, model, dry)
     status, answer, code = api.train(model)
     print(f'{show(model)}: training request HTTP {status} {code or ""}'.rstrip())
-    if status == 200 and answer.get('status') == 'ok':
-        return {'result': 'pending', 'state': 'training', 'train_started': True}
     if status in UNANSWERED:
         return {'result': 'error'}
-    return {'result': 'pending', 'state': 'unknown', 'train_started': False}
+    if status == 200 and answer.get('status') == 'ok':
+        return {'result': 'pending', 'state': 'asked', 'train_started': True}
+    return voice_check(api, kind, current, model, dry)
 
 
 def tts_fields(agent):
@@ -429,15 +436,14 @@ def text_failed(kind, old, new, outcome, tries):
 
 
 def text_pending(kind, old, new, outcome):
+    if outcome['state'] == 'asked':
+        return (f'ElevenLabs has a new voice model {show(new)}. I asked ElevenLabs to train your voice on it and '
+                f'will test it tomorrow. {NAME[kind]} stays on {show(old)} until it is checked.')
     if outcome['state'] == 'training':
         return (f'ElevenLabs has a new voice model {show(new)}. Your voice is being trained on it now. '
                 f'{NAME[kind]} stays on {show(old)} until the training is done and checked.')
-    if outcome['state'] == 'would_train':
-        return (f'ElevenLabs has a new voice model {show(new)}. Your voice is not trained on it yet; a real run '
-                f'would start the training. {NAME[kind]} stays on {show(old)}.')
-    return (f'ElevenLabs has a new voice model {show(new)}, but I could not start training your voice on it: '
-            f'ElevenLabs gave an answer this check does not know. {NAME[kind]} stays on {show(old)}. '
-            f'Please tell an AI session to look.')
+    return (f'ElevenLabs has a new voice model {show(new)}, but ElevenLabs shows a training state this check does '
+            f'not know. {NAME[kind]} stays on {show(old)}. Please tell an AI session to look.')
 
 
 def text_error(kind, old, new, outcome):
@@ -469,7 +475,7 @@ def run(state, api, today, dry=False, pretend=None, forced=None):
         for model in queue.get(kind, []):
             old = current[kind]
             tested.add(model)
-            outcome = assess(api, kind, old, model, entries[model], state['pending'].get(model), dry)
+            outcome = assess(api, kind, old, model, entries[model], state['pending'].get(model), today, dry)
             if outcome['result'] == 'switch' and kind == 'realtime':
                 agents = move_agents(api, old, model, dry)
                 outcome['agents'], outcome['stuck'] = agents.get('count', 0), agents['stuck']

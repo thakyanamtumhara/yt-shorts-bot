@@ -39,6 +39,7 @@ class FakeApi:
         self.states = {model: 'fine_tuned' for model in trained}
         self.heard, self.sizes, self.speech_status = {}, {}, {}
         self.train_answer = (200, {'status': 'ok'}, None)
+        self.shows_training = True
         self.agent_map = {agent_id: dict(tts) for agent_id, tts in (agents or {}).items()}
         self.refuse, self.unreadable_agents, self.shallow, self.calls = {}, False, False, []
 
@@ -62,7 +63,7 @@ class FakeApi:
 
     def train(self, model):
         self.calls.append(('train', model))
-        if self.train_answer[0] == 200:
+        if self.train_answer[0] == 200 and self.shows_training:
             self.states[model] = 'fine_tuning'
         return self.train_answer
 
@@ -286,8 +287,9 @@ class RunTest(unittest.TestCase):
         after, notes, blind, _ = go(state(), api)
         self.assertEqual((after['flagship'], blind, api.count('train'), api.count('speak')), ('eleven_v4', False, 1, 0))
         self.assertEqual(after['pending'], {'eleven_v5': {'kind': 'flagship', 'since': '2026-11-12', 'told': '2026-11-12',
-                                                          'state': 'training', 'train_started': True}})
-        self.assertIn('Your voice is being trained on it now. Voice stays on eleven_v4', notes[0]['text'])
+                                                          'state': 'asked', 'train_started': True}})
+        self.assertIn('I asked ElevenLabs to train your voice on it and will test it tomorrow. Voice stays on eleven_v4',
+                      notes[0]['text'])
         after, notes, _, _ = go(after, api, later(1))
         self.assertEqual((notes, api.count('train'), api.count('speak')), ([], 1, 0))
         after, notes, _, _ = go(after, api, later(7))
@@ -310,15 +312,35 @@ class RunTest(unittest.TestCase):
         after = go(after, api, later(8))[0]
         self.assertEqual((api.count('train'), sorted(after['pending'])), (2, ['eleven_v5']))
 
-    def test_an_unknown_training_answer_stays_pending_and_says_so(self):
+    def test_a_model_elevenlabs_shows_no_training_for_is_checked_the_next_day(self):
+        api = FakeApi(KNOWN + ['eleven_v5'])
+        api.shows_training = False
+        after, notes, _, _ = go(state(), api)
+        self.assertEqual((after['flagship'], after['pending']['eleven_v5']['state'], api.count('speak')), ('eleven_v4', 'asked', 0))
+        after, notes, blind, _ = go(after, api, later(1))
+        self.assertEqual((after['flagship'], after['pending'], blind, api.count('train')), ('eleven_v5', {}, False, 1))
+        self.assertIn('Voice moved to the new ElevenLabs model eleven_v5 (was eleven_v4)', notes[0]['text'])
+
+    def test_training_that_hangs_two_weeks_is_checked_as_it_is(self):
+        api = FakeApi(KNOWN + ['eleven_v5'])
+        after = go(state(), api)[0]
+        after = go(after, api, later(13))[0]
+        self.assertEqual((after['flagship'], sorted(after['pending'])), ('eleven_v4', ['eleven_v5']))
+        self.assertEqual(go(after, api, later(14))[0]['flagship'], 'eleven_v5')
+
+    def test_a_refused_training_request_goes_straight_to_the_voice_check(self):
         api = FakeApi(KNOWN + ['eleven_v5'])
         api.train_answer = (400, {'detail': {'status': 'some_new_code', 'message': 'private body text'}}, 'some_new_code')
         after, notes, blind, output = go(state(), api)
-        self.assertEqual((after['flagship'], blind, after['pending']['eleven_v5']['train_started']), ('eleven_v4', False, False))
-        self.assertIn('ElevenLabs gave an answer this check does not know', notes[0]['text'])
+        self.assertEqual((after['flagship'], blind, after['pending'], api.count('train')), ('eleven_v5', False, {}, 1))
         self.assertIn('some_new_code', output)
         self.assertNotIn('private body text', output)
-        self.assertEqual((go(after, api, later(1))[1], api.count('train')), ([], 1))
+        api = FakeApi(KNOWN + ['eleven_v5'])
+        api.states['eleven_v5'] = 'something_new'
+        after, notes, blind, _ = go(state(), api)
+        self.assertEqual((after['flagship'], blind, after['pending']['eleven_v5']['train_started']), ('eleven_v4', False, False))
+        self.assertIn('a training state this check does not know', notes[0]['text'])
+        api = FakeApi(KNOWN + ['eleven_v5'])
         api.train_answer = (503, {}, None)
         after, notes, blind, _ = go(state(), api)
         self.assertEqual((blind, after['pending'], 'eleven_v5' in after['known']), (True, {}, False))
@@ -350,9 +372,10 @@ class RunTest(unittest.TestCase):
 
     def test_dry_run_starts_no_training_and_changes_no_agent(self):
         api = FakeApi(KNOWN + ['eleven_v5'])
-        _, notes, _, _ = go(state(), api, dry=True)
+        after, notes, _, output = go(state(), api, dry=True)
         self.assertEqual(api.count('train'), 0)
-        self.assertIn('a real run would start the training', notes[0]['text'])
+        self.assertIn('a real run would first ask ElevenLabs to train the clone on it', output)
+        self.assertIn('Voice moved to the new ElevenLabs model eleven_v5', notes[0]['text'])
         agents = {AGENTS[0]: {'voice_id': watch.VOICE, 'model_id': 'eleven_v4_turbo'}}
         api = FakeApi(KNOWN + ['eleven_v5_turbo'], trained=['eleven_v5_turbo'], agents=agents)
         _, notes, _, _ = go(state(), api, dry=True)
