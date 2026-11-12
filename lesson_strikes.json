@@ -18,5 +18,14 @@
    "garment_dimensional_change_home_laundering_test"
   ],
   "reason": "no approved script after 5 attempts: These lines break the cited facts' limits or are wrong Hindi; rewrite without them: \"Apna sample dhoke check kar lo\" breaks: garment_dimensional_change_home_laundering_test limits: Do not present a ho"
+ },
+ {
+  "date": "2026-11-12",
+  "topic": "एक ही प्रिंट का रंग अलग-अलग टी-शर्ट पर कम-ज़्यादा ब्राइट क्यों आता है?",
+  "intent_key": "print_brightness_depends_on_yarn_surface",
+  "fact_ids": [
+   "print_colour_yarn_hairiness_lustre"
+  ],
+  "reason": "no approved script after 5 attempts: Score 35/60. Weakest: ending. The script teaches the yarn lustre/twist/hairiness mechanism clearly and stays within cited facts, but the ending feels abrupt and generic — 'Sample check kar lo' adds li"
  }
 ]
