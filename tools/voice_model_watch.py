@@ -423,8 +423,9 @@ def text_failed(kind, old, new, outcome, tries):
                'agents': 'the voice agents did not accept it'}[reason]
     again = (f'I will test it again in {RETEST_DAYS} days.' if tries <= MAX_RETESTS
              else 'I will not test it again by myself.')
+    ask = f" To move sooner, tell any AI session: 'move the voice to {show(new)}'." if reason == 'speed' else ''
     return (f'ElevenLabs has a new voice model {show(new)}. It did not pass: {why}. {NAME[kind]} stays on '
-            f'{show(old)}. {again}{stuck_line(outcome.get("stuck"))}')
+            f'{show(old)}. {again}{ask}{stuck_line(outcome.get("stuck"))}')
 
 
 def text_pending(kind, old, new, outcome):
