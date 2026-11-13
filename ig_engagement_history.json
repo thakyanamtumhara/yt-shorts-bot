@@ -2809,7 +2809,7 @@
     "title": "Why Can T-Shirt Colour Fade in Strong Sun? Ask for a Light Fastness Rating",
     "topic": "तेज़ धूप में टी-शर्ट का रंग क्यों उड़ सकता है?",
     "published_at": "2026-11-07T15:00:53.129391+05:30",
-    "checked": false,
+    "checked": true,
     "bot_youtube_id": "zwEebzz9lpU",
     "workflow_run_id": "42357852743",
     "source_repository": "thakyanamtumhara/yt-shorts-bot",
@@ -2823,6 +2823,38 @@
     "ai_disclosure": {
       "requested": true,
       "container_id": "18353241979266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0",
+    "checked_at": "2026-11-13T15:01:45.165209+05:30",
+    "hours_since_publish": 144.0,
+    "views": 503,
+    "reach": 375,
+    "likes": 7,
+    "comments": 1,
+    "shares": 1,
+    "saves": 4,
+    "avg_watch_time_ms": 7671
+  },
+  {
+    "media_id": "17896565652434472",
+    "title": "Same Print, Different Brightness on 2 T-Shirts? The Yarn Explains It",
+    "topic": "एक ही प्रिंट का रंग अलग-अलग टी-शर्ट पर कम-ज़्यादा ब्राइट क्यों आता है?",
+    "published_at": "2026-11-13T15:04:02.458345+05:30",
+    "checked": false,
+    "bot_youtube_id": "RI7s1SqlgTw",
+    "workflow_run_id": "43397717057",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "SAME PRINT रंग अलग क्यों?",
+    "cover_color": "#f1ecdf cream + navy; blue/yellow comparison",
+    "cover_path": "ai+pil-buyer-b",
+    "cover_face": false,
+    "cover_layout": "buyer-comparison-b-v1",
+    "cover_comparison": null,
+    "cover_labels": [],
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18354184528266060",
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"

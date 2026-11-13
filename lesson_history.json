@@ -179,5 +179,16 @@
     "buyer_decision": "For T-shirts that will hang in a sunny shop front or be worn outdoors all day, such as staff uniforms, ask the supplier for a light-fastness rating and agree the level you need before ordering.",
     "video_id": "zwEebzz9lpU",
     "published_on": "2026-11-07"
+  },
+  {
+    "topic": "एक ही प्रिंट का रंग अलग-अलग टी-शर्ट पर कम-ज़्यादा ब्राइट क्यों आता है?",
+    "intent_key": "print_brightness_depends_on_yarn_surface",
+    "fact_ids": [
+      "print_colour_yarn_hairiness_lustre"
+    ],
+    "lesson": "Print colour is applied from one side of the fabric, so how even, bright and deep it looks depends heavily on the yarn: its hairiness, twist and lustre all change the result, and higher yarn lustre gives a brighter printed colour. Highly twisted yarns may not let print paste penetrate deeply into the yarn bundle, which yields poor print colourfastness, and textured surfaces are harder to print than flat ones.",
+    "buyer_decision": "Approve print colour on a sample printed on the exact blank you will buy in bulk, not on a different T-shirt, because the yarn itself changes how the same design looks.",
+    "video_id": "RI7s1SqlgTw",
+    "published_on": "2026-11-13"
   }
 ]

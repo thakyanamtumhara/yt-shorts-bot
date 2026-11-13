@@ -6,15 +6,15 @@
     "Loss",
     "Crack",
     "Fake",
-    "Reality",
-    "Wasted",
+    "Waste",
     "Secret",
+    "Reality",
+    "Exposed",
     "Reject",
     "बर्बाद",
-    "Exposed",
-    "Trap",
     "Shocking",
-    "Hack"
+    "Fail",
+    "गलती"
   ],
   "best_colors": {
     "text": [
@@ -26,21 +26,21 @@
     ],
     "stroke": "#000000"
   },
-  "text_rules": "Keep cover text to 3-5 punchy words mixing Hindi+English with at least one number (₹ amount, GSM, piece count, or a loss figure); frame it as a question or disaster outcome to create an open curiosity loop — never answer the question on the thumbnail itself.",
-  "layout": "Place all text in the vertical 25%-70% safe zone (center of the 9:16 frame), using large bold sans-serif type with thick black stroke; product or fabric close-up fills the background — skip face shots, let the yellow-highlighted keyword be the single visual anchor.",
-  "patterns": "Top-performing Indian business Reels thumbnails follow a 'money-at-risk + specific number' formula — a rupee loss figure or piece count paired with a failure keyword (Crack, Reject, Scam, Wasted) instantly signals stakes. Yellow (#FFD400) keyword highlight against white body text on a dark or product-hero background dominates the highest-view covers; cream/pastel or illustration-based covers with no numbers consistently flatline. Hinglish (Hindi question + English technical term like GSM, DTF, YARN) outperforms pure Hindi or pure English because it matches how Indian B2B buyers actually talk.",
+  "text_rules": "Keep cover text to 3-5 punchy words mixing Hindi/English, always include a specific number (₹ amount, GSM, piece count, or loss figure) paired with a consequence or question mark to create curiosity-gap. Yellow (#FFD400) keywords + white secondary text on dark/product backgrounds massively outperform soft cream/navy or illustration-based covers — never use muted pastel palettes.",
+  "layout": "Center all text in the 25%-70% vertical band (safe zone) using large bold sans-serif type; product or warehouse imagery fills the background with slight dark overlay so text pops — no faces needed, let the product-hero or damaged-goods visual anchor the bottom third. Keep text stacked in 2-3 short lines, biggest word/number gets the yellow highlight color.",
+  "patterns": "Top-performing Indian business Reels thumbnails follow a 'money-at-risk' or 'scam-exposed' pattern: a specific rupee loss figure or GSM/quantity mismatch creates instant stakes (e.g., ₹40K Loss, 500 Pcs Crack, 220 GSM लिखा 160 निकली). Bold yellow-on-dark text with a question mark or angry emoji outperforms clean/educational designs by 100x+ in this niche. The worst performers use soft illustration styles, cream backgrounds, and purely Hindi educational questions with no financial stakes or concrete numbers.",
   "example_texts": [
-    "₹30K 180 GSM SCAM?",
-    "BIOWASH सच या TRAP?",
-    "₹60 vs ₹90 REAL TEST",
-    "500 Pc COLLAR REJECT",
-    "OVERLOCK 1 गलती बर्बाद",
-    "₹15 PRINT 3 WASH गया",
-    "COMBED COTTON असली कैसे?",
-    "200 GSM SHRINK कितना?",
-    "₹2 TAG से ₹40K LOSS",
-    "SUBLIMATION DARK पर FAIL"
+    "₹30K 200 GSM SCAM?",
+    "1 WASH SHAPE गई",
+    "₹60 vs ₹90 सच",
+    "500 Pc COLLAR FAIL",
+    "BIOWASH सिर्फ NAAM?",
+    "₹15 PRINT 1000 Pc",
+    "RING SPUN या FAKE?",
+    "₹2L STOCK बर्बाद",
+    "SUBLIMATION 3 गलती",
+    "160 GSM ₹45 REALITY"
   ],
-  "ig_patterns": "High-save Reels covers promise a reusable checklist or diagnostic ('Check These 3 Things', '3 Checks That Save') — the thumbnail implies lasting reference value the viewer will need again, driving bookmarks. High-share covers frame a specific disaster with a relatable ₹ loss amount (₹40K, ₹50K, ₹25K) that triggers 'my retailer friend is making this exact mistake' forwarding impulse. Both save and share leaders use the proven formula: ₹-amount or piece-count + technical keyword in yellow + failure/question hook in white — zero illustration, zero cream/pastel, zero pure-Hindi educational framing.",
-  "updated": "2026-10-31T09:25:43.670353"
+  "ig_patterns": "Highest save-rate Reels (1.7%+) use covers promising diagnostic checklists tied to a financial loss scenario — viewers bookmark them as future reference when ordering bulk (e.g., '200 GSM Feels Cheap? 3 Checks'). Highest share-rate covers (1.7-2.5%) expose a common supplier scam or monsoon/seasonal failure that triggers 'my retailer friend needs this warning' — the combination of a specific ₹ loss + a surprising technical cause (humidity, yarn swap, moisture) drives forwarding. Yellow keyword + white text on real product/warehouse backgrounds with zero faces consistently outperform illustration or cream-palette covers in both saves and shares by 50-700x.",
+  "updated": "2026-11-13T09:26:43.685722"
 }

@@ -3312,5 +3312,20 @@
       "gemini_thumbnail": 0.045,
       "claude_sonnet": 0.067
     }
+  },
+  {
+    "date": "2026-11-13T09:34:29.653990",
+    "topic": "\u090f\u0915 \u0939\u0940 \u092a\u094d\u0930\u093f\u0902\u091f \u0915\u093e \u0930\u0902\u0917 \u0905\u0932\u0917-\u0905\u0932\u0917 \u091f\u0940-\u0936\u0930\u094d\u091f \u092a\u0930 \u0915\u092e-\u091c\u093c\u094d\u092f\u093e\u0926\u093e \u092c\u094d\u0930\u093e\u0907\u091f \u0915\u094d\u092f\u094b\u0902 \u0906\u0924\u093e \u0939\u0948?",
+    "title": "\u090f\u0915 \u0939\u0940 \u092a\u094d\u0930\u093f\u0902\u091f \u2014 \u0905\u0932\u0917 \u092c\u094d\u0930\u093e\u0907\u091f\u0928\u0947\u0938? Yarn Lustre \u0915\u093e \u0916\u0947\u0932 \u0938\u092e\u091d\u094b",
+    "total_usd": 8.7744,
+    "duration_min": 30.3,
+    "breakdown": {
+      "claude_opus": 1.2957,
+      "replicate_music": 0.05,
+      "tts_elevenlabs": 0.0118,
+      "veo_clips": 7.3368,
+      "gemini_thumbnail": 0.045,
+      "claude_sonnet": 0.035
+    }
   }
 ]
