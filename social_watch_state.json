@@ -343,6 +343,10 @@
   "CFbqfEj-HGM": {
    "title": "Meesho Pe Plain T-Shirt Bechte Ho? Lot Sale ₹60 Se | Achhi Quality, Kam Daam",
    "published": "2026-11-12T11:30:19+00:00"
+  },
+  "qtVJqor-gWM": {
+   "title": "DTF Print Kitna Bada Dikhega? Order Se Pehle T-Shirt Pe Dekho",
+   "published": "2026-11-13T05:30:13+00:00"
   }
  },
  "instagram": {
@@ -1069,6 +1073,14 @@
   "18029837321870231": {
    "permalink": "https://www.instagram.com/reel/DfpAwWoieb1/",
    "ts": "2026-11-12T12:04:17+0000"
+  },
+  "17896565652434472": {
+   "permalink": "https://www.instagram.com/reel/DfrUVrMGWlI/",
+   "ts": "2026-11-13T09:33:46+0000"
+  },
+  "18153679486553378": {
+   "permalink": "https://www.instagram.com/reel/Dfq49YFCFRA/",
+   "ts": "2026-11-13T05:35:18+0000"
   }
  },
  "facebook": {
@@ -1394,15 +1406,22 @@
   },
   "2126150404930489": {
    "queued_at": "2026-11-13 09:34",
-   "confirmed": false
+   "confirmed": true,
+   "publication_check": {
+    "state": "published_public_by_api",
+    "video_status": "ready",
+    "published": true,
+    "publishing_phase": "complete",
+    "publish_status": "published",
+    "privacy": "EVERYONE",
+    "read_errors": {}
+   },
+   "confirmation_method": "published_public_api_v1",
+   "confirmed_at": "2026-11-13T18:21:30+05:30",
+   "permalink": "https://www.facebook.com/reel/2126150404930489"
   }
  },
  "history": [
-  {
-   "at": "2026-08-02T20:30:38+05:30",
-   "alerts": 0,
-   "new": 1
-  },
   {
    "at": "2026-08-03T13:57:07+05:30",
    "alerts": 0,
@@ -2397,8 +2416,13 @@
    "at": "2026-11-13T02:48:12+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-13T18:21:30+05:30",
+   "alerts": 0,
+   "new": 3
   }
  ],
  "last_green_date": "2026-11-13",
- "last_run_ist": "2026-11-13T02:48:12+05:30"
+ "last_run_ist": "2026-11-13T18:21:30+05:30"
 }
