@@ -928,5 +928,25 @@
  "raw20261109-ls-meesho-v1-facebook": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/2230186337921665/"
+ },
+ "raw20261109-ls-meesho-v1-linkedin": {
+  "nudged": true
+ },
+ "dtftee20261111-tee-size-youtube": {
+  "nudged": true
+ },
+ "dtftee20261111-tee-size-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/Dfq49YFCFRA/"
+ },
+ "dtftee20261111-tee-size-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1124006436921109/"
+ },
+ "dtftee20261111-tee-size-linkedin": {
+  "nudged": true
+ },
+ "dtftee20261111-tee-size-x": {
+  "nudged": true
  }
 }
