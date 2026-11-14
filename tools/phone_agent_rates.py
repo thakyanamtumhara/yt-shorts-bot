@@ -104,13 +104,18 @@ def main():
         changed = sorted(set(fresh) ^ set(body_lines(old_block)))
         print(f'phone agent {n}: {len(changed)} line(s) differ' + (' (forced)' if force else ''))
         if dry:
+            print('prompt fields: ' + ', '.join(sorted(prompt_obj)))
             touched += 1
             continue
         new_text = before + block + after
         status, raw = http('PATCH', API + 'convai/agents/' + urllib.parse.quote(agent_id, safe=''),
                            {'conversation_config': {'agent': {'prompt': dict(prompt_obj, prompt=new_text)}}}, head, timeout=60)
         if status != 200:
-            raise SystemExit(f'phone agent {n}: update HTTP {status}')
+            try:
+                detail = json.dumps(json.loads(raw).get('detail'))[:600]
+            except Exception:
+                detail = raw[:300].decode('utf8', 'replace')
+            raise SystemExit(f'phone agent {n}: update HTTP {status} {detail}')
         status, raw = http('GET', API + 'convai/agents/' + urllib.parse.quote(agent_id, safe=''), headers=head)
         check = json.loads(raw) if status == 200 else {}
         p2 = ((check.get('conversation_config') or {}).get('agent') or {}).get('prompt') or {}
