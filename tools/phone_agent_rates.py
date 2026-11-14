@@ -109,7 +109,7 @@ def main():
             continue
         new_text = before + block + after
         status, raw = http('PATCH', API + 'convai/agents/' + urllib.parse.quote(agent_id, safe=''),
-                           {'conversation_config': {'agent': {'prompt': dict(prompt_obj, prompt=new_text)}}}, head, timeout=60)
+                           {'conversation_config': {'agent': {'prompt': {k: v for k, v in dict(prompt_obj, prompt=new_text).items() if k != 'tools'}}}}, head, timeout=60)
         if status != 200:
             try:
                 detail = json.dumps(json.loads(raw).get('detail'))[:600]
