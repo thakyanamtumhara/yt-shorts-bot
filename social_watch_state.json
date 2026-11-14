@@ -347,6 +347,10 @@
   "qtVJqor-gWM": {
    "title": "DTF Print Kitna Bada Dikhega? Order Se Pehle T-Shirt Pe Dekho",
    "published": "2026-11-13T05:30:13+00:00"
+  },
+  "x_9SL_8ol5w": {
+   "title": "Hoodie Pe Print Kaisa Lagega? Round Neck, Polo, Oversize, Hoodie Pe Pehle Dekho",
+   "published": "2026-11-14T05:30:19+00:00"
   }
  },
  "instagram": {
@@ -1081,6 +1085,10 @@
   "18153679486553378": {
    "permalink": "https://www.instagram.com/reel/Dfq49YFCFRA/",
    "ts": "2026-11-13T05:35:18+0000"
+  },
+  "17891472537477878": {
+   "permalink": "https://www.instagram.com/reel/DftduDygqvW/",
+   "ts": "2026-11-14T05:34:23+0000"
   }
  },
  "facebook": {
@@ -1422,11 +1430,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-03T21:53:04+05:30",
-   "alerts": 0,
-   "new": 2
-  },
   {
    "at": "2026-08-04T13:07:37+05:30",
    "alerts": 0,
@@ -2421,8 +2424,13 @@
    "at": "2026-11-14T02:15:26+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-14T17:25:56+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-11-14",
- "last_run_ist": "2026-11-14T02:15:26+05:30"
+ "last_run_ist": "2026-11-14T17:25:56+05:30"
 }
