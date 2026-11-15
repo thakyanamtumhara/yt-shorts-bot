@@ -17,7 +17,7 @@
     "1": {
       "id": 1,
       "status": "active",
-      "last_run": "2026-11-08T23:57:48.067088+05:30",
+      "last_run": "2026-11-16T00:58:01.822865+05:30",
       "last_result": "no-saturday-upload",
       "details": "No long-form video uploaded by main channel in last 48h — skipping recap"
     },
@@ -29,5 +29,5 @@
       "details": "Voice style hints active in daily script gen (70 corpus entries)"
     }
   },
-  "last_update": "2026-11-08T23:57:48.067088+05:30"
+  "last_update": "2026-11-16T00:58:01.822865+05:30"
 }
