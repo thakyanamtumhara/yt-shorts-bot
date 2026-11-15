@@ -965,5 +965,22 @@
  },
  "dtftee20261111-tee-hoodie-x": {
   "nudged": true
+ },
+ "dtftee20261111-tee-share-youtube": {
+  "nudged": true
+ },
+ "dtftee20261111-tee-share-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DfwCf_XCR3W/"
+ },
+ "dtftee20261111-tee-share-fb": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1894993421862875/"
+ },
+ "dtftee20261111-tee-share-linkedin": {
+  "nudged": true
+ },
+ "dtftee20261111-tee-share-x": {
+  "nudged": true
  }
 }
