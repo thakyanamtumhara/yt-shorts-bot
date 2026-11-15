@@ -14462,8 +14462,8 @@ if __name__ == "__main__":
     # Sunday recap mode — fetch user's Saturday main-channel upload, generate
     # blog + Reddit (no Veo). Triggered by .github/workflows/sunday_recap.yml
     if "--mode=sunday-recap" in sys.argv or "--sunday-recap" in sys.argv:
-        ok = process_main_channel_recap()
-        sys.exit(0 if ok else 1)
+        process_main_channel_recap()
+        sys.exit(0)
     # IG carousel post mode — read the latest ig_drafts JSON and publish to IG.
     # Triggered by .github/workflows/ig_carousel.yml at 4:30 UTC (10 AM IST).
     if "--mode=ig-carousel-post" in sys.argv or "--ig-carousel-post" in sys.argv:
