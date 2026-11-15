@@ -351,6 +351,10 @@
   "x_9SL_8ol5w": {
    "title": "Hoodie Pe Print Kaisa Lagega? Round Neck, Polo, Oversize, Hoodie Pe Pehle Dekho",
    "published": "2026-11-14T05:30:19+00:00"
+  },
+  "jMtAHcBq9Ww": {
+   "title": "Customer Ko Print Se Pehle Dikhao, T-Shirt Pe Design Kaisa Lagega",
+   "published": "2026-11-15T05:30:22+00:00"
   }
  },
  "instagram": {
@@ -1089,6 +1093,10 @@
   "17891472537477878": {
    "permalink": "https://www.instagram.com/reel/DftduDygqvW/",
    "ts": "2026-11-14T05:34:23+0000"
+  },
+  "17919722772538513": {
+   "permalink": "https://www.instagram.com/reel/DfwCf_XCR3W/",
+   "ts": "2026-11-15T05:34:17+0000"
   }
  },
  "facebook": {
@@ -1430,11 +1438,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-04T21:40:35+05:30",
-   "alerts": 0,
-   "new": 2
-  },
   {
    "at": "2026-08-05T13:06:59+05:30",
    "alerts": 0,
@@ -2429,8 +2432,13 @@
    "at": "2026-11-15T00:26:41+05:30",
    "alerts": 0,
    "new": 0
+  },
+  {
+   "at": "2026-11-15T17:59:12+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
  "last_green_date": "2026-11-15",
- "last_run_ist": "2026-11-15T00:26:41+05:30"
+ "last_run_ist": "2026-11-15T17:59:12+05:30"
 }
