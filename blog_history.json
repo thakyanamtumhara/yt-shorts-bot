@@ -1352,13 +1352,14 @@
   },
   {
     "date": "2026-06-02",
-    "title": "240 GSM Drop Shoulder T-Shirts Wholesale India - Price & MOQ Tiers",
+    "title": "240 GSM Oversized Drop-Shoulder T-Shirts Wholesale India - Price, Colours & Sizes",
     "slug": "Dropshoulders",
     "url": "https://www.bulkplaintshirt.com/p/Dropshoulders.html",
     "topic": "Buy 240 GSM drop-shoulder T-shirts wholesale in India - full price table by MOQ ",
     "vid_url": "",
-    "word_count": 3289,
-    "editorial_corrected_at": "2026-10-17",
+    "word_count": 2078,
+    "editorial_corrected_at": "2026-11-16",
+    "modified": "2026-11-16",
     "managed_by": "catalog/guides.js (240 GSM product guide, built from catalog data)"
   },
   {
@@ -2980,6 +2981,7 @@
     "vid_url": "",
     "hero_image": "/catalog/images/sublimation-t-shirt/6.webp",
     "editorial_corrected_at": "2026-10-23",
+    "modified": "2026-11-16",
     "managed_by": "catalog/guides.js (sublimation T-shirt product guide, built from catalog data)"
   },
   {
@@ -2991,6 +2993,7 @@
     "vid_url": "",
     "hero_image": "/catalog/images/hoodie-320gsm-black/1.webp",
     "editorial_corrected_at": "2026-10-24",
+    "modified": "2026-11-16",
     "managed_by": "catalog/guides.js (plain hoodie product guide, built from catalog data)"
   },
   {
@@ -3002,6 +3005,7 @@
     "vid_url": "",
     "hero_image": "/catalog/images/dropshoulder-hoodie-430gsm/1.webp",
     "editorial_corrected_at": "2026-10-24",
+    "modified": "2026-11-16",
     "managed_by": "catalog/guides.js (430 GSM drop-shoulder hoodie product guide, built from catalog data)"
   },
   {
@@ -3013,6 +3017,7 @@
     "vid_url": "",
     "hero_image": "/catalog/images/kids-hoodie/1.webp",
     "editorial_corrected_at": "2026-11-07",
+    "modified": "2026-11-16",
     "managed_by": "catalog/guides.js (kids hoodie product guide, built from catalog data)"
   }
 ]
