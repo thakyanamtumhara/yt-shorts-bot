@@ -27,5 +27,14 @@
    "print_colour_yarn_hairiness_lustre"
   ],
   "reason": "no approved script after 5 attempts: Score 35/60. Weakest: ending. The script teaches the yarn lustre/twist/hairiness mechanism clearly and stays within cited facts, but the ending feels abrupt and generic — 'Sample check kar lo' adds li"
+ },
+ {
+  "date": "2026-11-19",
+  "topic": "₹150 vs ₹158 Round Neck — Biowash और True Biowash Supercombed में ₹8 का फ़र्क़ क्यों?",
+  "intent_key": "biowash_vs_true_biowash_supercombed_round_neck_price",
+  "fact_ids": [
+   "combing_short_fibres"
+  ],
+  "reason": "final AI review: Checked: probe sha256 values match, loudness -15.3 LUFS, true peak -3.6 dBTP (pass); audio and visual machine reviews passed; transcript matches script.voice in order with a complete ending; spoken claims match rate_bio_rneck, rate_true_bio_rneck and"
  }
 ]
