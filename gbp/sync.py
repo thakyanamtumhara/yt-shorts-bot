@@ -28,12 +28,12 @@ STATE_FILE = os.path.join(HERE, 'state.json')
 MAX_PHOTOS = int(os.environ.get('GBP_MAX_PHOTOS', '6'))
 MAX_VIDEOS = int(os.environ.get('GBP_MAX_VIDEOS', '1'))
 BUSINESS_TITLE = 'Own Knitted Blank Wears'
-# Varsity is closed since 23-Sep-2026 (never show it anywhere); "-sale" galleries are closing-out lots.
+# Varsity is closed since 23-Sep-2026 (never show it anywhere); a gallery with "sale" in its name (cotton-polo-sale,
+# sale-pant) is a closing-out lot.
 SKIP_SLUGS = {'varsity-jacket'}
-SKIP_SUFFIX = ('-sale',)
-# Google's stated limits for a Business Profile: photos JPG / PNG 10 KB - 5 MB, at least 250 px; videos up to
-# 30 s, 75 MB, 720p or more.
-PHOTO_MIN, PHOTO_MAX, PHOTO_MIN_SIDE = 10 * 1024, 5 * 1024 * 1024, 250
+# Google's stated limits for a Business Profile: photos JPG / PNG 10 KB - 5 MB, at least 250 px (we ask 600, the
+# website's own smallest gallery size, so a thumbnail never goes up); videos up to 30 s, 75 MB, 720p or more.
+PHOTO_MIN, PHOTO_MAX, PHOTO_MIN_SIDE = 10 * 1024, 5 * 1024 * 1024, 600
 VIDEO_MAX, VIDEO_MAX_SECONDS, VIDEO_MIN_SIDE = 75 * 1024 * 1024, 30.0, 720
 NAMES = {
     'acidwash-os': 'Acid Wash Oversized T-shirt', 'bio-rneck': 'Bio Wash Round Neck T-shirt',
@@ -110,7 +110,7 @@ def website_items():
 
 
 def skipped_slug(slug):
-    return slug in SKIP_SLUGS or slug.endswith(SKIP_SUFFIX)
+    return slug in SKIP_SLUGS or 'sale' in slug.split('-') or 'varsity' in slug.split('-')
 
 
 def access_token():
@@ -267,7 +267,6 @@ def run(mode):
         save_state(st) if any(v.get('s', '').startswith('skipped') and v.get('at') == day for v in seen.values()) else None
         return
     if not todo:
-        st['last_run'] = day
         save_state(st)
         return
     if st.get('last_upload') == day and not os.environ.get('GBP_FORCE'):
@@ -310,7 +309,6 @@ def run(mode):
             save_state(st)
     if done:
         st['last_upload'] = day
-    st['last_run'] = day
     save_state(st)
     if done:
         names = []
@@ -341,8 +339,11 @@ def main():
             seen = st.get('seen', {})
             up = [v for v in seen.values() if v.get('s') == 'uploaded']
             month = today()[:7]
-            tell('Google Business photo job is running. Uploaded so far: %d (this month: %d). Last upload: %s.' % (
-                len(up), len([v for v in up if v.get('at', '').startswith(month)]), st.get('last_upload', 'none yet')))
+            g = Google()
+            count = g.media_count(g.target())
+            tell('Google Business photo job is running and Google still accepts its permission. Uploaded by it so far: %d '
+                 '(this month: %d), last upload: %s. Photos and videos on the profile now: %s.' % (
+                     len(up), len([v for v in up if v.get('at', '').startswith(month)]), st.get('last_upload', 'none yet'), count))
         elif mode in ('baseline', 'dry', 'run'):
             run(mode)
         else:
