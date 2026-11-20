@@ -1,0 +1,65 @@
+name: Google Business photos
+run-name: "Google Business photos (${{ github.event.schedule == '0 5 1 * *' && 'monthly still-running note' || github.event_name == 'schedule' && 'daily' || inputs.action }})"
+
+# New website photos / videos -> the Google Business Profile, through Google's official Business Profile API
+# (access given to the business for its own profile, 19-Nov-2026). gbp/sync.py reads the website's own
+# phphotos.js, uploads only items that appeared after the 19-Nov-2026 baseline, a few per run (Ketu: "small, small
+# only coming"), and Telegrams him what went up, a failure, or a blind run. The 1st of each month it says it is
+# still running (if that note stops coming, the job is dead).
+
+on:
+  schedule:
+    - cron: '50 5 * * *'
+    - cron: '0 5 1 * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'run = upload what is new (small batch); dry = only print; whoami = check the Google permission; heartbeat = send the still-running note'
+        type: choice
+        options: [dry, run, whoami, heartbeat]
+        default: dry
+
+concurrency:
+  group: gbp-photos
+  cancel-in-progress: false
+
+jobs:
+  gbp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      MODE: ${{ github.event.schedule == '0 5 1 * *' && 'heartbeat' || github.event_name == 'schedule' && 'run' || inputs.action }}
+      GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+      GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+      GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync
+        run: |
+          pip install --quiet requests pillow
+          python gbp/sync.py "$MODE"
+      - name: Save what was uploaded
+        if: always() && env.MODE == 'run'
+        run: |
+          git config user.name "gbp-photos"
+          git config user.email "actions@users.noreply.github.com"
+          git add gbp/state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "gbp: state $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          exit 1
+      - name: Tell Ketu if it failed
+        if: failure() && env.MODE != 'dry'
+        run: |
+          [ -f /tmp/gbp_told ] && exit 0
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0
+          curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=Google Business photo job FAILED before it could say why (run ${GITHUB_RUN_ID}). Nothing wrong was uploaded; it tries again tomorrow." > /dev/null

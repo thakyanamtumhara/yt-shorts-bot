@@ -1,0 +1,1070 @@
+{
+ "baseline_at": "2026-11-19",
+ "seen": {
+  "/ph/acidwash-os/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/acidwash-os/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/acidwash-os/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/acidwash-os/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/18.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/19.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/20.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/21.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/22.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/23.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/24.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/25.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/26.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/27.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/bio-rneck/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo-sale/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/cotton-polo/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/18.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/19.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/20.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/21.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/22.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/23.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/24.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-320gsm/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/hoodie-430gsm/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-hoodie/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-hoodie/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-hoodie/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-hoodie/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-hoodie/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-rneck/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-rneck/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-rneck/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-rneck/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/kids-rneck/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck-sale/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck-sale/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck-sale/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/non-bio-rneck/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-180gsm/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-180gsm/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-210gsm/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/18.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/19.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/20.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/21.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/22.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/23.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/24.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/25.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/26.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/27.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-240gsm/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/1b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/2b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/3b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/4b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/5b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/6b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/7b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/8b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/oversize-260gsm/9b.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/18.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/19.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/premium-polo/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/shorts/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sublimation/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/15.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/16.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/17.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/18.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/19.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/sweatshirt/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/10.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/11.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/12.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/13.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/14.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/6.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/7.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/8.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/true-bio-rneck/9.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/varsity-jacket/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/varsity-jacket/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-armygreen-v2.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-brown.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-maroon.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-multi-v2.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-navy.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os-red-v2.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/acidwash-os.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/cotton-polo-sale-lot.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/cotton-polo.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/hoodie-320gsm-black-v2.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/hoodie-320gsm-navy.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/hoodie-320gsm-white.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/hoodie-430gsm-black-v2.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/kids-hoodie-black.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/kids-polo-sale.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/non-bio-rneck-sale-charcoal-navy.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/oversize-210gsm-red.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/oversize-240gsm-charcoal.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/oversize-240gsm-royalblue-navy.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/oversize-260gsm-white.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/premium-polo-white.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/sale-pant-black.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/sublimation.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/sweatshirt-grey.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/sweatshirt-maroon.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/sweatshirt-offwhite.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/true-bio-rneck-darksky.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/true-bio-rneck-grey.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/true-bio-rneck-mustardyellow.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/true-bio-rneck-navy.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/vid/zip-hoodie-black.mp4": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/zip-hoodie/1.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/zip-hoodie/2.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/zip-hoodie/3.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/zip-hoodie/4.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  },
+  "/ph/zip-hoodie/5.webp": {
+   "at": "2026-11-19",
+   "s": "baseline"
+  }
+ },
+ "version": 1
+}
