@@ -1,11 +1,14 @@
 name: Google Business photos
 run-name: "Google Business photos (${{ github.event.schedule == '0 5 1 * *' && 'monthly still-running note' || github.event_name == 'schedule' && 'daily' || inputs.action }})"
 
-# New website photos / videos -> the Google Business Profile, through Google's official Business Profile API
-# (access given to the business for its own profile, 19-Nov-2026). gbp/sync.py reads the website's own
-# phphotos.js, uploads only items that appeared after the 19-Nov-2026 baseline, a few per run (Ketu: "small, small
-# only coming"), and Telegrams him what went up, a failure, or a blind run. The 1st of each month it says it is
-# still running (if that note stops coming, the job is dead).
+# Website photos / videos -> the Google Business Profile, through Google's official Business Profile API (access
+# given to the business for its own profile, 19-Nov-2026). gbp/sync.py reads the website's own phphotos.js.
+#  - NEW items (on the website after the 19-Nov-2026 baseline) go up first, Telegram at once.
+#  - The OLDER gallery (gbp/backlog.json, each item looked at before it was listed) goes up a few a day (Ketu,
+#    20-Nov-2026: "keep pushing slowly, maybe on an everyday basis ... just be safe"), only while the item is still on
+#    the website and its product + colour are still in the live catalogue; one Telegram a week (Monday).
+#  - A day's ceiling for everything together: 6 photos + 1 video.
+# Failure or a blind run = Telegram at once. The 1st of each month it says it is still running (no note = dead job).
 
 on:
   schedule:
@@ -14,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'run = upload what is new (small batch); dry = only print; whoami = check the Google permission; heartbeat = send the still-running note'
+        description: 'run = upload today''s small batch (never above the day''s ceiling); dry = only print; whoami = check the Google permission; heartbeat = send the still-running note'
         type: choice
         options: [dry, run, whoami, heartbeat]
         default: dry
@@ -26,22 +29,30 @@ concurrency:
 jobs:
   gbp:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       contents: write
     env:
       MODE: ${{ github.event.schedule == '0 5 1 * *' && 'heartbeat' || github.event_name == 'schedule' && 'run' || inputs.action }}
-      GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
-      GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
-      GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
     steps:
+      - name: Read the live product list (first step on purpose - no keys here, nothing checked out yet)
+        continue-on-error: true
+        run: |
+          curl -sf -m 30 -o /tmp/catalog.js https://www.bulkplaintshirt.com/catalog/data/catalog.js
+          node -e 'const fs=require("fs"),vm=require("vm");const D=vm.runInNewContext(fs.readFileSync(process.argv[1],"utf8")+"\n;CATALOG_DATA",{},{timeout:3000});const out={};for(const c of D.categories)for(const p of c.products){if(p.hidden)continue;const t=p.tiers||[p];out[p.name]=[].concat(...t.map(x=>x.colors||[]));}process.stdout.write(JSON.stringify(out));' /tmp/catalog.js > /tmp/gbp_catalog.tmp
+          mv /tmp/gbp_catalog.tmp /tmp/gbp_catalog.json
+          rm -f /tmp/catalog.js
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Sync
+        env:
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
         run: |
           pip install --quiet requests pillow
           python gbp/sync.py "$MODE"
@@ -57,6 +68,9 @@ jobs:
           exit 1
       - name: Tell Ketu if it failed
         if: failure() && env.MODE != 'dry'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
         run: |
           [ -f /tmp/gbp_told ] && exit 0
           [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0

@@ -7,7 +7,11 @@ same day, so nothing here drives a browser. This repo is public: no profile ids 
 
 The website's own public list (phphotos.js: PH_PHOTOS + PH_VIDEOS) is the only input. gbp/state.json remembers every
 item ever seen. Everything on the site on the day of the baseline is marked "baseline" and never uploaded: only items
-that appear later go up, a few per run (GBP_MAX_PHOTOS / GBP_MAX_VIDEOS), at most one run a day.
+that appear later go up as "new", a few a day (GBP_MAX_PHOTOS / GBP_MAX_VIDEOS are the day's ceiling).
+
+Since 20-Nov-2026 the older gallery goes up too, slowly: gbp/backlog.json is an ordered list of older items, each one
+looked at before it was listed; GBP_OLD_PHOTOS / GBP_OLD_VIDEOS of them a day, only while the item is still on the
+website and its product and colour are still in the live catalogue (/tmp/gbp_catalog.json, made by the workflow).
 
 Modes: baseline | dry | run | heartbeat | whoami
 """
@@ -27,6 +31,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, 'state.json')
 MAX_PHOTOS = int(os.environ.get('GBP_MAX_PHOTOS', '6'))
 MAX_VIDEOS = int(os.environ.get('GBP_MAX_VIDEOS', '1'))
+# Older gallery items (backlog.json): Ketu, 20-Nov-2026, "keep pushing slowly, maybe on an everyday basis ... just be
+# safe". A few a day, inside the same daily ceiling as the new items, which always go first.
+OLD_PHOTOS = int(os.environ.get('GBP_OLD_PHOTOS', '3'))
+OLD_VIDEOS = int(os.environ.get('GBP_OLD_VIDEOS', '1'))
+BACKLOG_FILE = os.path.join(HERE, 'backlog.json')
+CATALOG_JSON = os.environ.get('GBP_CATALOG_JSON', '/tmp/gbp_catalog.json')
 BUSINESS_TITLE = 'Own Knitted Blank Wears'
 # Varsity is closed since 23-Sep-2026 (never show it anywhere); a gallery with "sale" in its name (cotton-polo-sale,
 # sale-pant) is a closing-out lot.
@@ -52,8 +62,12 @@ class Blind(Exception):
     pass
 
 
+def now_ist():
+    return datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=5, minutes=30)
+
+
 def today():
-    return (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d')
+    return now_ist().strftime('%Y-%m-%d')
 
 
 def tell(text):
@@ -237,10 +251,62 @@ def label(slug, colour):
     return ('%s, %s' % (name, colour)) if colour and colour.lower() != 'assorted' else name
 
 
+def norm_colour(c):
+    c = re.sub(r'[^a-z]', '', (c or '').lower())
+    return {'charcol': 'charcoal', 'biege': 'beige'}.get(c, c)
+
+
+def live_catalogue():
+    """{product: set(colours)} that the catalogue lists today, or None when the list could not be read."""
+    try:
+        d = json.load(open(CATALOG_JSON))
+    except Exception:
+        return None
+    if not isinstance(d, dict) or len(d) < 10:
+        return None
+    return {name: set(norm_colour(c) for c in cols) for name, cols in d.items()}
+
+
+def old_queue(seen, on_site, live):
+    """Older gallery items (backlog.json) that may go up today, in their listed order.
+
+    One goes up only while it is still on the website AND its product and colour are still in the catalogue. An item
+    that fails that today is passed over, not dropped: it is looked at again on the next run.
+    """
+    if live is None or not os.path.exists(BACKLOG_FILE):
+        return []
+    out = []
+    for e in json.load(open(BACKLOG_FILE))['items']:
+        if seen.get(e['k'], {}).get('s') != 'baseline' or e['k'] not in on_site:
+            continue
+        if e['p'] not in live or (e['c'] and e['c'] not in live[e['p']]):
+            continue
+        out.append(e)
+    return out
+
+
+def old_waiting(seen):
+    if not os.path.exists(BACKLOG_FILE):
+        return 0
+    return len([e for e in json.load(open(BACKLOG_FILE))['items'] if seen.get(e['k'], {}).get('s') == 'baseline'])
+
+
+def is_video(key):
+    return key.endswith('.mp4')
+
+
+def counts(n_photos, n_videos):
+    parts = (['%d photo%s' % (n_photos, '' if n_photos == 1 else 's')] if n_photos else []) + \
+            (['%d video%s' % (n_videos, '' if n_videos == 1 else 's')] if n_videos else [])
+    return ' and '.join(parts) or 'nothing'
+
+
 def run(mode):
     st = load_state()
     seen = st.setdefault('seen', {})
     items = website_items()
+    on_site = set(x[0] for x in items)
+    now = now_ist()
     day = today()
     if mode == 'baseline':
         added = 0
@@ -252,30 +318,43 @@ def run(mode):
         save_state(st)
         print('baseline: %d items on the website, %d newly marked' % (len(items), added))
         return
-    fresh = [x for x in items if x[0] not in seen]
-    for key, kind, slug, colour in list(fresh):
+    fresh = []
+    for key, kind, slug, colour in items:
+        if key in seen:
+            continue
         if skipped_slug(slug):
-            seen[key] = {'s': 'skipped: closed or sale line', 'at': day}
-            fresh.remove((key, kind, slug, colour))
-    photos = [x for x in fresh if x[1] == 'photo'][:MAX_PHOTOS]
-    videos = [x for x in fresh if x[1] == 'video'][:MAX_VIDEOS]
-    todo, left = photos + videos, len(fresh) - len(photos) - len(videos)
-    print('%d on the website, %d new, %d this run, %d wait for the next run' % (len(items), len(fresh), len(todo), left))
+            if mode == 'run':
+                seen[key] = {'s': 'skipped: closed or sale line', 'at': day}
+            continue
+        fresh.append({'k': key, 'kind': kind, 'slug': slug, 'd': label(slug, colour), 'src': 'new'})
+    up_today = [k for k, v in seen.items() if v.get('s') == 'uploaded' and v.get('at') == day]
+    room_p = max(0, MAX_PHOTOS - len([k for k in up_today if not is_video(k)]))
+    room_v = max(0, MAX_VIDEOS - len([k for k in up_today if is_video(k)]))
+    photos = [x for x in fresh if x['kind'] == 'photo'][:room_p]
+    videos = [x for x in fresh if x['kind'] == 'video'][:room_v]
+    left = len(fresh) - len(photos) - len(videos)
+    live = live_catalogue()
+    queue = old_queue(seen, on_site, live)
+    old_p_today = len([k for k in up_today if not is_video(k) and seen[k].get('src') == 'old'])
+    old_photos = [e for e in queue if e['kind'] == 'photo'][:max(0, min(OLD_PHOTOS - old_p_today, room_p - len(photos)))]
+    old_videos = [e for e in queue if e['kind'] == 'video'][:max(0, min(OLD_VIDEOS, room_v - len(videos)))]
+    old = [dict(e, src='old') for e in old_photos + old_videos]
+    todo = photos + videos + old
+    print('%d on the website | new: %d, %d this run, %d wait | older: %d waiting, %d may go, %d this run%s' % (
+        len(items), len(fresh), len(photos) + len(videos), left, old_waiting(seen), len(queue), len(old),
+        '' if live is not None else ' (product list unreadable: older items wait)'))
     if mode == 'dry':
-        for key, kind, slug, colour in todo:
-            print('  would upload', kind, key, '|', label(slug, colour))
-        save_state(st) if any(v.get('s', '').startswith('skipped') and v.get('at') == day for v in seen.values()) else None
+        for x in todo:
+            print('  would upload', x['src'], x['kind'], x['k'], '|', x['d'])
         return
-    if not todo:
-        save_state(st)
-        return
-    if st.get('last_upload') == day and not os.environ.get('GBP_FORCE'):
-        print('already uploaded today; the rest waits for tomorrow')
-        return
-    g = Google()
-    parent = g.target()
+    if live is None and old_waiting(seen):
+        st['old_blind'] = sorted(set(st.get('old_blind', []) + [day]))[-14:]
     done, skipped, failed = [], [], None
-    for key, kind, slug, colour in todo:
+    if todo:
+        g = Google()
+        parent = g.target()
+    for x in todo:
+        key, kind = x['k'], x['kind']
         try:
             r = requests.get(SITE + key, headers=UA, timeout=300)
             if r.status_code != 200:
@@ -299,9 +378,9 @@ def run(mode):
                 seen[key] = {'s': 'skipped: ' + why, 'at': day}
                 skipped.append((key, why))
                 continue
-            name = g.upload(parent, kind, data, label(slug, colour))
-            seen[key] = {'s': 'uploaded', 'at': day, 'id': name.split('/')[-1]}
-            done.append((kind, slug, colour))
+            name = g.upload(parent, kind, data, x['d'])
+            seen[key] = {'s': 'uploaded', 'at': day, 'id': name.split('/')[-1], 'src': x['src']}
+            done.append(x)
         except Exception as e:
             failed = '%s: %s' % (key, str(e)[:200])
             break
@@ -309,23 +388,50 @@ def run(mode):
             save_state(st)
     if done:
         st['last_upload'] = day
-    save_state(st)
-    if done:
+    new_done = [x for x in done if x['src'] == 'new']
+    if new_done:
         names = []
-        for kind, slug, colour in done:
-            n = label(slug, colour) or slug
+        for x in new_done:
+            n = x['d'] or x['slug']
             if n not in names:
                 names.append(n)
-        np, nv = len([d for d in done if d[0] == 'photo']), len([d for d in done if d[0] == 'video'])
-        parts = (['%d photo%s' % (np, '' if np == 1 else 's')] if np else []) + (['%d video%s' % (nv, '' if nv == 1 else 's')] if nv else [])
-        msg = 'Google Business: %s added from the website (%s). Google shows them after its own check.' % (' and '.join(parts), '; '.join(names[:6]))
+        msg = 'Google Business: %s added from the website (%s). Google shows them after its own check.' % (
+            counts(len([x for x in new_done if x['kind'] == 'photo']), len([x for x in new_done if x['kind'] == 'video'])),
+            '; '.join(names[:6]))
         if left:
             msg += ' %d more wait for tomorrow (small batches).' % left
         tell(msg)
     for key, why in skipped:
         tell('Google Business: not uploaded, %s: %s. Nothing else is affected.' % (key, why))
     if failed:
+        save_state(st)
         raise RuntimeError(failed)
+    if os.path.exists(BACKLOG_FILE) and not st.get('old_done'):
+        rest = old_queue(seen, on_site, live)
+        rest_p = len([e for e in rest if e['kind'] == 'photo'])
+        rest_v = len(rest) - rest_p
+        olds = [(k, v) for k, v in seen.items() if v.get('s') == 'uploaded' and v.get('src') == 'old']
+        if live is not None and not rest and olds:
+            st['old_done'] = day
+            msg = 'Google Business: all the older website photos and videos are now on the profile (%s over the weeks). From now only new website items go up.' % counts(
+                len([k for k, v in olds if not is_video(k)]), len([k for k, v in olds if is_video(k)]))
+            if old_waiting(seen):
+                msg += ' %d were left out because that product or colour is no longer listed.' % old_waiting(seen)
+            tell(msg)
+        elif now.weekday() == 0 and st.get('old_note') != day:
+            st['old_note'] = day
+            week = set((now - datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7))
+            wk = [k for k, v in olds if v.get('at') in week]
+            msg = 'Google Business, last 7 days: %s from the older website gallery added, a few each day.' % counts(
+                len([k for k in wk if not is_video(k)]), len([k for k in wk if is_video(k)]))
+            if live is not None:
+                days = max(-(-rest_p // max(1, OLD_PHOTOS)), -(-rest_v // max(1, OLD_VIDEOS)))
+                msg += ' Still to go: %s, about %d week%s.' % (counts(rest_p, rest_v), -(-days // 7), '' if days <= 7 else 's')
+            blind = [d for d in st.get('old_blind', []) if d in week]
+            if blind:
+                msg += ' On %d day%s nothing older went up because the product list could not be read.' % (len(blind), '' if len(blind) == 1 else 's')
+            tell(msg)
+    save_state(st)
 
 
 def main():
@@ -342,8 +448,8 @@ def main():
             g = Google()
             count = g.media_count(g.target())
             tell('Google Business photo job is running and Google still accepts its permission. Uploaded by it so far: %d '
-                 '(this month: %d), last upload: %s. Photos and videos on the profile now: %s.' % (
-                     len(up), len([v for v in up if v.get('at', '').startswith(month)]), st.get('last_upload', 'none yet'), count))
+                 '(this month: %d), last upload: %s. Older website items still waiting: %d. Photos and videos on the profile now: %s.' % (
+                     len(up), len([v for v in up if v.get('at', '').startswith(month)]), st.get('last_upload', 'none yet'), old_waiting(seen), count))
         elif mode in ('baseline', 'dry', 'run'):
             run(mode)
         else:
