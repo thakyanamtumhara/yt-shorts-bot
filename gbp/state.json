@@ -1,5 +1,6 @@
 {
  "baseline_at": "2026-11-19",
+ "last_upload": "2026-11-20",
  "seen": {
   "/ph/acidwash-os/1.webp": {
    "at": "2026-11-19",
@@ -972,6 +973,11 @@
   "/ph/vid/hoodie-430gsm-black-v2.mp4": {
    "at": "2026-11-19",
    "s": "baseline"
+  },
+  "/ph/vid/kids-hoodie-black.mp4": {
+   "at": "2026-11-20",
+   "id": "CIABIhAkCY89aPJUPOX0b8WjTPsv",
+   "s": "uploaded"
   },
   "/ph/vid/kids-polo-sale.mp4": {
    "at": "2026-11-19",
