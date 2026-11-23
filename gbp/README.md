@@ -14,7 +14,9 @@ Profile API. No browser is driven.
   coming back, anything already on the profile, a printed sample, clips over 30 s, clips with a readable vehicle
   number plate. To take an item out: delete its entry from `backlog.json`.
 - A day's ceiling for everything together: 6 photos + 1 video (`GBP_MAX_PHOTOS`, `GBP_MAX_VIDEOS`, `GBP_OLD_PHOTOS`,
-  `GBP_OLD_VIDEOS`); a second run on the same day never goes above it. Daily run 11:20 IST.
+  `GBP_OLD_VIDEOS`); a second run on the same day never goes above it. Daily run booked for 11:20 IST; GitHub often starts
+  it hours late (21 and 22-Nov-2026: about 19:10 IST), which is fine. The weekly note goes on Monday, or on the first
+  run after it when Monday's run starts past midnight IST.
 - Photos (600 px or more) go up as JPG copies, category ADDITIONAL like every photo already on the profile, with
   "Product, Colour" as the description; a video must fit Google's limits (30 s, 75 MB, 720p).
 - Never uploaded: Varsity (closed) and any gallery with `sale` in its name.

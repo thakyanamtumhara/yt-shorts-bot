@@ -418,7 +418,8 @@ def run(mode):
             if old_waiting(seen):
                 msg += ' %d were left out because that product or colour is no longer listed.' % old_waiting(seen)
             tell(msg)
-        elif now.weekday() == 0 and st.get('old_note') != day:
+        elif (st.get('old_note') or '') < (now - datetime.timedelta(days=now.weekday())).strftime('%Y-%m-%d'):
+            # weekly note: on Monday, or on the first run after it when GitHub starts Monday's run past midnight IST
             st['old_note'] = day
             week = set((now - datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7))
             wk = [k for k, v in olds if v.get('at') in week]
