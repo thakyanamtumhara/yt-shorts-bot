@@ -1,6 +1,7 @@
 {
  "baseline_at": "2026-11-19",
- "last_upload": "2026-11-22",
+ "last_upload": "2026-11-23",
+ "old_note": "2026-11-23",
  "seen": {
   "/ph/acidwash-os/1.webp": {
    "at": "2026-11-22",
@@ -167,8 +168,10 @@
    "s": "baseline"
   },
   "/ph/cotton-polo/1.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-23",
+   "id": "CIABIhDxmhMXH8IOohB1ccPZk4nN",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/cotton-polo/10.webp": {
    "at": "2026-11-19",
@@ -665,8 +668,10 @@
    "s": "baseline"
   },
   "/ph/premium-polo/1.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-23",
+   "id": "CIABIhDOmMRkikkdxDRsQALX4mZO",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/premium-polo/10.webp": {
    "at": "2026-11-19",
@@ -895,8 +900,10 @@
    "s": "baseline"
   },
   "/ph/true-bio-rneck/14.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-23",
+   "id": "CIABIhCU0kMYF2vyZM4S7JnqT-Zx",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/true-bio-rneck/2.webp": {
    "at": "2026-11-19",
@@ -1064,8 +1071,10 @@
    "s": "baseline"
   },
   "/ph/vid/zip-hoodie-black.mp4": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-23",
+   "id": "CIABIhCjT8rJHJoBrea2xEuIEDkN",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/zip-hoodie/1.webp": {
    "at": "2026-11-20",
