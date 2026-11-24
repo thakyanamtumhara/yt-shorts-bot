@@ -982,5 +982,19 @@
  },
  "dtftee20261111-tee-share-x": {
   "nudged": true
+ },
+ "raw20261123-b1-baggy-v1-youtube": {
+  "nudged": true
+ },
+ "raw20261123-b1-baggy-v1-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DgH6TgdEWsH/"
+ },
+ "raw20261123-b1-baggy-v1-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/1024936720669615/"
+ },
+ "raw20261123-b1-baggy-v1-x": {
+  "nudged": true
  }
 }
