@@ -1,0 +1,28 @@
+{
+ "job": "raw20261123-f1-winter-v5-fb",
+ "video_id": "2059476568049404",
+ "publish_at_ist": "2026-11-28 20:00",
+ "scheduled_at_utc": "2026-11-24T02:49:41+00:00",
+ "read_back": {
+  "id": "2059476568049404",
+  "title": "Winter Range 2026: Plain Hoodie ₹307, 430 GSM Boxy, Sweatshirt ₹235, Kids Hoodie ₹200",
+  "published": false,
+  "scheduled_publish_time": "2026-11-28T14:30:00+0000",
+  "status": {
+   "video_status": "ready",
+   "uploading_phase": {
+    "status": "complete"
+   },
+   "processing_phase": {
+    "status": "complete"
+   },
+   "publishing_phase": {
+    "status": "complete",
+    "publish_status": "scheduled",
+    "publish_time": "2026-11-28T14:30:00+0000"
+   }
+  },
+  "permalink_url": "/reel/2059476568049404/",
+  "length": 576.81
+ }
+}
