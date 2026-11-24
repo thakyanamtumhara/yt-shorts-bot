@@ -4551,6 +4551,20 @@
    "booking_status": "accepted",
    "note": "Vizard accepted (code 2000); not proof of publication. Confirm after due time.",
    "url": "https://x.com/sale91_com"
+  },
+  {
+   "id": "raw20261123-f1-winter-v5-youtube",
+   "label": "Raw 23-Nov f1: Full video: Winter range 2026 — YouTube MAIN",
+   "platform": "youtube",
+   "rail": "api-scheduled",
+   "due_ist": "2026-11-28 19:00",
+   "verify": "manual",
+   "video_sha256": "40508fd82badaf71a5817b0aeab33b2126779eac308daa15bd0bab7d7e57832b",
+   "approved_version": "f1-winter-v5",
+   "native_ai": false,
+   "video_id": "RXMGib4dXYI",
+   "url": "https://youtu.be/RXMGib4dXYI",
+   "note": "MAIN owner API: private + exact publishAt read back at booking (Ketu ticked the exact file on the review page). Confirm public after due time."
   }
  ]
 }
