@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261123s4",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-24T01:35:57.148Z",
+  "videos": [
+    {
+      "id": "s4-kids-v4",
+      "version": "1",
+      "sha256": "93b22516f535ea5d4dca24b8a5e1944d731129f391d403f2b3df2c00d63e88f6",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
