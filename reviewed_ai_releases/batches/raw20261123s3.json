@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261123s3",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-24T01:47:50.840Z",
+  "videos": [
+    {
+      "id": "s3-hoodie430-v4",
+      "version": "1",
+      "sha256": "5214208fa9084c60b42476a024114942eff8d9fa19a6e2493d08e04b4b6897d8",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
