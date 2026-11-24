@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261123s6",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-24T01:36:43.796Z",
+  "videos": [
+    {
+      "id": "s6-colours-v4",
+      "version": "1",
+      "sha256": "0030940fe4cc1cd88eb99d0a146ac4ce919f768415260df1819a6567f4561caa",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
