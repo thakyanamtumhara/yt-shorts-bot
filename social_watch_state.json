@@ -355,6 +355,10 @@
   "jMtAHcBq9Ww": {
    "title": "Customer Ko Print Se Pehle Dikhao, T-Shirt Pe Design Kaisa Lagega",
    "published": "2026-11-15T05:30:22+00:00"
+  },
+  "1PL9Z6juh6s": {
+   "title": "Baggy Pant Launch Jaldi! 280 GSM, ₹220 Ke Aaspaas | 10-12 Din Mein sale91.com Pe",
+   "published": "2026-11-24T11:45:19+00:00"
   }
  },
  "instagram": {
@@ -1097,6 +1101,10 @@
   "17919722772538513": {
    "permalink": "https://www.instagram.com/reel/DfwCf_XCR3W/",
    "ts": "2026-11-15T05:34:17+0000"
+  },
+  "17918128971519907": {
+   "permalink": "https://www.instagram.com/reel/DgH6TgdEWsH/",
+   "ts": "2026-11-24T12:04:22+0000"
   }
  },
  "facebook": {
@@ -1438,11 +1446,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-12T20:24:42+05:30",
-   "alerts": 1,
-   "new": 2
-  },
   {
    "at": "2026-08-13T11:44:44+05:30",
    "alerts": 1,
@@ -2437,8 +2440,13 @@
    "at": "2026-11-23T21:10:40+05:30",
    "alerts": 1,
    "new": 0
+  },
+  {
+   "at": "2026-11-24T21:01:14+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-11-17",
- "last_run_ist": "2026-11-23T21:10:40+05:30"
+ "last_green_date": "2026-11-24",
+ "last_run_ist": "2026-11-24T21:01:14+05:30"
 }
