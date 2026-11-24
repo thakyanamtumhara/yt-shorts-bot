@@ -78,7 +78,7 @@ jobs:
               print("  container:", r.status_code, r.text[:200])
               r.raise_for_status()
               cid = r.json()["id"]
-              for i in range(40):
+              for i in range(120):  # 30 min: a long full video (up to 15 min) can take Instagram well over 10 min to process
                   st = requests.get(f"https://graph.facebook.com/{V}/{cid}",
                                     params={"fields": "status_code,status",
                                             "access_token": tok}, timeout=30).json()

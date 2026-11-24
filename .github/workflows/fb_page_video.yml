@@ -1,0 +1,41 @@
+name: Facebook Page video (scheduled by Facebook)
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Job file under fb_page_videos/ (for example raw20261123-f1-winter-v5.json)
+        required: true
+      execute:
+        description: Send it to Facebook (false = check the hosted file only)
+        type: boolean
+        default: false
+
+concurrency:
+  group: fb-page-video
+  cancel-in-progress: false
+
+jobs:
+  schedule:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Schedule on the Page
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        run: |
+          python3 tools/fb_page_video.py "fb_page_videos/${{ inputs.job }}" ${{ inputs.execute && '--execute' || '' }}
+      - name: Keep the answer so a second run never posts twice
+        if: always() && inputs.execute
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add fb_page_videos/*.result.json || true
+          git commit -m "Facebook Page video scheduled: ${{ inputs.job }} [skip ci]" || true
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
