@@ -37,6 +37,10 @@ ACTIONS = {
     'youtube': ('Reconnect YouTube',
                 'The daily Short cannot be uploaded to YouTube.',
                 'https://studio.youtube.com/'),
+    # tools/content_watch.py passes its own title, detail and link (how long, and why).
+    'auto_short_stopped': ('Auto Short stopped',
+                           'The automatic daily Short has not gone out for two working days or more.',
+                           'https://github.com/thakyanamtumhara/yt-shorts-bot/actions/workflows/daily_short.yml'),
 }
 
 
@@ -65,6 +69,12 @@ def update(owner, active, path=None, now=None):
         if key not in ACTIONS:
             continue
         title, detail, url = ACTIONS[key]
+        if isinstance(evidence, dict):
+            title = str(evidence.get('title') or title)[:60]
+            detail = str(evidence.get('detail') or detail)[:280]
+            link = str(evidence.get('url') or '')
+            url = link if link.startswith('https://') and ' ' not in link else url
+            evidence = evidence.get('evidence')
         kept.append({'id': key, 'owner': owner, 'title': title, 'detail': detail, 'action_url': url,
                      'evidence': str(evidence or '')[:200],
                      'since': (previous.get(key) or {}).get('since') or now, 'last_seen': now})

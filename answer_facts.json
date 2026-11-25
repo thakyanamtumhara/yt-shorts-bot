@@ -1,0 +1,128 @@
+{
+ "format": "answer-facts-v1",
+ "reviewed": true,
+ "reviewed_on": "2026-11-25",
+ "scope": "Our own business facts for the daily answer Short: how buyers order, pay and get delivery. Each was checked on the reviewed date against the live website or the owner's stated rule. Rates are never kept here: they are read from the live rate list on every run.",
+ "facts": {
+  "order_from_one_piece": {
+   "claim": "On BulkPlainTshirt.com / sale91.com a buyer can order a single piece of any product as a sample at that product's sample rate. The bulk rate applies from 10 pieces of a product.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "BulkPlainTshirt.com live rate list (sample rate and bulk rate)",
+   "checked_on": "2026-11-25",
+   "limits": "Say 'sample rate' for fewer than 10 pieces and 'bulk rate' from 10 pieces. Never say there is no minimum for the bulk rate. Never promise a free sample."
+  },
+  "plain_garments_only": {
+   "claim": "Own Knitted Blank Wears sells plain (blank) garments for printing and resale: T-shirts, oversized T-shirts, polos, hoodies, sweatshirts and kids wear. It does not print on garments. It also sells DTF prints by the metre, which the buyer presses on the garment himself.",
+   "source_url": "https://www.bulkplaintshirt.com/catalog/",
+   "source_title": "sale91.com catalogue",
+   "checked_on": "2026-11-25",
+   "limits": "Never say we print T-shirts or do custom printing on garments. Do not name a product that is not in the cited rate facts."
+  },
+  "made_tiruppur_stock_delhi": {
+   "claim": "The garments are manufactured in Tiruppur and kept as ready stock in the company's own godown in Delhi. Orders are dispatched from Delhi to buyers anywhere in India.",
+   "source_url": "https://www.bulkplaintshirt.com/llms-full.txt",
+   "source_title": "Own Knitted Blank Wears company guide",
+   "checked_on": "2026-11-25",
+   "limits": "Do not name a street address or a market. Do not say we have a shop or branch in another city. Do not promise that every size is in stock: the website shows live stock."
+  },
+  "courier_all_india": {
+   "claim": "The website ships by courier across India. Courier delivery usually takes 2 to 5 days depending on the place, and the checkout shows the expected dates for the buyer's own pincode before payment.",
+   "source_url": "https://www.bulkplaintshirt.com/calc/shipping-calculator.html",
+   "source_title": "sale91.com shipping calculator and checkout",
+   "checked_on": "2026-11-25",
+   "limits": "Say 'usually 2 to 5 days'. Never promise a date, next-day courier delivery or free delivery. The delivery charge is extra and depends on weight and pincode."
+  },
+  "delhi_bike_delivery": {
+   "claim": "For Delhi NCR pincodes the website offers same-day bike delivery through Porter during godown hours, and self-pickup from the Delhi godown.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com checkout delivery options",
+   "checked_on": "2026-11-25",
+   "limits": "Only Delhi NCR. Never give a fixed number of hours as a guarantee. Godown hours are Monday to Saturday 10 am to 6 pm and Sunday 12 pm to 4 pm."
+  },
+  "train_option_bulk": {
+   "claim": "For bulk orders the website checkout has a Train option to stations with a direct train from New Delhi; such parcels usually reach the next day or the day after, depending on the train.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com checkout delivery options",
+   "checked_on": "2026-11-25",
+   "limits": "Say 'usually'. Never guarantee a day. Do not name a city unless the buyer question names it, and then say only that the checkout shows whether Train is offered."
+  },
+  "godown_hours": {
+   "claim": "The Delhi godown is open Monday to Saturday 10 am to 6 pm and Sunday 12 pm to 4 pm.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com godown hours",
+   "checked_on": "2026-11-25",
+   "limits": "Never give other hours. Do not promise it is open on a festival day."
+  },
+  "gst_bill_every_order": {
+   "claim": "Every order gets a GST bill. Garment rates on the website are before 5% GST, which is added at checkout. A buyer who enters his GSTIN at checkout gets the bill in his business name.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com checkout",
+   "checked_on": "2026-11-25",
+   "limits": "Do not explain input tax credit or give tax advice. DTF print carries 18% GST, not 5%."
+  },
+  "carton_discount": {
+   "claim": "On the website an order gets ₹4 per piece off by itself when every size ordered is a whole multiple of that product's carton number: 10 pieces for T-shirts, and 5 pieces for polos, hoodies, sweatshirts and 260 GSM oversized T-shirts.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com 'How to get ₹4/pc off'",
+   "checked_on": "2026-11-25",
+   "amounts": [4],
+   "limits": "State the rule exactly: every size must be a whole multiple of the carton number. Never call it a coupon, never promise it on mixed quantities, and never subtract it from a rate to state a new price."
+  },
+  "cod_part_advance": {
+   "claim": "Cash on delivery is offered on courier orders where the COD courier serves the buyer's pincode: the buyer pays a part in advance on the website and the rest to the courier on delivery. The checkout shows the COD option only where it is available.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com checkout payment options",
+   "checked_on": "2026-11-25",
+   "limits": "Never say full COD with nothing in advance. Never say COD is available everywhere. COD is not available for drop-shipping orders."
+  },
+  "dropship_prepaid": {
+   "claim": "A reseller can place an order on the website that is shipped straight to his own customer under the reseller's name ('We ship on your behalf'); our name, address and bill are not shown to that customer. Drop-shipping orders are prepaid only.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com checkout drop-shipping option",
+   "checked_on": "2026-11-25",
+   "limits": "Never say COD for drop-shipping. Do not promise printing. Do not promise a delivery date."
+  },
+  "prebook_and_notify": {
+   "claim": "When a size is sold out on the website and a new lot is coming, the website lets the buyer pre-book it from that lot, and 'Notify Me' sends a WhatsApp message when a sold-out size is back in stock.",
+   "source_url": "https://www.bulkplaintshirt.com/delhi-stock.html",
+   "source_title": "sale91.com stock and Notify Me page",
+   "checked_on": "2026-11-25",
+   "limits": "Never give an arrival date. Never say a particular colour or size is in stock or sold out: stock changes through the day."
+  },
+  "lot_sale_reason": {
+   "claim": "The website's Lot Sale products are the company's regular garments sold at a lower rate because a colour has been discontinued or only some sizes are left. The size packed in a Lot Sale order can be one size up or down.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com Lot Sale",
+   "checked_on": "2026-11-25",
+   "limits": "Quote only the Sale rates in the cited rate facts. Say plainly that sizes and colours are limited to what the website shows and that exact sizes are not promised. Never call it defective or second quality."
+  },
+  "proforma_invoice": {
+   "claim": "On the website's cart page the Share button makes a proforma invoice PDF (a price quote with the buyer's billing name, GSTIN and address) before payment. The GST bill is made after payment.",
+   "source_url": "https://www.bulkplaintshirt.com/",
+   "source_title": "sale91.com cart Share button",
+   "checked_on": "2026-11-25",
+   "limits": "Call it a price quote, not a tax invoice. Do not mention bank transfer."
+  },
+  "size_chart_on_site": {
+   "claim": "Every product on the website has its own size chart with chest and length in inches. Oversized (drop-shoulder) T-shirts and regular-fit T-shirts have different charts and different size names (letter sizes such as S, M, L for oversized, chest numbers 36 to 46 for regular fit).",
+   "source_url": "https://www.bulkplaintshirt.com/?q=SizeChart",
+   "source_title": "sale91.com size charts",
+   "checked_on": "2026-11-25",
+   "limits": "Do not state any measurement in inches or centimetres. Tell the viewer to open that product's own chart."
+  },
+  "dtf_how_it_works": {
+   "claim": "On dtf.bulkplaintshirt.com a buyer uploads designs as PNG or PDF, the site packs them on a 22.8 inch wide sheet and shows the price by length before payment. The print is delivered as a film roll; the buyer presses it on the garment with a heat press. The file is printed exactly as uploaded.",
+   "source_url": "https://dtf.bulkplaintshirt.com/",
+   "source_title": "Own Knitted Blank Wears DTF print site",
+   "checked_on": "2026-11-25",
+   "limits": "Never say we press or print on the T-shirt. Do not state press temperature or time unless a cited fact gives it. Do not promise a delivery time. Quote the DTF rate only from the cited live DTF rate fact."
+  },
+  "gsm_is_weight": {
+   "claim": "GSM means grams per square metre: the weight of one square metre of the fabric. A higher GSM fabric is heavier and usually thicker. GSM alone does not tell the fibre, the softness or the quality of stitching.",
+   "source_url": "https://www.bulkplaintshirt.com/llms-full.txt",
+   "source_title": "Own Knitted Blank Wears GSM guide",
+   "checked_on": "2026-11-25",
+   "limits": "Never call a GSM good or bad by itself and never rank quality by GSM. Do not teach a home test for GSM. Product GSM figures come only from the cited rate facts."
+  }
+ }
+}

@@ -562,6 +562,10 @@ def main():
     # last_video_voice is retrospective — it stays red until a good render exists,
     # so gating on it would deadlock the very run that fixes it
     blocking = [r for r in down if r.severity == CRITICAL and r.key != "last_video_voice"]
+    # The answer Short (default engine since 25-Nov-2026) is built from our own clips: no Google AI call, so a Google
+    # billing or key problem must not stop it or sit on the WWbun bar. SHORT_ENGINE=legacy brings the check back.
+    if os.environ.get("SHORT_ENGINE", "answer").strip() != "legacy":
+        blocking = [r for r in blocking if r.key != "google"]
     if not dry:
         try:
             from tools.urgent_actions import update as update_urgent_actions

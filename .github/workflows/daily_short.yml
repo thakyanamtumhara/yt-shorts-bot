@@ -16,6 +16,12 @@ on:
   #   - cron: '0 9 * * 1-6'
   workflow_dispatch:
     inputs:
+      engine:
+        description: 'answer = searched buyer question over our real product clips (default since 25-Nov-2026); legacy = the old AI-clip textile lesson'
+        required: false
+        type: choice
+        options: [answer, legacy]
+        default: answer
       test_mode:
         description: 'Test mode (skip Veo clips + YouTube upload = free run)'
         required: false
@@ -103,7 +109,9 @@ jobs:
       contents: write
       issues: write
       actions: write
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 in mid-Nov-2026 (ImageMagick 7, other policy path) and every text overlay
+    # of the 19-Nov Short failed. Move the pin only after a test run on the new image.
+    runs-on: ubuntu-24.04
     # 150 + up to ~15 min for the clip check re-making refused clips (tools/clip_visual_check.py)
     timeout-minutes: 170
 
@@ -149,7 +157,10 @@ jobs:
           # libraqm* = correct Devanagari shaping (ि-matra reorder, conjuncts)
           # for the thumbnail text renderer; fonts-noto-* for Hindi glyph coverage.
           sudo -E apt-get $APT_NET install -y -qq imagemagick ffmpeg fonts-noto-core fonts-noto-cjk fonts-freefont-ttf libraqm0 libraqm-dev
-          sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
+          for policy in /etc/ImageMagick-6/policy.xml /etc/ImageMagick-7/policy.xml; do
+            [ -f "$policy" ] && sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' "$policy"
+          done
+          true
 
       - name: Install Python packages
         run: pip install -q -r requirements.txt
@@ -173,6 +184,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GEMINI_PREPAY_KEY || secrets.GOOGLE_API_KEY }}
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           FAL_KEY: ${{ secrets.FAL_KEY }}
+          SHORT_ENGINE: ${{ github.event.inputs.engine || 'answer' }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           FB_APP_ID: ${{ secrets.FB_APP_ID }}
           FB_APP_SECRET: ${{ secrets.FB_APP_SECRET }}
@@ -245,8 +257,14 @@ jobs:
           THUMBNAIL_SCRIPT: ${{ github.event.inputs.thumbnail_script }}
           THUMBNAIL_TOPIC: ${{ github.event.inputs.thumbnail_topic }}
           THUMBNAIL_BASE_IMAGE: ${{ github.event.inputs.thumbnail_base_image }}
+          ENGINE: ${{ github.event.inputs.engine || 'answer' }}
+          # The answer engine publishes nothing on a test run (it has one test switch).
+          ANSWER_DRY: ${{ (github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true') && '1' || '' }}
         run: |
-          if [ "$TEST_THUMBNAIL" = "true" ]; then
+          if [ "$ENGINE" != "legacy" ] && [ "$TEST_THUMBNAIL" != "true" ] && [ "$HOLD_ONLY" != "true" ] \
+             && [ -z "$DAILY_ANNOUNCEMENT" ] && [ -z "$DAILY_CAMPAIGN_FACT" ]; then
+            python -m tools.answer_short.run
+          elif [ "$TEST_THUMBNAIL" = "true" ]; then
             ARGS="--test-thumbnail"
             [ -n "$THUMBNAIL_TOPIC" ] && ARGS="$ARGS --topic \"$THUMBNAIL_TOPIC\""
             [ -n "$THUMBNAIL_SCRIPT" ] && ARGS="$ARGS --script \"$THUMBNAIL_SCRIPT\""
@@ -264,7 +282,7 @@ jobs:
       # The gate proves the services were alive before we started; this proves
       # the reel that actually came out is the one we meant to ship.
       - name: Grade the finished reel
-        if: ${{ always() && steps.generate.conclusion != 'skipped' && github.event.inputs.test_thumbnail != 'true' }}
+        if: ${{ always() && steps.generate.conclusion != 'skipped' && github.event.inputs.test_thumbnail != 'true' && github.event.inputs.engine == 'legacy' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
@@ -274,11 +292,17 @@ jobs:
         run: |
           if [ "$TEST_RUN" = "true" ]; then python health_watch.py --postrun --dry-run; else python health_watch.py --postrun; fi
 
+      # The WWbun top bar says so when the automatic Short has stopped for two working days (tools/content_watch.py).
+      - name: Say on the WWbun bar whether the Short is going out
+        if: ${{ always() && github.event.inputs.test_mode != 'true' && github.event.inputs.new_test_mode != 'true' }}
+        run: python -m tools.content_watch || true
+
       - name: Save updated tracking files
         if: always()
         run: |
           git config user.name "YT Shorts Bot"
           git config user.email "bot@sale91.com"
+          git add daily_short_status.json answer_history.json 2>/dev/null || true
           git add topic_history.json || true
           git add lesson_history.json || true
           git add cost_tracker.json || true
@@ -330,6 +354,10 @@ jobs:
           path: |
             /tmp/yt_shorts/SHORT_*.mp4
             /tmp/yt_shorts/thumbnail_*.png
+            answer_out/*.mp4
+            answer_out/*.png
+            answer_out/*.json
+            answer_out/review-sheet.jpg
           retention-days: 3
 
       - name: Save rendered video (backup for every run, not a failure signal)
@@ -348,6 +376,10 @@ jobs:
             /tmp/yt_shorts/review_cover.*
             /tmp/yt_shorts/review_normalized_voice.*
             /tmp/yt_shorts/voice_alignment.json
+            answer_out/*.mp4
+            answer_out/*.png
+            answer_out/*.json
+            answer_out/review-sheet.jpg
           retention-days: 21
           if-no-files-found: ignore
 

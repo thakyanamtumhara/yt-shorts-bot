@@ -80,6 +80,11 @@ jobs:
           set -o pipefail
           python health_watch.py $ARGS | tee /tmp/health.txt
 
+      # Runs even on a day the daily Short never started: that is exactly what it must notice.
+      - name: Say on the WWbun bar whether the Short is going out
+        if: ${{ always() && github.event.inputs.dry_run != 'true' && github.event.inputs.gate != 'true' }}
+        run: python -m tools.content_watch || true
+
       - name: Commit state
         if: ${{ always() && github.event.inputs.dry_run != 'true' }}
         run: |

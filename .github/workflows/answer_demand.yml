@@ -1,0 +1,49 @@
+name: Answer Short question list
+# What buyers type into YouTube and Google (public search suggestions, India). The daily answer Short picks its
+# question from this list, so it is re-read every Monday; a failed read keeps the old list and says so.
+on:
+  schedule:
+    - cron: '30 1 * * 1'    # Monday 07:00 IST (GitHub may start it late; any time that day is fine)
+  workflow_dispatch:
+
+concurrency:
+  group: answer-demand
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read the search suggestions
+        id: read
+        run: python -m tools.answer_short.demand --refresh | tee /tmp/demand.txt
+      - name: Save the list
+        run: |
+          git config user.name "YT Shorts Bot"
+          git config user.email "bot@sale91.com"
+          git add demand_bank.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Answer Short: searched questions re-read [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin ${{ github.ref_name }} || git rebase --abort || true
+            git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep $((i*15))
+          done
+          exit 1
+      - name: Tell Ketu when the list could not be read
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ALERT_CHAT_ID" ] || exit 0
+          curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=⚠️ Daily Short: this week's list of searched buyer questions could not be read. The Short keeps using last week's list. Nothing for you to do; an AI session should look if it repeats next Monday." > /dev/null

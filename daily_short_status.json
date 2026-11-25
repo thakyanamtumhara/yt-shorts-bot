@@ -1,0 +1,75 @@
+{
+ "format": "daily-short-status-v1",
+ "runs": [
+  {
+   "date": "2026-11-14",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "43578454304"
+  },
+  {
+   "date": "2026-11-16",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "43835915375"
+  },
+  {
+   "date": "2026-11-17",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "44051600316"
+  },
+  {
+   "date": "2026-11-18",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "44271889152"
+  },
+  {
+   "date": "2026-11-19",
+   "published": false,
+   "reason": "the final AI review refused the video",
+   "detail": "review: rejected (read from the run log on 25-Nov-2026)",
+   "run": "44492465383"
+  },
+  {
+   "date": "2026-11-20",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "44707055890"
+  },
+  {
+   "date": "2026-11-21",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "44887498121"
+  },
+  {
+   "date": "2026-11-23",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "45143216862"
+  },
+  {
+   "date": "2026-11-24",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "45361099714"
+  },
+  {
+   "date": "2026-11-25",
+   "published": false,
+   "reason": "no new topic passed the checks",
+   "detail": "TopicHold (read from the run log on 25-Nov-2026)",
+   "run": "45581316878"
+  }
+ ]
+}
