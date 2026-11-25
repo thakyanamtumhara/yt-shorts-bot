@@ -113,7 +113,8 @@ def card_image(card):
     tiers = card['tiers']
     rates = [tier['rate'] for tier in tiers]
     title_face, title_w, _, _ = fit(card['product'].upper(), CARD_W - 96, 62, 40)
-    big_text = rupee(rates[0]) if len(set(rates)) == 1 else f'{rupee(min(rates))} – {rupee(max(rates))}'
+    # Up to three size groups: the first group's rate big, every group in the rows below. More: the range.
+    big_text = rupee(rates[0]) if len(tiers) <= 3 else f'{rupee(min(rates))} – {rupee(max(rates))}'
     big_face, big_w, big_h, big_box = fit(big_text, CARD_W - 96, 190, 110)
     small, tiny = font(44, 'Bold'), font(36, 'SemiBold')
     rows = []

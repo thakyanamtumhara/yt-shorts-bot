@@ -136,7 +136,8 @@ Return ONE JSON object, no markdown:
  "description": "<2-3 plain sentences in English repeating the answer with the search phrase and 2-3 of also_matches worked in naturally; no hashtags, no links>",
  "tags": ["<8-12 search phrases people would type, lower case>"]
 }}
-A "card" shows that product's live rates in big digits: use it on the sentence that says the rate.
+A "card" shows that product's live rates in big digits: put it only on the sentence that says that product's rate
+(at most 3 lines in the whole video carry a card; every other line has "card": "").
 "show" rules: a line that names a product shows THAT product. A line about ordering, delivery or the closing
 question may show another product of the same kind of garment that has videos (a T-shirt for a T-shirt video,
 never a hoodie), so the video is not photos only.{redo}"""
@@ -202,6 +203,8 @@ def code_problems(plan, sheet, questions, history):
         card = line.get('card') or ''
         if card and (card not in sheet['cards'] or card not in cited):
             problems.append(f'line {index} "card" must be a cited rate fact id')
+    if sum(1 for line in lines if line.get('card')) > 3:
+        problems.append('at most 3 lines may carry a rate card; keep it on the lines that say the rate')
     if not lines[0]['say'].strip().endswith('?'):
         problems.append('line 1 (the hook) must be the buyer question and end with ?')
     if not lines[-1]['say'].strip().endswith('?'):
