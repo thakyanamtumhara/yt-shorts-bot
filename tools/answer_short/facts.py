@@ -24,6 +24,9 @@ DTF_META_URL = 'https://dtf.bulkplaintshirt.com/api/meta'
 IST = timezone(timedelta(hours=5, minutes=30))
 # Never shown or named: closed products, and products not launched yet.
 CLOSED = re.compile(r'varsity|boxy', re.I)
+# Gallery clips kept out of the Shorts: a car number plate can be read in them (seen 25-Nov-2026). They stay on the
+# website gallery; a new clip with a plate goes here too (the final look also refuses a readable plate).
+BLOCKED_CLIPS = {'true-bio-rneck-navy.mp4', 'kids-polo-sale.mp4', 'kids-hoodie-black.mp4'}
 FOLDERS = {'acidwash os': 'acidwash-os', 'sublimation tshirt': 'sublimation', 'dropsho hoodie 430gsm': 'hoodie-430gsm',
            'sale: polo tshirt': 'cotton-polo-sale', 'sale: shorts': 'shorts'}
 
@@ -54,7 +57,8 @@ def gallery(text=None):
             continue
         entry = out.setdefault(folder, {'videos': [], 'posters': [], 'photos': []})
         for item in items:
-            if isinstance(item, dict) and str(item.get('src', '')).endswith('.mp4'):
+            if (isinstance(item, dict) and str(item.get('src', '')).endswith('.mp4')
+                    and item['src'].rsplit('/', 1)[-1] not in BLOCKED_CLIPS):
                 entry['videos'].append(SITE + item['src'])
                 entry['posters'].append(SITE + item['poster'] if item.get('poster') else '')
     return out

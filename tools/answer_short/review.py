@@ -99,7 +99,8 @@ COVER TEXT: {plan['cover']}
 CITED FACTS: {json.dumps(cited, ensure_ascii=False)}
 
 Reject for any of these, and only these: a frame that is black, blank, broken or only blur; text cut off at an edge,
-overlapping other text, or unreadable; a rate card or caption covering a person's face; a rupee number on screen that
+overlapping other text, or unreadable; a rate card or caption covering a person's face; a vehicle number plate that
+can be read; a rupee number on screen that
 is not in the cited facts; a product on screen that is clearly a different kind of garment from the one the line is
 about (a hoodie for a T-shirt question); a spelling mistake in the hook, cover or end card; anything a buyer would
 find confusing in the first two seconds. Do not reject for taste.

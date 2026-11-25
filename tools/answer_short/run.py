@@ -55,17 +55,43 @@ def taken(history, today):
     return history['published'] + recent
 
 
+def topic_for(plan):
+    from tools.daily_topic_selection import SelectedTopic
+    return SelectedTopic({'topic': plan['title_youtube'], 'buyer_question': plan['search_phrase'],
+                          'intent_key': plan['intent_key'], 'lesson': ' '.join(line['say'] for line in plan['lines']),
+                          'buyer_decision': plan['comment_question'], 'fact_ids': plan['fact_ids'],
+                          'evidence': plan['evidence']})
+
+
+def publish_check(plan, log=print):
+    """A dry run cannot upload, but it can prove every piece of the upload path is there and the logins work."""
+    sys.path.insert(0, str(ROOT))
+    import daily_short as ds
+    topic = topic_for(plan)
+    for name in ('upload_to_youtube', 'upload_thumbnail', 'pin_comment', 'add_to_playlist', 'cross_post_to_instagram',
+                 'save_ig_upload_record', 'publish_fb_reel', 'post_telegram_channel', 'consume_uploaded_topic',
+                 'check_past_engagement', 'check_instagram_engagement', 'refresh_instagram_token_if_needed',
+                 'get_youtube_service'):
+        if not callable(getattr(ds, name, None)):
+            raise AnswerHold(f'upload code changed: daily_short.{name} is missing')
+    for name in ('TOPIC_HISTORY_FILE', 'SCHEDULE_PUBLISH', 'COVER_META'):
+        if not hasattr(ds, name):
+            raise AnswerHold(f'upload code changed: daily_short.{name} is missing')
+    tags, hashtags = ds.get_topic_tags(topic), ds.get_topic_hashtags(topic)
+    ds.campaign_description_line(topic)
+    youtube = ds.get_youtube_service()
+    log(f"   upload path: code present, {len(tags)} topic tags, {len(hashtags)} hashtags, YouTube login "
+        f"{'OK' if youtube else 'NOT working'}, Instagram token {'set' if os.environ.get('INSTAGRAM_ACCESS_TOKEN') else 'MISSING'}")
+    return bool(youtube)
+
+
 def publish(plan, report, log=print):
     """Each place on its own: one failing never stops the others. Returns what went where."""
     sys.path.insert(0, str(ROOT))
     import daily_short as ds
-    from tools.daily_topic_selection import SelectedTopic
     from tools.youtube_status import post_daily_ai_comment
     final, cover = report['final'], report['cover']
-    brief = {'topic': plan['title_youtube'], 'buyer_question': plan['search_phrase'], 'intent_key': plan['intent_key'],
-             'lesson': ' '.join(line['say'] for line in plan['lines']), 'buyer_decision': plan['comment_question'],
-             'fact_ids': plan['fact_ids'], 'evidence': plan['evidence']}
-    topic = SelectedTopic(brief)
+    topic = topic_for(plan)
     description = plan['description'].strip() + '\n\n' + plan['comment_question'].strip()
     went = {'youtube': None, 'instagram': None, 'facebook': None, 'telegram': False}
     youtube = ds.get_youtube_service()
@@ -180,6 +206,7 @@ def main(log=print):
             save_history(history)
         raise AnswerHold('review: rejected by the final look; nothing was published')
     if dry:
+        publish_check(plan, log=log)
         log(f"   DRY run complete: {report['final']}")
         return 0
     went = publish(plan, report, log=log)
