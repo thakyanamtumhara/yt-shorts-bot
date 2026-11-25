@@ -1,0 +1,14 @@
+{
+  "batch_id": "raw20261125b2",
+  "approval_method": "user_exact_selection",
+  "approved_at": "2026-11-25T17:56:24.347Z",
+  "videos": [
+    {
+      "id": "b2-baggyfinal-v2",
+      "version": "1",
+      "sha256": "69996b7b9420e3bf7ab1b56f434f2e844ba2630eaa2f5c98e2d74fe532bf0bde",
+      "public_release_approved": true,
+      "media_kind": "original_recording"
+    }
+  ]
+}
