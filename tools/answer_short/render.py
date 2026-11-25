@@ -243,16 +243,36 @@ def probe_seconds(path):
     return float(out)
 
 
-def plan_pictures(plan, sheet, spans):
+def picture_key(folder, url):
+    return folder + '/' + url.rsplit('/', 1)[-1]
+
+
+def by_colour_turn(photos):
+    """Photos re-ordered so neighbours differ in colour (the gallery lists three of one colour in a row)."""
+    groups = {}
+    for item in photos:
+        groups.setdefault(item.get('c') or '', []).append(item['u'])
+    out, lists = [], list(groups.values())
+    while any(lists):
+        for group in lists:
+            if group:
+                out.append(group.pop(0))
+    return out
+
+
+def plan_pictures(plan, sheet, spans, recent=()):
     """One real picture per spoken line: the product's own clips and photos in turn (clip, clip, photo, ...).
-    A clip that comes round again plays on from where it stopped, so no moment is shown twice."""
+    `recent` = pictures of the last published Shorts, oldest first: a clip or photo not shown lately goes first, so
+    the same picture comes back as late as the gallery allows. A clip that comes round again inside one Short plays
+    on from where it stopped, so no moment is shown twice."""
+    last_used = {key: index for index, key in enumerate(recent)}
     turn, cursor, shots = {}, {}, []
     for line, (start, end) in zip(plan['lines'], spans):
         folder = sheet['visuals'][line['show']]
         entry = sheet['gallery'][folder]
-        videos = [('video', url) for url in entry['videos']]
-        step = max(1, len(entry['photos']) // 4)
-        photos = [('photo', item['u']) for item in entry['photos'][::step][:4]]
+        fresh = lambda url: last_used.get(picture_key(folder, url), -1)
+        videos = [('video', url) for url in sorted(entry['videos'], key=fresh)]
+        photos = [('photo', url) for url in sorted(by_colour_turn(entry['photos']), key=fresh)[:4]]
         options = []
         for photo in photos or [None]:
             options += videos + ([photo] if photo else [])
@@ -261,8 +281,8 @@ def plan_pictures(plan, sheet, spans):
         index = turn.get(folder, 0)
         kind, url = options[index % len(options)]
         turn[folder] = index + 1
-        shots.append({'kind': kind, 'url': url, 'folder': folder, 'start': start, 'end': end,
-                      'from': cursor.get(url, 0.0), 'card': line.get('card') or ''})
+        shots.append({'kind': kind, 'url': url, 'folder': folder, 'key': picture_key(folder, url), 'start': start,
+                      'end': end, 'from': cursor.get(url, 0.0), 'card': line.get('card') or ''})
         cursor[url] = cursor.get(url, 0.0) + (end - start)
     return shots
 
@@ -292,7 +312,7 @@ class Shot:
         self.start, self.end = shot['start'], shot['end']
         need = self.end - self.start
         path = download(shot['url'], work / 'assets')
-        self.kind, self.name = shot['kind'], path.name
+        self.kind, self.name, self.key = shot['kind'], path.name, shot.get('key') or path.name
         if shot['kind'] == 'video':
             self.files = video_frames(path, shot['from'], need, work / 'frames' / f"{len(list((work / 'frames').glob('*'))) if (work / 'frames').is_dir() else 0:02d}")
         else:
@@ -363,7 +383,7 @@ def caption_states(words, hook_end, body):
     return states, [[word['text'] for word in line] for line in lines]
 
 
-def render(plan, sheet, voice, work, final):
+def render(plan, sheet, voice, work, final, recent=()):
     """Returns a report dict. `work` holds the pieces; `final` is the finished mp4; the cover is beside it."""
     check_font()
     work, final = Path(work), Path(final)
@@ -383,7 +403,7 @@ def render(plan, sheet, voice, work, final):
         key = line.get('card') or ''
         if key:
             cards.setdefault(key, {'image': card_image(sheet['cards'][key]), 'spans': []})['spans'].append((max(start, hook_end), end))
-    pictures = plan_pictures(plan, sheet, spans)
+    pictures = plan_pictures(plan, sheet, spans, recent)
     for picture in pictures:
         picture['top'] = CARD_Y + cards[picture['card']]['image'].height + UNDER_CARD_GAP if picture['card'] else None
     shutil.rmtree(work / 'frames', ignore_errors=True)
@@ -453,7 +473,7 @@ def render(plan, sheet, voice, work, final):
     mix.unlink(missing_ok=True)
     report = {'final': str(final), 'cover': str(cover_path), 'seconds': round(total, 2), 'body': round(body, 2),
               'hook_end': round(hook_end, 2), 'music': MUSIC.is_file(),
-              'pictures': [{'line': index + 1, 'kind': shot.kind, 'file': shot.name, 'start': round(shot.start, 2),
+              'pictures': [{'line': index + 1, 'kind': shot.kind, 'file': shot.name, 'key': shot.key, 'start': round(shot.start, 2),
                             'end': round(shot.end, 2)} for index, shot in enumerate(shots)],
               'cards': {key: [[round(a, 2), round(b, 2)] for a, b in card['spans']] for key, card in cards.items()},
               'caption_lines': caption_lines}

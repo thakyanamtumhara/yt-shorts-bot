@@ -191,7 +191,9 @@ def main(log=print):
     spoken = voice.speak(plan, OUT, key, sheet['normalize'])
     log(f"   voice: {spoken['duration']:.1f} s on {spoken['model_id']}, every word timed")
     slug = re.sub(r'[^a-z0-9]+', '-', plan['search_phrase'].lower()).strip('-')[:60]
-    report = render.render(plan, sheet, spoken, OUT, OUT / f'{today.isoformat()}-{slug}.mp4')
+    # Pictures of the last 12 published Shorts, oldest first: the render shows the least recently used ones first.
+    recent = [key for item in history['published'][-12:] for key in item.get('pictures') or []]
+    report = render.render(plan, sheet, spoken, OUT, OUT / f'{today.isoformat()}-{slug}.mp4', recent=recent)
     log(f"   video: {report['seconds']} s, {sum(item['kind'] == 'video' for item in report['pictures'])} real clips + "
         f"{sum(item['kind'] == 'photo' for item in report['pictures'])} real photos, music {'on' if report['music'] else 'OFF'}")
     model = plan['model'] if plan['model'].startswith('claude-') else write.pick_model(client)
@@ -215,7 +217,7 @@ def main(log=print):
     if not (went['youtube'] or went['instagram']):
         raise AnswerHold('the video was made and approved but neither YouTube nor Instagram took it')
     history['published'].append({**entry, **went, 'seconds': report['seconds'],
-                                 'pictures': [item['file'] for item in report['pictures']]})
+                                 'pictures': [item['key'] for item in report['pictures']]})
     save_history(history)
     log('✅ Answer Short published')
     return 0

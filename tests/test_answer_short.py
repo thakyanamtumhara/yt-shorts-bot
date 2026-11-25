@@ -96,6 +96,33 @@ class Facts(unittest.TestCase):
                 facts.dtf_fact('2026-11-25', json.dumps(bad))
 
 
+class Pictures(unittest.TestCase):
+    def sheet(self):
+        photos = [{'u': f'https://x/ph/os/{n}.webp', 'c': colour} for n, colour in
+                  enumerate(['Black', 'Black', 'Black', 'White', 'White', 'White', 'Navy', 'Navy'], 1)]
+        return {'visuals': {'rate_os': 'os'},
+                'gallery': {'os': {'videos': ['https://x/ph/vid/a.mp4', 'https://x/ph/vid/b.mp4'], 'photos': photos}}}
+
+    def plan(self, lines=4):
+        return {'lines': [{'say': 'x', 'show': 'rate_os', 'card': ''} for _ in range(lines)]}
+
+    def test_a_picture_not_shown_lately_goes_first(self):
+        from tools.answer_short.render import plan_pictures
+        spans = [(index * 4.0, index * 4.0 + 4.0) for index in range(4)]
+        first = [shot['key'] for shot in plan_pictures(self.plan(), self.sheet(), spans)]
+        self.assertEqual(first, ['os/a.mp4', 'os/b.mp4', 'os/1.webp', 'os/a.mp4'])
+        again = [shot['key'] for shot in plan_pictures(self.plan(), self.sheet(), spans, recent=['os/a.mp4', 'os/1.webp'])]
+        self.assertEqual(again[:3], ['os/b.mp4', 'os/a.mp4', 'os/4.webp'])
+
+    def test_photos_take_turns_by_colour_and_a_clip_plays_on(self):
+        from tools.answer_short.render import by_colour_turn, plan_pictures
+        order = [url.rsplit('/', 1)[-1] for url in by_colour_turn(self.sheet()['gallery']['os']['photos'])]
+        self.assertEqual(order[:4], ['1.webp', '4.webp', '7.webp', '2.webp'])
+        spans = [(index * 4.0, index * 4.0 + 4.0) for index in range(4)]
+        shots = plan_pictures(self.plan(), self.sheet(), spans)
+        self.assertEqual((shots[0]['from'], shots[3]['from']), (0.0, 4.0))
+
+
 class Plan(unittest.TestCase):
     def test_a_sound_plan_passes(self):
         self.assertEqual(write.code_problems(good_plan(), SHEET, QUESTIONS, []), [])
