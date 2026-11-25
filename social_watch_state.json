@@ -359,6 +359,10 @@
   "1PL9Z6juh6s": {
    "title": "Baggy Pant Launch Jaldi! 280 GSM, ₹220 Ke Aaspaas | 10-12 Din Mein sale91.com Pe",
    "published": "2026-11-24T11:45:19+00:00"
+  },
+  "yNbQUPhDLpE": {
+   "title": "Plain Hoodie ₹307 Mein? 320 GSM, 88% Cotton | Spun Ya PC Nahi | sale91.com",
+   "published": "2026-11-25T11:45:37+00:00"
   }
  },
  "instagram": {
@@ -1105,6 +1109,10 @@
   "17918128971519907": {
    "permalink": "https://www.instagram.com/reel/DgH6TgdEWsH/",
    "ts": "2026-11-24T12:04:22+0000"
+  },
+  "18134729470888703": {
+   "permalink": "https://www.instagram.com/reel/DgKfGSVuJC2/",
+   "ts": "2026-11-25T12:04:21+0000"
   }
  },
  "facebook": {
@@ -1446,11 +1454,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-13T11:44:44+05:30",
-   "alerts": 1,
-   "new": 0
-  },
   {
    "at": "2026-08-13T20:24:58+05:30",
    "alerts": 1,
@@ -2445,8 +2448,13 @@
    "at": "2026-11-24T21:01:14+05:30",
    "alerts": 0,
    "new": 2
+  },
+  {
+   "at": "2026-11-25T20:47:52+05:30",
+   "alerts": 0,
+   "new": 2
   }
  ],
- "last_green_date": "2026-11-24",
- "last_run_ist": "2026-11-24T21:01:14+05:30"
+ "last_green_date": "2026-11-25",
+ "last_run_ist": "2026-11-25T20:47:52+05:30"
 }
