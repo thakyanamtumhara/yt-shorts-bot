@@ -69,7 +69,7 @@ def publish_check(plan, log=print):
     import daily_short as ds
     topic = topic_for(plan)
     for name in ('upload_to_youtube', 'upload_thumbnail', 'pin_comment', 'add_to_playlist', 'cross_post_to_instagram',
-                 'save_ig_upload_record', 'publish_fb_reel', 'post_telegram_channel', 'consume_uploaded_topic',
+                 'save_ig_upload_record', 'publish_fb_reel', 'post_telegram_channel',
                  'check_past_engagement', 'check_instagram_engagement', 'refresh_instagram_token_if_needed',
                  'get_youtube_service'):
         if not callable(getattr(ds, name, None)):
@@ -89,6 +89,7 @@ def publish(plan, report, log=print):
     """Each place on its own: one failing never stops the others. Returns what went where."""
     sys.path.insert(0, str(ROOT))
     import daily_short as ds
+    from tools.daily_topic_selection import consume_uploaded_topic
     from tools.youtube_status import post_daily_ai_comment
     final, cover = report['final'], report['cover']
     topic = topic_for(plan)
@@ -106,7 +107,7 @@ def publish(plan, report, log=print):
             video_id, url = ds.upload_to_youtube(youtube, final, plan['title_youtube'], description, plan['tags'], topic=topic)
             if re.fullmatch(r'[A-Za-z0-9_-]{11}', str(video_id)):
                 went['youtube'] = video_id
-                ds.consume_uploaded_topic(ds.TOPIC_HISTORY_FILE, topic, video_id)
+                consume_uploaded_topic(ds.TOPIC_HISTORY_FILE, topic, video_id)
                 for label, job in (
                         ('owner comment', lambda: post_daily_ai_comment(
                             youtube, video_id, plan['comment_question'],
