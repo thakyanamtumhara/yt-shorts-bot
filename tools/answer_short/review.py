@@ -86,7 +86,7 @@ def model_look(client, model, plan, sheet_path, cover_path, times):
     small = Path(sheet_path).with_name('cover-small.jpg')
     cover.save(small, quality=85)
     cited = {key: fact['claim'] for key, fact in plan['evidence'].items()}
-    text = f"""You are the final reviewer of a 30-second vertical business video before it is published. Picture 1 is a sheet
+    text = f"""You are the final reviewer of a 25 to 45 second vertical business video before it is published. Picture 1 is a sheet
 of real frames from the finished file, left to right, top to bottom, at these seconds: {times}. Picture 2 is its cover.
 
 It should show: our real product videos and photos (plain T-shirts, hoodies, people holding or wearing them, a godown),

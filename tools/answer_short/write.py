@@ -84,7 +84,7 @@ def writer_prompt(sheet, questions, history, feedback=None, previous=None):
         redo = ('\nYOUR LAST PLAN WAS REFUSED. Fix exactly these points and return the whole corrected plan. '
                 'Keep the same question unless a point says it cannot be answered from the facts:\n- '
                 + '\n- '.join(feedback) + '\nLAST PLAN:\n' + json.dumps(previous, ensure_ascii=False) + '\n')
-    return f"""You plan one 30-second vertical video (YouTube Short / Instagram Reel) for Own Knitted Blank Wears
+    return f"""You plan one 30 to 35 second vertical video (YouTube Short / Instagram Reel) for Own Knitted Blank Wears
 (sale91.com), a plain T-shirt and hoodie wholesaler in Delhi. Today is {sheet['today']}.
 
 GOAL: answer ONE thing Indian buyers are really typing into YouTube and Google, so the video is found by search and
