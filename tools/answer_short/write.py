@@ -51,15 +51,20 @@ def pick_model(client):
     return FALLBACK_MODEL
 
 
-def ask_json(client, model, prompt, max_tokens=8000):
-    response = client.messages.create(model=model, max_tokens=max_tokens, messages=[{'role': 'user', 'content': prompt}])
-    if getattr(response, 'stop_reason', None) == 'max_tokens':
-        raise WriteHold('model answer was cut off')
-    text = '\n'.join(block.text for block in response.content if isinstance(getattr(block, 'text', None), str)).strip()
-    start, end = text.find('{'), text.rfind('}')
-    if start < 0 or end <= start:
-        raise WriteHold('model answer had no JSON object')
-    return json.loads(text[start:end + 1])
+def ask_json(client, model, prompt, max_tokens=20000):
+    """One JSON object from the model. Newer models think first, so the allowance is generous; an answer with no
+    JSON in it is asked for once more."""
+    for attempt in (1, 2):
+        response = client.messages.create(model=model, max_tokens=max_tokens, messages=[{'role': 'user', 'content': prompt}])
+        text = '\n'.join(block.text for block in response.content if isinstance(getattr(block, 'text', None), str)).strip()
+        start, end = text.find('{'), text.rfind('}')
+        if getattr(response, 'stop_reason', None) != 'max_tokens' and start >= 0 and end > start:
+            try:
+                return json.loads(text[start:end + 1])
+            except ValueError:
+                pass
+        print(f"   model answer {attempt} unreadable (stop {getattr(response, 'stop_reason', '?')}, {len(text)} chars)")
+    raise WriteHold('the model gave no readable JSON twice')
 
 
 def open_questions(bank, history, limit=70):
@@ -101,7 +106,8 @@ ALREADY ANSWERED (do not answer the same buyer decision again, even under anothe
 CHOOSING: pick the question with the most buyer intent that the facts above answer COMPLETELY and that has not
 been answered. Prefer price, where-to-buy, how-to-start, how-to-order, delivery and "which one" questions over
 definitions. A city question is fine only when the facts answer it (we stock in Delhi and courier across India).
-If a question needs a fact that is not above, do not pick it.
+If a question needs a fact that is not above, do not pick it. Other things equal, prefer a question whose main
+product has videos in REAL PICTURES: moving pictures hold viewers, photos alone do not.
 
 {STYLE}
 
@@ -131,7 +137,9 @@ Return ONE JSON object, no markdown:
  "tags": ["<8-12 search phrases people would type, lower case>"]
 }}
 A "card" shows that product's live rates in big digits: use it on the sentence that says the rate.
-Use at least two different "show" ids when more than one product has pictures; otherwise repeat the one.{redo}"""
+"show" rules: a line that names a product shows THAT product. A line about ordering, delivery or the closing
+question may show another product of the same kind of garment that has videos (a T-shirt for a T-shirt video,
+never a hoodie), so the video is not photos only.{redo}"""
 
 
 def audit_prompt(plan, sheet):
@@ -244,7 +252,7 @@ def make_plan(client, sheet, bank, history, log=print):
         plan = ask_json(client, model, writer_prompt(sheet, questions, history, feedback, previous))
         problems = code_problems(plan, sheet, questions, history)
         if not problems:
-            verdict = ask_json(client, model, audit_prompt(plan, sheet), max_tokens=6000)
+            verdict = ask_json(client, model, audit_prompt(plan, sheet))
             breaches = verdict.get('breaches') if isinstance(verdict, dict) else None
             if not isinstance(breaches, list):
                 raise WriteHold('fact check gave no readable answer')

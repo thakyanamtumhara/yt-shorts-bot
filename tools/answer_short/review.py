@@ -107,13 +107,24 @@ find confusing in the first two seconds. Do not reject for taste.
 
 Return ONE JSON object: {{"decision": "approve" or "reject", "problems": ["<each problem, with the second it is at>"],
 "notes": "<one sentence on what you saw>"}}"""
-    response = client.messages.create(model=model, max_tokens=4000, messages=[{'role': 'user', 'content': [
-        picture(sheet_path), picture(small), {'type': 'text', 'text': text}]}])
-    raw = '\n'.join(block.text for block in response.content if isinstance(getattr(block, 'text', None), str))
-    start, end = raw.find('{'), raw.rfind('}')
-    if start < 0 or end <= start:
+    content = [picture(sheet_path), picture(small), {'type': 'text', 'text': text}]
+    verdict = None
+    # Newer models think before they answer: a small token allowance came back with no text at all (first cloud
+    # test, 25-Nov-2026). Generous allowance, and one more try before the run is held.
+    for attempt in (1, 2):
+        response = client.messages.create(model=model, max_tokens=16000, messages=[{'role': 'user', 'content': content}])
+        raw = '\n'.join(block.text for block in response.content if isinstance(getattr(block, 'text', None), str))
+        start, end = raw.find('{'), raw.rfind('}')
+        if start >= 0 and end > start:
+            try:
+                verdict = json.loads(raw[start:end + 1])
+                break
+            except ValueError:
+                pass
+        print(f"   final look attempt {attempt}: no JSON (stop {getattr(response, 'stop_reason', '?')}, "
+              f"{len(raw)} chars: {raw[:120]!r})")
+    if verdict is None:
         raise ReviewHold('the final look gave no readable answer')
-    verdict = json.loads(raw[start:end + 1])
     if verdict.get('decision') not in ('approve', 'reject') or not isinstance(verdict.get('problems'), list):
         raise ReviewHold('the final look gave no clear decision')
     return verdict
