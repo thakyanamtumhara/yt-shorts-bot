@@ -996,5 +996,18 @@
  },
  "raw20261123-b1-baggy-v1-x": {
   "nudged": true
+ },
+ "raw20261123-b1-baggy-v1-linkedin": {
+  "nudged": true
+ },
+ "raw20261123-s2-hoodie320-v3-youtube": {
+  "nudged": true
+ },
+ "raw20261123-s2-hoodie320-v3-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DgKfGSVuJC2/"
+ },
+ "raw20261123-s2-hoodie320-v3-x": {
+  "nudged": true
  }
 }
