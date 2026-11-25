@@ -26,7 +26,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 CLOSED = re.compile(r'varsity|boxy', re.I)
 # Gallery clips kept out of the Shorts: a car number plate can be read in them (seen 25-Nov-2026). They stay on the
 # website gallery; a new clip with a plate goes here too (the final look also refuses a readable plate).
-BLOCKED_CLIPS = {'true-bio-rneck-navy.mp4', 'kids-polo-sale.mp4', 'kids-hoodie-black.mp4'}
+BLOCKED_CLIPS = {'true-bio-rneck-navy.mp4', 'true-bio-rneck-grey.mp4', 'kids-polo-sale.mp4', 'kids-hoodie-black.mp4'}
 FOLDERS = {'acidwash os': 'acidwash-os', 'sublimation tshirt': 'sublimation', 'dropsho hoodie 430gsm': 'hoodie-430gsm',
            'sale: polo tshirt': 'cotton-polo-sale', 'sale: shorts': 'shorts'}
 

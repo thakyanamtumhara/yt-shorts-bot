@@ -22,7 +22,8 @@ HOOK_MAX, HOOK_FADE = 2.6, 0.3
 CAPTION_Y, CAPTION_MAX_W, CAPTION_SIZE, CAPTION_STROKE = 1250, 860, 78, 7
 CARD_Y, CARD_W, CARD_FADE = 236, 936, 0.25
 BADGE_XY = (48, 168)
-PHOTO_W, PHOTO_TOP, PHOTO_TOP_CARD = 1240, 370, 690   # a square photo, shown wider than the screen
+PHOTO_W, PHOTO_TOP = 1240, 370   # a square photo, shown wider than the screen
+UNDER_CARD_GAP, UNDER_CARD_BOTTOM = 14, 36
 MUSIC = ROOT / 'bg_music' / 'answer_bed.m4a'
 MUSIC_DB = -23
 FONT = ROOT / 'assets' / 'fonts' / 'Baloo2.ttf'
@@ -261,7 +262,7 @@ def plan_pictures(plan, sheet, spans):
         kind, url = options[index % len(options)]
         turn[folder] = index + 1
         shots.append({'kind': kind, 'url': url, 'folder': folder, 'start': start, 'end': end,
-                      'from': cursor.get(url, 0.0), 'card': bool(line.get('card'))})
+                      'from': cursor.get(url, 0.0), 'card': line.get('card') or ''})
         cursor[url] = cursor.get(url, 0.0) + (end - start)
     return shots
 
@@ -299,19 +300,28 @@ class Shot:
             back = photo.resize((H, H), Image.LANCZOS).crop(((H - W) // 2, 0, (H - W) // 2 + W, H))
             self.back = back.filter(ImageFilter.GaussianBlur(40)).point(lambda value: int(value * 0.55))
             self.photo, self.need = photo, need
-            # Under a rate card the photo starts below the card, so the card never sits on a face.
-            self.top = PHOTO_TOP_CARD if shot.get('card') else PHOTO_TOP
+        # While a rate card is up, the picture sits below it (a clip is shown smaller on a dark ground), so the card
+        # never covers a face, a collar or the hands holding the garment.
+        self.under = shot.get('top')
 
     def frame(self, t):
         if self.kind == 'video':
             index = min(len(self.files) - 1, max(0, int((t - self.start) * FPS)))
-            return Image.open(self.files[index]).convert('RGB')
+            image = Image.open(self.files[index]).convert('RGB')
+            if not self.under:
+                return image
+            height = H - self.under - UNDER_CARD_BOTTOM
+            width = int(W * height / H)
+            ground = Image.new('RGB', (W, H), INK)
+            ground.paste(image.resize((width, height), Image.LANCZOS), ((W - width) // 2, self.under))
+            return ground
         zoom = 1.0 + 0.06 * min(1.0, max(0.0, (t - self.start) / self.need))
         width = int(PHOTO_W * zoom)
         size = (width, int(width * self.photo.height / self.photo.width))
         shown = self.photo.resize(size, Image.LANCZOS)
         image = self.back.copy()
-        image.paste(shown, ((W - size[0]) // 2, self.top - (size[1] - int(PHOTO_W * self.photo.height / self.photo.width)) // 2))
+        top = self.under or PHOTO_TOP
+        image.paste(shown, ((W - size[0]) // 2, top - (size[1] - int(PHOTO_W * self.photo.height / self.photo.width)) // 2))
         return image
 
     def first(self):
@@ -366,9 +376,6 @@ def render(plan, sheet, voice, work, final):
     spans = [(start, starts[index + 1] if index + 1 < len(starts) else body) for index, start in enumerate(starts)]
     if any(end - start < 0.6 for start, end in spans):
         raise RenderHold('a spoken line is shorter than 0.6 s; the script is not one sentence per line')
-    pictures = plan_pictures(plan, sheet, spans)
-    shutil.rmtree(work / 'frames', ignore_errors=True)
-    shots = [Shot(picture, work) for picture in pictures]
     hook_end = min(HOOK_MAX, sentences[0]['end'] + 0.25)
     hook = hook_image(plan['hook_text'])
     cards = {}
@@ -376,6 +383,11 @@ def render(plan, sheet, voice, work, final):
         key = line.get('card') or ''
         if key:
             cards.setdefault(key, {'image': card_image(sheet['cards'][key]), 'spans': []})['spans'].append((max(start, hook_end), end))
+    pictures = plan_pictures(plan, sheet, spans)
+    for picture in pictures:
+        picture['top'] = CARD_Y + cards[picture['card']]['image'].height + UNDER_CARD_GAP if picture['card'] else None
+    shutil.rmtree(work / 'frames', ignore_errors=True)
+    shots = [Shot(picture, work) for picture in pictures]
     states, caption_lines = caption_states(words, hook_end, body)
     badge, shade, outro = badge_image(), scrim(), outro_image()
     cover = cover_image(shots[0].first(), plan['cover'])
