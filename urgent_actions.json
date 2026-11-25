@@ -1,16 +1,16 @@
 {
  "format": "urgent-actions-v1",
- "updated_at": "2026-11-25T17:46:48+05:30",
+ "updated_at": "2026-11-25T18:41:17+05:30",
  "items": [
   {
    "id": "auto_short_stopped",
    "owner": "content_watch",
    "title": "Auto Short stopped: last one 13 Nov",
-   "detail": "No automatic Short for 10 working days. Why: no new topic passed the checks and the final AI review refused the video. The automatic photo post waits on it (last 7 Nov). Nothing to pay and no login. Tell any AI session: fix the daily Short.",
+   "detail": "No automatic Short for 10 working days. Why: no new topic passed the checks and the final AI review refused the video. Nothing to pay and no login. Tell any AI session: fix the daily Short.",
    "action_url": "https://github.com/thakyanamtumhara/yt-shorts-bot/actions/runs/45581316878",
    "evidence": "last 2026-11-13; missed 10; no new topic passed the checks and the final AI review refused the video",
    "since": "2026-11-25T17:46:48+05:30",
-   "last_seen": "2026-11-25T17:46:48+05:30"
+   "last_seen": "2026-11-25T18:41:17+05:30"
   }
  ]
 }

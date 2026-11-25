@@ -162,9 +162,7 @@ def urgent_item(result):
     why = ' and '.join(result['reasons']) if result['reasons'] else 'not known yet'
     if result['ran_days'] == 0:
         why = 'the daily run did not start'
-    photo = result['photo']
-    photo_line = f" The automatic photo post waits on it (last {_short_date(photo)})." if photo else ''
-    detail = (f"No automatic Short for {result['missed']} working days. Why: {why}.{photo_line} "
+    detail = (f"No automatic Short for {result['missed']} working days. Why: {why}. "
               "Nothing to pay and no login. Tell any AI session: fix the daily Short.")
     url = f"{REPO_URL}/actions/runs/{result['run']}" if result['run'] else f'{REPO_URL}/actions/workflows/daily_short.yml'
     return {'auto_short_stopped': {'title': f'Auto Short stopped: last one {_short_date(last)}',
