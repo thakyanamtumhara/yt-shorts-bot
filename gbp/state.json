@@ -1,6 +1,6 @@
 {
  "baseline_at": "2026-11-19",
- "last_upload": "2026-11-24",
+ "last_upload": "2026-11-25",
  "old_note": "2026-11-23",
  "seen": {
   "/ph/acidwash-os/1.webp": {
@@ -308,8 +308,10 @@
    "s": "baseline"
   },
   "/ph/hoodie-320gsm/5.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-25",
+   "id": "CIABIhDSwnhpy-M-HaoK7ckMuDxp",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/hoodie-320gsm/6.webp": {
    "at": "2026-11-19",
@@ -466,8 +468,10 @@
    "s": "baseline"
   },
   "/ph/oversize-180gsm/1.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-25",
+   "id": "CIABIhBWratQJtiOBusiosiBUdgn",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/oversize-180gsm/2.webp": {
    "at": "2026-11-19",
@@ -750,8 +754,10 @@
    "s": "baseline"
   },
   "/ph/shorts/1.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-25",
+   "id": "CIABIhANmHP47nf8gIGhCu_CGk-_",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/shorts/2.webp": {
    "at": "2026-11-19",
@@ -998,8 +1004,10 @@
    "s": "baseline"
   },
   "/ph/vid/hoodie-320gsm-white.mp4": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-25",
+   "id": "CIABIhBfJ-LjMxQjQQiAagY_dKMK",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/vid/hoodie-430gsm-black-v2.mp4": {
    "at": "2026-11-22",
