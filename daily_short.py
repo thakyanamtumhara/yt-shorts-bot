@@ -10436,6 +10436,11 @@ def build_sitemap_xml(new_post=None):
 
     # Blog posts from history (redirect-consolidated losers excluded)
     posts = _load_blog_history_active()
+    # 26-Nov-2026 prune: a history entry with a 'noindex' key is an old auto-blog post Google never sent a click
+    # to. Its page on S3 carries <meta name="robots" content="noindex, follow"> and it stays out of the sitemap
+    # (still on the blog index for readers). Rewriting such a post = remove the key and that tag together.
+    noindex_slugs = {p.get('slug') for p in posts if p.get('noindex')}
+    posts = [p for p in posts if not p.get('noindex')]
 
     if new_post and new_post.get('slug'):
         if not any(p.get('slug') == new_post['slug'] for p in posts):
@@ -10488,7 +10493,7 @@ def build_sitemap_xml(new_post=None):
         "true-bio-rneck", "cloud-dancer-tshirts",
     ]
     for slug in legacy_sitemap_posts:
-        if slug not in seen_slugs:
+        if slug not in seen_slugs and slug not in noindex_slugs:
             seen_slugs.add(slug)
             urls_xml += f'''  <url>
     <loc>{BLOG_BASE_URL}/p/{slug}.html</loc>

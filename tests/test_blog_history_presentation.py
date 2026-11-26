@@ -83,6 +83,16 @@ class HistoryPresentationTest(unittest.TestCase):
         self.assertEqual(parsedate_to_datetime(items[0].findtext('pubDate')).isoformat(), POSTS[0]['date'])
         self.assertIn('Sep 22, 2026', self.scope['build_blog_widget_html']())
 
+    def test_noindex_post_leaves_the_sitemap_but_stays_on_the_blog_index(self):
+        posts = [dict(POSTS[0]), dict(POSTS[1], noindex='2026-11-26'), dict(POSTS[2])]
+        scope = load_functions('build_sitemap_xml', 'build_blog_index_html', posts=posts)
+        locs = [el.text for el in ET.fromstring(scope['build_sitemap_xml']()).iter(
+            '{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+        self.assertNotIn(f'{BASE}/p/legacy-guide.html', locs)
+        self.assertIn(f'{BASE}/p/corrected-guide.html', locs)
+        self.assertIn(f'{BASE}/p/custom-guide.html', locs)
+        self.assertIn('legacy-guide.html', scope['build_blog_index_html']())
+
     def test_bad_correction_date_uses_original_and_unknown_date_is_not_fabricated(self):
         scope = load_functions('build_sitemap_xml', posts=[
             {'slug': 'bad-modified', 'date': '2026-08-01', 'modified': 'not-a-date'},
