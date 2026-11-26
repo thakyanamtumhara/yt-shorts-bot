@@ -190,5 +190,19 @@
     "buyer_decision": "Approve print colour on a sample printed on the exact blank you will buy in bulk, not on a different T-shirt, because the yarn itself changes how the same design looks.",
     "video_id": "RI7s1SqlgTw",
     "published_on": "2026-11-13"
+  },
+  {
+    "topic": "Plain T Shirt Wholesale Price: 180 GSM Round Neck ₹107, ₹150, ₹158 Website Rate",
+    "intent_key": "plain_round_neck_180gsm_wholesale_price",
+    "fact_ids": [
+      "rate_non_bio_rneck",
+      "rate_bio_rneck",
+      "rate_true_bio_rneck",
+      "order_from_one_piece"
+    ],
+    "lesson": "Plain T-shirt ka wholesale price kya hai, 180 GSM round neck ka? Current website rate par 88% cotton, 12% polyester Non Bio ₹107 per piece hai. 100% cotton wali Bio Round neck ₹150 per piece hai. 100% cotton supercombed True Bio Round neck ₹158 per piece hai. Ye teeno aaj ke bulk rate hain, 10 piece se, size 36 se 42. 5% GST aur delivery alag hai, pehle 1 piece sample rate par mangwa lo. Aapko printing ke liye kaunsa chahiye, Non Bio, Bio ya True Bio?",
+    "buyer_decision": "Aapko printing ke liye kaunsa chahiye, Non Bio, Bio ya True Bio?",
+    "video_id": "FemhGUBfHxU",
+    "published_on": "2026-11-26"
   }
 ]

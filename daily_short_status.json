@@ -70,6 +70,13 @@
    "reason": "no new topic passed the checks",
    "detail": "TopicHold (read from the run log on 25-Nov-2026)",
    "run": "45581316878"
+  },
+  {
+   "date": "2026-11-26",
+   "published": true,
+   "reason": "",
+   "detail": "",
+   "run": "45788010297"
   }
  ]
 }
