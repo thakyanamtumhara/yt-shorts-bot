@@ -122,6 +122,15 @@ class Pictures(unittest.TestCase):
         shots = plan_pictures(self.plan(), self.sheet(), spans)
         self.assertEqual((shots[0]['from'], shots[3]['from']), (0.0, 4.0))
 
+    def test_a_product_name_is_never_split_over_two_caption_lines(self):
+        from tools.answer_short.render import caption_lines
+        said = 'par 88% cotton, 12% polyester Non Bio ₹107 per piece hai. supercombed True Bio Round neck ₹158 per piece hai.'
+        words = [{'raw': token, 'text': token.strip('.,')} for token in said.split()]
+        lines = [' '.join(word['text'] for word in line) for line in caption_lines(words)]
+        self.assertEqual(lines, ['par 88% cotton', '12% polyester', 'Non Bio ₹107', 'per piece hai',
+                                 'supercombed True Bio', 'Round neck ₹158', 'per piece hai'])
+        self.assertTrue(all(len(line.split()) <= 3 for line in lines))
+
 
 class Plan(unittest.TestCase):
     def test_a_sound_plan_passes(self):

@@ -356,15 +356,29 @@ def with_alpha(image, alpha):
     return out
 
 
-def caption_states(words, hook_end, body):
+NAME_STARTS = {'non', 'true', 'round', 'acid', 'zip', 'kids', 'premium', 'drop'}
+
+
+def caption_lines(words):
+    """Up to 3 words a line, a new line after punctuation. The first word of a product name never ends a line:
+    "... Non" / "Bio ₹107 per" read as Bio at the Non Bio rate (26-Nov-2026), so "Non Bio ₹107" stays together."""
     lines, current = [], []
-    for word in words:
+    for index, word in enumerate(words):
+        if len(current) == 2 and index + 1 < len(words) and word['text'].strip('.,!?').lower() in NAME_STARTS \
+                and not word['raw'].rstrip().endswith(('.', '!', '?', ',')):
+            lines.append(current)
+            current = []
         current.append(word)
         if len(current) >= 3 or word['raw'].rstrip().endswith(('.', '!', '?', ',')):
             lines.append(current)
             current = []
     if current:
         lines.append(current)
+    return lines
+
+
+def caption_states(words, hook_end, body):
+    lines = caption_lines(words)
     states, cache = [], {}
     for number, line in enumerate(lines):
         line_start, line_end = line[0]['start'], line[-1]['end'] + 0.18
