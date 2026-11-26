@@ -363,6 +363,14 @@
   "yNbQUPhDLpE": {
    "title": "Plain Hoodie ₹307 Mein? 320 GSM, 88% Cotton | Spun Ya PC Nahi | sale91.com",
    "published": "2026-11-25T11:45:37+00:00"
+  },
+  "y79GnjT-6yw": {
+   "title": "Kids Hoodie Mein Kangaroo Pocket Kyun Nahi? 320 GSM Kids Hoodie ₹200 | sale91.com",
+   "published": "2026-11-26T11:45:08+00:00"
+  },
+  "bsgqhEVzWis": {
+   "title": "Baggy Pant Final Ho Gayi! Production Start | Black, Navy Pehle | 10-12 Din Mein sale91.com Pe",
+   "published": "2026-11-26T06:45:02+00:00"
   }
  },
  "instagram": {
@@ -1113,6 +1121,18 @@
   "18134729470888703": {
    "permalink": "https://www.instagram.com/reel/DgKfGSVuJC2/",
    "ts": "2026-11-25T12:04:21+0000"
+  },
+  "18174326713467553": {
+   "permalink": "https://www.instagram.com/reel/DgND42FhIDu/",
+   "ts": "2026-11-26T12:04:18+0000"
+  },
+  "18204026890381249": {
+   "permalink": "https://www.instagram.com/reel/DgMxANcK7CH/",
+   "ts": "2026-11-26T09:19:18+0000"
+  },
+  "18041183654851627": {
+   "permalink": "https://www.instagram.com/reel/DgMhpkgs-Xt/",
+   "ts": "2026-11-26T07:05:09+0000"
   }
  },
  "facebook": {
@@ -1454,11 +1474,6 @@
   }
  },
  "history": [
-  {
-   "at": "2026-08-13T20:24:58+05:30",
-   "alerts": 1,
-   "new": 2
-  },
   {
    "at": "2026-08-14T11:42:24+05:30",
    "alerts": 1,
@@ -2453,8 +2468,13 @@
    "at": "2026-11-25T20:47:52+05:30",
    "alerts": 0,
    "new": 2
+  },
+  {
+   "at": "2026-11-26T20:12:53+05:30",
+   "alerts": 0,
+   "new": 5
   }
  ],
- "last_green_date": "2026-11-25",
- "last_run_ist": "2026-11-25T20:47:52+05:30"
+ "last_green_date": "2026-11-26",
+ "last_run_ist": "2026-11-26T20:12:53+05:30"
 }
