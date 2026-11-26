@@ -1013,5 +1013,32 @@
  "raw20261123-s2-hoodie320-v3-facebook": {
   "resolved": true,
   "url": "https://www.facebook.com/reel/2436722430404809/"
+ },
+ "raw20261123-s2-hoodie320-v3-linkedin": {
+  "nudged": true
+ },
+ "raw20261123-s4-kids-v4-youtube": {
+  "nudged": true
+ },
+ "raw20261123-s4-kids-v4-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DgND42FhIDu/"
+ },
+ "raw20261123-s4-kids-v4-x": {
+  "nudged": true
+ },
+ "raw20261125-b2-baggyfinal-v2-youtube": {
+  "nudged": true
+ },
+ "raw20261125-b2-baggyfinal-v2-instagram": {
+  "resolved": true,
+  "url": "https://www.instagram.com/reel/DgMhpkgs-Xt/"
+ },
+ "raw20261125-b2-baggyfinal-v2-facebook": {
+  "resolved": true,
+  "url": "https://www.facebook.com/reel/2955909898111799/"
+ },
+ "raw20261125-b2-baggyfinal-v2-x": {
+  "nudged": true
  }
 }
