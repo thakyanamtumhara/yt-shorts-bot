@@ -244,6 +244,13 @@ def mp4_facts(raw):
     return seconds, w, h
 
 
+KEY_LABELS = {
+    '/ph/vid/true-bio-rneck-white.mp4': 'True Bio Round Neck T-shirt, White',
+    '/ph/vid/bio-rneck-white.mp4': 'Bio Wash Round Neck T-shirt, White',
+    '/ph/vid/true-bio-vs-bio-rneck-white.mp4': 'True Bio Round Neck (red label) vs Bio Wash Round Neck (yellow label), White',
+}
+
+
 def label(slug, colour):
     name = NAMES.get(slug)
     if not name:
@@ -326,7 +333,9 @@ def run(mode):
             if mode == 'run':
                 seen[key] = {'s': 'skipped: closed or sale line', 'at': day}
             continue
-        fresh.append({'k': key, 'kind': kind, 'slug': slug, 'd': label(slug, colour), 'src': 'new'})
+        if any(x['k'] == key for x in fresh):
+            continue
+        fresh.append({'k': key, 'kind': kind, 'slug': slug, 'd': KEY_LABELS.get(key) or label(slug, colour), 'src': 'new'})
     up_today = [k for k, v in seen.items() if v.get('s') == 'uploaded' and v.get('at') == day]
     room_p = max(0, MAX_PHOTOS - len([k for k in up_today if not is_video(k)]))
     room_v = max(0, MAX_VIDEOS - len([k for k in up_today if is_video(k)]))
