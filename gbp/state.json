@@ -1,6 +1,6 @@
 {
  "baseline_at": "2026-11-19",
- "last_upload": "2026-11-25",
+ "last_upload": "2026-11-26",
  "old_note": "2026-11-23",
  "seen": {
   "/ph/acidwash-os/1.webp": {
@@ -372,8 +372,10 @@
    "s": "baseline"
   },
   "/ph/hoodie-430gsm/6.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-26",
+   "id": "CIABIhBh1q_-Sn_C7YlHE6A7zlBM",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/hoodie-430gsm/7.webp": {
    "at": "2026-11-19",
@@ -614,8 +616,10 @@
    "src": "old"
   },
   "/ph/oversize-240gsm/4.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-26",
+   "id": "CIABIhBFbBjonv6tAqjvG8KRS9pc",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/oversize-240gsm/5.webp": {
    "at": "2026-11-19",
@@ -880,8 +884,10 @@
    "src": "old"
   },
   "/ph/sweatshirt/7.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-26",
+   "id": "CIABIhCQOAf9GXex183cIM28q6rc",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/sweatshirt/8.webp": {
    "at": "2026-11-19",
@@ -1085,6 +1091,12 @@
   "/ph/vid/true-bio-rneck-navy.mp4": {
    "at": "2026-11-19",
    "s": "baseline"
+  },
+  "/ph/vid/true-bio-rneck-white.mp4": {
+   "at": "2026-11-26",
+   "id": "CIABIhCc-zNq7bhtt_80Cmp-ipYA",
+   "s": "uploaded",
+   "src": "new"
   },
   "/ph/vid/zip-hoodie-black.mp4": {
    "at": "2026-11-23",
