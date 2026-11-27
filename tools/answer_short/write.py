@@ -17,6 +17,8 @@ from tools.answer_short.facts import allowed_amounts
 from tools.answer_short import screens
 
 ROUNDS = 4
+QUESTION_TURNS = 2          # a question no plan passes for is left, and one other question gets its own ROUNDS
+WEBSITE_SAID = 2            # "website" in the spoken lines: once as the rate label, once for where to order
 MODEL_LINES = ('fable', 'opus')
 FALLBACK_MODEL = 'claude-opus-5-5'
 BANNED = re.compile(
@@ -32,7 +34,11 @@ He answers first and explains after. He never bad-mouths other sellers and never
 
 
 class WriteHold(RuntimeError):
-    pass
+    """`failed` = the questions no plan passed for, so the run can rest them (run.py holds them HOLD_DAYS)."""
+
+    def __init__(self, message, failed=()):
+        super().__init__(message)
+        self.failed = list(failed)
 
 
 def pick_model(client):
@@ -124,7 +130,8 @@ SCRIPT SHAPE (hard limits): 6 or 7 sentences, 72-88 words in all, each sentence 
 3-5. The two or three facts that change what the buyer does (what the rate depends on, sample or bulk, delivery).
 6. One practical next step.
 Last: a real question the viewer can answer in one or two words in the comments (never "comment karo" alone).
-Say "website" at most once and never spell a web address. No rupee amount unless it is written in a cited fact
+Say "website" at most twice and never spell a web address: once as the rate label when you quote a rate ("website
+pe aaj ka rate", said once, covers every amount after it) and at most once more for where to order. No rupee amount unless it is written in a cited fact
 (a rate, the difference of two cited rates, or a cited rate times 10, 20, 25, 50 or 100 pieces, which you must
 multiply correctly). Never state a selling price, a margin, a profit or an investment figure.
 
@@ -148,11 +155,13 @@ A "card" shows that product's live rates in big digits: put it only on the sente
 "show" rules: a line that names a product shows THAT product. A line about ordering, delivery or the closing
 question may show another product of the same kind of garment that has videos (a T-shirt for a T-shirt video,
 never a hoodie), so the video is not photos only.
-"screen" rules: when a cited fact has a WEBSITE SCREEN, put it on the ONE sentence that tells the buyer what that
-page shows or what to do there (the size chart sentence, the "order on the website" sentence, the DTF sentence).
-At most 2 lines carry a screen; never line 1, never the last line, never a line with a card; the fact id must be
-in "fact_ids". Every other line has "screen": "". A screen line still needs its "show" (for a size chart, "show"
-is the product whose chart it is).{redo}"""
+"screen" rules: a screen is only a PICTURE. It never adds anything to say: every sentence, with or without a
+screen, says only what the cited facts state. Never describe how a page looks or works (no "box mein piece bharo",
+no buttons, no steps) unless a cited fact says exactly that. When a cited fact has a WEBSITE SCREEN, put it on the
+ONE sentence that already speaks that fact (the size chart sentence, the sample or ordering sentence, the DTF
+sentence). At most 2 lines carry a screen; never line 1, never the last line, never a line with a card; the fact
+id must be in "fact_ids". Every other line has "screen": "". A screen line still needs its "show" (for a size
+chart, "show" is the product whose chart it is).{redo}"""
 
 
 def audit_prompt(plan, sheet):
@@ -249,8 +258,8 @@ def code_problems(plan, sheet, questions, history):
         problems.append(f'remove these words or claims: {banned}')
     if re.search(r'https?://|www\.|\.com|\.in\b', script, re.I):
         problems.append('never say a web address in the spoken lines; say "website"')
-    if len(re.findall(r'\bwebsite\b', script, re.I)) > 1:
-        problems.append('say "website" at most once')
+    if len(re.findall(r'\bwebsite\b', script, re.I)) > WEBSITE_SAID:
+        problems.append(f'say "website" at most {WEBSITE_SAID} times: once as the rate label, once for where to order')
     if re.search(r'[\[\]<>{}#*_]', script) or re.search(r'[ऀ-ॿ]', script):
         problems.append('spoken lines are plain Roman Hinglish: no Devanagari, brackets or symbols')
     return problems
@@ -268,23 +277,40 @@ def make_plan(client, sheet, bank, history, log=print, only=''):
         if not questions:
             raise WriteHold(f'"{only}" is not an open searched question')
         log(f'   hand run: only "{only}"')
-    feedback, previous = None, None
-    for attempt in range(1, ROUNDS + 1):
-        plan = ask_json(client, model, writer_prompt(sheet, questions, history, feedback, previous))
-        screens.tidy(plan, sheet)
-        problems = code_problems(plan, sheet, questions, history)
-        if not problems:
-            verdict = ask_json(client, model, audit_prompt(plan, sheet))
-            breaches = verdict.get('breaches') if isinstance(verdict, dict) else None
-            if not isinstance(breaches, list):
-                raise WriteHold('fact check gave no readable answer')
-            problems = [f"{item.get('where')}: {item.get('problem')}" for item in breaches if isinstance(item, dict)]
-        log(f"   plan {attempt}/{ROUNDS}: \"{plan.get('search_phrase')}\" → " + ('passed' if not problems else f'{len(problems)} point(s) to fix'))
-        for problem in problems:
-            log(f'      - {str(problem)[:260]}')
-        if not problems:
-            plan['model'] = model
-            plan['evidence'] = {key: sheet['facts'][key] for key in plan['fact_ids']}
-            return plan
-        feedback, previous = problems, plan
-    raise WriteHold(f'No plan passed the fact check after {ROUNDS} attempts')
+    # One hard question must not cost the day's Short: when no plan passes for it in ROUNDS attempts, that question
+    # is left and one other question gets its own ROUNDS. Every question given up on is returned, so the run can
+    # rest it and tomorrow does not start with it again.
+    failed = []
+    for turn in range(1, (1 if only else QUESTION_TURNS) + 1):
+        feedback, previous, seen = None, None, {}
+        for attempt in range(1, ROUNDS + 1):
+            plan = ask_json(client, model, writer_prompt(sheet, questions, history, feedback, previous))
+            screens.tidy(plan, sheet)
+            problems = code_problems(plan, sheet, questions, history)
+            if not problems:
+                verdict = ask_json(client, model, audit_prompt(plan, sheet))
+                breaches = verdict.get('breaches') if isinstance(verdict, dict) else None
+                if not isinstance(breaches, list):
+                    raise WriteHold('fact check gave no readable answer', failed)
+                problems = [f"{item.get('where')}: {item.get('problem')}" for item in breaches if isinstance(item, dict)]
+            log(f"   plan {attempt}/{ROUNDS}: \"{plan.get('search_phrase')}\" → " + ('passed' if not problems else f'{len(problems)} point(s) to fix'))
+            for problem in problems:
+                log(f'      - {str(problem)[:260]}')
+            if not problems:
+                plan['model'] = model
+                plan['evidence'] = {key: sheet['facts'][key] for key in plan['fact_ids']}
+                plan['gave_up_on'] = failed
+                return plan
+            phrase = str(plan.get('search_phrase') or '').strip().lower()
+            if phrase:
+                seen[phrase] = {'search_phrase': phrase, 'intent_key': str(plan.get('intent_key') or ''),
+                                'why': 'no plan passed: ' + '; '.join(str(problem) for problem in problems)[:260]}
+            feedback, previous = problems, plan
+        failed += list(seen.values())
+        questions = [entry for entry in questions if entry['q'] not in seen]
+        history = list(history) + list(seen.values())      # the same buyer decision is not tried under another phrase
+        if turn < QUESTION_TURNS and not only and len(questions) >= 5:
+            log(f"   no plan passed for {sorted(seen) or 'that question'}; trying one other question")
+        else:
+            break
+    raise WriteHold(f'No plan passed the fact check after {ROUNDS} attempts', failed)

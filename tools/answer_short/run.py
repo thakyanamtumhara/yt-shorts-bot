@@ -183,8 +183,18 @@ def main(log=print):
         plan['model'] = 'written plan'
         plan['evidence'] = {key: sheet['facts'][key] for key in plan['fact_ids']}
     else:
-        plan = write.make_plan(client, sheet, bank, taken(history, today), log=log,
-                               only=os.environ.get('ANSWER_QUESTION', '').strip())
+        def rest(failed):
+            """Questions no plan passed for are rested like a refused Short, so tomorrow starts with another one."""
+            if failed and not dry:
+                history['refused'] = (history['refused'] + [{'date': today.isoformat(), **item} for item in failed])[-40:]
+                save_history(history)
+        try:
+            plan = write.make_plan(client, sheet, bank, taken(history, today), log=log,
+                                   only=os.environ.get('ANSWER_QUESTION', '').strip())
+        except write.WriteHold as error:
+            rest(error.failed)
+            raise
+        rest(plan.pop('gave_up_on', None))
     # Website screens are taken before any money is spent on the voice; a screen that fails only loses its line.
     sheet['screen_files'] = screens.capture(plan, sheet, OUT / 'screens', log=log)
     (OUT / 'plan.json').write_text(json.dumps(plan, ensure_ascii=False, indent=1), encoding='utf-8')

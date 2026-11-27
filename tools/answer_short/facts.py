@@ -28,6 +28,18 @@ CLOSED = re.compile(r'varsity|boxy', re.I)
 # website gallery; a new clip with a plate goes here too (the final look also refuses a readable plate).
 BLOCKED_CLIPS = {'true-bio-rneck-navy.mp4', 'true-bio-rneck-grey.mp4', 'kids-polo-sale.mp4', 'kids-hoodie-black.mp4',
                  'sale-pant-black.mp4'}
+# The rate rule as the answer Short's fact checker reads it. The shared wording ("call it the current website
+# rate") was read as "say those words with every amount", which a script with two rates cannot do inside its
+# other limits (27-Nov-2026: no plan passed in 4 attempts). One spoken label covers the amounts after it.
+RATE_LIMITS = ('Website rate on the checked date only; rates can change later. Excludes {gst}% GST, delivery and any '
+               'discount. Quote an amount exactly as listed. The spoken script must say ONCE, with or before its first '
+               'amount, that the amounts are current website rates (for example "website pe aaj ka rate", "aaj ka '
+               'website rate", "current website rate"); that one label covers every amount spoken after it, so later '
+               'amounts need no label. A title or description that shows an amount must mark it once as a current '
+               'rate: the words "website rate", "aaj ka rate" or "current rate" are each enough. The short on-screen '
+               'hook and the cover need no label. Never round an amount, never call it permanent, cheapest or better '
+               'value, never mention a discount, and never give a reason for a price difference beyond the product '
+               'details listed in these facts.')
 FOLDERS = {'acidwash os': 'acidwash-os', 'sublimation tshirt': 'sublimation', 'dropsho hoodie 430gsm': 'hoodie-430gsm',
            'sale: polo tshirt': 'cotton-polo-sale', 'sale: shorts': 'shorts'}
 
@@ -106,7 +118,8 @@ def build(today=None):
     today = today or datetime.now(IST).date().isoformat()
     tbl = parse_catalogue(fetch_catalogue())
     rows = [row for row in product_rates(tbl) if not CLOSED.search(row['product'])]
-    facts = {key: fact for key, fact in rate_facts(tbl, today).items() if not CLOSED.search(key)}
+    rule = RATE_LIMITS.format(gst=f"{tbl[6]['gst']:g}")
+    facts = {key: {**fact, 'limits': rule} for key, fact in rate_facts(tbl, today).items() if not CLOSED.search(key)}
     pictures = gallery()
     cards, visuals = {}, {}
     for row in rows:

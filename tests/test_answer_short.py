@@ -86,6 +86,25 @@ class Facts(unittest.TestCase):
         for value in (200, 199, 499, 210, 129):
             self.assertNotIn(value, allowed)
 
+    def test_the_rate_rule_asks_for_one_spoken_label_not_one_per_amount(self):
+        from unittest import mock
+        old = {'claim': 'x', 'limits': 'call it the current website rate', 'source_url': 'u', 'source_title': 't',
+               'checked_on': '2026-11-27', 'amounts': [205]}
+        table = [None] * 6 + [{'gst': 5}]
+        with mock.patch.object(facts, 'fetch_catalogue', return_value=''), \
+                mock.patch.object(facts, 'parse_catalogue', return_value=table), \
+                mock.patch.object(facts, 'product_rates', return_value=[]), \
+                mock.patch.object(facts, 'rate_facts', return_value={'rate_oversize_240gsm': old}), \
+                mock.patch.object(facts, 'gallery', return_value={}), \
+                mock.patch.object(facts, 'dtf_fact', side_effect=ValueError('no dtf')):
+            sheet = facts.build('2026-11-27')
+        rule = sheet['facts']['rate_oversize_240gsm']['limits']
+        self.assertEqual(rule, facts.RATE_LIMITS.format(gst='5'))
+        for words in ('say ONCE', 'one label covers every amount', 'Excludes 5% GST', 'Never round'):
+            self.assertIn(words, rule)
+        self.assertNotIn('call it the current website rate', rule)
+        self.assertEqual(sheet['facts']['rate_oversize_240gsm']['amounts'], [205])
+
     def test_dtf_price_is_read_exactly_or_not_at_all(self):
         fact = facts.dtf_fact('2026-11-25', json.dumps({'pricePerMetrePaise': 13000, 'gstBp': 1800, 'acceptingOrders': True}))
         self.assertEqual(fact['dtf_rate']['amounts'], [130])
@@ -181,6 +200,76 @@ class Plan(unittest.TestCase):
         def change(plan):
             plan['lines'][1]['say'] = 'sale91.com pe aaj ka rate ₹205 per piece hai.'
         self.assertIn('never say a web address', self.problems(change))
+
+    def test_website_may_be_said_twice_the_rate_label_and_where_to_order(self):
+        def twice(plan):
+            plan['lines'][5]['say'] = 'GST 5% aur delivery alag hai, website se 1 piece sample mangwa lo.'
+        self.assertEqual(self.problems(twice), '')
+
+        def thrice(plan):
+            twice(plan)
+            plan['lines'][4]['say'] = 'Fabric 100% cotton biowash hai, website pe size XS se XXL tak.'
+        self.assertIn('say "website" at most 2 times', self.problems(thrice))
+
+
+class FakeClient:
+    """Stands in for the model: the writer answers the first question it is offered; the fact checker refuses
+    every plan for the questions in `hard`."""
+
+    def __init__(self, hard):
+        self.hard, self.asked, self.messages = set(hard), [], self
+
+    def create(self, model, max_tokens, messages):
+        prompt = messages[0]['content']
+        if prompt.startswith('You are the fact checker'):
+            refused = any(f'"search_phrase": "{phrase}"' in prompt or phrase in self.asked[-1:] for phrase in self.hard)
+            answer = {'breaches': [{'where': '2', 'problem': 'not in the facts'}] if refused else []}
+        else:
+            offered = json.loads(prompt.split('yt / google = where it appeared):\n', 1)[1].split('\n\nFACTS YOU MAY USE', 1)[0])
+            phrase = offered[0]['q']
+            self.asked.append(phrase)
+            answer = {**good_plan(), 'search_phrase': phrase, 'intent_key': 'intent_' + phrase.replace(' ', '_')}
+        text = json.dumps(answer, ensure_ascii=False)
+        return type('Reply', (), {'content': [type('Block', (), {'text': text})()], 'stop_reason': 'end_turn'})()
+
+
+class HardQuestion(unittest.TestCase):
+    """27-Nov-2026: no plan passed for one question in 4 attempts and the day's Short was lost."""
+
+    def setUp(self):
+        import os
+        from unittest import mock
+        self.env = mock.patch.dict(os.environ, {'ANSWER_MODEL': 'claude-test-1-0'})
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        self.bank = {'queries': [{'q': f'question {number}', 'yt': 1, 'google': 1, 'rank': number} for number in range(1, 8)]}
+
+    def test_a_question_no_plan_passes_for_gives_way_to_another_and_is_rested(self):
+        client, said = FakeClient(hard={'question 1'}), []
+        plan = write.make_plan(client, SHEET, self.bank, [], log=said.append)
+        self.assertEqual(plan['search_phrase'], 'question 2')
+        self.assertEqual(client.asked, ['question 1'] * write.ROUNDS + ['question 2'])
+        self.assertEqual([(item['search_phrase'], item['intent_key']) for item in plan['gave_up_on']],
+                         [('question 1', 'intent_question_1')])
+        self.assertTrue(any('trying one other question' in line for line in said))
+
+    def test_two_hard_questions_stop_the_run_and_both_are_handed_back_to_be_rested(self):
+        client = FakeClient(hard={'question 1', 'question 2'})
+        with self.assertRaises(write.WriteHold) as stopped:
+            write.make_plan(client, SHEET, self.bank, [], log=lambda line: None)
+        self.assertEqual([item['search_phrase'] for item in stopped.exception.failed], ['question 1', 'question 2'])
+        self.assertEqual(len(client.asked), 2 * write.ROUNDS)
+
+    def test_a_pinned_test_question_never_moves_to_another_one(self):
+        client = FakeClient(hard={'question 3'})
+        with self.assertRaises(write.WriteHold) as stopped:
+            write.make_plan(client, SHEET, self.bank, [], log=lambda line: None, only='question 3')
+        self.assertEqual(client.asked, ['question 3'] * write.ROUNDS)
+        self.assertEqual([item['search_phrase'] for item in stopped.exception.failed], ['question 3'])
+
+    def test_the_first_plan_that_passes_gives_up_on_nothing(self):
+        plan = write.make_plan(FakeClient(hard=set()), SHEET, self.bank, [], log=lambda line: None)
+        self.assertEqual((plan['search_phrase'], plan['gave_up_on']), ('question 1', []))
 
 
 class Screens(unittest.TestCase):
