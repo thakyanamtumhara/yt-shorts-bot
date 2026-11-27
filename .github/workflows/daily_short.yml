@@ -277,6 +277,7 @@ jobs:
           # The answer engine publishes nothing on a test run (it has one test switch).
           ANSWER_DRY: ${{ (github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true') && '1' || '' }}
           ANSWER_QUESTION: ${{ github.event.inputs.test_mode == 'true' && github.event.inputs.answer_question || '' }}
+          ANSWER_SCREENS: ${{ vars.ANSWER_SCREENS }}
         run: |
           if [ "$ENGINE" != "legacy" ] && [ "$TEST_THUMBNAIL" != "true" ] && [ "$HOLD_ONLY" != "true" ] \
              && [ -z "$DAILY_ANNOUNCEMENT" ] && [ -z "$DAILY_CAMPAIGN_FACT" ]; then

@@ -214,6 +214,16 @@ class Screens(unittest.TestCase):
         del sheet['facts']['dtf_rate']
         self.assertEqual(screens.tidy(unknown_today, sheet), [])
 
+    def test_the_off_switch_leaves_every_line_its_product_picture(self):
+        import os
+        from unittest import mock
+        from tools.answer_short import screens
+        plan = self.plan(['', 'dtf_rate', 'order_from_one_piece', ''])
+        with mock.patch.dict(os.environ, {'ANSWER_SCREENS': 'off'}):
+            self.assertEqual(screens.offered(self.sheet()), {})
+            self.assertEqual(screens.tidy(plan, self.sheet()), [])
+        self.assertEqual([line['screen'] for line in plan['lines']], ['', '', '', ''])
+
     def test_a_size_chart_belongs_to_the_product_shown_and_never_to_a_sale_lot(self):
         from tools.answer_short import screens
         plan = self.plan(['', 'size_chart_on_site', 'size_chart_on_site', ''], shows={2: 'rate_sale'})

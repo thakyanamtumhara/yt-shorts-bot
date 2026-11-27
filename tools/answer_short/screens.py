@@ -10,6 +10,7 @@ Nothing here may stop a Short. No browser, a page that fails, a picture that loo
 product picture, and the log says why.
 """
 
+import os
 from pathlib import Path
 import re
 
@@ -40,7 +41,10 @@ SCREENS = {
 
 
 def offered(sheet):
-    """{fact id: what it shows} for the facts that are known today."""
+    """{fact id: what it shows} for the facts that are known today. ANSWER_SCREENS=off = none (the off switch:
+    `gh variable set ANSWER_SCREENS --body off`; every line then keeps its product picture)."""
+    if os.environ.get('ANSWER_SCREENS', '').strip().lower() == 'off':
+        return {}
     return {key: spec['what'] for key, spec in SCREENS.items() if key in sheet['facts']}
 
 
