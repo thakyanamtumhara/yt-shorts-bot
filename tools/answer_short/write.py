@@ -14,6 +14,7 @@ import re
 from tools.current_rates import loose_rupee_words, money_amounts
 from tools.script_length import voice_text_feedback
 from tools.answer_short.facts import allowed_amounts
+from tools.answer_short import screens
 
 ROUNDS = 4
 MODEL_LINES = ('fable', 'opus')
@@ -79,6 +80,7 @@ def writer_prompt(sheet, questions, history, feedback=None, previous=None):
                 for key, folder in sheet['visuals'].items()}
     recent = [{'search_phrase': item.get('search_phrase'), 'intent_key': item.get('intent_key'), 'title': item.get('title')}
               for item in history[-60:]]
+    pages = screens.offered(sheet)
     redo = ''
     if feedback:
         redo = ('\nYOUR LAST PLAN WAS REFUSED. Fix exactly these points and return the whole corrected plan. '
@@ -100,6 +102,10 @@ FACTS YOU MAY USE (nothing else is known; obey every "limits" line word for word
 REAL PICTURES (our own product videos and photos; a sentence can only show one of these fact ids):
 {json.dumps(pictures, ensure_ascii=False)}
 
+WEBSITE SCREENS (a real page of our website, shown as a phone screen while one sentence is spoken; fact id → what
+the page shows):
+{json.dumps(pages, ensure_ascii=False)}
+
 ALREADY ANSWERED (do not answer the same buyer decision again, even under another phrase):
 {json.dumps(recent, ensure_ascii=False)}
 
@@ -107,7 +113,8 @@ CHOOSING: pick the question with the most buyer intent that the facts above answ
 been answered. Prefer price, where-to-buy, how-to-start, how-to-order, delivery and "which one" questions over
 definitions. A city question is fine only when the facts answer it (we stock in Delhi and courier across India).
 If a question needs a fact that is not above, do not pick it. Other things equal, prefer a question whose main
-product has videos in REAL PICTURES: moving pictures hold viewers, photos alone do not.
+product has videos in REAL PICTURES: moving pictures hold viewers, photos alone do not. A question about the website
+itself (size chart, how to order, DTF) whose fact has a WEBSITE SCREEN is as good as one with videos.
 
 {STYLE}
 
@@ -129,7 +136,7 @@ Return ONE JSON object, no markdown:
  "fact_ids": ["<1-5 fact ids the script relies on>"],
  "hook_text": "<on-screen hook, at most 7 words, Roman letters, the question or its number>",
  "cover": ["<line 1: 1-3 words, the subject, CAPITALS>", "<line 2: the question, at most 5 words, ends with ?>"],
- "lines": [{{"say": "<one sentence>", "show": "<fact id from REAL PICTURES>", "card": "<rate fact id whose rate card is on screen during this sentence, or empty>"}}],
+ "lines": [{{"say": "<one sentence>", "show": "<fact id from REAL PICTURES>", "card": "<rate fact id whose rate card is on screen during this sentence, or empty>", "screen": "<fact id from WEBSITE SCREENS whose page is on screen during this sentence, or empty>"}}],
  "comment_question": "<the closing question, as text for the pinned comment>",
  "title_youtube": "<at most 85 characters, starts with or contains the search phrase naturally, Hinglish/English>",
  "title_instagram": "<at most 90 characters, hook first>",
@@ -140,7 +147,12 @@ A "card" shows that product's live rates in big digits: put it only on the sente
 (at most 3 lines in the whole video carry a card; every other line has "card": "").
 "show" rules: a line that names a product shows THAT product. A line about ordering, delivery or the closing
 question may show another product of the same kind of garment that has videos (a T-shirt for a T-shirt video,
-never a hoodie), so the video is not photos only.{redo}"""
+never a hoodie), so the video is not photos only.
+"screen" rules: when a cited fact has a WEBSITE SCREEN, put it on the ONE sentence that tells the buyer what that
+page shows or what to do there (the size chart sentence, the "order on the website" sentence, the DTF sentence).
+At most 2 lines carry a screen; never line 1, never the last line, never a line with a card; the fact id must be
+in "fact_ids". Every other line has "screen": "". A screen line still needs its "show" (for a size chart, "show"
+is the product whose chart it is).{redo}"""
 
 
 def audit_prompt(plan, sheet):
@@ -244,15 +256,22 @@ def code_problems(plan, sheet, questions, history):
     return problems
 
 
-def make_plan(client, sheet, bank, history, log=print):
+def make_plan(client, sheet, bank, history, log=print, only=''):
+    """`only` = one searched question to answer (a hand test run); empty = the writer chooses."""
     model = pick_model(client)
     log(f'   writer model: {model}')
-    questions = open_questions(bank, history)
+    questions = open_questions(bank, history, limit=70 if not only else 10000)
     if len(questions) < 5:
         raise WriteHold('fewer than 5 searched questions are left unanswered; refresh the question bank')
+    if only:
+        questions = [entry for entry in questions if entry['q'] == only.strip().lower()]
+        if not questions:
+            raise WriteHold(f'"{only}" is not an open searched question')
+        log(f'   hand run: only "{only}"')
     feedback, previous = None, None
     for attempt in range(1, ROUNDS + 1):
         plan = ask_json(client, model, writer_prompt(sheet, questions, history, feedback, previous))
+        screens.tidy(plan, sheet)
         problems = code_problems(plan, sheet, questions, history)
         if not problems:
             verdict = ask_json(client, model, audit_prompt(plan, sheet))

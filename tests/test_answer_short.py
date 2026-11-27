@@ -183,6 +183,104 @@ class Plan(unittest.TestCase):
         self.assertIn('never say a web address', self.problems(change))
 
 
+class Screens(unittest.TestCase):
+    """A real page of our own website on a line or two. A screen that cannot be shown never stops a Short."""
+
+    def sheet(self):
+        return {'facts': {'size_chart_on_site': {}, 'order_from_one_piece': {}, 'dtf_rate': {'amounts': [130]}, 'rate_os': {}},
+                'visuals': {'rate_os': 'oversize-240gsm', 'rate_sale': 'cotton-polo-sale'},
+                'gallery': {'oversize-240gsm': {'videos': ['https://x/ph/vid/a.mp4'], 'photos': []},
+                            'cotton-polo-sale': {'videos': ['https://x/ph/vid/s.mp4'], 'photos': []}}}
+
+    def plan(self, screens, cards=None, shows=None):
+        cards, shows = cards or {}, shows or {}
+        return {'fact_ids': ['size_chart_on_site', 'order_from_one_piece', 'dtf_rate', 'rate_os'],
+                'lines': [{'say': 'x', 'show': shows.get(index, 'rate_os'), 'card': cards.get(index, ''), 'screen': name}
+                          for index, name in enumerate(screens)]}
+
+    def test_a_screen_is_kept_only_where_it_may_be_shown(self):
+        from tools.answer_short import screens
+        plan = self.plan(['dtf_rate', 'size_chart_on_site', 'made_up', 'order_from_one_piece', 'dtf_rate', 'dtf_rate'],
+                         cards={1: 'rate_os'})
+        self.assertEqual(screens.tidy(plan, self.sheet()), ['order_from_one_piece', 'dtf_rate'])
+        self.assertEqual([line['screen'] for line in plan['lines']], ['', '', '', 'order_from_one_piece', 'dtf_rate', ''])
+        three = self.plan(['', 'dtf_rate', 'order_from_one_piece', 'size_chart_on_site', ''])
+        self.assertEqual(len(screens.tidy(three, self.sheet())), 2)
+        uncited = self.plan(['', 'dtf_rate', ''])
+        uncited['fact_ids'] = ['rate_os']
+        self.assertEqual(screens.tidy(uncited, self.sheet()), [])
+        unknown_today = self.plan(['', 'dtf_rate', ''])
+        sheet = self.sheet()
+        del sheet['facts']['dtf_rate']
+        self.assertEqual(screens.tidy(unknown_today, sheet), [])
+
+    def test_a_size_chart_belongs_to_the_product_shown_and_never_to_a_sale_lot(self):
+        from tools.answer_short import screens
+        plan = self.plan(['', 'size_chart_on_site', 'size_chart_on_site', ''], shows={2: 'rate_sale'})
+        self.assertEqual(screens.tidy(plan, self.sheet()), ['size_chart_on_site'])
+        self.assertEqual(screens.key_for(plan['lines'][1], self.sheet()), 'size_chart_on_site@oversize-240gsm')
+        self.assertEqual(screens.key_for({'screen': 'dtf_rate', 'show': 'rate_os'}, self.sheet()), 'dtf_rate')
+
+    def test_a_taken_screen_is_shown_and_a_missing_one_keeps_the_product_picture(self):
+        from tools.answer_short.render import plan_pictures
+        plan = self.plan(['', 'size_chart_on_site', 'dtf_rate', ''])
+        sheet = {**self.sheet(), 'screen_files': {'size_chart_on_site@oversize-240gsm': '/tmp/chart.png'}}
+        shots = plan_pictures(plan, sheet, [(index * 4.0, index * 4.0 + 4.0) for index in range(4)])
+        self.assertEqual([shot['kind'] for shot in shots], ['video', 'screen', 'video', 'video'])
+        self.assertEqual((shots[1]['key'], shots[1]['bar'], shots[1]['card']),
+                         ('screen/size_chart_on_site@oversize-240gsm', 'bulkplaintshirt.com', ''))
+
+    def test_no_browser_means_product_pictures_not_a_stopped_short(self):
+        import sys
+        from unittest import mock
+        from tools.answer_short import screens
+        plan = self.plan(['', 'dtf_rate', 'order_from_one_piece', ''])
+        said = []
+        with mock.patch.dict(sys.modules, {'playwright': None, 'playwright.sync_api': None}), tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(screens.capture(plan, self.sheet(), folder, log=said.append), {})
+        self.assertEqual([line['screen'] for line in plan['lines']], ['', '', '', ''])
+        self.assertEqual(len(said), 1)
+        quiet = []
+        self.assertEqual(screens.capture(self.plan(['', '', '']), self.sheet(), '/nowhere', log=quiet.append), {})
+        self.assertEqual(quiet, [])
+
+    def test_a_blank_or_tiny_picture_is_not_a_screen(self):
+        from PIL import Image, ImageDraw
+        from tools.answer_short import screens
+        with tempfile.TemporaryDirectory() as folder:
+            blank, small, good = (Path(folder) / name for name in ('blank.png', 'small.png', 'good.png'))
+            Image.new('RGB', (1140, 681), 'white').save(blank)
+            Image.new('RGB', (300, 200), 'white').save(small)
+            page = Image.new('RGB', (1140, 681), 'white')
+            ImageDraw.Draw(page).rectangle((0, 0, 1140, 200), fill=(106, 27, 154))
+            page.save(good)
+            self.assertEqual([screens.looks_right(path) for path in (blank, small, good, Path(folder) / 'none.png')],
+                             [False, False, True, False])
+
+    def test_a_screen_is_drawn_above_the_captions_and_a_long_page_scrolls(self):
+        from PIL import Image, ImageDraw
+        from tools.answer_short import render
+        with tempfile.TemporaryDirectory() as folder:
+            short, long = Path(folder) / 'short.png', Path(folder) / 'long.png'
+            Image.new('RGB', (1140, 681), 'white').save(short)
+            page = Image.new('RGB', (1170, 2400), 'white')
+            ImageDraw.Draw(page).rectangle((0, 1150, 1170, 1250), fill=(200, 0, 0))
+            page.save(long)
+            base = {'kind': 'screen', 'url': '', 'bar': 'bulkplaintshirt.com', 'key': 'screen/x', 'start': 2.0, 'end': 8.0}
+            for path in (short, long):
+                shot = render.Shot({**base, 'path': str(path)}, Path(folder))
+                first, last = shot.frame(2.1), shot.frame(7.9)
+                self.assertEqual(first.size, (render.W, render.H))
+                self.assertGreater(min(first.getpixel((render.W // 2, 700))), 200)
+                for y in (render.SCREEN_TOP - 30, render.SCREEN_BOTTOM + 30, render.CAPTION_Y):
+                    self.assertLess(max(first.getpixel((render.W // 2, y))), 140)
+                    self.assertLess(max(last.getpixel((render.W // 2, y))), 140)
+            self.assertNotEqual(first.tobytes(), last.tobytes())
+            red = [y for y in range(render.SCREEN_TOP, render.SCREEN_BOTTOM) if last.getpixel((render.W // 2, y))[0] > 150
+                   and last.getpixel((render.W // 2, y))[1] < 80]
+            self.assertTrue(red)
+
+
 class Watch(unittest.TestCase):
     def folder(self, last='2026-11-13', runs=()):
         root = Path(tempfile.mkdtemp())

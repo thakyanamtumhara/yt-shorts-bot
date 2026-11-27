@@ -1,4 +1,5 @@
-"""Builds the answer Short from real pictures: our own product videos and photos, full screen.
+"""Builds the answer Short from real pictures: our own product videos and photos, full screen, and on a line or
+two a real page of our own website shown as a phone screen (tools/answer_short/screens.py takes it).
 
 No AI picture is made here. Each spoken line gets a real gallery clip or photo of the product it talks about; on
 top go the hook (the buyer's question), word-by-word captions timed from the voice, the live rate card (digits read
@@ -24,6 +25,10 @@ CARD_Y, CARD_W, CARD_FADE = 236, 936, 0.25
 BADGE_XY = (48, 168)
 PHOTO_W, PHOTO_TOP = 1240, 370   # a square photo, shown wider than the screen
 UNDER_CARD_GAP, UNDER_CARD_BOTTOM = 14, 36
+# A website screen: a rounded card with an address bar, always above the captions so no page text sits under
+# them. A short page part is centred there; a long one scrolls slowly inside it.
+SCREEN_W, SCREEN_TOP, SCREEN_BOTTOM = 960, 250, 1170
+SCREEN_BAR, SCREEN_RADIUS, SCREEN_SPEED, SCREEN_WAIT = 88, 40, 85, 0.5
 MUSIC = ROOT / 'bg_music' / 'answer_bed.m4a'
 MUSIC_DB = -23
 FONT = ROOT / 'assets' / 'fonts' / 'Baloo2.ttf'
@@ -247,6 +252,22 @@ def picture_key(folder, url):
     return folder + '/' + url.rsplit('/', 1)[-1]
 
 
+def address_bar(domain):
+    """The strip on top of a website screen: a lock and the site's name, like a phone browser."""
+    bar = Image.new('RGB', (SCREEN_W, SCREEN_BAR), (236, 236, 242))
+    draw = ImageDraw.Draw(bar)
+    face = font(38, 'SemiBold')
+    width = text_size(draw, domain, face)[0]
+    pill = (60, 14, SCREEN_W - 60, SCREEN_BAR - 14)
+    draw.rounded_rectangle(pill, radius=30, fill=(255, 255, 255))
+    left = (SCREEN_W - width - 44) // 2
+    middle = SCREEN_BAR // 2
+    draw.rounded_rectangle((left, middle - 4, left + 26, middle + 16), radius=5, fill=(70, 70, 84))
+    draw.arc((left + 4, middle - 20, left + 22, middle + 6), 180, 360, fill=(70, 70, 84), width=5)
+    draw.text((left + 44, middle - 2), domain, font=face, fill=(40, 40, 52), anchor='lm')
+    return bar
+
+
 def by_colour_turn(photos):
     """Photos re-ordered so neighbours differ in colour (the gallery lists three of one colour in a row)."""
     groups = {}
@@ -265,9 +286,16 @@ def plan_pictures(plan, sheet, spans, recent=()):
     `recent` = pictures of the last published Shorts, oldest first: a clip or photo not shown lately goes first, so
     the same picture comes back as late as the gallery allows. A clip that comes round again inside one Short plays
     on from where it stopped, so no moment is shown twice."""
+    from tools.answer_short.screens import SCREENS, key_for
     last_used = {key: index for index, key in enumerate(recent)}
     turn, cursor, shots = {}, {}, []
+    taken = sheet.get('screen_files') or {}
     for line, (start, end) in zip(plan['lines'], spans):
+        if line.get('screen') and key_for(line, sheet) in taken:
+            key = key_for(line, sheet)
+            shots.append({'kind': 'screen', 'url': '', 'path': taken[key], 'bar': SCREENS[line['screen']]['bar'],
+                          'folder': 'screen', 'key': 'screen/' + key, 'start': start, 'end': end, 'from': 0.0, 'card': ''})
+            continue
         folder = sheet['visuals'][line['show']]
         entry = sheet['gallery'][folder]
         fresh = lambda url: last_used.get(picture_key(folder, url), -1)
@@ -311,9 +339,27 @@ class Shot:
     def __init__(self, shot, work):
         self.start, self.end = shot['start'], shot['end']
         need = self.end - self.start
-        path = download(shot['url'], work / 'assets')
+        path = Path(shot['path']) if shot['kind'] == 'screen' else download(shot['url'], work / 'assets')
         self.kind, self.name, self.key = shot['kind'], path.name, shot.get('key') or path.name
-        if shot['kind'] == 'video':
+        if shot['kind'] == 'screen':
+            page = Image.open(path).convert('RGB')
+            back = page.resize((H, H), Image.LANCZOS).crop(((H - W) // 2, 0, (H - W) // 2 + W, H))
+            self.back = back.filter(ImageFilter.GaussianBlur(60)).point(lambda value: int(value * 0.32))
+            body = page.resize((SCREEN_W, max(1, round(page.height * SCREEN_W / page.width))), Image.LANCZOS)
+            self.card = Image.new('RGB', (SCREEN_W, SCREEN_BAR + body.height), 'white')
+            self.card.paste(address_bar(shot.get('bar') or 'sale91.com'), (0, 0))
+            self.card.paste(body, (0, SCREEN_BAR))
+            self.need = need
+            self.window = min(self.card.height, SCREEN_BOTTOM - SCREEN_TOP)
+            self.short = self.window == self.card.height
+            self.mask = Image.new('L', (SCREEN_W, self.window), 0)
+            ImageDraw.Draw(self.mask).rounded_rectangle((0, 0, SCREEN_W - 1, self.window - 1), radius=SCREEN_RADIUS, fill=255)
+            # A long page runs out under the card's bottom edge: a soft white fade there, so a cut line of page
+            # text reads as "more below", not as a mistake.
+            self.fade = Image.new('RGBA', (SCREEN_W, 90), (255, 255, 255, 0))
+            for row in range(90):
+                ImageDraw.Draw(self.fade).line((0, row, SCREEN_W, row), fill=(255, 255, 255, int(255 * (row / 89) ** 1.6)))
+        elif shot['kind'] == 'video':
             self.files = video_frames(path, shot['from'], need, work / 'frames' / f"{len(list((work / 'frames').glob('*'))) if (work / 'frames').is_dir() else 0:02d}")
         else:
             photo = Image.open(path).convert('RGB')
@@ -325,6 +371,20 @@ class Shot:
         self.under = shot.get('top')
 
     def frame(self, t):
+        if self.kind == 'screen':
+            image = self.back.copy()
+            if self.short:
+                top = SCREEN_TOP + (SCREEN_BOTTOM - SCREEN_TOP - self.window) // 2
+                image.paste(self.card, ((W - SCREEN_W) // 2, top), self.mask)
+                return image
+            moved = min(self.card.height - self.window, int(SCREEN_SPEED * max(0.0, t - self.start - SCREEN_WAIT)))
+            shown = Image.new('RGB', (SCREEN_W, self.window), 'white')
+            shown.paste(self.card.crop((0, SCREEN_BAR + moved, SCREEN_W, moved + self.window)), (0, SCREEN_BAR))
+            shown.paste(self.card.crop((0, 0, SCREEN_W, SCREEN_BAR)), (0, 0))
+            if moved < self.card.height - self.window:
+                shown.paste(self.fade, (0, self.window - 90), self.fade)
+            image.paste(shown, ((W - SCREEN_W) // 2, SCREEN_TOP), self.mask)
+            return image
         if self.kind == 'video':
             index = min(len(self.files) - 1, max(0, int((t - self.start) * FPS)))
             image = Image.open(self.files[index]).convert('RGB')

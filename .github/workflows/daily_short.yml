@@ -93,6 +93,11 @@ on:
         required: false
         type: string
         default: ''
+      answer_question:
+        description: 'Test run only (needs test_mode): the answer engine answers this one searched question from demand_bank.json; nothing is published'
+        required: false
+        type: string
+        default: ''
       announcement:
         description: 'Hand run only: an owner-requested announcement id from daily_topic_lessons.json "announcements" (no topic scoring; the script and final reviews still apply)'
         required: false
@@ -164,6 +169,17 @@ jobs:
 
       - name: Install Python packages
         run: pip install -q -r requirements.txt
+
+      # Website screens for the answer Short (tools/answer_short/screens.py). If this step fails the Short is still
+      # made: every line then keeps its product picture.
+      - name: Install the page-capture browser
+        if: ${{ (github.event.inputs.engine || 'answer') != 'legacy' }}
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          pip install -q playwright
+          sudo -E apt-get install -y -qq fonts-noto-color-emoji fonts-roboto || true
+          python -m playwright install --with-deps --only-shell chromium
 
       - name: Restore YouTube credentials
         run: |
@@ -260,6 +276,7 @@ jobs:
           ENGINE: ${{ github.event.inputs.engine || 'answer' }}
           # The answer engine publishes nothing on a test run (it has one test switch).
           ANSWER_DRY: ${{ (github.event.inputs.test_mode == 'true' || github.event.inputs.new_test_mode == 'true') && '1' || '' }}
+          ANSWER_QUESTION: ${{ github.event.inputs.test_mode == 'true' && github.event.inputs.answer_question || '' }}
         run: |
           if [ "$ENGINE" != "legacy" ] && [ "$TEST_THUMBNAIL" != "true" ] && [ "$HOLD_ONLY" != "true" ] \
              && [ -z "$DAILY_ANNOUNCEMENT" ] && [ -z "$DAILY_CAMPAIGN_FACT" ]; then

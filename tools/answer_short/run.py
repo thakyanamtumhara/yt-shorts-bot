@@ -3,8 +3,10 @@
     python -m tools.answer_short.run            plan → voice → real-picture video → final look → publish
     ANSWER_DRY=1 ...                            everything except publishing (files stay in answer_out/)
     ANSWER_PLAN=path.json ...                   use a written plan instead of asking the writer (still checked)
+    ANSWER_QUESTION="t shirt size chart" ...    the writer answers this one searched question (hand test runs)
 
-A searched buyer question is answered from today's live facts over our own product videos and photos. No AI picture
+A searched buyer question is answered from today's live facts over our own product videos and photos, with a real
+page of our own website on a line or two when the answer lives there (screens.py). No AI picture
 is generated, so there is no clip bill and no "the picture does not match" stop. Publishing reuses the old daily
 pipeline's upload code (same accounts, same AI-voice disclosure, same cover, same owner comment).
 """
@@ -149,7 +151,7 @@ def publish(plan, report, log=print):
 
 def main(log=print):
     from tools import voice_runtime
-    from tools.answer_short import demand, facts, render, review, voice, write
+    from tools.answer_short import demand, facts, render, review, screens, voice, write
     now = datetime.now(IST)
     today = now.date()
     dry = flag('ANSWER_DRY')
@@ -174,13 +176,17 @@ def main(log=print):
     plan_file = os.environ.get('ANSWER_PLAN', '').strip()
     if plan_file:
         plan = json.loads(Path(plan_file).read_text(encoding='utf-8'))
+        screens.tidy(plan, sheet)
         problems = write.code_problems(plan, sheet, bank['queries'], taken(history, today))
         if problems:
             raise AnswerHold('the written plan fails the checks: ' + '; '.join(problems))
         plan['model'] = 'written plan'
         plan['evidence'] = {key: sheet['facts'][key] for key in plan['fact_ids']}
     else:
-        plan = write.make_plan(client, sheet, bank, taken(history, today), log=log)
+        plan = write.make_plan(client, sheet, bank, taken(history, today), log=log,
+                               only=os.environ.get('ANSWER_QUESTION', '').strip())
+    # Website screens are taken before any money is spent on the voice; a screen that fails only loses its line.
+    sheet['screen_files'] = screens.capture(plan, sheet, OUT / 'screens', log=log)
     (OUT / 'plan.json').write_text(json.dumps(plan, ensure_ascii=False, indent=1), encoding='utf-8')
     log(f"   question: \"{plan['search_phrase']}\"")
     for line in plan['lines']:
@@ -195,14 +201,16 @@ def main(log=print):
     recent = [key for item in history['published'][-12:] for key in item.get('pictures') or []]
     report = render.render(plan, sheet, spoken, OUT, OUT / f'{today.isoformat()}-{slug}.mp4', recent=recent)
     log(f"   video: {report['seconds']} s, {sum(item['kind'] == 'video' for item in report['pictures'])} real clips + "
-        f"{sum(item['kind'] == 'photo' for item in report['pictures'])} real photos, music {'on' if report['music'] else 'OFF'}")
+        f"{sum(item['kind'] == 'photo' for item in report['pictures'])} real photos + "
+        f"{sum(item['kind'] == 'screen' for item in report['pictures'])} website screens, music {'on' if report['music'] else 'OFF'}")
     model = plan['model'] if plan['model'].startswith('claude-') else write.pick_model(client)
     verdict = review.check(client, model, plan, report, spoken, OUT)
     log(f"   final look: {verdict['decision']} — {verdict['notes']}")
     for problem in verdict['problems']:
         log(f'      - {problem}')
     entry = {'date': today.isoformat(), 'search_phrase': plan['search_phrase'], 'intent_key': plan['intent_key'],
-             'title': plan['title_youtube'], 'fact_ids': plan['fact_ids'], 'also_matches': plan.get('also_matches') or []}
+             'title': plan['title_youtube'], 'fact_ids': plan['fact_ids'], 'also_matches': plan.get('also_matches') or [],
+             'screens': sorted(sheet['screen_files'])}
     if verdict['decision'] != 'approve':
         if not dry:
             history['refused'] = (history['refused'] + [{**entry, 'why': '; '.join(map(str, verdict['problems']))[:300]}])[-40:]

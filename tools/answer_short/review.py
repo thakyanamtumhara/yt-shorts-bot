@@ -92,6 +92,10 @@ of real frames from the finished file, left to right, top to bottom, at these se
 It should show: our real product videos and photos (plain T-shirts, hoodies, people holding or wearing them, a godown),
 a yellow question panel near the start, word captions in the lower middle, a dark rate card with big yellow rupee
 digits on some frames, a small "sale91.com" badge top left, and a dark end card with "sale91.com".
+On one or two lines it may instead show a WEBSITE SCREEN: a real page of our own website inside a white rounded card
+with a grey address bar on top (a size chart, the ordering page with its colour and size grid, or the DTF order
+page). Everything inside that card is the live page: its own text, digits and prices are allowed. A long page scrolls
+slowly inside the card, so page text may run out under the card's faded bottom edge; that is normal.
 
 SPOKEN LINES: {json.dumps([line['say'] for line in plan['lines']], ensure_ascii=False)}
 HOOK ON SCREEN: {plan['hook_text']}
@@ -101,7 +105,8 @@ CITED FACTS: {json.dumps(cited, ensure_ascii=False)}
 Reject for any of these, and only these: a frame that is black, blank, broken or only blur; text cut off at an edge,
 overlapping other text, or unreadable; a rate card or caption covering a person's face; a vehicle number plate that
 can be read; a rupee number on screen that
-is not in the cited facts; a product on screen that is clearly a different kind of garment from the one the line is
+is not in the cited facts (a website screen's own digits do not count); a website screen that is blank, an error
+page, still loading, or whose main text is too small to read; a product on screen that is clearly a different kind of garment from the one the line is
 about (a hoodie for a T-shirt question); a spelling mistake in the hook, cover or end card; anything a buyer would
 find confusing in the first two seconds. Do not reject for taste.
 
