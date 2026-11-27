@@ -183,7 +183,8 @@ OTHER PUBLIC TEXT:
 List every place where the video says or implies something a cited fact does not state, breaks a fact's "limits",
 does wrong arithmetic, promises a result, date, stock, quality rank or saving, names a product or place the facts do
 not, or is unnatural or wrong Hindi/Hinglish that a Delhi wholesaler would not say. A plain restatement of a fact is
-fine. The closing question to viewers is not a claim. Also check the first line is a question a buyer would search
+fine. The closing question to viewers is not a claim. The seller's own names are always known and never a breach:
+Own Knitted Blank Wears, sale91.com and BulkPlainTshirt.com are the same plain T-shirt and hoodie wholesaler in Delhi. Also check the first line is a question a buyer would search
 and the second line answers it directly.
 
 Return ONE JSON object: {{"breaches": [{{"where": "<line number or field name>", "problem": "<what is wrong and the exact fix>"}}]}}
