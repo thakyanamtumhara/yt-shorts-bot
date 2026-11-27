@@ -281,6 +281,34 @@ def by_colour_turn(photos):
     return out
 
 
+def squash(text):
+    return ''.join(letter for letter in str(text).lower() if letter.isalnum())
+
+
+def colours_named(text, names):
+    """The colour names (as the gallery writes them) that a spoken line says. "Off-white" is not also "White"."""
+    left, found = ' ' + ' '.join(''.join(letter if letter.isalnum() else ' ' for letter in str(text).lower()).split()) + ' ', set()
+    for name in sorted(names, key=len, reverse=True):
+        words = ''.join(letter if letter.isalnum() else ' ' for letter in name.lower()).split()
+        for phrase in {' '.join(words), ''.join(words)}:
+            if phrase and f' {phrase} ' in left:
+                found.add(name)
+                left = left.replace(f' {phrase} ', ' | ')
+    return found
+
+
+def clip_colours(url, folder, names):
+    """The colours in a gallery clip's file name: hoodie-320gsm-black-v2.mp4 → Black; ...-royalblue-navy.mp4 → both."""
+    stem = url.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    rest = squash(stem[len(folder):] if stem.startswith(folder) else stem)
+    found = set()
+    for name in sorted(names, key=len, reverse=True):
+        if squash(name) and squash(name) in rest:
+            found.add(name)
+            rest = rest.replace(squash(name), '|')
+    return found
+
+
 def plan_pictures(plan, sheet, spans, recent=()):
     """One real picture per spoken line: the product's own clips and photos in turn (clip, clip, photo, ...).
     `recent` = pictures of the last published Shorts, oldest first: a clip or photo not shown lately goes first, so
@@ -290,6 +318,7 @@ def plan_pictures(plan, sheet, spans, recent=()):
     last_used = {key: index for index, key in enumerate(recent)}
     turn, cursor, shots = {}, {}, []
     taken = sheet.get('screen_files') or {}
+    names = {item.get('c') for entry in sheet['gallery'].values() for item in entry.get('photos') or [] if item.get('c')}
     for line, (start, end) in zip(plan['lines'], spans):
         if line.get('screen') and key_for(line, sheet) in taken:
             key = key_for(line, sheet)
@@ -305,16 +334,29 @@ def plan_pictures(plan, sheet, spans, recent=()):
         folder = sheet['visuals'][line['show']]
         entry = sheet['gallery'][folder]
         fresh = lambda url: last_used.get(picture_key(folder, url), -1)
-        videos = [('video', url) for url in sorted(entry['videos'], key=fresh)]
-        photos = [('photo', url) for url in sorted(by_colour_turn(entry['photos']), key=fresh)[:4]]
+        clips = sorted(entry['videos'], key=fresh)
+        stills = sorted(by_colour_turn(entry['photos']), key=fresh)
+        # A line that names a colour shows that colour when the gallery has it: "Black ₹307" over a clip marked
+        # WHITE reads as the white one at the black rate (27-Nov-2026 test run).
+        shade = {item['u']: item.get('c') or '' for item in entry['photos']}
+        said = colours_named(line['say'], names)
+        group = folder
+        if said:
+            same_clips = [url for url in clips if clip_colours(url, folder, names) & said]
+            same_stills = [url for url in stills if shade.get(url) in said]
+            if same_clips or same_stills:
+                clips, stills = same_clips, same_stills
+                group = folder + '|' + ','.join(sorted(said))     # its own turn: the colour's clip comes first
+        videos = [('video', url) for url in clips]
+        photos = [('photo', url) for url in stills[:4]]
         options = []
         for photo in photos or [None]:
             options += videos + ([photo] if photo else [])
         if not options:
             raise RenderHold(f'no real picture for {folder}')
-        index = turn.get(folder, 0)
+        index = turn.get(group, 0)
         kind, url = options[index % len(options)]
-        turn[folder] = index + 1
+        turn[group] = index + 1
         shots.append({'kind': kind, 'url': url, 'folder': folder, 'key': picture_key(folder, url), 'start': start,
                       'end': end, 'from': cursor.get(url, 0.0), 'card': line.get('card') or ''})
         cursor[url] = cursor.get(url, 0.0) + (end - start)

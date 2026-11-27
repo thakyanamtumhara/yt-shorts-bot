@@ -141,6 +141,27 @@ class Pictures(unittest.TestCase):
         shots = plan_pictures(self.plan(), self.sheet(), spans)
         self.assertEqual((shots[0]['from'], shots[3]['from']), (0.0, 4.0))
 
+    def test_a_line_that_names_a_colour_shows_that_colour(self):
+        from tools.answer_short.render import clip_colours, colours_named, plan_pictures
+        names = {'Black', 'White', 'Navy', 'Off-white', 'Royal Blue', 'Army Green', 'Red'}
+        self.assertEqual(colours_named('Black non-zipper hoodie ₹307 per piece.', names), {'Black'})
+        self.assertEqual(colours_named('Off-white aur Royal Blue mein bhi hai, ordered kal.', names), {'Off-white', 'Royal Blue'})
+        self.assertEqual(colours_named('Aapko hoodie kis colour mein chahiye?', names), set())
+        self.assertEqual(clip_colours('https://x/ph/vid/hoodie-320gsm-black-v2.mp4', 'hoodie-320gsm', names), {'Black'})
+        self.assertEqual(clip_colours('https://x/ph/vid/oversize-240gsm-royalblue-navy.mp4', 'oversize-240gsm', names),
+                         {'Royal Blue', 'Navy'})
+        photos = [{'u': f'https://x/ph/h/{n}.webp', 'c': colour} for n, colour in enumerate(['White', 'Navy', 'Black', 'Red'], 1)]
+        sheet = {'visuals': {'rate_h': 'hoodie-320gsm'}, 'gallery': {'hoodie-320gsm': {
+            'videos': ['https://x/ph/vid/hoodie-320gsm-white.mp4', 'https://x/ph/vid/hoodie-320gsm-black-v2.mp4'], 'photos': photos}}}
+        says = ['Hoodie ka rate kya hai?', 'Black hoodie ₹307 per piece.', 'White aur Navy mein ₹337 hai.',
+                'Red mein bhi ₹337 hai.', 'Army Green abhi nahi hai.', 'Kis colour mein chahiye?']
+        plan = {'lines': [{'say': say, 'show': 'rate_h', 'card': ''} for say in says]}
+        keys = [shot['key'].split('/', 1)[1] for shot in plan_pictures(plan, sheet, [(i * 4.0, i * 4.0 + 4.0) for i in range(6)])]
+        self.assertEqual(keys[1], 'hoodie-320gsm-black-v2.mp4')
+        self.assertIn(keys[2], ('hoodie-320gsm-white.mp4', '1.webp', '2.webp'))
+        self.assertEqual(keys[3], '4.webp')
+        self.assertIn(keys[4], ('hoodie-320gsm-white.mp4', 'hoodie-320gsm-black-v2.mp4', '1.webp', '2.webp', '3.webp', '4.webp'))
+
     def test_a_product_name_is_never_split_over_two_caption_lines(self):
         from tools.answer_short.render import caption_lines
         said = 'par 88% cotton, 12% polyester Non Bio ₹107 per piece hai. supercombed True Bio Round neck ₹158 per piece hai.'
@@ -231,6 +252,16 @@ class FakeClient:
             answer = {**good_plan(), 'search_phrase': phrase, 'intent_key': 'intent_' + phrase.replace(' ', '_')}
         text = json.dumps(answer, ensure_ascii=False)
         return type('Reply', (), {'content': [type('Block', (), {'text': text})()], 'stop_reason': 'end_turn'})()
+
+
+class OneADay(unittest.TestCase):
+    def test_a_second_start_the_same_day_posts_nothing(self):
+        from tools.answer_short import run
+        history = {'published': [{'date': '2026-11-26', 'youtube': 'abc', 'instagram': '1'},
+                                 {'date': '2026-11-27', 'youtube': None, 'instagram': None, 'telegram': True}]}
+        self.assertTrue(run.out_today(history, date(2026, 11, 26)))
+        self.assertFalse(run.out_today(history, date(2026, 11, 27)))
+        self.assertFalse(run.out_today(history, date(2026, 11, 28)))
 
 
 class HardQuestion(unittest.TestCase):

@@ -57,6 +57,13 @@ def taken(history, today):
     return history['published'] + recent
 
 
+def out_today(history, today):
+    """True when an answer Short of this date is already on YouTube or Instagram. A second start the same day (a
+    hand run, then the 14:30 trigger) must not post a second one."""
+    return any(item.get('date') == today.isoformat() and (item.get('youtube') or item.get('instagram'))
+               for item in history['published'])
+
+
 def topic_for(plan):
     from tools.daily_topic_selection import SelectedTopic
     return SelectedTopic({'topic': plan['title_youtube'], 'buyer_question': plan['search_phrase'],
@@ -171,6 +178,9 @@ def main(log=print):
         except Exception as error:
             log(f'   ⚠️ refresh failed ({error}); using the saved list')
     history = load_history()
+    if not dry and not flag('ANSWER_AGAIN') and out_today(history, today):
+        log("   today's answer Short is already published; nothing more is posted (ANSWER_AGAIN=1 makes a second one)")
+        return 0
     import anthropic
     client = anthropic.Anthropic()
     plan_file = os.environ.get('ANSWER_PLAN', '').strip()
