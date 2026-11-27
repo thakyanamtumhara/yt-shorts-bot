@@ -77,6 +77,13 @@
    "reason": "",
    "detail": "",
    "run": "45788010297"
+  },
+  {
+   "date": "2026-11-27",
+   "published": false,
+   "reason": "no script passed the fact check",
+   "detail": "WriteHold: No plan passed the fact check after 4 attempts",
+   "run": "45970109702"
   }
  ]
 }
