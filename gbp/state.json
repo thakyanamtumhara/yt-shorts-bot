@@ -1,6 +1,6 @@
 {
  "baseline_at": "2026-11-19",
- "last_upload": "2026-11-26",
+ "last_upload": "2026-11-27",
  "old_note": "2026-11-23",
  "seen": {
   "/ph/acidwash-os/1.webp": {
@@ -18,8 +18,10 @@
    "s": "baseline"
   },
   "/ph/acidwash-os/4.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-27",
+   "id": "CIABIhBlRI--zTLBbT4leQtgqhhv",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/bio-rneck/1.webp": {
    "at": "2026-11-22",
@@ -514,8 +516,10 @@
    "s": "baseline"
   },
   "/ph/oversize-210gsm/6.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-27",
+   "id": "CIABIhDILy1fIhgPiGaVDtuPntCo",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/oversize-210gsm/7.webp": {
    "at": "2026-11-19",
@@ -660,8 +664,10 @@
    "s": "baseline"
   },
   "/ph/oversize-260gsm/5b.webp": {
-   "at": "2026-11-19",
-   "s": "baseline"
+   "at": "2026-11-27",
+   "id": "CIABIhBXwmx8QIsZwJNwRi0VDhzM",
+   "s": "uploaded",
+   "src": "old"
   },
   "/ph/oversize-260gsm/6b.webp": {
    "at": "2026-11-19",
@@ -1095,6 +1101,12 @@
   "/ph/vid/true-bio-rneck-white.mp4": {
    "at": "2026-11-26",
    "id": "CIABIhCc-zNq7bhtt_80Cmp-ipYA",
+   "s": "uploaded",
+   "src": "new"
+  },
+  "/ph/vid/true-bio-vs-bio-rneck-white.mp4": {
+   "at": "2026-11-27",
+   "id": "CIABIhCoLMvRfwxh94ARyd4UdlMm",
    "s": "uploaded",
    "src": "new"
   },
