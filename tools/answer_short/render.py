@@ -28,7 +28,7 @@ UNDER_CARD_GAP, UNDER_CARD_BOTTOM = 14, 36
 # A website screen: a rounded card with an address bar, always above the captions so no page text sits under
 # them. A short page part is centred there; a long one scrolls slowly inside it.
 SCREEN_W, SCREEN_TOP, SCREEN_BOTTOM = 960, 250, 1170
-SCREEN_BAR, SCREEN_RADIUS, SCREEN_SPEED, SCREEN_WAIT = 88, 40, 85, 0.5
+SCREEN_BAR, SCREEN_RADIUS, SCREEN_SPEED, SCREEN_WAIT = 88, 40, 70, 1.4   # the top stays still while it is read
 MUSIC = ROOT / 'bg_music' / 'answer_bed.m4a'
 MUSIC_DB = -23
 FONT = ROOT / 'assets' / 'fonts' / 'Baloo2.ttf'
@@ -296,8 +296,11 @@ def plan_pictures(plan, sheet, spans, recent=()):
             # Behind the page: a real photo of the product the line is about, dimmed (else the page itself, blurred).
             own = sheet['gallery'].get(sheet['visuals'].get(line.get('show')) or '') or {}
             behind = next((item['u'] for item in own.get('photos') or []), '') or next((url for url in own.get('posters') or [] if url), '')
+            # A page that comes round again scrolls on from where it stopped, like a clip.
+            scrolled = cursor.get('screen/' + key, 0.0)
             shots.append({'kind': 'screen', 'url': '', 'path': taken[key], 'bar': SCREENS[line['screen']]['bar'], 'behind': behind,
-                          'folder': 'screen', 'key': 'screen/' + key, 'start': start, 'end': end, 'from': 0.0, 'card': ''})
+                          'folder': 'screen', 'key': 'screen/' + key, 'start': start, 'end': end, 'from': scrolled, 'card': ''})
+            cursor['screen/' + key] = scrolled + max(0.0, end - start - SCREEN_WAIT)
             continue
         folder = sheet['visuals'][line['show']]
         entry = sheet['gallery'][folder]
@@ -361,7 +364,7 @@ class Shot:
             self.card = Image.new('RGB', (SCREEN_W, SCREEN_BAR + body.height), 'white')
             self.card.paste(address_bar(shot.get('bar') or 'sale91.com'), (0, 0))
             self.card.paste(body, (0, SCREEN_BAR))
-            self.need = need
+            self.need, self.scrolled = need, shot.get('from') or 0.0
             self.window = min(self.card.height, SCREEN_BOTTOM - SCREEN_TOP)
             self.short = self.window == self.card.height
             self.mask = Image.new('L', (SCREEN_W, self.window), 0)
@@ -389,7 +392,8 @@ class Shot:
                 top = SCREEN_TOP + (SCREEN_BOTTOM - SCREEN_TOP - self.window) // 2
                 image.paste(self.card, ((W - SCREEN_W) // 2, top), self.mask)
                 return image
-            moved = min(self.card.height - self.window, int(SCREEN_SPEED * max(0.0, t - self.start - SCREEN_WAIT)))
+            moved = min(self.card.height - self.window,
+                        int(SCREEN_SPEED * (self.scrolled + max(0.0, t - self.start - SCREEN_WAIT))))
             shown = Image.new('RGB', (SCREEN_W, self.window), 'white')
             shown.paste(self.card.crop((0, SCREEN_BAR + moved, SCREEN_W, moved + self.window)), (0, SCREEN_BAR))
             shown.paste(self.card.crop((0, 0, SCREEN_W, SCREEN_BAR)), (0, 0))

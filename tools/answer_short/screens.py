@@ -33,9 +33,9 @@ SCREENS = {
     'order_from_one_piece': {'what': 'the real ordering page: every product, colours down the side, sizes across, '
                                      'a box to type the pieces', 'bar': 'bulkplaintshirt.com'},
     'dtf_rate': {'what': 'the real DTF order page: its price per metre and the three steps',
-                 'bar': 'dtf.bulkplaintshirt.com'},
+                 'bar': 'dtf.bulkplaintshirt.com', 'page': 'dtf_page'},
     'dtf_how_it_works': {'what': 'the real DTF order page: upload designs, see the sheet and price, we print and deliver',
-                         'bar': 'dtf.bulkplaintshirt.com'},
+                         'bar': 'dtf.bulkplaintshirt.com', 'page': 'dtf_page'},
 }
 
 
@@ -45,11 +45,13 @@ def offered(sheet):
 
 
 def key_for(line, sheet):
-    """The picture a line's screen needs. A size chart belongs to the product the line shows."""
+    """The picture a line's screen needs. A size chart belongs to the product the line shows; two facts shown on
+    the same page share one picture, so its second showing scrolls on instead of starting again."""
     fact = line.get('screen') or ''
-    if SCREENS.get(fact, {}).get('by_product'):
+    spec = SCREENS.get(fact) or {}
+    if spec.get('by_product'):
         return fact + '@' + str(sheet['visuals'].get(line.get('show')) or '')
-    return fact
+    return spec.get('page') or fact
 
 
 def tidy(plan, sheet):

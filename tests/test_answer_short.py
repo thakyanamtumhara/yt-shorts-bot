@@ -219,7 +219,19 @@ class Screens(unittest.TestCase):
         plan = self.plan(['', 'size_chart_on_site', 'size_chart_on_site', ''], shows={2: 'rate_sale'})
         self.assertEqual(screens.tidy(plan, self.sheet()), ['size_chart_on_site'])
         self.assertEqual(screens.key_for(plan['lines'][1], self.sheet()), 'size_chart_on_site@oversize-240gsm')
-        self.assertEqual(screens.key_for({'screen': 'dtf_rate', 'show': 'rate_os'}, self.sheet()), 'dtf_rate')
+        self.assertEqual(screens.key_for({'screen': 'dtf_rate', 'show': 'rate_os'}, self.sheet()), 'dtf_page')
+        self.assertEqual(screens.key_for({'screen': 'order_from_one_piece', 'show': 'rate_os'}, self.sheet()), 'order_from_one_piece')
+
+    def test_two_facts_on_one_page_share_its_picture_and_the_second_showing_scrolls_on(self):
+        from tools.answer_short import render, screens
+        sheet = {**self.sheet(), 'facts': {**self.sheet()['facts'], 'dtf_how_it_works': {}}}
+        plan = self.plan(['', 'dtf_rate', '', 'dtf_how_it_works', ''])
+        plan['fact_ids'].append('dtf_how_it_works')
+        self.assertEqual(screens.tidy(plan, sheet), ['dtf_rate', 'dtf_how_it_works'])
+        sheet['screen_files'] = {'dtf_page': '/tmp/dtf.png'}
+        shots = render.plan_pictures(plan, sheet, [(index * 5.0, index * 5.0 + 5.0) for index in range(5)])
+        self.assertEqual([shot['key'] for shot in shots if shot['kind'] == 'screen'], ['screen/dtf_page', 'screen/dtf_page'])
+        self.assertEqual((shots[1]['from'], shots[3]['from']), (0.0, 5.0 - render.SCREEN_WAIT))
 
     def test_a_taken_screen_is_shown_and_a_missing_one_keeps_the_product_picture(self):
         from tools.answer_short.render import plan_pictures
