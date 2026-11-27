@@ -94,7 +94,7 @@ a yellow question panel near the start, word captions in the lower middle, a dar
 digits on some frames, a small "sale91.com" badge top left, and a dark end card with "sale91.com".
 On one or two lines it may instead show a WEBSITE SCREEN: a real page of our own website inside a white rounded card
 with a grey address bar on top (a size chart, the ordering page with its colour and size grid, or the DTF order
-page). Everything inside that card is the live page: its own text, digits and prices are allowed. A long page scrolls
+page), over a dimmed, blurred product photo. Everything inside that card is the live page: its own text, digits and prices are allowed. A long page scrolls
 slowly inside the card, so page text may run out under the card's faded bottom edge; that is normal.
 
 SPOKEN LINES: {json.dumps([line['say'] for line in plan['lines']], ensure_ascii=False)}

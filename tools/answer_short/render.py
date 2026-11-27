@@ -293,7 +293,10 @@ def plan_pictures(plan, sheet, spans, recent=()):
     for line, (start, end) in zip(plan['lines'], spans):
         if line.get('screen') and key_for(line, sheet) in taken:
             key = key_for(line, sheet)
-            shots.append({'kind': 'screen', 'url': '', 'path': taken[key], 'bar': SCREENS[line['screen']]['bar'],
+            # Behind the page: a real photo of the product the line is about, dimmed (else the page itself, blurred).
+            own = sheet['gallery'].get(sheet['visuals'].get(line.get('show')) or '') or {}
+            behind = next((item['u'] for item in own.get('photos') or []), '') or next((url for url in own.get('posters') or [] if url), '')
+            shots.append({'kind': 'screen', 'url': '', 'path': taken[key], 'bar': SCREENS[line['screen']]['bar'], 'behind': behind,
                           'folder': 'screen', 'key': 'screen/' + key, 'start': start, 'end': end, 'from': 0.0, 'card': ''})
             continue
         folder = sheet['visuals'][line['show']]
@@ -343,8 +346,17 @@ class Shot:
         self.kind, self.name, self.key = shot['kind'], path.name, shot.get('key') or path.name
         if shot['kind'] == 'screen':
             page = Image.open(path).convert('RGB')
-            back = page.resize((H, H), Image.LANCZOS).crop(((H - W) // 2, 0, (H - W) // 2 + W, H))
-            self.back = back.filter(ImageFilter.GaussianBlur(60)).point(lambda value: int(value * 0.32))
+            ground, soft, dim = page, 60, 0.32
+            if shot.get('behind'):
+                try:
+                    ground, soft, dim = Image.open(download(shot['behind'], work / 'assets')).convert('RGB'), 16, 0.4
+                except Exception:
+                    pass
+            cover = max(W / ground.width, H / ground.height)
+            back = ground.resize((max(W, round(ground.width * cover)), max(H, round(ground.height * cover))), Image.LANCZOS)
+            left, top = (back.width - W) // 2, (back.height - H) // 2
+            self.back = (back.crop((left, top, left + W, top + H)).filter(ImageFilter.GaussianBlur(soft))
+                         .point(lambda value: int(value * dim)))
             body = page.resize((SCREEN_W, max(1, round(page.height * SCREEN_W / page.width))), Image.LANCZOS)
             self.card = Image.new('RGB', (SCREEN_W, SCREEN_BAR + body.height), 'white')
             self.card.paste(address_bar(shot.get('bar') or 'sale91.com'), (0, 0))
