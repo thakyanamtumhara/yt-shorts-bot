@@ -2888,5 +2888,25 @@
       "verification": "create_accepted_native_label_unverified"
     },
     "ig_api": "v24.0"
+  },
+  {
+    "media_id": "18080502077450932",
+    "title": "Oversized T-shirt wholesale mein kitne ki? 240 GSM ₹205, 210 GSM ₹200, aaj ka rate",
+    "topic": "Oversized T Shirt Wholesale: 240 GSM ₹205, 210 GSM ₹200 Website Rate (10+ Piece)",
+    "published_at": "2026-11-28T14:40:14.237444+05:30",
+    "checked": false,
+    "bot_youtube_id": "5wzi0BWmqkw",
+    "workflow_run_id": "46128414492",
+    "source_repository": "thakyanamtumhara/yt-shorts-bot",
+    "cover_text": "OVERSIZED T-SHIRT Wholesale mein kitne ki?",
+    "cover_color": null,
+    "cover_path": "answer-short-real-frame",
+    "cover_face": false,
+    "ai_disclosure": {
+      "requested": true,
+      "container_id": "18356239741266060",
+      "verification": "create_accepted_native_label_unverified"
+    },
+    "ig_api": "v24.0"
   }
 ]

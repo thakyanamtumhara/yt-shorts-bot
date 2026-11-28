@@ -32,6 +32,42 @@
     "true-bio-rneck/true-bio-rneck-mustardyellow.mp4",
     "true-bio-rneck/2.webp"
    ]
+  },
+  {
+   "date": "2026-11-28",
+   "search_phrase": "oversized t shirt wholesale",
+   "intent_key": "oversized_tshirt_210_240gsm_wholesale_price",
+   "title": "Oversized T Shirt Wholesale: 240 GSM ₹205, 210 GSM ₹200 Website Rate (10+ Piece)",
+   "fact_ids": [
+    "rate_oversize_240gsm",
+    "rate_oversize_210gsm",
+    "order_from_one_piece",
+    "made_tiruppur_stock_delhi",
+    "courier_all_india"
+   ],
+   "also_matches": [
+    "oversized t shirt wholesale delhi",
+    "oversized t shirt 240 gsm",
+    "240 gsm t shirt wholesale",
+    "210 gsm t shirt wholesale"
+   ],
+   "screens": [
+    "order_from_one_piece"
+   ],
+   "youtube": "5wzi0BWmqkw",
+   "instagram": "18080502077450932",
+   "facebook": "1119837034389624",
+   "telegram": true,
+   "seconds": 31.66,
+   "pictures": [
+    "oversize-240gsm/oversize-240gsm-royalblue-navy.mp4",
+    "oversize-240gsm/oversize-240gsm-charcoal.mp4",
+    "oversize-240gsm/1.webp",
+    "oversize-210gsm/oversize-210gsm-red.mp4",
+    "oversize-210gsm/1.webp",
+    "screen/order_from_one_piece",
+    "oversize-210gsm/oversize-210gsm-red.mp4"
+   ]
   }
  ],
  "refused": []

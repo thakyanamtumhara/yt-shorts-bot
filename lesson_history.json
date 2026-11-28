@@ -204,5 +204,20 @@
     "buyer_decision": "Aapko printing ke liye kaunsa chahiye, Non Bio, Bio ya True Bio?",
     "video_id": "FemhGUBfHxU",
     "published_on": "2026-11-26"
+  },
+  {
+    "topic": "Oversized T Shirt Wholesale: 240 GSM ₹205, 210 GSM ₹200 Website Rate (10+ Piece)",
+    "intent_key": "oversized_tshirt_210_240gsm_wholesale_price",
+    "fact_ids": [
+      "rate_oversize_240gsm",
+      "rate_oversize_210gsm",
+      "order_from_one_piece",
+      "made_tiruppur_stock_delhi",
+      "courier_all_india"
+    ],
+    "lesson": "240 GSM oversized T-shirt wholesale mein kitne ki? Website pe aaj ka rate ₹205 per piece hai, 10 ya zyada piece pe. 10 se kam piece pe iska sample rate ₹245 hai. 210 GSM wali ka bulk rate ₹200 per piece hai. 5% GST aur delivery alag, Delhi godown se pure India courier hota hai. Pehle 1 piece sample mangao, fabric dekho, phir website se bulk order karo. Aapko kaunsa GSM chahiye?",
+    "buyer_decision": "Aapko kaunsa GSM chahiye?",
+    "video_id": "5wzi0BWmqkw",
+    "published_on": "2026-11-28"
   }
 ]
