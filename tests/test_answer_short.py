@@ -125,6 +125,61 @@ class Pictures(unittest.TestCase):
     def plan(self, lines=4):
         return {'lines': [{'say': 'x', 'show': 'rate_os', 'card': ''} for _ in range(lines)]}
 
+    def test_two_products_with_the_same_file_name_each_keep_their_own_photo(self):
+        from unittest import mock
+        from tools.answer_short import render
+
+        class Reply:
+            def __init__(self, url):
+                self.body = (url + ' ').encode() * 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self):
+                return self.body
+
+        urls = ['https://x/ph/oversize-240gsm/1.webp', 'https://x/ph/oversize-210gsm/1.webp']
+        with tempfile.TemporaryDirectory() as folder, \
+                mock.patch.object(render.urllib.request, 'urlopen', lambda request, timeout=0: Reply(request.full_url)):
+            first, second = (render.download(url, Path(folder)) for url in urls)
+            self.assertNotEqual(first, second)
+            self.assertEqual((first.name, second.name), ('1.webp', '1.webp'))
+            self.assertIn(b'oversize-240gsm', first.read_bytes())
+            self.assertIn(b'oversize-210gsm', second.read_bytes())
+            self.assertEqual(render.download(urls[0], Path(folder)), first)
+
+    def test_white_bars_at_the_sides_of_a_photo_are_cut_and_a_white_wall_stays(self):
+        from PIL import Image, ImageDraw
+        from tools.answer_short import render
+        barred = Image.new('RGB', (600, 600), 'white')
+        ImageDraw.Draw(barred).rectangle((75, 0, 524, 599), fill=(150, 140, 130))
+        cut = render.trim_plain(barred)
+        self.assertEqual(cut.height, 600)
+        self.assertTrue(440 <= cut.width <= 450)
+        self.assertLess(max(cut.getpixel((0, 300))), 200)
+        self.assertLess(max(cut.getpixel((cut.width - 1, 300))), 200)
+        studio = Image.new('RGB', (600, 600), 'white')
+        ImageDraw.Draw(studio).ellipse((200, 150, 400, 450), fill=(30, 30, 30))
+        self.assertEqual(render.trim_plain(studio).size, (600, 600))
+        self.assertEqual(render.trim_plain(Image.new('RGB', (600, 600), 'white')).size, (600, 600))
+        full = Image.new('RGB', (600, 600), (90, 90, 90))
+        self.assertIs(render.trim_plain(full), full)
+        with tempfile.TemporaryDirectory() as folder:
+            barred.save(Path(folder) / 'p.png')
+            with self.subTest('drawn with no white frame'):
+                from unittest import mock
+                with mock.patch.object(render, 'download', lambda url, where: Path(folder) / 'p.png'):
+                    shot = render.Shot({'kind': 'photo', 'url': 'https://x/ph/os/p.png', 'key': 'os/p.png',
+                                        'start': 0.0, 'end': 4.0}, Path(folder))
+                frame = shot.frame(1.0)
+                self.assertEqual(frame.size, (render.W, render.H))
+                for x in (4, render.W // 2, render.W - 5):
+                    self.assertLess(max(frame.getpixel((x, render.PHOTO_TOP + 300))), 200)
+
     def test_a_picture_not_shown_lately_goes_first(self):
         from tools.answer_short.render import plan_pictures
         spans = [(index * 4.0, index * 4.0 + 4.0) for index in range(4)]

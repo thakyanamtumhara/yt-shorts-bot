@@ -231,8 +231,13 @@ def cover_image(base, lines):
 # ---------------------------------------------------------------- real pictures
 
 def download(url, folder):
+    # Every gallery folder has a "1.webp": a file is kept under its own folder's name, so one product's photo can
+    # never stand in for another's (it did on 26 and 28-Nov-2026: the first "1.webp" was reused for every later one).
+    parts = url.split('?', 1)[0].rstrip('/').rsplit('/', 2)
+    home = ''.join(char if char.isalnum() or char in '-_' else '_' for char in parts[-2]) if len(parts) == 3 else ''
+    folder = folder / (home or 'other')
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / url.rsplit('/', 1)[-1]
+    path = folder / parts[-1]
     if not path.is_file() or path.stat().st_size < 2000:
         request = urllib.request.Request(url, headers={'User-Agent': 'yt-shorts-bot answer short'})
         with urllib.request.urlopen(request, timeout=90) as response:
@@ -240,6 +245,20 @@ def download(url, folder):
     if path.stat().st_size < 2000:
         raise RenderHold(f'picture did not download: {url}')
     return path
+
+
+def trim_plain(photo):
+    """Some gallery photos are saved with white bars at the sides. The bars go, so no white frame shows in the
+    video. Only a bar with a hard edge counts (padding): a white studio wall fades into the product and stays."""
+    grey = photo.convert('L')
+    box = [0, 0, photo.width, photo.height]
+    for axis, size in ((0, photo.width), (1, photo.height)):
+        means = list(grey.resize((size, 1) if axis == 0 else (1, size), Image.BOX).tobytes())
+        for side, run in ((0, means), (1, means[::-1])):
+            blank = next((index for index, value in enumerate(run) if value < 252), len(run))
+            if max(4, size // 100) <= blank <= size // 4 and run[blank + 3] <= 238:
+                box[axis + 2 * side] = blank + 2 if side == 0 else size - blank - 2
+    return photo if box == [0, 0, photo.width, photo.height] else photo.crop(tuple(box))
 
 
 def probe_seconds(path):
@@ -419,10 +438,12 @@ class Shot:
         elif shot['kind'] == 'video':
             self.files = video_frames(path, shot['from'], need, work / 'frames' / f"{len(list((work / 'frames').glob('*'))) if (work / 'frames').is_dir() else 0:02d}")
         else:
-            photo = Image.open(path).convert('RGB')
+            photo = trim_plain(Image.open(path).convert('RGB'))
             back = photo.resize((H, H), Image.LANCZOS).crop(((H - W) // 2, 0, (H - W) // 2 + W, H))
             self.back = back.filter(ImageFilter.GaussianBlur(40)).point(lambda value: int(value * 0.55))
             self.photo, self.need = photo, need
+            # A square photo is shown a little wider than the screen; a tall one (bars cut off) fills its width.
+            self.wide = PHOTO_W if photo.height <= photo.width * 1.15 else W
         # While a rate card is up, the picture sits below it (a clip is shown smaller on a dark ground), so the card
         # never covers a face, a collar or the hands holding the garment.
         self.under = shot.get('top')
@@ -454,12 +475,12 @@ class Shot:
             ground.paste(image.resize((width, height), Image.LANCZOS), ((W - width) // 2, self.under))
             return ground
         zoom = 1.0 + 0.06 * min(1.0, max(0.0, (t - self.start) / self.need))
-        width = int(PHOTO_W * zoom)
+        width = int(self.wide * zoom)
         size = (width, int(width * self.photo.height / self.photo.width))
         shown = self.photo.resize(size, Image.LANCZOS)
         image = self.back.copy()
         top = self.under or PHOTO_TOP
-        image.paste(shown, ((W - size[0]) // 2, top - (size[1] - int(PHOTO_W * self.photo.height / self.photo.width)) // 2))
+        image.paste(shown, ((W - size[0]) // 2, top - (size[1] - int(self.wide * self.photo.height / self.photo.width)) // 2))
         return image
 
     def first(self):
