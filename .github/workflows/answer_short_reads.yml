@@ -1,0 +1,51 @@
+name: Answer Short booked reads
+
+# Two dated reads of the new answer Shorts' numbers were promised to the owner: the first read of saves, shares and
+# comments on Thu 3-Dec-2026, and the pass or fail verdict on 12 Shorts on Sat 12-Dec-2026. Both need an AI session,
+# so on the day the owner gets a Telegram with the words to say. It runs after each real daily Short run (that run is
+# started on time from outside GitHub) and once from GitHub's own timer, which runs hours late here.
+# Delete this file after 12-Dec-2026.
+
+on:
+  workflow_run:
+    workflows: ["Daily YouTube Short"]
+    types: [completed]
+  schedule:
+    - cron: '30 4 3 12 *'
+    - cron: '30 4 12 12 *'
+  workflow_dispatch:
+    inputs:
+      pretend_date:
+        description: 'Proof only: act as if today were this date (YYYY-MM-DD). Prints the message, sends nothing.'
+        required: false
+        default: ''
+
+permissions: {}
+
+jobs:
+  remind:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tell the owner when a read is due today
+        env:
+          PRETEND: ${{ github.event.inputs.pretend_date }}
+          RUN_TITLE: ${{ github.event.workflow_run.display_title }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ALERT_BOT_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          DAY="${PRETEND:-$(TZ=Asia/Kolkata date +%F)}"
+          case "$RUN_TITLE" in *"(test)"*) echo "after a test run: nothing to say"; exit 0 ;; esac
+          case "$DAY" in
+            2026-12-03) TEXT='Auto Shorts: the first read of saves, shares and comments is due today (3 Dec). Tell any AI session: "read the new Shorts numbers".' ;;
+            2026-12-12) TEXT='Auto Shorts: the pass or fail verdict on the 12 new Shorts is due today (12 Dec). Tell any AI session: "Shorts pass or fail verdict".' ;;
+            *) echo "no read is due on $DAY"; exit 0 ;;
+          esac
+          echo "$TEXT"
+          if [ -n "$PRETEND" ]; then echo "proof run: not sent"; exit 0; fi
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_ALERT_CHAT_ID" ]; then echo "::error::no Telegram settings"; exit 1; fi
+          curl -s -m 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}" -o /tmp/read-alert.json
+          python3 -c 'import json; r=json.load(open("/tmp/read-alert.json")); assert r.get("ok") is True, "Telegram did not confirm delivery"; print("told the owner:", r["result"]["message_id"])'
